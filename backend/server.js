@@ -36,6 +36,14 @@ const mockUsers = [
     email: 'john@example.com',
     role: 'user',
     avatar: 'https://picsum.photos/150/150'
+  },
+  {
+    id: '2',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    role: 'admin',
+    avatar: 'https://picsum.photos/150/150'
   }
 ];
 
@@ -43,30 +51,169 @@ const mockProperties = [
   {
     id: '1',
     title: 'Beautiful Family Home',
-    description: 'Spacious 3-bedroom home with modern amenities',
+    description: 'Spacious 3-bedroom home with modern amenities and stunning views',
     price: 450000,
     type: 'house',
-    status: 'for-sale',
+    status: 'for-sale', // for-sale, for-rent, for-lease
     location: {
       address: '123 Main St',
       city: 'New York',
       state: 'NY',
-      zipCode: '10001'
+      zipCode: '10001',
+      coordinates: {
+        latitude: 40.7128,
+        longitude: -74.0060
+      },
+      nearestBusStop: {
+        name: 'Main St & 5th Ave',
+        distance: '0.2 miles',
+        coordinates: {
+          latitude: 40.7130,
+          longitude: -74.0058
+        }
+      }
     },
     details: {
       bedrooms: 3,
       bathrooms: 2,
-      sqft: 1800
+      sqft: 1800,
+      yearBuilt: 2015,
+      lotSize: '0.25 acres',
+      parking: '2-car garage',
+      heating: 'Central',
+      cooling: 'Central AC'
     },
+    amenities: [
+      'Hardwood Floors',
+      'Fireplace',
+      'Walk-in Closet',
+      'Garden',
+      'Patio',
+      'Security System',
+      'High-Speed Internet'
+    ],
     images: [
       {
         url: 'https://picsum.photos/400/300',
-        isPrimary: true
+        isPrimary: true,
+        caption: 'Front View'
+      },
+      {
+        url: 'https://picsum.photos/400/300',
+        isPrimary: false,
+        caption: 'Living Room'
+      },
+      {
+        url: 'https://picsum.photos/400/300',
+        isPrimary: false,
+        caption: 'Kitchen'
+      }
+    ],
+    videos: [
+      {
+        url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+        thumbnail: 'https://picsum.photos/400/300',
+        caption: 'Property Tour'
+      }
+    ],
+    documentation: [
+      {
+        type: 'title-deed',
+        name: 'Property Title Deed',
+        url: 'https://example.com/documents/title-deed.pdf',
+        verified: true
+      },
+      {
+        type: 'survey-plan',
+        name: 'Survey Plan',
+        url: 'https://example.com/documents/survey-plan.pdf',
+        verified: true
+      },
+      {
+        type: 'building-permit',
+        name: 'Building Permit',
+        url: 'https://example.com/documents/building-permit.pdf',
+        verified: false
       }
     ],
     owner: mockUsers[0],
     views: 45,
-    favorites: []
+    favorites: [],
+    isVerified: false,
+    verificationStatus: 'pending', // pending, approved, rejected
+    verificationNotes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Modern Downtown Apartment',
+    description: 'Luxury 2-bedroom apartment in the heart of downtown',
+    price: 2500,
+    type: 'apartment',
+    status: 'for-rent',
+    location: {
+      address: '456 Downtown Ave',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10002',
+      coordinates: {
+        latitude: 40.7589,
+        longitude: -73.9851
+      },
+      nearestBusStop: {
+        name: 'Downtown Ave & Broadway',
+        distance: '0.1 miles',
+        coordinates: {
+          latitude: 40.7590,
+          longitude: -73.9850
+        }
+      }
+    },
+    details: {
+      bedrooms: 2,
+      bathrooms: 1,
+      sqft: 1200,
+      yearBuilt: 2020,
+      floor: 15,
+      totalFloors: 25,
+      parking: '1 assigned space',
+      heating: 'Central',
+      cooling: 'Central AC'
+    },
+    amenities: [
+      'Balcony',
+      'Gym Access',
+      'Pool',
+      'Doorman',
+      'Elevator',
+      'In-Unit Laundry',
+      'High-Speed Internet'
+    ],
+    images: [
+      {
+        url: 'https://picsum.photos/400/300',
+        isPrimary: true,
+        caption: 'Living Area'
+      }
+    ],
+    videos: [],
+    documentation: [
+      {
+        type: 'rental-agreement',
+        name: 'Rental Agreement',
+        url: 'https://example.com/documents/rental-agreement.pdf',
+        verified: true
+      }
+    ],
+    owner: mockUsers[0],
+    views: 32,
+    favorites: [],
+    isVerified: true,
+    verificationStatus: 'approved',
+    verificationNotes: 'All documents verified successfully',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
@@ -204,7 +351,18 @@ app.post('/api/auth/login', (req, res) => {
 
 // Mock properties routes
 app.get('/api/properties', (req, res) => {
-  const { page = 1, limit = 12, search, type, minPrice, maxPrice } = req.query;
+  const { 
+    page = 1, 
+    limit = 12, 
+    search, 
+    type, 
+    status,
+    minPrice, 
+    maxPrice,
+    bedrooms,
+    bathrooms,
+    verified
+  } = req.query;
   
   let filteredProperties = [...mockProperties];
   
@@ -212,12 +370,18 @@ app.get('/api/properties', (req, res) => {
   if (search) {
     filteredProperties = filteredProperties.filter(p => 
       p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase())
+      p.description.toLowerCase().includes(search.toLowerCase()) ||
+      p.location.address.toLowerCase().includes(search.toLowerCase()) ||
+      p.location.city.toLowerCase().includes(search.toLowerCase())
     );
   }
   
   if (type) {
     filteredProperties = filteredProperties.filter(p => p.type === type);
+  }
+
+  if (status) {
+    filteredProperties = filteredProperties.filter(p => p.status === status);
   }
   
   if (minPrice) {
@@ -226,6 +390,20 @@ app.get('/api/properties', (req, res) => {
   
   if (maxPrice) {
     filteredProperties = filteredProperties.filter(p => p.price <= parseInt(maxPrice));
+  }
+
+  if (bedrooms) {
+    filteredProperties = filteredProperties.filter(p => p.details.bedrooms >= parseInt(bedrooms));
+  }
+
+  if (bathrooms) {
+    filteredProperties = filteredProperties.filter(p => p.details.bathrooms >= parseInt(bathrooms));
+  }
+
+  if (verified === 'true') {
+    filteredProperties = filteredProperties.filter(p => p.isVerified === true);
+  } else if (verified === 'false') {
+    filteredProperties = filteredProperties.filter(p => p.isVerified === false);
   }
 
   // Pagination
@@ -241,6 +419,10 @@ app.get('/api/properties', (req, res) => {
       totalPages: Math.ceil(filteredProperties.length / parseInt(limit)),
       totalItems: filteredProperties.length,
       itemsPerPage: parseInt(limit)
+    },
+    filters: {
+      availableTypes: ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'],
+      availableStatuses: ['for-sale', 'for-rent', 'for-lease']
     }
   });
 });
@@ -261,39 +443,122 @@ app.get('/api/properties/:id', (req, res) => {
   });
 });
 
-app.post('/api/properties', (req, res) => {
-  const { title, description, price, type, location, details } = req.body;
+// Admin routes for property verification
+app.get('/api/admin/properties', (req, res) => {
+  const { status, verificationStatus } = req.query;
   
-  if (!title || !description || !price || !type || !location || !details) {
+  let filteredProperties = [...mockProperties];
+  
+  if (status) {
+    filteredProperties = filteredProperties.filter(p => p.status === status);
+  }
+  
+  if (verificationStatus) {
+    filteredProperties = filteredProperties.filter(p => p.verificationStatus === verificationStatus);
+  }
+  
+  res.json({
+    success: true,
+    data: filteredProperties,
+    stats: {
+      total: mockProperties.length,
+      pending: mockProperties.filter(p => p.verificationStatus === 'pending').length,
+      approved: mockProperties.filter(p => p.verificationStatus === 'approved').length,
+      rejected: mockProperties.filter(p => p.verificationStatus === 'rejected').length
+    }
+  });
+});
+
+app.put('/api/admin/properties/:id/verify', (req, res) => {
+  const { id } = req.params;
+  const { verificationStatus, verificationNotes } = req.body;
+  
+  const property = mockProperties.find(p => p.id === id);
+  
+  if (!property) {
+    return res.status(404).json({
+      success: false,
+      message: 'Property not found'
+    });
+  }
+  
+  property.verificationStatus = verificationStatus;
+  property.verificationNotes = verificationNotes || '';
+  property.isVerified = verificationStatus === 'approved';
+  property.updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    message: `Property ${verificationStatus} successfully`,
+    data: property
+  });
+});
+
+// Enhanced property creation with more fields
+app.post('/api/properties', (req, res) => {
+  const { 
+    title, 
+    description, 
+    price, 
+    type, 
+    status,
+    location, 
+    details,
+    amenities,
+    images,
+    videos,
+    documentation
+  } = req.body;
+  
+  if (!title || !description || !price || !type || !status || !location || !details) {
     return res.status(400).json({
       success: false,
       message: 'All required fields must be provided'
     });
   }
-
+  
   const newProperty = {
     id: Date.now().toString(),
     title,
     description,
     price: parseInt(price),
     type,
-    status: 'for-sale',
-    location,
-    details,
-    images: [
+    status,
+    location: {
+      ...location,
+      coordinates: location.coordinates || { latitude: 0, longitude: 0 },
+      nearestBusStop: location.nearestBusStop || null
+    },
+    details: {
+      ...details,
+      yearBuilt: details.yearBuilt || null,
+      lotSize: details.lotSize || null,
+      parking: details.parking || null,
+      heating: details.heating || null,
+      cooling: details.cooling || null
+    },
+    amenities: amenities || [],
+    images: images || [
       {
         url: 'https://picsum.photos/400/300',
-        isPrimary: true
+        isPrimary: true,
+        caption: 'Property Image'
       }
     ],
+    videos: videos || [],
+    documentation: documentation || [],
     owner: mockUsers[0],
     views: 0,
     favorites: [],
-    createdAt: new Date().toISOString()
+    isVerified: false,
+    verificationStatus: 'pending',
+    verificationNotes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
-
+  
   mockProperties.push(newProperty);
-
+  
   res.status(201).json({
     success: true,
     message: 'Property created successfully',

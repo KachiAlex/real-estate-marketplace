@@ -8,10 +8,12 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
+    setShowUserMenu(false);
   };
 
   const isActive = (path) => {
@@ -126,52 +128,64 @@ const Header = () => {
                   <FaChartLine className="text-lg" />
                   <span>Dashboard</span>
                 </Link>
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-300 flex items-center space-x-2"
+                  >
+                    <FaShieldAlt className="text-lg" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
                 <div className="relative group">
-                  <button className="flex items-center space-x-3 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-all duration-300 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-xl">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
+                  >
                     <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full border-2 border-white shadow-md"
+                      src={user.avatar || 'https://picsum.photos/32/32'}
+                      alt={user.firstName}
+                      className="w-8 h-8 rounded-full"
                     />
-                    <span>{user.name}</span>
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="hidden md:block">{user.firstName}</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 border border-gray-100">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="text-sm font-semibold text-gray-900">{user.name}</div>
-                      <div className="text-xs text-gray-500">{user.email}</div>
-                    </div>
-                    <Link
-                      to="/profile"
-                      className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                    >
-                      <FaUser className="text-gray-400" />
-                      <span>Profile</span>
-                    </Link>
-                    <Link
-                      to="/add-property"
-                      className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                    >
-                      <FaBuilding className="text-gray-400" />
-                      <span>Add Property</span>
-                    </Link>
-                    <Link
-                      to="/escrow"
-                      className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                    >
-                      <FaShieldAlt className="text-gray-400" />
-                      <span>Escrow</span>
-                    </Link>
-                    <div className="border-t border-gray-100 mt-2">
+
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                      <Link
+                        to="/dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Profile
+                      </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 w-full text-left transition-colors duration-200"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
-                        <FaSignOutAlt className="text-red-400" />
-                        <span>Logout</span>
+                        Logout
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ) : (
