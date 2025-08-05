@@ -11,10 +11,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://*.vercel.app', 'https://*.onrender.com'],
+  origin: true, // Allow all origins for now
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
@@ -110,6 +110,13 @@ app.get('/', (req, res) => {
 });
 
 // Mock authentication routes
+app.options('/api/auth/register', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(200).end();
+});
+
 app.post('/api/auth/register', (req, res) => {
   console.log('Registration request received:', req.body);
   const { firstName, lastName, email, password } = req.body;
@@ -147,6 +154,13 @@ app.post('/api/auth/register', (req, res) => {
       avatar: newUser.avatar
     }
   });
+});
+
+app.options('/api/auth/login', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(200).end();
 });
 
 app.post('/api/auth/login', (req, res) => {
