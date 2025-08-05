@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('Sending login request with data:', { email, password: '***' });
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -36,7 +37,9 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({ email, password }),
       });
+      console.log('Login response status:', response.status);
       const data = await response.json();
+      console.log('Login response data:', data);
       
       if (data.success) {
         setUser(data.user);
@@ -61,6 +64,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('Sending registration request with data:', userData);
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
@@ -68,7 +72,9 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(userData),
       });
+      console.log('Registration response status:', response.status);
       const data = await response.json();
+      console.log('Registration response data:', data);
       
       if (data.success) {
         setUser(data.user);

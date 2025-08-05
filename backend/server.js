@@ -97,9 +97,11 @@ app.get('/', (req, res) => {
 
 // Mock authentication routes
 app.post('/api/auth/register', (req, res) => {
+  console.log('Registration request received:', req.body);
   const { firstName, lastName, email, password } = req.body;
   
   if (!firstName || !lastName || !email || !password) {
+    console.log('Missing required fields:', { firstName, lastName, email, password: password ? 'provided' : 'missing' });
     return res.status(400).json({
       success: false,
       message: 'All fields are required'
@@ -116,6 +118,7 @@ app.post('/api/auth/register', (req, res) => {
   };
 
   mockUsers.push(newUser);
+  console.log('User registered successfully:', newUser);
 
   res.status(201).json({
     success: true,
@@ -133,9 +136,11 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 app.post('/api/auth/login', (req, res) => {
+  console.log('Login request received:', req.body);
   const { email, password } = req.body;
   
   if (!email || !password) {
+    console.log('Missing required fields:', { email, password: password ? 'provided' : 'missing' });
     return res.status(400).json({
       success: false,
       message: 'Email and password are required'
@@ -143,6 +148,7 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const user = mockUsers.find(u => u.email === email);
+  console.log('User lookup result:', user ? 'found' : 'not found');
   
   if (!user) {
     return res.status(401).json({
@@ -150,6 +156,8 @@ app.post('/api/auth/login', (req, res) => {
       message: 'Invalid credentials'
     });
   }
+
+  console.log('Login successful for user:', user.email);
 
   res.json({
     success: true,
