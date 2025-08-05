@@ -57,8 +57,12 @@ const Login = () => {
     
     setLoading(true);
     try {
-      await login(formData.email, formData.password);
-      navigate('/dashboard');
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setErrors({ general: result.message || 'Login failed. Please try again.' });
+      }
     } catch (error) {
       setErrors({ general: error.message || 'Login failed. Please try again.' });
     } finally {

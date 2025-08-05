@@ -75,8 +75,19 @@ const Register = () => {
     
     setLoading(true);
     try {
-      await register(formData.firstName, formData.lastName, formData.email, formData.password);
-      navigate('/dashboard');
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
+      };
+      
+      const result = await register(userData);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setErrors({ general: result.message || 'Registration failed. Please try again.' });
+      }
     } catch (error) {
       setErrors({ general: error.message || 'Registration failed. Please try again.' });
     } finally {
