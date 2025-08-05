@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 const PropertyContext = createContext();
 
-const API_BASE_URL = 'https://real-estate-marketplace-1-k8jp.onrender.com';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
 
 export const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState([]);
