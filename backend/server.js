@@ -74,6 +74,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Real Estate Marketplace API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      properties: '/api/properties',
+      auth: {
+        register: '/api/auth/register',
+        login: '/api/auth/login'
+      },
+      users: {
+        profile: '/api/users/profile',
+        favorites: '/api/users/favorites'
+      }
+    },
+    status: 'running'
+  });
+});
+
 // Mock authentication routes
 app.post('/api/auth/register', (req, res) => {
   const { firstName, lastName, email, password } = req.body;
