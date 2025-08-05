@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "description": "A comprehensive real estate marketplace platform with property sales, rentals, and investment features",
   "private": true,
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "frontend:start": "react-scripts start",
+    "frontend:build": "react-scripts build",
+    "frontend:test": "react-scripts test",
+    "frontend:eject": "react-scripts eject"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -23,13 +32,22 @@
     "react-query": "^3.39.3",
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1",
-    "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "web-vitals": "^2.1.4",
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "multer": "^1.4.5-lts.1",
+    "cloudinary": "^1.40.0",
+    "stripe": "^13.5.0",
+    "nodemailer": "^6.9.4",
+    "socket.io": "^4.7.2",
+    "express-rate-limit": "^6.10.0",
+    "express-validator": "^7.0.1"
   },
   "eslintConfig": {
     "extends": [
@@ -52,6 +70,10 @@
   "devDependencies": {
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

@@ -2,7 +2,7 @@ services:
   - type: web
     name: real-estate-backend
     env: node
-    buildCommand: cp package-deploy.json package.json && npm install
+    buildCommand: npm install
     startCommand: node backend/server.js
     plan: free
     envVars:
