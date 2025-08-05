@@ -35,7 +35,7 @@ const mockUsers = [
     lastName: 'Doe',
     email: 'john@example.com',
     role: 'user',
-    avatar: 'https://via.placeholder.com/150'
+    avatar: 'https://picsum.photos/150/150'
   }
 ];
 
@@ -60,7 +60,7 @@ const mockProperties = [
     },
     images: [
       {
-        url: 'https://via.placeholder.com/400x300',
+        url: 'https://picsum.photos/400/300',
         isPrimary: true
       }
     ],
@@ -135,7 +135,7 @@ app.post('/api/auth/register', (req, res) => {
     lastName,
     email,
     role: 'user',
-    avatar: 'https://via.placeholder.com/150'
+    avatar: 'https://picsum.photos/150/150'
   };
 
   mockUsers.push(newUser);
@@ -282,7 +282,7 @@ app.post('/api/properties', (req, res) => {
     details,
     images: [
       {
-        url: 'https://via.placeholder.com/400x300',
+        url: 'https://picsum.photos/400/300',
         isPrimary: true
       }
     ],
