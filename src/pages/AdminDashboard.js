@@ -30,7 +30,7 @@ const AdminDashboard = () => {
       return;
     }
     loadAdminData();
-  }, [user, navigate]);
+  }, [user, navigate, loadAdminData]);
 
   const loadAdminData = async () => {
     const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);

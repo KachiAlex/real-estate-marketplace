@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
@@ -26,74 +26,72 @@ import SearchResults from './pages/SearchResults';
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <PropertyProvider>
-          <InvestmentProvider>
-            <EscrowProvider>
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/properties" element={<Properties />} />
-                    <Route path="/property/:id" element={<PropertyDetail />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/search" element={<SearchResults />} />
-                    
-                    {/* Protected Routes */}
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/add-property" element={
-                      <ProtectedRoute>
-                        <AddProperty />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin" element={
-                      <ProtectedRoute>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/escrow" element={
-                      <ProtectedRoute>
-                        <Escrow />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/investments" element={
-                      <ProtectedRoute>
-                        <Investments />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/investment/:id" element={
-                      <ProtectedRoute>
-                        <InvestmentDetail />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/mortgages" element={
-                      <ProtectedRoute>
-                        <Mortgages />
-                      </ProtectedRoute>
-                    } />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
-            </EscrowProvider>
-          </InvestmentProvider>
-        </PropertyProvider>
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <PropertyProvider>
+        <InvestmentProvider>
+          <EscrowProvider>
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/property/:id" element={<PropertyDetail />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  
+                  {/* Protected Routes */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/add-property" element={
+                    <ProtectedRoute>
+                      <AddProperty />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/escrow" element={
+                    <ProtectedRoute>
+                      <Escrow />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/investments" element={
+                    <ProtectedRoute>
+                      <Investments />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/investment/:id" element={
+                    <ProtectedRoute>
+                      <InvestmentDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgages" element={
+                    <ProtectedRoute>
+                      <Mortgages />
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </EscrowProvider>
+        </InvestmentProvider>
+      </PropertyProvider>
+    </AuthProvider>
   );
 }
 

@@ -228,7 +228,7 @@ export const PropertyProvider = ({ children }) => {
 
   useEffect(() => {
     fetchProperties();
-  }, []);
+  }, [fetchProperties]);
 
   const value = {
     properties,
