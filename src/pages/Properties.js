@@ -23,7 +23,7 @@ const Properties = () => {
 
   useEffect(() => {
     fetchProperties();
-  }, [fetchProperties]);
+  }, []); // Remove fetchProperties from dependencies to prevent circular dependency
 
   const handleFilterChange = (key, value) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));

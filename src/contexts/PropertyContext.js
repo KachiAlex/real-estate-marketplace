@@ -226,9 +226,8 @@ export const PropertyProvider = ({ children }) => {
     verificationStatuses: ['pending', 'approved', 'rejected']
   }), []);
 
-  useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+  // Remove the automatic fetch on mount to prevent circular dependencies
+  // fetchProperties will be called explicitly when needed
 
   const value = {
     properties,
