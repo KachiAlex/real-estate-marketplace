@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaSearch, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaHeart, FaStar, FaPlay, FaArrowRight, FaHome, FaBuilding, FaLandmark, FaShieldAlt, FaUsers, FaChartLine } from 'react-icons/fa';
+import { FaSearch, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaHeart, FaStar, FaArrowRight, FaHome, FaBuilding, FaLandmark, FaShieldAlt, FaUsers, FaChartLine } from 'react-icons/fa';
 
 const Home = () => {
   const { properties, loading } = useProperty();

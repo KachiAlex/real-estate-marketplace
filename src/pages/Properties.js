@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaSearch, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaHeart, FaStar, FaFilter, FaTimes, FaArrowRight, FaHome, FaBuilding, FaLandmark } from 'react-icons/fa';
+import { FaSearch, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaHeart, FaStar, FaFilter, FaTimes, FaArrowRight, FaBuilding } from 'react-icons/fa';
 
 const Properties = () => {
   const { properties, loading, filters, updateFilters, clearFilters, getFilterOptions } = useProperty();
@@ -14,9 +14,8 @@ const Properties = () => {
   const filterOptions = getFilterOptions();
 
   useEffect(() => {
-    fetchProperties({}); // Pass empty object to use default behavior
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Remove fetchProperties from dependencies to prevent circular dependency
+    // Properties are loaded automatically by the context
+  }, []);
 
   const handleFilterChange = (key, value) => {
     updateFilters({ [key]: value });

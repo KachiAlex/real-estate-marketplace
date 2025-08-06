@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaShieldAlt, FaCreditCard, FaFileAlt, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaEye, FaDownload, FaUpload } from 'react-icons/fa';
+import { FaShieldAlt, FaCreditCard, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaEye } from 'react-icons/fa';
 
 const Escrow = () => {
   const navigate = useNavigate();
@@ -17,10 +17,6 @@ const Escrow = () => {
     createEscrowTransaction, 
     initiatePayment, 
     verifyPayment,
-    getEscrowTransaction,
-    updateEscrowStatus,
-    uploadDocument,
-    completeMilestone,
     cancelEscrowTransaction,
     getEscrowTransactionsByUser
   } = useEscrow();
@@ -101,16 +97,6 @@ const Escrow = () => {
 
   const handlePayment = async (escrowId) => {
     await initiatePayment(escrowId, 'card');
-  };
-
-  const handleUploadDocument = async (transactionId, file) => {
-    const formData = new FormData();
-    formData.append('document', file);
-    await uploadDocument(transactionId, formData);
-  };
-
-  const handleCompleteMilestone = async (transactionId, milestoneName) => {
-    await completeMilestone(transactionId, milestoneName);
   };
 
   const handleCancelTransaction = async (transactionId, reason) => {
