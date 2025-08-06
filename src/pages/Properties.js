@@ -22,7 +22,7 @@ const Properties = () => {
   const filterOptions = getFilterOptions();
 
   useEffect(() => {
-    fetchProperties();
+    fetchProperties({}); // Pass empty object to use default behavior
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Remove fetchProperties from dependencies to prevent circular dependency
 

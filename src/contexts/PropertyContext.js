@@ -36,7 +36,7 @@ export const PropertyProvider = ({ children }) => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
 
   // Fetch properties with filters
-  const fetchProperties = useCallback(async (newFilters = filters, page = 1) => {
+  const fetchProperties = useCallback(async (newFilters = {}, page = 1) => {
     setLoading(true);
     setError(null);
     
@@ -53,7 +53,9 @@ export const PropertyProvider = ({ children }) => {
       if (data.success) {
         setProperties(data.data);
         setPagination(data.pagination);
-        setFilters(newFilters);
+        if (Object.keys(newFilters).length > 0) {
+          setFilters(newFilters);
+        }
       } else {
         setError(data.message || 'Failed to fetch properties');
       }
@@ -63,7 +65,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.itemsPerPage, API_BASE_URL]); // Remove filters from dependencies to prevent infinite re-renders
+  }, [pagination.itemsPerPage, API_BASE_URL]); // Stable dependencies only
 
   // Fetch admin properties
   const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
