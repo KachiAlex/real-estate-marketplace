@@ -496,6 +496,29 @@ const AddProperty = () => {
                     />
                   </div>
                 </div>
+                
+                {/* Google Maps Link */}
+                {formData.location.coordinates.latitude && formData.location.coordinates.longitude && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="text-sm font-semibold text-blue-800 mb-2">Google Maps Link</h5>
+                        <p className="text-sm text-blue-600">
+                          Coordinates: {formData.location.coordinates.latitude}, {formData.location.coordinates.longitude}
+                        </p>
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps?q=${formData.location.coordinates.latitude},${formData.location.coordinates.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        <FaMapPin className="mr-2" />
+                        View on Google Maps
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Nearest Bus Stop */}
@@ -551,6 +574,32 @@ const AddProperty = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Bus Stop Google Maps Link */}
+                {formData.location.nearestBusStop.coordinates.latitude && formData.location.nearestBusStop.coordinates.longitude && (
+                  <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="text-sm font-semibold text-green-800 mb-2">Bus Stop Location</h5>
+                        <p className="text-sm text-green-600">
+                          {formData.location.nearestBusStop.name} - {formData.location.nearestBusStop.distance}
+                        </p>
+                        <p className="text-sm text-green-600">
+                          Coordinates: {formData.location.nearestBusStop.coordinates.latitude}, {formData.location.nearestBusStop.coordinates.longitude}
+                        </p>
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps?q=${formData.location.nearestBusStop.coordinates.latitude},${formData.location.nearestBusStop.coordinates.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                      >
+                        <FaBus className="mr-2" />
+                        View Bus Stop
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
