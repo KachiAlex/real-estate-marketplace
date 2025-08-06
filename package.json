@@ -11,16 +11,30 @@
     "frontend:start": "react-scripts start",
     "frontend:build": "react-scripts build",
     "frontend:test": "react-scripts test",
-    "frontend:eject": "react-scripts eject"
+    "frontend:eject": "react-scripts eject",
+    "dev:full": "concurrently \"npm run dev\" \"npm run frontend:start\""
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.11.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.40.0",
+    "cors": "^2.8.5",
     "date-fns": "^2.28.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.10.0",
+    "express-validator": "^7.0.1",
     "framer-motion": "^6.5.1",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.8.0",
+    "mongoose": "^7.5.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.4",
     "react": "^18.2.0",
     "react-datepicker": "^4.8.0",
     "react-dom": "^18.2.0",
@@ -33,22 +47,9 @@
     "react-query": "^3.39.3",
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1",
-    "web-vitals": "^2.1.4",
-    "express": "^4.18.2",
-    "mongoose": "^7.5.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.0.0",
-    "morgan": "^1.10.0",
-    "dotenv": "^16.3.1",
-    "multer": "^1.4.5-lts.1",
-    "cloudinary": "^1.40.0",
-    "stripe": "^13.5.0",
-    "nodemailer": "^6.9.4",
     "socket.io": "^4.7.2",
-    "express-rate-limit": "^6.10.0",
-    "express-validator": "^7.0.1"
+    "stripe": "^13.5.0",
+    "web-vitals": "^2.1.4"
   },
   "eslintConfig": {
     "extends": [
@@ -71,8 +72,9 @@
   "devDependencies": {
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
-    "typescript": "^4.7.4",
-    "nodemon": "^3.0.1"
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.0.1",
+    "typescript": "^4.7.4"
   },
   "engines": {
     "node": ">=16.0.0"
