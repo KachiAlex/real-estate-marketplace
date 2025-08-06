@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,13 @@ const AdminDashboard = () => {
   const [verificationNotes, setVerificationNotes] = useState('');
   const [selectedProperty, setSelectedProperty] = useState(null);
 
+  const loadAdminData = useCallback(async () => {
+    const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
+    if (adminStats) {
+      setStats(adminStats);
+    }
+  }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
+
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/login');
@@ -31,13 +38,6 @@ const AdminDashboard = () => {
     }
     loadAdminData();
   }, [user, navigate, loadAdminData]);
-
-  const loadAdminData = async () => {
-    const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-    if (adminStats) {
-      setStats(adminStats);
-    }
-  };
 
   const handleStatusFilter = (status) => {
     setSelectedStatus(status);

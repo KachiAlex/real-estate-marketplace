@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const PropertyContext = createContext();
@@ -36,7 +36,7 @@ export const PropertyProvider = ({ children }) => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
 
   // Fetch properties with filters
-  const fetchProperties = async (newFilters = filters, page = 1) => {
+  const fetchProperties = useCallback(async (newFilters = filters, page = 1) => {
     setLoading(true);
     setError(null);
     
@@ -63,10 +63,10 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, pagination.itemsPerPage, API_BASE_URL]);
 
   // Fetch admin properties
-  const fetchAdminProperties = async (status = '', verificationStatus = '') => {
+  const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
     if (user?.role !== 'admin') {
       setError('Admin access required');
       return;
@@ -95,10 +95,10 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.role, API_BASE_URL]);
 
   // Verify property (admin only)
-  const verifyProperty = async (propertyId, verificationStatus, verificationNotes = '') => {
+  const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
     if (user?.role !== 'admin') {
       setError('Admin access required');
       return false;
@@ -142,10 +142,10 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.role, API_BASE_URL]);
 
   // Create new property
-  const createProperty = async (propertyData) => {
+  const createProperty = useCallback(async (propertyData) => {
     setLoading(true);
     setError(null);
     
@@ -174,10 +174,10 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
 
   // Get property by ID
-  const getPropertyById = async (id) => {
+  const getPropertyById = useCallback(async (id) => {
     setLoading(true);
     setError(null);
     
@@ -198,15 +198,15 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
 
   // Update filters
-  const updateFilters = (newFilters) => {
+  const updateFilters = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-  };
+  }, []);
 
   // Clear filters
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       search: '',
       type: '',
@@ -217,14 +217,14 @@ export const PropertyProvider = ({ children }) => {
       bathrooms: '',
       verified: ''
     });
-  };
+  }, []);
 
   // Get available filter options
-  const getFilterOptions = () => ({
+  const getFilterOptions = useCallback(() => ({
     types: ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'],
     statuses: ['for-sale', 'for-rent', 'for-lease'],
     verificationStatuses: ['pending', 'approved', 'rejected']
-  });
+  }), []);
 
   useEffect(() => {
     fetchProperties();
