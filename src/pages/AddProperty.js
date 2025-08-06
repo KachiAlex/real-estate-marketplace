@@ -65,61 +65,87 @@ const AddProperty = () => {
     
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
-    } else if (name.includes('coordinates.')) {
-      const coordType = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          coordinates: {
-            ...prev.location.coordinates,
-            [coordType]: parseFloat(value) || ''
+      if (parent === 'location' && child === 'address') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            address: value
           }
-        }
-      }));
-    } else if (name.includes('busStop.')) {
-      const busStopType = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          nearestBusStop: {
-            ...prev.location.nearestBusStop,
-            [busStopType]: value
+        }));
+      } else if (parent === 'location' && child === 'city') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            city: value
           }
-        }
-      }));
-    } else if (name.includes('busStopCoordinates.')) {
-      const coordType = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          nearestBusStop: {
-            ...prev.location.nearestBusStop,
+        }));
+      } else if (parent === 'location' && child === 'state') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            state: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'zipCode') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            zipCode: value
+          }
+        }));
+      } else if (name.includes('coordinates.')) {
+        const coordType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
             coordinates: {
-              ...prev.location.nearestBusStop.coordinates,
+              ...prev.location.coordinates,
               [coordType]: parseFloat(value) || ''
             }
           }
-        }
-      }));
-    } else if (name.includes('details.')) {
-      const detailType = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        details: {
-          ...prev.details,
-          [detailType]: value
-        }
-      }));
+        }));
+      } else if (name.includes('busStop.')) {
+        const busStopType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            nearestBusStop: {
+              ...prev.location.nearestBusStop,
+              [busStopType]: value
+            }
+          }
+        }));
+      } else if (name.includes('busStopCoordinates.')) {
+        const coordType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            nearestBusStop: {
+              ...prev.location.nearestBusStop,
+              coordinates: {
+                ...prev.location.nearestBusStop.coordinates,
+                [coordType]: parseFloat(value) || ''
+              }
+            }
+          }
+        }));
+      } else if (name.includes('details.')) {
+        const detailType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            [detailType]: value
+          }
+        }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,

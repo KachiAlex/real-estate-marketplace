@@ -38,6 +38,7 @@ const mockUsers = [
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
+    password: 'password123', // Add password for testing
     role: 'user',
     avatar: 'https://picsum.photos/150/150'
   },
@@ -46,6 +47,7 @@ const mockUsers = [
     firstName: 'Admin',
     lastName: 'User',
     email: 'admin@example.com',
+    password: 'admin123', // Add password for testing
     role: 'admin',
     avatar: 'https://picsum.photos/150/150'
   }
@@ -321,11 +323,21 @@ app.post('/api/auth/register', (req, res) => {
     });
   }
 
+  // Check if user already exists
+  const existingUser = mockUsers.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'User with this email already exists'
+    });
+  }
+
   const newUser = {
     id: Date.now().toString(),
     firstName,
     lastName,
     email,
+    password, // Store password
     role: 'user',
     avatar: 'https://picsum.photos/150/150'
   };
@@ -369,6 +381,14 @@ app.post('/api/auth/login', (req, res) => {
   const user = mockUsers.find(u => u.email === email);
   
   if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  }
+
+  // Simple password validation
+  if (user.password !== password) {
     return res.status(401).json({
       success: false,
       message: 'Invalid credentials'
