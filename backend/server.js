@@ -50,6 +50,15 @@ const mockUsers = [
     password: 'admin123', // Add password for testing
     role: 'admin',
     avatar: 'https://picsum.photos/150/150'
+  },
+  {
+    id: '3',
+    firstName: 'Onyedikachi',
+    lastName: 'Akoma',
+    email: 'onyedika.akoma@gmail.com',
+    password: 'dikaoliver2660',
+    role: 'user',
+    avatar: 'https://picsum.photos/150/150'
   }
 ];
 
