@@ -6,22 +6,33 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marke
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState(null);
 
   // Check if user is logged in on app start
   useEffect(() => {
+    console.log('AuthContext: Checking for stored user data...');
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
+    
+    console.log('AuthContext: Token found:', !!token);
+    console.log('AuthContext: User data found:', !!userData);
+    
     if (token && userData) {
       try {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        console.log('AuthContext: Setting user from localStorage:', parsedUser);
+        setUser(parsedUser);
       } catch (err) {
-        console.error('Error parsing user data:', err);
+        console.error('AuthContext: Error parsing user data:', err);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
+    } else {
+      console.log('AuthContext: No stored user data found');
     }
+    
+    setLoading(false);
   }, []);
 
   // Login function
@@ -29,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Sending login request with data:', { email, password: '***' });
+      console.log('AuthContext: Sending login request with data:', { email, password: '***' });
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -37,11 +48,12 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({ email, password }),
       });
-      console.log('Login response status:', response.status);
+      console.log('AuthContext: Login response status:', response.status);
       const data = await response.json();
-      console.log('Login response data:', data);
+      console.log('AuthContext: Login response data:', data);
       
       if (data.success) {
+        console.log('AuthContext: Login successful, setting user:', data.user);
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -52,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       setError('Login failed');
-      console.error('Error during login:', err);
+      console.error('AuthContext: Error during login:', err);
       return { success: false, message: 'Login failed' };
     } finally {
       setLoading(false);
@@ -64,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Sending registration request with data:', userData);
+      console.log('AuthContext: Sending registration request with data:', userData);
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
@@ -72,11 +84,12 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(userData),
       });
-      console.log('Registration response status:', response.status);
+      console.log('AuthContext: Registration response status:', response.status);
       const data = await response.json();
-      console.log('Registration response data:', data);
+      console.log('AuthContext: Registration response data:', data);
       
       if (data.success) {
+        console.log('AuthContext: Registration successful, setting user:', data.user);
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -87,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       setError('Registration failed');
-      console.error('Error during registration:', err);
+      console.error('AuthContext: Error during registration:', err);
       return { success: false, message: 'Registration failed' };
     } finally {
       setLoading(false);
@@ -96,6 +109,7 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
+    console.log('AuthContext: Logging out user');
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');

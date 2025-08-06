@@ -56,17 +56,35 @@ const Login = () => {
     }
     
     setLoading(true);
+    setErrors({});
+
     try {
+      console.log('Login: Attempting login with:', { email: formData.email, password: '***' });
       const result = await login(formData.email, formData.password);
+      console.log('Login: Login result:', result);
+      
       if (result.success) {
+        console.log('Login: Login successful, navigating to dashboard');
         navigate('/dashboard');
       } else {
-        setErrors({ general: result.message || 'Login failed. Please try again.' });
+        console.log('Login: Login failed:', result.message);
+        setErrors({ general: result.message });
       }
     } catch (error) {
-      setErrors({ general: error.message || 'Login failed. Please try again.' });
+      console.error('Login: Error during login:', error);
+      setErrors({ general: 'Login failed' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Test function to check localStorage
+  const testLocalStorage = () => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    console.log('Login: localStorage test - Token:', !!token, 'User:', !!user);
+    if (user) {
+      console.log('Login: User data:', JSON.parse(user));
     }
   };
 
@@ -101,7 +119,22 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+                      <form onSubmit={handleSubmit} className="space-y-6">
+              {errors.general && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {errors.general}
+                </div>
+              )}
+
+              {/* Test button for debugging */}
+              <button
+                type="button"
+                onClick={testLocalStorage}
+                className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Test localStorage (Check Console)
+              </button>
+
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                 Email Address
