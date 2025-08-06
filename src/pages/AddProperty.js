@@ -527,7 +527,7 @@ const AddProperty = () => {
                   <FaBus className="mr-2 text-green-600" />
                   Nearest Bus Stop
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Name</label>
                     <input
@@ -550,56 +550,7 @@ const AddProperty = () => {
                       placeholder="0.2 miles"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Coordinates</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        step="any"
-                        name="busStopCoordinates.latitude"
-                        value={formData.location.nearestBusStop.coordinates.latitude}
-                        onChange={handleChange}
-                        className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                        placeholder="Lat"
-                      />
-                      <input
-                        type="number"
-                        step="any"
-                        name="busStopCoordinates.longitude"
-                        value={formData.location.nearestBusStop.coordinates.longitude}
-                        onChange={handleChange}
-                        className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                        placeholder="Lng"
-                      />
-                    </div>
-                  </div>
                 </div>
-                
-                {/* Bus Stop Google Maps Link */}
-                {formData.location.nearestBusStop.coordinates.latitude && formData.location.nearestBusStop.coordinates.longitude && (
-                  <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-sm font-semibold text-green-800 mb-2">Bus Stop Location</h5>
-                        <p className="text-sm text-green-600">
-                          {formData.location.nearestBusStop.name} - {formData.location.nearestBusStop.distance}
-                        </p>
-                        <p className="text-sm text-green-600">
-                          Coordinates: {formData.location.nearestBusStop.coordinates.latitude}, {formData.location.nearestBusStop.coordinates.longitude}
-                        </p>
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps?q=${formData.location.nearestBusStop.coordinates.latitude},${formData.location.nearestBusStop.coordinates.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                      >
-                        <FaBus className="mr-2" />
-                        View Bus Stop
-                      </a>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
