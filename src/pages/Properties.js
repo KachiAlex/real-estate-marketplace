@@ -36,10 +36,10 @@ const Properties = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'for-sale': return 'bg-green-500 text-white';
-      case 'for-rent': return 'bg-blue-500 text-white';
-      case 'for-lease': return 'bg-purple-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'for-sale': return 'bg-red-600 text-white';
+      case 'for-rent': return 'bg-red-700 text-white';
+      case 'for-lease': return 'bg-black text-white';
+      default: return 'bg-gray-600 text-white';
     }
   };
 
@@ -55,7 +55,7 @@ const Properties = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900 text-white py-16">
+      <div className="bg-gradient-to-r from-red-900 via-red-800 to-black text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Find Your Perfect Property</h1>
@@ -79,7 +79,7 @@ const Properties = () => {
                   placeholder="Search by location, property type, or keywords..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-gray-900 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  className="w-full pl-12 pr-4 py-4 text-gray-900 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
                 />
               </form>
             </div>
@@ -87,7 +87,7 @@ const Properties = () => {
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2"
+              className="px-6 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center justify-center space-x-2"
             >
               <FaFilter />
               <span>Filters</span>
@@ -107,7 +107,7 @@ const Properties = () => {
                       setSelectedType(e.target.value);
                       handleFilterChange('type', e.target.value);
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
                   >
                     <option value="">All Types</option>
                     {filterOptions.types.map(type => (
@@ -127,7 +127,7 @@ const Properties = () => {
                       setSelectedStatus(e.target.value);
                       handleFilterChange('status', e.target.value);
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
                   >
                     <option value="">All Status</option>
                     {filterOptions.statuses.map(status => (
@@ -149,7 +149,7 @@ const Properties = () => {
                       setPriceRange({ ...priceRange, min: e.target.value });
                       handleFilterChange('minPrice', e.target.value);
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
                   />
                 </div>
 
@@ -164,7 +164,7 @@ const Properties = () => {
                       setPriceRange({ ...priceRange, max: e.target.value });
                       handleFilterChange('maxPrice', e.target.value);
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
                   />
                 </div>
               </div>
@@ -190,7 +190,7 @@ const Properties = () => {
           </p>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">Sort by:</span>
-            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
               <option value="newest">Newest First</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
@@ -202,7 +202,7 @@ const Properties = () => {
         {/* Properties Grid */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading properties...</p>
           </div>
         ) : properties.length === 0 ? (
@@ -285,7 +285,7 @@ const Properties = () => {
                     </div>
                     <Link
                       to={`/property/${property.id}`}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center"
+                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center"
                     >
                       View Details
                       <FaArrowRight className="ml-2 text-sm" />
@@ -300,7 +300,7 @@ const Properties = () => {
         {/* Load More */}
         {properties.length > 0 && (
           <div className="text-center mt-12">
-            <button className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold">
+            <button className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold">
               Load More Properties
             </button>
           </div>
