@@ -36,8 +36,8 @@ export const InvestmentProvider = ({ children }) => {
         coordinates: { lat: 40.7128, lng: -74.0060 }
       },
       images: [
-        'https://via.placeholder.com/600x400/3b82f6/ffffff?text=Land+1',
-        'https://via.placeholder.com/600x400/10b981/ffffff?text=Land+2'
+        'https://picsum.photos/600/400?random=1',
+        'https://picsum.photos/600/400?random=2'
       ],
       documents: [
         { name: 'Land Survey', status: 'available' },
@@ -73,8 +73,8 @@ export const InvestmentProvider = ({ children }) => {
         coordinates: { lat: 34.0522, lng: -118.2437 }
       },
       images: [
-        'https://via.placeholder.com/600x400/ef4444/ffffff?text=REIT+1',
-        'https://via.placeholder.com/600x400/8b5cf6/ffffff?text=REIT+2'
+        'https://picsum.photos/600/400?random=3',
+        'https://picsum.photos/600/400?random=4'
       ],
       documents: [
         { name: 'Property Portfolio', status: 'available' },

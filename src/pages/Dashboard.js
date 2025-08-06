@@ -157,7 +157,7 @@ const Dashboard = () => {
               {userProperties.slice(0, 3).map((property) => (
                 <div key={property.id} className="border border-gray-200 rounded-lg p-4">
                   <img
-                    src={property.images?.[0] || '/placeholder-property.jpg'}
+                    src={property.images?.[0] || 'https://picsum.photos/400/300'}
                     alt={property.title}
                     className="w-full h-32 object-cover rounded-md mb-3"
                   />

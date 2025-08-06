@@ -71,7 +71,7 @@ const PropertyDetail = () => {
             <div className="mb-8">
               <div className="relative">
                 <img
-                  src={property.images?.[activeImage] || '/placeholder-property.jpg'}
+                  src={property.images?.[activeImage] || 'https://picsum.photos/800/600'}
                   alt={property.title}
                   className="w-full h-96 object-cover rounded-lg"
                 />
