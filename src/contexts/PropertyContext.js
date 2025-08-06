@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const PropertyContext = createContext();
@@ -63,7 +63,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.itemsPerPage, API_BASE_URL]);
+  }, [pagination.itemsPerPage, API_BASE_URL]); // Remove filters from dependencies to prevent infinite re-renders
 
   // Fetch admin properties
   const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {

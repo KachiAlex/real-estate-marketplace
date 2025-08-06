@@ -23,6 +23,7 @@ const Properties = () => {
 
   useEffect(() => {
     fetchProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Remove fetchProperties from dependencies to prevent circular dependency
 
   const handleFilterChange = (key, value) => {
