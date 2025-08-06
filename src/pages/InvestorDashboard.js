@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaChartLine, FaDollarSign, FaCalendarAlt, FaBuilding, FaUsers, FaPercentage, FaDownload, FaEye } from 'react-icons/fa';
+import { FaChartLine, FaDollarSign, FaBuilding, FaPercentage, FaEye } from 'react-icons/fa';
 
 const InvestorDashboard = () => {
   const { user } = useAuth();
@@ -11,19 +11,22 @@ const InvestorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('portfolio');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('InvestorDashboard: Fetching data for user:', user?.id);
+      console.log('InvestorDashboard: API_BASE_URL:', API_BASE_URL);
       
       // Fetch investment opportunities
       const opportunitiesResponse = await fetch(`${API_BASE_URL}/api/investments`);
       const opportunitiesData = await opportunitiesResponse.json();
+      console.log('InvestorDashboard: Opportunities response:', opportunitiesData);
       
       if (opportunitiesData.success) {
         setInvestmentOpportunities(opportunitiesData.data);
@@ -32,6 +35,7 @@ const InvestorDashboard = () => {
       // Fetch user investments
       const userInvestmentsResponse = await fetch(`${API_BASE_URL}/api/user/investments?userId=${user?.id}`);
       const userInvestmentsData = await userInvestmentsResponse.json();
+      console.log('InvestorDashboard: User investments response:', userInvestmentsData);
       
       if (userInvestmentsData.success) {
         setUserInvestments(userInvestmentsData.data);
