@@ -268,6 +268,136 @@ const mockEscrowTransactions = [
   }
 ];
 
+// Mock investment opportunities data
+const mockInvestmentOpportunities = [
+  {
+    id: '1',
+    title: 'Downtown Commercial Complex',
+    description: 'Prime downtown commercial property with high rental yield potential. Located in the heart of the business district.',
+    type: 'commercial', // commercial, residential, land, reit
+    totalAmount: 5000000,
+    minimumInvestment: 50000,
+    raisedAmount: 3200000,
+    investors: 64,
+    expectedReturn: 12.5,
+    dividendRate: 8.5, // Annual dividend rate
+    duration: 36, // months
+    location: {
+      address: '123 Business District',
+      city: 'New York',
+      state: 'NY',
+      coordinates: { latitude: 40.7128, longitude: -74.0060 }
+    },
+    images: [
+      'https://picsum.photos/600/400?random=1',
+      'https://picsum.photos/600/400?random=2'
+    ],
+    documents: [
+      { name: 'Property Appraisal', status: 'available' },
+      { name: 'Financial Projections', status: 'available' },
+      { name: 'Legal Documents', status: 'available' }
+    ],
+    status: 'fundraising', // fundraising, funded, active, completed
+    createdAt: '2024-01-15T10:00:00Z',
+    expectedCompletion: '2027-01-15T10:00:00Z',
+    sponsor: {
+      id: '1',
+      name: 'Real Estate Development Corp',
+      experience: '15+ years',
+      completedProjects: 25,
+      rating: 4.8
+    },
+    monthlyDividends: [],
+    propertyDetails: {
+      sqft: 25000,
+      units: 15,
+      occupancyRate: 85,
+      averageRent: 8500
+    }
+  },
+  {
+    id: '2',
+    title: 'Suburban Residential Portfolio',
+    description: 'Diversified portfolio of suburban residential properties with stable rental income.',
+    type: 'residential',
+    totalAmount: 2000000,
+    minimumInvestment: 25000,
+    raisedAmount: 1800000,
+    investors: 72,
+    expectedReturn: 8.2,
+    dividendRate: 6.5,
+    duration: 60,
+    location: {
+      address: 'Multiple Suburban Locations',
+      city: 'Los Angeles',
+      state: 'CA',
+      coordinates: { latitude: 34.0522, longitude: -118.2437 }
+    },
+    images: [
+      'https://picsum.photos/600/400?random=3',
+      'https://picsum.photos/600/400?random=4'
+    ],
+    documents: [
+      { name: 'Property Portfolio', status: 'available' },
+      { name: 'Financial Statements', status: 'available' },
+      { name: 'Management Agreement', status: 'available' }
+    ],
+    status: 'active',
+    createdAt: '2024-01-10T14:30:00Z',
+    expectedCompletion: '2029-01-10T14:30:00Z',
+    sponsor: {
+      id: '2',
+      name: 'Suburban Properties LLC',
+      experience: '20+ years',
+      completedProjects: 40,
+      rating: 4.9
+    },
+    monthlyDividends: [
+      { month: '2024-01', amount: 6500, paid: true },
+      { month: '2024-02', amount: 6800, paid: true },
+      { month: '2024-03', amount: 7200, paid: true }
+    ],
+    propertyDetails: {
+      sqft: 15000,
+      units: 12,
+      occupancyRate: 92,
+      averageRent: 3200
+    }
+  }
+];
+
+// Mock user investments data
+const mockUserInvestments = [
+  {
+    id: '1',
+    userId: '3', // onyedika.akoma@gmail.com
+    investmentId: '1',
+    investmentTitle: 'Downtown Commercial Complex',
+    amount: 100000,
+    shares: 2, // Number of investment units
+    investmentDate: '2024-01-20T10:00:00Z',
+    status: 'active',
+    totalDividendsEarned: 8500,
+    lastDividendDate: '2024-03-01T00:00:00Z',
+    expectedMonthlyDividend: 708, // 100000 * 0.085 / 12
+    totalReturn: 12.5
+  },
+  {
+    id: '2',
+    userId: '3',
+    investmentId: '2',
+    investmentTitle: 'Suburban Residential Portfolio',
+    amount: 75000,
+    shares: 3,
+    investmentDate: '2024-01-15T14:30:00Z',
+    status: 'active',
+    totalDividendsEarned: 4875,
+    lastDividendDate: '2024-03-01T00:00:00Z',
+    expectedMonthlyDividend: 406, // 75000 * 0.065 / 12
+    totalReturn: 8.2
+  }
+];
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -900,6 +1030,212 @@ app.put('/api/escrow/:id/status', (req, res) => {
   });
 });
 
+// Investment opportunities routes
+app.get('/api/investments', (req, res) => {
+  const { type, status, minAmount, maxAmount } = req.query;
+  
+  let filteredInvestments = [...mockInvestmentOpportunities];
+  
+  // Filter by type
+  if (type) {
+    filteredInvestments = filteredInvestments.filter(inv => inv.type === type);
+  }
+  
+  // Filter by status
+  if (status) {
+    filteredInvestments = filteredInvestments.filter(inv => inv.status === status);
+  }
+  
+  // Filter by amount range
+  if (minAmount) {
+    filteredInvestments = filteredInvestments.filter(inv => inv.minimumInvestment >= parseInt(minAmount));
+  }
+  if (maxAmount) {
+    filteredInvestments = filteredInvestments.filter(inv => inv.minimumInvestment <= parseInt(maxAmount));
+  }
+  
+  res.json({
+    success: true,
+    data: filteredInvestments,
+    total: filteredInvestments.length
+  });
+});
+
+app.get('/api/investments/:id', (req, res) => {
+  const { id } = req.params;
+  const investment = mockInvestmentOpportunities.find(inv => inv.id === id);
+  
+  if (!investment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Investment opportunity not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: investment
+  });
+});
+
+// User investments routes
+app.get('/api/user/investments', (req, res) => {
+  const { userId } = req.query;
+  
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: 'User ID is required'
+    });
+  }
+  
+  const userInvestments = mockUserInvestments.filter(inv => inv.userId === userId);
+  
+  // Calculate portfolio summary
+  const portfolioSummary = {
+    totalInvested: userInvestments.reduce((sum, inv) => sum + inv.amount, 0),
+    totalDividendsEarned: userInvestments.reduce((sum, inv) => sum + inv.totalDividendsEarned, 0),
+    totalReturn: userInvestments.reduce((sum, inv) => sum + (inv.totalDividendsEarned / inv.amount * 100), 0) / userInvestments.length || 0,
+    activeInvestments: userInvestments.filter(inv => inv.status === 'active').length,
+    totalInvestments: userInvestments.length
+  };
+  
+  res.json({
+    success: true,
+    data: userInvestments,
+    summary: portfolioSummary
+  });
+});
+
+app.post('/api/investments/:id/invest', (req, res) => {
+  const { id } = req.params;
+  const { userId, amount } = req.body;
+  
+  if (!userId || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: 'User ID and investment amount are required'
+    });
+  }
+  
+  const investment = mockInvestmentOpportunities.find(inv => inv.id === id);
+  
+  if (!investment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Investment opportunity not found'
+    });
+  }
+  
+  if (amount < investment.minimumInvestment) {
+    return res.status(400).json({
+      success: false,
+      message: `Minimum investment amount is $${investment.minimumInvestment.toLocaleString()}`
+    });
+  }
+  
+  if (investment.raisedAmount + amount > investment.totalAmount) {
+    return res.status(400).json({
+      success: false,
+      message: 'Investment amount exceeds remaining available amount'
+    });
+  }
+  
+  // Create new user investment
+  const newUserInvestment = {
+    id: Date.now().toString(),
+    userId,
+    investmentId: id,
+    investmentTitle: investment.title,
+    amount: parseInt(amount),
+    shares: Math.floor(amount / investment.minimumInvestment),
+    investmentDate: new Date().toISOString(),
+    status: 'active',
+    totalDividendsEarned: 0,
+    lastDividendDate: null,
+    expectedMonthlyDividend: (amount * investment.dividendRate / 100) / 12,
+    totalReturn: 0
+  };
+  
+  mockUserInvestments.push(newUserInvestment);
+  
+  // Update investment opportunity
+  investment.raisedAmount += parseInt(amount);
+  investment.investors += 1;
+  
+  if (investment.raisedAmount >= investment.totalAmount) {
+    investment.status = 'funded';
+  }
+  
+  res.json({
+    success: true,
+    message: 'Investment successful!',
+    data: newUserInvestment
+  });
+});
+
+// Dividend routes
+app.get('/api/investments/:id/dividends', (req, res) => {
+  const { id } = req.params;
+  const investment = mockInvestmentOpportunities.find(inv => inv.id === id);
+  
+  if (!investment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Investment opportunity not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: investment.monthlyDividends || []
+  });
+});
+
+app.post('/api/investments/:id/dividends', (req, res) => {
+  const { id } = req.params;
+  const { month, amount } = req.body;
+  
+  const investment = mockInvestmentOpportunities.find(inv => inv.id === id);
+  
+  if (!investment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Investment opportunity not found'
+    });
+  }
+  
+  // Add dividend payment
+  if (!investment.monthlyDividends) {
+    investment.monthlyDividends = [];
+  }
+  
+  investment.monthlyDividends.push({
+    month,
+    amount: parseInt(amount),
+    paid: true,
+    paidDate: new Date().toISOString()
+  });
+  
+  // Update user investments with dividend earnings
+  const userInvestments = mockUserInvestments.filter(inv => inv.investmentId === id);
+  userInvestments.forEach(userInv => {
+    const dividendShare = (userInv.amount / investment.raisedAmount) * amount;
+    userInv.totalDividendsEarned += dividendShare;
+    userInv.lastDividendDate = new Date().toISOString();
+  });
+  
+  res.json({
+    success: true,
+    message: 'Dividend payment processed successfully',
+    data: {
+      month,
+      amount,
+      totalInvestors: userInvestments.length
+    }
+  });
+});
+
 // Mock users routes
 app.get('/api/users/profile', (req, res) => {
   res.json({
@@ -954,6 +1290,7 @@ app.listen(PORT, () => {
   console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
   console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
   console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
+  console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
 });
 
 module.exports = app; 

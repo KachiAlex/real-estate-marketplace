@@ -21,6 +21,7 @@ import Contact from './pages/Contact';
 import Escrow from './pages/Escrow';
 import Investments from './pages/Investments';
 import InvestmentDetail from './pages/InvestmentDetail';
+import InvestorDashboard from './pages/InvestorDashboard';
 import Mortgages from './pages/Mortgages';
 import SearchResults from './pages/SearchResults';
 
@@ -72,6 +73,11 @@ function App() {
                   <Route path="/investments" element={
                     <ProtectedRoute>
                       <Investments />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/investor-dashboard" element={
+                    <ProtectedRoute>
+                      <InvestorDashboard />
                     </ProtectedRoute>
                   } />
                   <Route path="/investment/:id" element={

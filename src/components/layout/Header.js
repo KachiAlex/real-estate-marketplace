@@ -46,6 +46,12 @@ const Header = () => {
               Investments
             </Link>
             <Link
+              to="/investor-dashboard"
+              className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
+            >
+              Landvest
+            </Link>
+            <Link
               to="/escrow"
               className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
             >
