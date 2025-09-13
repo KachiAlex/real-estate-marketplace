@@ -23,7 +23,7 @@ const MyInquiries = () => {
           bedrooms: 4,
           bathrooms: 5,
           area: 450,
-          image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=500&h=300&fit=crop"
+          image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&h=300&fit=crop"
         },
         message: "I'm interested in viewing this property. Could you please provide more details about the amenities and schedule a viewing?",
         status: "pending",
@@ -53,7 +53,7 @@ const MyInquiries = () => {
           bedrooms: 3,
           bathrooms: 3,
           area: 320,
-          image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500&h=300&fit=crop"
+          image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&h=300&fit=crop"
         },
         message: "What are the maintenance fees and what's included in the building amenities?",
         status: "responded",
@@ -125,7 +125,7 @@ const MyInquiries = () => {
           bedrooms: 5,
           bathrooms: 6,
           area: 580,
-          image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&h=300&fit=crop"
+          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&h=300&fit=crop"
         },
         message: "I'm interested in this property for investment purposes. What's the rental yield potential in this area?",
         status: "pending",
