@@ -7,7 +7,7 @@ import { EscrowProvider } from './contexts/EscrowContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import DashboardLayout from './components/layout/DashboardLayout';
+import Sidebar from './components/layout/Sidebar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -34,7 +34,7 @@ function App() {
           <EscrowProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
-              <main className="flex-grow">
+              <div className="flex flex-grow">
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
@@ -45,72 +45,99 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/search" element={<SearchResults />} />
                   
-                  {/* Protected Routes with Dashboard Layout */}
+                  {/* Protected Routes with Permanent Sidebar */}
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <Dashboard />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Dashboard />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/add-property" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <AddProperty />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <AddProperty />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <AdminDashboard />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <AdminDashboard />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <Profile />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Profile />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/escrow" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <Escrow />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Escrow />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/investments" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <Investments />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Investments />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/investor-dashboard" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <InvestorDashboard />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <InvestorDashboard />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/investment/:id" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <InvestmentDetail />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <InvestmentDetail />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/mortgages" element={
                     <ProtectedRoute>
-                      <DashboardLayout>
-                        <Mortgages />
-                      </DashboardLayout>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Mortgages />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } />
                 </Routes>
-              </main>
+              </div>
               <Footer />
             </div>
           </EscrowProvider>

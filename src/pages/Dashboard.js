@@ -88,9 +88,9 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex gap-6 p-6">
+    <div className="p-6">
       {/* Main Content Area */}
-      <div className="flex-1">
+      <div className="w-full">
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="welcome-section">
@@ -313,157 +313,6 @@ const Dashboard = () => {
                 <p className="font-semibold text-gray-900">₦95M</p>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Sidebar Widgets */}
-      <div className="w-80 space-y-6">
-        {/* Complete Your Profile */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Complete Your Profile</h3>
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Progress</span>
-              <span>75%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-brand-blue h-2 rounded-full" style={{width: '75%'}}></div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FaCheck className="text-green-500" />
-                <span className="text-sm text-gray-700">Verify email address</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FaCheck className="text-green-500" />
-                <span className="text-sm text-gray-700">Set up your preferences</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FaCheck className="text-green-500" />
-                <span className="text-sm text-gray-700">Add phone number</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="w-4 h-4 border border-gray-300 rounded"></span>
-                <span className="text-sm text-gray-700">Upload profile picture</span>
-              </div>
-              <button className="text-xs bg-brand-blue text-white px-2 py-1 rounded">Add</button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="w-4 h-4 border border-gray-300 rounded"></span>
-                <span className="text-sm text-gray-700">Verify ID document</span>
-              </div>
-              <button className="text-xs bg-brand-blue text-white px-2 py-1 rounded">Verify</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Viewings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Upcoming Viewings</h3>
-            <FaCalendar className="text-brand-blue" />
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-brand-blue rounded-lg flex items-center justify-center text-white font-bold">
-                18
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">Luxury Apartment, V.I</p>
-                <p className="text-sm text-gray-600">10:00 AM - With John</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-brand-blue rounded-lg flex items-center justify-center text-white font-bold">
-                22
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">Modern House, Lekki</p>
-                <p className="text-sm text-gray-600">02:30 PM - With Sarah</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Property Alerts */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Property Alerts</h3>
-            <FaBell className="text-brand-blue" />
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <FaTag className="text-brand-orange" />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">Price Drops - Lagos</p>
-                <p className="text-sm text-gray-600">12 new properties this week</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FaHome className="text-brand-blue" />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">New Listings - Lekki</p>
-                <p className="text-sm text-gray-600">8 new properties this week</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FaMapMarkerAlt className="text-green-500" />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">Victoria Island Properties</p>
-                <p className="text-sm text-gray-600">8 new properties this week</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Your Dedicated Agent */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Your Dedicated Agent</h3>
-            <FaUser className="text-brand-blue" />
-          </div>
-          
-          <div className="text-center mb-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
-              <FaUser className="text-2xl text-gray-500" />
-            </div>
-            <h4 className="font-semibold text-gray-900">Sarah Okafor</h4>
-            <p className="text-sm text-gray-600">Senior Property Consultant</p>
-          </div>
-          
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Response Rate</span>
-              <span className="font-medium text-gray-900">98%</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Properties Sold</span>
-              <span className="font-medium text-gray-900">152</span>
-            </div>
-          </div>
-          
-          <div className="flex space-x-2">
-            <button className="flex-1 bg-brand-blue text-white py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center space-x-1">
-              <FaPhone />
-              <span>Call</span>
-            </button>
-            <button className="flex-1 bg-brand-orange text-white py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center space-x-1">
-              <FaEnvelope />
-              <span>Message</span>
-            </button>
           </div>
         </div>
       </div>
