@@ -28,7 +28,7 @@ const Messages = () => {
         property: {
           id: 1,
           title: "Luxury 4-Bedroom Villa in Victoria Island",
-          image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&h=100&fit=crop"
+          image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop"
         },
         lastMessage: {
           text: "I've scheduled the viewing for Saturday 2 PM. Please confirm if that works for you.",
@@ -84,7 +84,7 @@ const Messages = () => {
         property: {
           id: 2,
           title: "Modern 3-Bedroom Apartment in Ikoyi",
-          image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=100&h=100&fit=crop"
+          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop"
         },
         lastMessage: {
           text: "The maintenance fee is ₦150,000 monthly and includes all amenities I mentioned.",
@@ -182,7 +182,7 @@ const Messages = () => {
         property: {
           id: 4,
           title: "Spacious 5-Bedroom Duplex in Abuja",
-          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop"
+          image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=100&h=100&fit=crop"
         },
         lastMessage: {
           text: "I'll get back to you with the rental yield data for the Asokoro area.",
