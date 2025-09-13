@@ -98,13 +98,13 @@ const Dashboard = () => {
             <p className="text-blue-100 mb-4">
               Welcome to your dashboard. Track your property journey, manage saved listings, and explore new opportunities in the African real estate market.
             </p>
-            
-            {/* Stats Cards */}
+
+        {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="stats-card">
                 <div className="text-2xl font-bold">5</div>
                 <div className="text-blue-200 text-sm">Saved Properties</div>
-              </div>
+                </div>
               <div className="stats-card">
                 <div className="text-2xl font-bold">3</div>
                 <div className="text-blue-200 text-sm">Property Alerts</div>
@@ -143,8 +143,8 @@ const Dashboard = () => {
                   <div className="absolute top-2 right-2 flex space-x-2">
                     <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
                     <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
-                  </div>
                 </div>
+              </div>
                 
                 <div className="property-card-content">
                   <div className="property-price">
@@ -166,12 +166,12 @@ const Dashboard = () => {
                       <FaRuler />
                       <span>{property.area}m² Area</span>
                     </div>
-                  </div>
+              </div>
+            </div>
+          </div>
+            ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
         {/* Recommended for You Section */}
         <div className="mb-8">
@@ -194,14 +194,14 @@ const Dashboard = () => {
                   {property.tag && (
                     <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>
                       {property.tag}
-                    </div>
+              </div>
                   )}
                   <div className="absolute top-2 right-2 flex space-x-2">
                     <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
                     <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
-                  </div>
-                </div>
-                
+            </div>
+          </div>
+
                 <div className="property-card-content">
                   <div className="property-price">
                     ₦{property.price.toLocaleString()}
@@ -213,16 +213,16 @@ const Dashboard = () => {
                     <div className="flex items-center space-x-1">
                       <FaBed />
                       <span>{property.bedrooms} Bedrooms</span>
-                    </div>
+                </div>
                     <div className="flex items-center space-x-1">
                       <FaBath />
                       <span>{property.bathrooms} Bathrooms</span>
-                    </div>
+              </div>
                     <div className="flex items-center space-x-1">
                       <FaRuler />
                       <span>{property.area}m² Area</span>
-                    </div>
-                  </div>
+              </div>
+            </div>
                 </div>
               </div>
             ))}
@@ -236,7 +236,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Price Trends in Lagos</h3>
               <FaChartLine className="text-brand-blue" />
-            </div>
+              </div>
             <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <div className="w-full h-48 bg-white rounded border p-4">
@@ -244,37 +244,37 @@ const Dashboard = () => {
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '60%'}}></div>
                       <span className="text-xs text-gray-600">Jan</span>
-                    </div>
+              </div>
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '70%'}}></div>
                       <span className="text-xs text-gray-600">Feb</span>
-                    </div>
+              </div>
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '80%'}}></div>
                       <span className="text-xs text-gray-600">Mar</span>
-                    </div>
+              </div>
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '75%'}}></div>
                       <span className="text-xs text-gray-600">Apr</span>
-                    </div>
+              </div>
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '85%'}}></div>
                       <span className="text-xs text-gray-600">May</span>
-                    </div>
+              </div>
                     <div className="flex flex-col items-center">
                       <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '90%'}}></div>
                       <span className="text-xs text-gray-600">Jun</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">Victoria Island (Green), Lagos (Yellow), Ikoyi (Blue)</p>
-              </div>
-            </div>
           </div>
+        </div>
+          </div>
+                <p className="text-sm text-gray-500 mt-2">Victoria Island (Green), Lagos (Yellow), Ikoyi (Blue)</p>
+                </div>
+            </div>
+        </div>
 
           {/* Recent Transactions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
               <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
                 <FaHome className="w-4 h-4 text-brand-blue" />
@@ -301,7 +301,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <p className="font-semibold text-gray-900">₦82M</p>
-              </div>
+          </div>
               <div className="flex items-center justify-between py-2">
                 <div className="flex items-center space-x-3">
                   <FaHome className="text-brand-blue" />
@@ -309,11 +309,11 @@ const Dashboard = () => {
                     <p className="font-medium text-gray-900">4 Bedroom Duplex</p>
                     <p className="text-sm text-gray-600">Lekki Phase 1, Lagos</p>
                   </div>
-                </div>
+                  </div>
                 <p className="font-semibold text-gray-900">₦95M</p>
-              </div>
+                  </div>
+                </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

@@ -109,7 +109,7 @@ const Properties = () => {
                 />
               </div>
             </div>
-          </div>
+            </div>
 
           {/* Property Features */}
           <div className="mb-6">
@@ -128,7 +128,7 @@ const Properties = () => {
               <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm">2+ Baths</button>
               <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">3+ Baths</button>
             </div>
-          </div>
+                </div>
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-3">Size</label>
@@ -137,7 +137,7 @@ const Properties = () => {
               <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">100m²+ Size</button>
               <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm">200m²+ Size</button>
             </div>
-          </div>
+                </div>
 
           {/* Amenities */}
           <div className="mb-6">
@@ -164,7 +164,7 @@ const Properties = () => {
               ))}
               <button className="text-blue-600 text-sm">Show more amenities</button>
             </div>
-          </div>
+                </div>
 
           {/* Property Age */}
           <div className="mb-6">
@@ -173,8 +173,8 @@ const Properties = () => {
               <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">Any Age</button>
               <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm">New 0-5 yrs</button>
               <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">5-10 yrs Age</button>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Action Buttons */}
           <div className="space-y-3">
@@ -183,8 +183,8 @@ const Properties = () => {
             </button>
             <button className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
               Reset
-            </button>
-          </div>
+                </button>
+              </div>
         </div>
 
         {/* Right Content Area */}
@@ -192,18 +192,18 @@ const Properties = () => {
           {/* Results Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Available Properties</h2>
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">Showing 1-9 of 230 properties</span>
               <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option>Sort By: Newest</option>
                 <option>Price: Low to High</option>
                 <option>Price: High to Low</option>
                 <option>Most Popular</option>
-              </select>
-            </div>
+            </select>
           </div>
+        </div>
 
-          {/* Properties Grid */}
+        {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
@@ -330,9 +330,9 @@ const Properties = () => {
                   <div className="absolute top-2 right-2 flex space-x-2">
                     <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
                     <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                    </div>
                   </div>
-                </div>
-                
+
                 <div className="p-4">
                   <div className="text-2xl font-bold text-gray-900 mb-1">
                     ₦{property.price.toLocaleString()}
@@ -344,17 +344,17 @@ const Properties = () => {
                     <div className="flex items-center space-x-1">
                       <FaBed />
                       <span>{property.bedrooms} Bedrooms</span>
-                    </div>
+                      </div>
                     <div className="flex items-center space-x-1">
                       <FaBath />
                       <span>{property.bathrooms} Bathrooms</span>
-                    </div>
+                      </div>
                     <div className="flex items-center space-x-1">
                       <FaRulerCombined />
                       <span>{property.area}m² Area</span>
                     </div>
                   </div>
-                  
+
                   <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
                     View Details →
                   </button>
@@ -376,7 +376,7 @@ const Properties = () => {
               <button className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">›</button>
             </div>
           </div>
-        </div>
+          </div>
       </div>
     </div>
   );

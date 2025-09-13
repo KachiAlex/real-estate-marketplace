@@ -39,11 +39,32 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/properties" element={<Properties />} />
-                  <Route path="/property/:id" element={<PropertyDetail />} />
+                  <Route path="/properties" element={
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <Properties />
+                      </main>
+                    </div>
+                  } />
+                  <Route path="/property/:id" element={
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <PropertyDetail />
+                      </main>
+                    </div>
+                  } />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
-                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/search" element={
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <SearchResults />
+                      </main>
+                    </div>
+                  } />
                   
                   {/* Protected Routes with Permanent Sidebar */}
                   <Route path="/dashboard" element={
