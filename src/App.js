@@ -25,6 +25,10 @@ import InvestmentDetail from './pages/InvestmentDetail';
 import InvestorDashboard from './pages/InvestorDashboard';
 import Mortgages from './pages/Mortgages';
 import SearchResults from './pages/SearchResults';
+import SavedProperties from './pages/SavedProperties';
+import MyInquiries from './pages/MyInquiries';
+import PropertyAlerts from './pages/PropertyAlerts';
+import Messages from './pages/Messages';
 
 function App() {
   return (
@@ -153,6 +157,46 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <Mortgages />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/saved-properties" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <SavedProperties />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/inquiries" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <MyInquiries />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/alerts" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <PropertyAlerts />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messages" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Messages />
                         </main>
                       </div>
                     </ProtectedRoute>
