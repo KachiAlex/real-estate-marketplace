@@ -7,6 +7,7 @@ import { EscrowProvider } from './contexts/EscrowContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import DashboardLayout from './components/layout/DashboardLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -44,50 +45,68 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/search" element={<SearchResults />} />
                   
-                  {/* Protected Routes */}
+                  {/* Protected Routes with Dashboard Layout */}
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <DashboardLayout>
+                        <Dashboard />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/add-property" element={
                     <ProtectedRoute>
-                      <AddProperty />
+                      <DashboardLayout>
+                        <AddProperty />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin" element={
                     <ProtectedRoute>
-                      <AdminDashboard />
+                      <DashboardLayout>
+                        <AdminDashboard />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
                     <ProtectedRoute>
-                      <Profile />
+                      <DashboardLayout>
+                        <Profile />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/escrow" element={
                     <ProtectedRoute>
-                      <Escrow />
+                      <DashboardLayout>
+                        <Escrow />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/investments" element={
                     <ProtectedRoute>
-                      <Investments />
+                      <DashboardLayout>
+                        <Investments />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/investor-dashboard" element={
                     <ProtectedRoute>
-                      <InvestorDashboard />
+                      <DashboardLayout>
+                        <InvestorDashboard />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/investment/:id" element={
                     <ProtectedRoute>
-                      <InvestmentDetail />
+                      <DashboardLayout>
+                        <InvestmentDetail />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/mortgages" element={
                     <ProtectedRoute>
-                      <Mortgages />
+                      <DashboardLayout>
+                        <Mortgages />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   } />
                 </Routes>

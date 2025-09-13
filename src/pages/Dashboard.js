@@ -3,199 +3,468 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
+import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine } from 'react-icons/fa';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { properties } = useProperty();
-  const { investments } = useInvestment();
 
-  const userProperties = properties?.filter(p => p.ownerId === user?.id) || [];
-  const userInvestments = investments?.filter(i => i.userId === user?.id) || [];
+  // Mock data for the dashboard
+  const mockProperties = [
+    {
+      id: 1,
+      title: "Luxury Apartment in Victoria Island",
+      price: 75000000,
+      location: "Victoria Island, Lagos",
+      bedrooms: 3,
+      bathrooms: 2,
+      area: 210,
+      image: "https://picsum.photos/400/300?random=1",
+      tag: "New Listing",
+      tagColor: "bg-green-500"
+    },
+    {
+      id: 2,
+      title: "Modern Family House in Lekki",
+      price: 120000000,
+      location: "Lekki Phase 1, Lagos",
+      bedrooms: 4,
+      bathrooms: 3,
+      area: 350,
+      image: "https://picsum.photos/400/300?random=2",
+      tag: "Featured",
+      tagColor: "bg-brand-orange"
+    },
+    {
+      id: 3,
+      title: "Penthouse with Ocean View in Ikoyi",
+      price: 95000000,
+      location: "Ikoyi, Lagos",
+      bedrooms: 2,
+      bathrooms: 2,
+      area: 180,
+      image: "https://picsum.photos/400/300?random=3",
+      tag: null,
+      tagColor: ""
+    }
+  ];
 
-  const totalPropertyValue = userProperties.reduce((sum, property) => sum + property.price, 0);
-  const totalInvestmentValue = userInvestments.reduce((sum, investment) => sum + investment.amount, 0);
+  const recommendedProperties = [
+    {
+      id: 4,
+      title: "Elegant Townhouse in Maitama",
+      price: 85000000,
+      location: "Maitama, Abuja",
+      bedrooms: 3,
+      bathrooms: 2,
+      area: 210,
+      image: "https://picsum.photos/400/300?random=4",
+      tag: "Hot Deal",
+      tagColor: "bg-red-500"
+    },
+    {
+      id: 5,
+      title: "Garden View Apartment in Ikeja GRA",
+      price: 55000000,
+      location: "Ikeja GRA, Lagos",
+      bedrooms: 4,
+      bathrooms: 3,
+      area: 350,
+      image: "https://picsum.photos/400/300?random=5",
+      tag: "Exclusive",
+      tagColor: "bg-blue-500"
+    },
+    {
+      id: 6,
+      title: "Beachfront Villa in Banana Island",
+      price: 180000000,
+      location: "Banana Island, Lagos",
+      bedrooms: 2,
+      bathrooms: 2,
+      area: 180,
+      image: "https://picsum.photos/400/300?random=6",
+      tag: "Premium",
+      tagColor: "bg-purple-500"
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="flex gap-6 p-6">
+      {/* Main Content Area */}
+      <div className="flex-1">
+        {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user?.firstName}!</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
+          <div className="welcome-section">
+            <h1 className="text-2xl font-bold mb-2">Good Afternoon, {user?.firstName || 'Oluwaseun'}!</h1>
+            <p className="text-blue-100 mb-4">
+              Welcome to your dashboard. Track your property journey, manage saved listings, and explore new opportunities in the African real estate market.
+            </p>
+            
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="stats-card">
+                <div className="text-2xl font-bold">5</div>
+                <div className="text-blue-200 text-sm">Saved Properties</div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Properties</p>
-                <p className="text-2xl font-semibold text-gray-900">{userProperties.length}</p>
+              <div className="stats-card">
+                <div className="text-2xl font-bold">3</div>
+                <div className="text-blue-200 text-sm">Property Alerts</div>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Property Value</p>
-                <p className="text-2xl font-semibold text-gray-900">${totalPropertyValue.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Investments</p>
-                <p className="text-2xl font-semibold text-gray-900">{userInvestments.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Invested</p>
-                <p className="text-2xl font-semibold text-gray-900">${totalInvestmentValue.toLocaleString()}</p>
+              <div className="stats-card">
+                <div className="text-2xl font-bold">2</div>
+                <div className="text-blue-200 text-sm">Pending Inquiries</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link
-              to="/add-property"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Add Property</h3>
-                <p className="text-sm text-gray-500">List a new property</p>
-              </div>
-            </Link>
-
-            <Link
-              to="/investments"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">View Investments</h3>
-                <p className="text-sm text-gray-500">Manage your investments</p>
-              </div>
-            </Link>
-
-            <Link
-              to="/escrow"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Escrow Services</h3>
-                <p className="text-sm text-gray-500">Secure transactions</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Recent Properties */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        {/* Continue Browsing Section */}
+        <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Your Properties</h2>
-            <Link to="/properties" className="text-blue-600 hover:text-blue-500 text-sm font-medium">
-              View all
+            <h2 className="text-xl font-bold text-gray-900">Continue Browsing</h2>
+            <Link to="/properties" className="text-brand-blue hover:text-blue-700 text-sm font-medium">
+              View history →
             </Link>
           </div>
-          {userProperties.length === 0 ? (
-            <p className="text-gray-500">You haven't listed any properties yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userProperties.slice(0, 3).map((property) => (
-                <div key={property.id} className="border border-gray-200 rounded-lg p-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {mockProperties.map((property) => (
+              <div key={property.id} className="property-card">
+                <div className="relative">
                   <img
-                    src={property.images?.[0] || 'https://picsum.photos/400/300'}
+                    src={property.image}
                     alt={property.title}
-                    className="w-full h-32 object-cover rounded-md mb-3"
+                    className="property-card-image"
                   />
-                  <h3 className="font-medium text-gray-900 mb-1">{property.title}</h3>
-                  <p className="text-sm text-gray-500 mb-2">{property.location}</p>
-                  <p className="text-lg font-semibold text-blue-600">${property.price.toLocaleString()}</p>
+                  {property.tag && (
+                    <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>
+                      {property.tag}
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                    <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+                
+                <div className="property-card-content">
+                  <div className="property-price">
+                    ₦{property.price.toLocaleString()}
+                  </div>
+                  <h3 className="property-title">{property.title}</h3>
+                  <p className="property-location">{property.location}</p>
+                  
+                  <div className="property-features">
+                    <div className="flex items-center space-x-1">
+                      <FaBed />
+                      <span>{property.bedrooms} Bedrooms</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaBath />
+                      <span>{property.bathrooms} Bathrooms</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaRuler />
+                      <span>{property.area}m² Area</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Recent Investments */}
+        {/* Recommended for You Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Recommended for You</h2>
+            <Link to="/properties" className="text-brand-blue hover:text-blue-700 text-sm font-medium">
+              View all →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recommendedProperties.map((property) => (
+              <div key={property.id} className="property-card">
+                <div className="relative">
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    className="property-card-image"
+                  />
+                  {property.tag && (
+                    <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>
+                      {property.tag}
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                    <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                  </div>
+                </div>
+                
+                <div className="property-card-content">
+                  <div className="property-price">
+                    ₦{property.price.toLocaleString()}
+                  </div>
+                  <h3 className="property-title">{property.title}</h3>
+                  <p className="property-location">{property.location}</p>
+                  
+                  <div className="property-features">
+                    <div className="flex items-center space-x-1">
+                      <FaBed />
+                      <span>{property.bedrooms} Bedrooms</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaBath />
+                      <span>{property.bathrooms} Bathrooms</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaRuler />
+                      <span>{property.area}m² Area</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Market Insight Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Price Trends Chart */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Price Trends in Lagos</h3>
+              <FaChartLine className="text-brand-blue" />
+            </div>
+            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-full h-48 bg-white rounded border p-4">
+                  <div className="flex items-end justify-between h-full">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '60%'}}></div>
+                      <span className="text-xs text-gray-600">Jan</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '70%'}}></div>
+                      <span className="text-xs text-gray-600">Feb</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '80%'}}></div>
+                      <span className="text-xs text-gray-600">Mar</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '75%'}}></div>
+                      <span className="text-xs text-gray-600">Apr</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '85%'}}></div>
+                      <span className="text-xs text-gray-600">May</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '90%'}}></div>
+                      <span className="text-xs text-gray-600">Jun</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Victoria Island (Green), Lagos (Yellow), Ikoyi (Blue)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Transactions */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+              <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+                <FaHome className="w-4 h-4 text-brand-blue" />
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <FaHome className="text-brand-blue" />
+                  <div>
+                    <p className="font-medium text-gray-900">3 Bedroom Apartment</p>
+                    <p className="text-sm text-gray-600">Victoria Island, Lagos</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-gray-900">₦100M</p>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <FaHome className="text-brand-blue" />
+                  <div>
+                    <p className="font-medium text-gray-900">2 Bedroom Penthouse</p>
+                    <p className="text-sm text-gray-600">Ikoyi, Lagos</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-gray-900">₦82M</p>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-3">
+                  <FaHome className="text-brand-blue" />
+                  <div>
+                    <p className="font-medium text-gray-900">4 Bedroom Duplex</p>
+                    <p className="text-sm text-gray-600">Lekki Phase 1, Lagos</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-gray-900">₦95M</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Sidebar Widgets */}
+      <div className="w-80 space-y-6">
+        {/* Complete Your Profile */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Complete Your Profile</h3>
+          <div className="mb-4">
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Progress</span>
+              <span>75%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-brand-blue h-2 rounded-full" style={{width: '75%'}}></div>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FaCheck className="text-green-500" />
+                <span className="text-sm text-gray-700">Verify email address</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FaCheck className="text-green-500" />
+                <span className="text-sm text-gray-700">Set up your preferences</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FaCheck className="text-green-500" />
+                <span className="text-sm text-gray-700">Add phone number</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="w-4 h-4 border border-gray-300 rounded"></span>
+                <span className="text-sm text-gray-700">Upload profile picture</span>
+              </div>
+              <button className="text-xs bg-brand-blue text-white px-2 py-1 rounded">Add</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="w-4 h-4 border border-gray-300 rounded"></span>
+                <span className="text-sm text-gray-700">Verify ID document</span>
+              </div>
+              <button className="text-xs bg-brand-blue text-white px-2 py-1 rounded">Verify</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Viewings */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Investments</h2>
-            <Link to="/investments" className="text-blue-600 hover:text-blue-500 text-sm font-medium">
-              View all
-            </Link>
+            <h3 className="text-lg font-semibold text-gray-900">Upcoming Viewings</h3>
+            <FaCalendar className="text-brand-blue" />
           </div>
-          {userInvestments.length === 0 ? (
-            <p className="text-gray-500">You haven't made any investments yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {userInvestments.slice(0, 3).map((investment) => (
-                <div key={investment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{investment.propertyTitle}</h3>
-                    <p className="text-sm text-gray-500">{investment.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-600">${investment.amount.toLocaleString()}</p>
-                    <p className="text-sm text-gray-500">{investment.percentage}% stake</p>
-                  </div>
-                </div>
-              ))}
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-brand-blue rounded-lg flex items-center justify-center text-white font-bold">
+                18
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Luxury Apartment, V.I</p>
+                <p className="text-sm text-gray-600">10:00 AM - With John</p>
+              </div>
             </div>
-          )}
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-brand-blue rounded-lg flex items-center justify-center text-white font-bold">
+                22
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Modern House, Lekki</p>
+                <p className="text-sm text-gray-600">02:30 PM - With Sarah</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Property Alerts */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Property Alerts</h3>
+            <FaBell className="text-brand-blue" />
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <FaTag className="text-brand-orange" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Price Drops - Lagos</p>
+                <p className="text-sm text-gray-600">12 new properties this week</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <FaHome className="text-brand-blue" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">New Listings - Lekki</p>
+                <p className="text-sm text-gray-600">8 new properties this week</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <FaMapMarkerAlt className="text-green-500" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Victoria Island Properties</p>
+                <p className="text-sm text-gray-600">8 new properties this week</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Your Dedicated Agent */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Your Dedicated Agent</h3>
+            <FaUser className="text-brand-blue" />
+          </div>
+          
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <FaUser className="text-2xl text-gray-500" />
+            </div>
+            <h4 className="font-semibold text-gray-900">Sarah Okafor</h4>
+            <p className="text-sm text-gray-600">Senior Property Consultant</p>
+          </div>
+          
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Response Rate</span>
+              <span className="font-medium text-gray-900">98%</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Properties Sold</span>
+              <span className="font-medium text-gray-900">152</span>
+            </div>
+          </div>
+          
+          <div className="flex space-x-2">
+            <button className="flex-1 bg-brand-blue text-white py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center space-x-1">
+              <FaPhone />
+              <span>Call</span>
+            </button>
+            <button className="flex-1 bg-brand-orange text-white py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center space-x-1">
+              <FaEnvelope />
+              <span>Message</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
