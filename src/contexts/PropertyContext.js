@@ -1,5 +1,21 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  startAfter, 
+  getDocs, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDoc,
+  serverTimestamp 
+} from 'firebase/firestore';
 import { useAuth } from './AuthContext';
+import { db } from '../config/firebase';
 
 const PropertyContext = createContext();
 
@@ -21,9 +37,10 @@ export const PropertyProvider = ({ children }) => {
     status: '',
     minPrice: '',
     maxPrice: '',
+    location: '',
     bedrooms: '',
     bathrooms: '',
-    verified: ''
+    amenities: []
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -33,31 +50,61 @@ export const PropertyProvider = ({ children }) => {
   });
   const { user } = useAuth();
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
-
   // Fetch properties with filters
   const fetchProperties = useCallback(async (newFilters = {}, page = 1) => {
     setLoading(true);
     setError(null);
     
     try {
-      const queryParams = new URLSearchParams({
-        page,
-        limit: pagination.itemsPerPage,
-        ...newFilters
-      });
+      let q = query(collection(db, 'properties'), orderBy('createdAt', 'desc'));
 
-      const response = await fetch(`${API_BASE_URL}/api/properties?${queryParams}`);
-      const data = await response.json();
+      // Apply filters
+      if (newFilters.type) {
+        q = query(q, where('type', '==', newFilters.type));
+      }
+      if (newFilters.status) {
+        q = query(q, where('status', '==', newFilters.status));
+      }
+      if (newFilters.minPrice) {
+        q = query(q, where('price', '>=', parseInt(newFilters.minPrice)));
+      }
+      if (newFilters.maxPrice) {
+        q = query(q, where('price', '<=', parseInt(newFilters.maxPrice)));
+      }
+      if (newFilters.location) {
+        q = query(q, where('location.city', '==', newFilters.location));
+      }
+      if (newFilters.bedrooms) {
+        q = query(q, where('bedrooms', '==', parseInt(newFilters.bedrooms)));
+      }
+      if (newFilters.bathrooms) {
+        q = query(q, where('bathrooms', '==', parseInt(newFilters.bathrooms)));
+      }
 
-      if (data.success) {
-        setProperties(data.data);
-        setPagination(data.pagination);
-        if (Object.keys(newFilters).length > 0) {
-          setFilters(newFilters);
-        }
-      } else {
-        setError(data.message || 'Failed to fetch properties');
+      // Add pagination
+      const itemsPerPage = pagination.itemsPerPage;
+      const startIndex = (page - 1) * itemsPerPage;
+      if (startIndex > 0) {
+        // For pagination beyond first page, we'd need to implement cursor-based pagination
+        // For now, we'll limit to first page
+      }
+      q = query(q, limit(itemsPerPage));
+
+      const querySnapshot = await getDocs(q);
+      const propertiesData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setProperties(propertiesData);
+      setPagination(prev => ({
+        ...prev,
+        currentPage: page,
+        totalItems: propertiesData.length
+      }));
+
+      if (Object.keys(newFilters).length > 0) {
+        setFilters(newFilters);
       }
     } catch (error) {
       setError('Failed to fetch properties');
@@ -65,133 +112,19 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.itemsPerPage, API_BASE_URL]); // Stable dependencies only
+  }, [pagination.itemsPerPage]);
 
-  // Fetch admin properties
-  const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
-    if (user?.role !== 'admin') {
-      setError('Admin access required');
-      return;
-    }
-
+  // Fetch single property
+  const fetchProperty = useCallback(async (propertyId) => {
     setLoading(true);
     setError(null);
     
     try {
-      const queryParams = new URLSearchParams();
-      if (status) queryParams.append('status', status);
-      if (verificationStatus) queryParams.append('verificationStatus', verificationStatus);
-
-      const response = await fetch(`${API_BASE_URL}/api/admin/properties?${queryParams}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setProperties(data.data);
-        return data.stats;
+      const propertyDoc = await getDoc(doc(db, 'properties', propertyId));
+      if (propertyDoc.exists()) {
+        return { id: propertyDoc.id, ...propertyDoc.data() };
       } else {
-        setError(data.message || 'Failed to fetch admin properties');
-      }
-    } catch (error) {
-      setError('Failed to fetch admin properties');
-      console.error('Error fetching admin properties:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.role, API_BASE_URL]);
-
-  // Verify property (admin only)
-  const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
-    if (user?.role !== 'admin') {
-      setError('Admin access required');
-      return false;
-    }
-
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/properties/${propertyId}/verify`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          verificationStatus,
-          verificationNotes
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update the property in the local state
-        setProperties(prev => 
-          prev.map(prop => 
-            prop.id === propertyId 
-              ? { ...prop, ...data.data }
-              : prop
-          )
-        );
-        return true;
-      } else {
-        setError(data.message || 'Failed to verify property');
-        return false;
-      }
-    } catch (error) {
-      setError('Failed to verify property');
-      console.error('Error verifying property:', error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.role, API_BASE_URL]);
-
-  // Create new property
-  const createProperty = useCallback(async (propertyData) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/properties`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(propertyData)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setProperties(prev => [data.data, ...prev]);
-        return { success: true, data: data.data };
-      } else {
-        setError(data.message || 'Failed to create property');
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      setError('Failed to create property');
-      console.error('Error creating property:', error);
-      return { success: false, message: 'Failed to create property' };
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL]);
-
-  // Get property by ID
-  const getPropertyById = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/properties/${id}`);
-      const data = await response.json();
-
-      if (data.success) {
-        return data.data;
-      } else {
-        setError(data.message || 'Property not found');
-        return null;
+        throw new Error('Property not found');
       }
     } catch (error) {
       setError('Failed to fetch property');
@@ -200,36 +133,155 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]);
-
-  // Update filters
-  const updateFilters = useCallback((newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  // Clear filters
-  const clearFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      type: '',
-      status: '',
-      minPrice: '',
-      maxPrice: '',
-      bedrooms: '',
-      bathrooms: '',
-      verified: ''
-    });
+  // Add new property
+  const addProperty = useCallback(async (propertyData) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (!user) throw new Error('User must be logged in');
+
+      const propertyWithMetadata = {
+        ...propertyData,
+        ownerId: user.uid,
+        ownerName: user.displayName || `${user.firstName} ${user.lastName}`,
+        ownerEmail: user.email,
+        status: 'pending',
+        isVerified: false,
+        verificationStatus: 'pending',
+        views: 0,
+        favorites: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, 'properties'), propertyWithMetadata);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      setError('Failed to add property');
+      console.error('Error adding property:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Update property
+  const updateProperty = useCallback(async (propertyId, updates) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (!user) throw new Error('User must be logged in');
+
+      const propertyRef = doc(db, 'properties', propertyId);
+      await updateDoc(propertyRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+
+      return { success: true };
+    } catch (error) {
+      setError('Failed to update property');
+      console.error('Error updating property:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Delete property
+  const deleteProperty = useCallback(async (propertyId) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (!user) throw new Error('User must be logged in');
+
+      const propertyRef = doc(db, 'properties', propertyId);
+      await deleteDoc(propertyRef);
+
+      return { success: true };
+    } catch (error) {
+      setError('Failed to delete property');
+      console.error('Error deleting property:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Fetch user's properties
+  const fetchUserProperties = useCallback(async (userId = null) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const targetUserId = userId || user?.uid;
+      if (!targetUserId) throw new Error('User ID required');
+
+      const q = query(
+        collection(db, 'properties'),
+        where('ownerId', '==', targetUserId),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const userProperties = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setProperties(userProperties);
+      return userProperties;
+    } catch (error) {
+      setError('Failed to fetch user properties');
+      console.error('Error fetching user properties:', error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Search properties
+  const searchProperties = useCallback(async (searchTerm) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Firestore doesn't support full-text search natively
+      // For now, we'll search by title and description
+      const q = query(
+        collection(db, 'properties'),
+        orderBy('title'),
+        limit(50)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const allProperties = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Filter by search term (client-side filtering)
+      const filteredProperties = allProperties.filter(property => 
+        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.location.address.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      setProperties(filteredProperties);
+      return filteredProperties;
+    } catch (error) {
+      setError('Failed to search properties');
+      console.error('Error searching properties:', error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
   }, []);
-
-  // Get available filter options
-  const getFilterOptions = useCallback(() => ({
-    types: ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'],
-    statuses: ['for-sale', 'for-rent', 'for-lease'],
-    verificationStatuses: ['pending', 'approved', 'rejected']
-  }), []);
-
-  // Remove the automatic fetch on mount to prevent circular dependencies
-  // fetchProperties will be called explicitly when needed
 
   const value = {
     properties,
@@ -238,13 +290,14 @@ export const PropertyProvider = ({ children }) => {
     filters,
     pagination,
     fetchProperties,
-    fetchAdminProperties,
-    verifyProperty,
-    createProperty,
-    getPropertyById,
-    updateFilters,
-    clearFilters,
-    getFilterOptions
+    fetchProperty,
+    addProperty,
+    updateProperty,
+    deleteProperty,
+    fetchUserProperties,
+    searchProperties,
+    setFilters,
+    setPagination
   };
 
   return (
@@ -252,4 +305,4 @@ export const PropertyProvider = ({ children }) => {
       {children}
     </PropertyContext.Provider>
   );
-}; 
+};

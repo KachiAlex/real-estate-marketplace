@@ -1,147 +1,179 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Check if user is logged in on app start
   useEffect(() => {
-    console.log('AuthContext: Checking for stored user data...');
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    console.log('AuthContext: Token found:', !!token);
-    console.log('AuthContext: User data found:', !!userData);
-    
-    if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        console.log('AuthContext: Setting user from localStorage:', parsedUser);
-        setUser(parsedUser);
-      } catch (err) {
-        console.error('AuthContext: Error parsing user data:', err);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Get additional user data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const userData = userDoc.exists() ? userDoc.data() : null;
+          
+          const userWithData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            ...userData
+          };
+          
+          setUser(userWithData);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setUser(firebaseUser);
+        }
+      } else {
+        setUser(null);
       }
-    } else {
-      console.log('AuthContext: No stored user data found');
-    }
-    
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Login function
-  const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      console.log('AuthContext: Sending login request with data:', { email, password: '***' });
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      console.log('AuthContext: Login response status:', response.status);
-      const data = await response.json();
-      console.log('AuthContext: Login response data:', data);
-      
-      if (data.success) {
-        console.log('AuthContext: Login successful, setting user:', data.user);
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return { success: true, user: data.user };
-      } else {
-        setError(data.message || 'Login failed');
-        return { success: false, message: data.message };
-      }
-    } catch (err) {
-      setError('Login failed');
-      console.error('AuthContext: Error during login:', err);
-      return { success: false, message: 'Login failed' };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Register function
   const register = async (userData) => {
-    setLoading(true);
-    setError(null);
     try {
-      console.log('AuthContext: Sending registration request with data:', userData);
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      console.log('AuthContext: Registration response status:', response.status);
-      const data = await response.json();
-      console.log('AuthContext: Registration response data:', data);
+      setError(null);
+      setLoading(true);
+
+      const { email, password, firstName, lastName, role = 'user' } = userData;
       
-      if (data.success) {
-        console.log('AuthContext: Registration successful, setting user:', data.user);
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return { success: true, user: data.user };
-      } else {
-        setError(data.message || 'Registration failed');
-        return { success: false, message: data.message };
-      }
-    } catch (err) {
-      setError('Registration failed');
-      console.error('AuthContext: Error during registration:', err);
-      return { success: false, message: 'Registration failed' };
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Update profile with display name
+      await updateProfile(user, {
+        displayName: `${firstName} ${lastName}`
+      });
+
+      // Create user document in Firestore
+      const userDocData = {
+        uid: user.uid,
+        email: user.email,
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        role,
+        avatar: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=1e40af&color=fff`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, 'users', user.uid), userDocData);
+
+      setUser(userDocData);
+      return { success: true, user: userDocData };
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
   };
 
-  // Logout function
-  const logout = () => {
-    console.log('AuthContext: Logging out user');
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  };
-
-  // Get user profile
-  const getUserProfile = async () => {
-    setLoading(true);
-    setError(null);
+  const login = async (email, password) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.data);
-        localStorage.setItem('user', JSON.stringify(data.data));
-        return data.data;
-      } else {
-        setError(data.message || 'Failed to fetch profile');
-        return null;
-      }
-    } catch (err) {
-      setError('Failed to fetch profile');
-      console.error('Error fetching profile:', err);
-      return null;
+      setError(null);
+      setLoading(true);
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Get additional user data from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.exists() ? userDoc.data() : null;
+
+      const userWithData = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        ...userData
+      };
+
+      setUser(userWithData);
+      return { success: true, user: userWithData };
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
     } finally {
       setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      setError(null);
+      await signOut(auth);
+      setUser(null);
+      return { success: true };
+    } catch (error) {
+      console.error('Logout error:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateUserProfile = async (updates) => {
+    try {
+      if (!user) throw new Error('No user logged in');
+
+      setError(null);
+      
+      // Update Firebase Auth profile if needed
+      if (updates.displayName || updates.photoURL) {
+        await updateProfile(auth.currentUser, {
+          displayName: updates.displayName || user.displayName,
+          photoURL: updates.photoURL || user.photoURL
+        });
+      }
+
+      // Update Firestore document
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        ...updates,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      // Update local state
+      setUser(prev => ({
+        ...prev,
+        ...updates,
+        updatedAt: new Date().toISOString()
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
     }
   };
 
@@ -149,10 +181,10 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
-    login,
     register,
+    login,
     logout,
-    getUserProfile,
+    updateUserProfile
   };
 
   return (
@@ -161,11 +193,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}; 

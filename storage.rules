@@ -1,0 +1,46 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Property images
+    match /properties/{propertyId}/images/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.ownerId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // Property documents
+    match /properties/{propertyId}/documents/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.ownerId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // Escrow documents
+    match /escrow/{escrowId}/documents/{fileName} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.buyerId || 
+         request.auth.uid == resource.metadata.sellerId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // Investment documents
+    match /investments/{investmentId}/documents/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.sponsorId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // General file uploads
+    match /uploads/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
