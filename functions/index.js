@@ -87,7 +87,7 @@ exports.verifyPayment = functions.https.onCall(async (data, context) => {
 });
 
 // Auto-release escrow funds after 7 days
-exports.autoReleaseEscrow = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+exports.autoReleaseEscrow = functions.https.onRequest(async (req, res) => {
   try {
     const now = admin.firestore.Timestamp.now();
     
@@ -142,10 +142,16 @@ exports.autoReleaseEscrow = functions.pubsub.schedule('every 1 hours').onRun(asy
     }
 
     console.log(`Auto-released ${expiredEscrows.size} escrow transactions`);
-    return null;
+    res.status(200).json({ 
+      success: true, 
+      message: `Auto-released ${expiredEscrows.size} escrow transactions` 
+    });
   } catch (error) {
     console.error('Auto-release error:', error);
-    return null;
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
