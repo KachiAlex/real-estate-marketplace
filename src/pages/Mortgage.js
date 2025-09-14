@@ -1,0 +1,608 @@
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRefresh, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
+
+const Mortgage = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedPriceRange, setSelectedPriceRange] = useState('any');
+  const [selectedPropertyType, setSelectedPropertyType] = useState('all');
+  const [selectedEligibility, setSelectedEligibility] = useState('all');
+  
+  // Mortgage calculator state
+  const [homePrice, setHomePrice] = useState(35000000);
+  const [downPayment, setDownPayment] = useState(7000000);
+  const [loanTerm, setLoanTerm] = useState(15);
+  const [interestRate, setInterestRate] = useState(13.5);
+
+  // Mock mortgage rates data
+  const mortgageRates = [
+    { type: '30-Year Fixed', rate: 13.5, change: -0.25, trend: 'down' },
+    { type: '15-Year Fixed', rate: 12.8, change: -0.15, trend: 'down' },
+    { type: '10-Year Fixed', rate: 12.2, change: -0.75, trend: 'down' },
+    { type: '5/1 ARM', rate: 11.9, change: 0.05, trend: 'up' }
+  ];
+
+  // Mock eligible properties data
+  const eligibleProperties = [
+    {
+      id: 1,
+      title: "Luxury Apartment in Ikoyi",
+      location: "Ikoyi, Lagos",
+      price: 38500000,
+      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
+      bedrooms: 3,
+      bathrooms: 3,
+      area: 250,
+      tags: ["Mortgage Ready", "Verified", "Featured"],
+      monthlyPayment: 364720,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5
+    },
+    {
+      id: 2,
+      title: "Modern Villa in Victoria Island",
+      location: "Victoria Island, Lagos",
+      price: 45000000,
+      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
+      bedrooms: 4,
+      bathrooms: 4,
+      area: 320,
+      tags: ["Mortgage Ready", "Verified", "New"],
+      monthlyPayment: 425000,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5
+    },
+    {
+      id: 3,
+      title: "Penthouse in Lekki",
+      location: "Lekki, Lagos",
+      price: 52000000,
+      image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
+      bedrooms: 5,
+      bathrooms: 5,
+      area: 400,
+      tags: ["Mortgage Ready", "Verified", "Featured"],
+      monthlyPayment: 490000,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5
+    }
+  ];
+
+  // Mock lender partners data
+  const lenderPartners = [
+    { name: "First Bank of Nigeria", rating: 4.7, rate: 13.2 },
+    { name: "Access Bank", rating: 4.7, rate: 13.2 },
+    { name: "UBA Mortgages", rating: 4.7, rate: 13.2 },
+    { name: "Zenith Bank", rating: 4.7, rate: 13.2 }
+  ];
+
+  // Mock application status data
+  const applicationStatus = [
+    {
+      date: "August 10, 2025",
+      title: "Application Submitted",
+      status: "completed",
+      description: "Your mortgage application has been received and is being processed."
+    },
+    {
+      date: "August 12, 2025",
+      title: "Document Verification",
+      status: "completed",
+      description: "Your identification and financial documents have been verified."
+    },
+    {
+      date: "In Progress",
+      title: "Credit Assessment",
+      status: "in-progress",
+      description: "Your credit history is being reviewed to determine loan eligibility."
+    },
+    {
+      date: "Pending",
+      title: "Property Appraisal",
+      status: "pending",
+      description: "An independent appraisal will determine the property's value."
+    },
+    {
+      date: "Pending",
+      title: "Final Approval",
+      status: "pending",
+      description: "Final review and approval of your mortgage application."
+    }
+  ];
+
+  // Mock educational resources
+  const educationalResources = [
+    "Understanding Mortgage Types in Nigeria",
+    "How to Improve Your Mortgage Approval Chances",
+    "First-Time Homebuyer's Guide",
+    "Nigerian Mortgage Glossary"
+  ];
+
+  // Calculate mortgage details
+  const loanAmount = homePrice - downPayment;
+  const monthlyRate = interestRate / 100 / 12;
+  const numberOfPayments = loanTerm * 12;
+  const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  const totalInterest = (monthlyPayment * numberOfPayments) - loanAmount;
+  const totalPayment = monthlyPayment * numberOfPayments;
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed':
+        return <FaCheck className="text-green-600" />;
+      case 'in-progress':
+        return <FaClock className="text-yellow-600" />;
+      case 'pending':
+        return <FaTimes className="text-gray-400" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in-progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'pending':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mortgage</h1>
+        <p className="text-gray-600">
+          Find the perfect mortgage solution for your dream home
+        </p>
+      </div>
+
+      {/* Top Section - Mortgage Summary and Rates */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Mortgage Summary */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Mortgage Summary</h2>
+          
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="text-center">
+              <div className="p-3 bg-blue-100 rounded-lg w-fit mx-auto mb-2">
+                <FaHome className="text-brand-blue text-xl" />
+              </div>
+              <p className="text-sm text-gray-600">Estimated Price Range</p>
+              <p className="text-lg font-bold text-gray-900">₦25-45M</p>
+            </div>
+            <div className="text-center">
+              <div className="p-3 bg-green-100 rounded-lg w-fit mx-auto mb-2">
+                <FaMoneyBillWave className="text-green-600 text-xl" />
+              </div>
+              <p className="text-sm text-gray-600">Recommended Down Payment</p>
+              <p className="text-lg font-bold text-gray-900">₦8.5M</p>
+            </div>
+            <div className="text-center">
+              <div className="p-3 bg-orange-100 rounded-lg w-fit mx-auto mb-2">
+                <FaPercentage className="text-brand-orange text-xl" />
+              </div>
+              <p className="text-sm text-gray-600">Current Avg. Interest Rate</p>
+              <p className="text-lg font-bold text-gray-900">13.5%</p>
+            </div>
+            <div className="text-center">
+              <div className="p-3 bg-purple-100 rounded-lg w-fit mx-auto mb-2">
+                <FaCalendar className="text-purple-600 text-xl" />
+              </div>
+              <p className="text-sm text-gray-600">Typical Loan Term</p>
+              <p className="text-lg font-bold text-gray-900">15-25 yrs</p>
+            </div>
+          </div>
+
+          <div className="bg-brand-blue rounded-lg p-4 text-white">
+            <h3 className="font-semibold mb-2">Get Pre-qualified Today</h3>
+            <p className="text-sm mb-3">Get a personalized estimate of how much you can borrow before you start house hunting. No impact on your credit score.</p>
+            <button className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+              <span>Start Pre-qualification</span>
+              <FaArrowRight />
+            </button>
+          </div>
+        </div>
+
+        {/* Current Mortgage Rates */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Mortgage Rates</h2>
+          
+          <div className="space-y-3 mb-6">
+            {mortgageRates.map((rate, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                <div>
+                  <p className="font-medium text-gray-900">{rate.type}</p>
+                  <p className="text-sm text-gray-600">
+                    {rate.trend === 'down' ? (
+                      <span className="text-green-600 flex items-center">
+                        <FaArrowDown className="mr-1" />
+                        {Math.abs(rate.change)}% from last week
+                      </span>
+                    ) : (
+                      <span className="text-red-600 flex items-center">
+                        <FaArrowUp className="mr-1" />
+                        +{rate.change}% from last week
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <p className="text-xl font-bold text-gray-900">{rate.rate}%</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <h3 className="font-medium text-gray-900 mb-2">Rate Trends</h3>
+            <div className="h-32 bg-white rounded border flex items-end justify-between px-2">
+              {[13.2, 13.8, 14.1, 13.9, 13.5, 13.5].map((height, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div
+                    className="w-6 bg-brand-blue rounded-t mb-1"
+                    style={{ height: `${(height - 12) * 20}%` }}
+                  ></div>
+                  <span className="text-xs text-gray-600">{['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'][index]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-500 mb-2">Last updated: June 15, 2023 | Source: AfricaEstate Partners</p>
+          <p className="text-xs text-gray-500 mb-2">Rates are subject to change</p>
+          <a href="#" className="text-sm text-brand-blue hover:underline">View Detailed Trends</a>
+        </div>
+      </div>
+
+      {/* Eligible Properties Section */}
+      <div className="bg-white rounded-lg shadow mb-8">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Mortgage Summary - Eligible Properties</h2>
+          
+          {/* Tabs */}
+          <div className="flex space-x-6 mb-4">
+            {[
+              { key: 'all', label: 'All Eligible (24)' },
+              { key: 'pre-approved', label: 'Pre-Approved (0)' },
+              { key: 'residential', label: 'Residential (12)' },
+              { key: 'commercial', label: 'Commercial (4)' },
+              { key: 'new-developments', label: 'New Developments (8)' },
+              { key: 'recently-added', label: 'Recently Added (0)' }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`pb-2 border-b-2 font-medium text-sm ${
+                  activeTab === tab.key
+                    ? 'border-brand-blue text-brand-blue'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="all">Location (All locations)</option>
+              <option value="lagos">Lagos</option>
+              <option value="abuja">Abuja</option>
+              <option value="port-harcourt">Port Harcourt</option>
+            </select>
+            
+            <select
+              value={selectedPriceRange}
+              onChange={(e) => setSelectedPriceRange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="any">Price Range (Any price)</option>
+              <option value="20-30m">₦20M - ₦30M</option>
+              <option value="30-40m">₦30M - ₦40M</option>
+              <option value="40-50m">₦40M - ₦50M</option>
+            </select>
+            
+            <select
+              value={selectedPropertyType}
+              onChange={(e) => setSelectedPropertyType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="all">Property Type (All types)</option>
+              <option value="apartment">Apartment</option>
+              <option value="villa">Villa</option>
+              <option value="penthouse">Penthouse</option>
+            </select>
+            
+            <select
+              value={selectedEligibility}
+              onChange={(e) => setSelectedEligibility(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="all">Mortgage Eligibility (All eligibility)</option>
+              <option value="ready">Mortgage Ready</option>
+              <option value="pre-approved">Pre-Approved</option>
+            </select>
+            
+            <button className="btn-primary flex items-center space-x-2">
+              <FaFilter />
+              <span>Filter Results</span>
+            </button>
+            
+            <button className="p-2 text-gray-500 hover:text-gray-700">
+              <FaRefresh />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <p className="text-gray-600 mb-6">Found 24 mortgage-eligible properties</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {eligibleProperties.map((property) => (
+              <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="relative">
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute top-2 right-2 flex flex-col space-y-1">
+                    {property.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          tag === 'Mortgage Ready' ? 'bg-green-100 text-green-800' :
+                          tag === 'Verified' ? 'bg-blue-100 text-blue-800' :
+                          tag === 'Featured' ? 'bg-purple-100 text-purple-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.title}</h3>
+                  <p className="text-gray-600 mb-3">{property.location}</p>
+                  
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                    <span className="flex items-center">
+                      <FaBed className="mr-1" />
+                      {property.bedrooms} beds
+                    </span>
+                    <span className="flex items-center">
+                      <FaBath className="mr-1" />
+                      {property.bathrooms} baths
+                    </span>
+                    <span className="flex items-center">
+                      <FaRuler className="mr-1" />
+                      {property.area} m²
+                    </span>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-gray-600 mb-1">Estimated Monthly Payment</p>
+                    <p className="text-xl font-bold text-gray-900">₦{property.monthlyPayment.toLocaleString()}/month</p>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {property.downPaymentPercent}% Down Payment • {property.loanTerm} yrs Loan Term • {property.interestRate}% Interest Rate
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <button className="flex-1 btn-outline text-sm">View Property</button>
+                    <button className="flex-1 btn-primary text-sm">Apply for Mortgage</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+            <div className="flex space-x-2">
+              {[1, 2, 3, 4, 5].map((page) => (
+                <button
+                  key={page}
+                  className={`px-3 py-2 rounded-lg text-sm ${
+                    page === 1
+                      ? 'bg-brand-blue text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <span className="px-3 py-2 text-gray-500">...</span>
+              <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">25</button>
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-500 mt-4 text-center">
+            All properties are verified by Naija Luxury Homes for mortgage eligibility.
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom Section - Calculator, Lenders, Application Status, Resources */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        {/* Quick Mortgage Calculator */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Mortgage Calculator</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+              <input
+                type="number"
+                value={homePrice}
+                onChange={(e) => setHomePrice(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+              <input
+                type="number"
+                value={downPayment}
+                onChange={(e) => setDownPayment(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Loan Term (Years): {loanTerm} Years
+              </label>
+              <input
+                type="range"
+                min="5"
+                max="30"
+                value={loanTerm}
+                onChange={(e) => setLoanTerm(parseInt(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>5 yrs</span>
+                <span>30 yrs</span>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Interest Rate (%): {interestRate}%
+              </label>
+              <input
+                type="range"
+                min="8"
+                max="18"
+                step="0.1"
+                value={interestRate}
+                onChange={(e) => setInterestRate(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>8%</span>
+                <span>18%</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Loan Amount:</span>
+              <span className="font-medium">₦{loanAmount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Total Interest:</span>
+              <span className="font-medium">₦{totalInterest.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Total Payment:</span>
+              <span className="font-medium">₦{totalPayment.toLocaleString()}</span>
+            </div>
+            <div className="border-t pt-2">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-gray-900">Monthly Payment:</span>
+                <span className="text-lg font-bold text-brand-blue">₦{Math.round(monthlyPayment).toLocaleString()} / month</span>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-500 mt-4">This is an estimate only</p>
+          <a href="#" className="text-sm text-brand-blue hover:underline">Detailed Calculator</a>
+        </div>
+
+        {/* Approved Lender Partners */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Approved Lender Partners</h3>
+          
+          <div className="space-y-3">
+            {lenderPartners.map((lender, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{lender.name}</p>
+                  <div className="flex items-center space-x-1">
+                    <FaStar className="text-yellow-500 text-sm" />
+                    <span className="text-sm text-gray-600">{lender.rating}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900">{lender.rate}%</p>
+                  <FaArrowRight className="text-gray-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <p className="text-sm text-gray-600 mt-4">7 lenders available in your area</p>
+          <a href="#" className="text-sm text-brand-blue hover:underline">Compare All</a>
+        </div>
+
+        {/* Application Status */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Status</h3>
+          
+          <div className="space-y-4">
+            {applicationStatus.map((status, index) => (
+              <div key={index} className="flex items-start space-x-3">
+                <div className={`p-2 rounded-full ${getStatusColor(status.status)}`}>
+                  {getStatusIcon(status.status)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <p className="text-sm font-medium text-gray-900">{status.date}</p>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status.status)}`}>
+                      {status.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">{status.title}</p>
+                  <p className="text-xs text-gray-600">{status.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">Application ID: MO-2025-005872</p>
+            <a href="#" className="text-sm text-brand-blue hover:underline">View Details</a>
+          </div>
+        </div>
+
+        {/* Educational Resources */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Educational Resources</h3>
+          
+          <div className="space-y-3">
+            {educationalResources.map((resource, index) => (
+              <div key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
+                <FaFileAlt className="text-gray-400" />
+                <span className="text-sm text-gray-700">{resource}</span>
+              </div>
+            ))}
+          </div>
+          
+          <p className="text-sm text-gray-600 mt-4">75 Resources available</p>
+          <a href="#" className="text-sm text-brand-blue hover:underline">Compare All</a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Mortgage;

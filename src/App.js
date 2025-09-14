@@ -30,6 +30,7 @@ import MyInquiries from './pages/MyInquiries';
 import PropertyAlerts from './pages/PropertyAlerts';
 import Messages from './pages/Messages';
 import Investment from './pages/Investment';
+import Mortgage from './pages/Mortgage';
 
 function App() {
   return (
@@ -58,6 +59,16 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <Investment />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgage" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Mortgage />
                         </main>
                       </div>
                     </ProtectedRoute>
