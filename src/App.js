@@ -18,7 +18,6 @@ import AddProperty from './pages/AddProperty';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
 import About from './pages/About';
-import Contact from './pages/Contact';
 import Escrow from './pages/Escrow';
 import Investments from './pages/Investments';
 import InvestmentDetail from './pages/InvestmentDetail';
@@ -47,14 +46,6 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/contact" element={
-                    <div className="flex w-full">
-                      <Sidebar />
-                      <main className="flex-1 ml-64">
-                        <Contact />
-                      </main>
-                    </div>
-                  } />
                   <Route path="/properties" element={
                     <div className="flex w-full">
                       <Sidebar />
@@ -92,7 +83,6 @@ function App() {
                     </div>
                   } />
                   <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
                   <Route path="/search" element={
                     <div className="flex w-full">
                       <Sidebar />
