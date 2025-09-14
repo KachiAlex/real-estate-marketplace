@@ -99,6 +99,7 @@ const VendorSidebar = () => {
 
       {/* Bottom Section */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+        {/* User Profile Section */}
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gray-600">V</span>
@@ -108,6 +109,8 @@ const VendorSidebar = () => {
             <p className="text-xs text-gray-500">Premium Member</p>
           </div>
         </div>
+        
+        {/* Sign Out Button */}
         <button className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <FaSignOutAlt className="h-4 w-4" />
           <span>Sign Out</span>
