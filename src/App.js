@@ -47,6 +47,14 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/contact" element={
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <Contact />
+                      </main>
+                    </div>
+                  } />
                   <Route path="/properties" element={
                     <div className="flex w-full">
                       <Sidebar />
