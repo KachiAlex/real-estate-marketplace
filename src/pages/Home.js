@@ -1,270 +1,585 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaSearch, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaHeart, FaStar, FaArrowRight, FaHome, FaBuilding, FaLandmark, FaShieldAlt, FaUsers, FaChartLine } from 'react-icons/fa';
+import { 
+  FaSearch, 
+  FaMapMarkerAlt, 
+  FaBed, 
+  FaBath, 
+  FaRulerCombined, 
+  FaHeart, 
+  FaShare, 
+  FaArrowRight, 
+  FaTimes,
+  FaFilter,
+  FaSort,
+  FaEye,
+  FaCheck,
+  FaBuilding,
+  FaChartLine,
+  FaPlay
+} from 'react-icons/fa';
 
 const Home = () => {
   const { properties } = useProperty();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('Lagos');
+  const [selectedType, setSelectedType] = useState('Apartment');
+  const [priceRange, setPriceRange] = useState([20000000, 120000000]);
+  const [bedrooms, setBedrooms] = useState('2');
+  const [bathrooms, setBathrooms] = useState('3');
+  const [selectedAmenities, setSelectedAmenities] = useState([
+    'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 'WiFi', 'Furnished', 'Balcony'
+  ]);
+  const [propertyAge, setPropertyAge] = useState('New 0-5 yrs');
+  const [quickFilter, setQuickFilter] = useState('All Properties');
+  const [sortBy, setSortBy] = useState('Most Relevant');
+  const [showMoreAmenities, setShowMoreAmenities] = useState(false);
 
-  const featuredProperties = properties.slice(0, 6);
+  // Mock data for the properties shown in the screenshot
+  const mockProperties = [
+    {
+      id: 1,
+      title: "Luxury Apartment in Victoria Island",
+      location: "Victoria Island, Lagos",
+      price: 75000000,
+      status: "For Sale",
+      bedrooms: 3,
+      bathrooms: 3,
+      sqft: 175,
+      description: "Stunning 3-bedroom apartment with city views, pool, and gym access.",
+      image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    },
+    {
+      id: 2,
+      title: "Modern Family House in Lekki",
+      location: "Lekki Phase 1, Lagos",
+      price: 120000000,
+      status: "For Sale",
+      bedrooms: 4,
+      bathrooms: 4,
+      sqft: 250,
+      description: "Spacious 4-bedroom house with modern kitchen, garden, and 24/7 security.",
+      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    },
+    {
+      id: 3,
+      title: "Penthouse with Ocean View in Ikoyi",
+      location: "Ikoyi, Lagos",
+      price: 95000000,
+      status: "For Sale",
+      bedrooms: 2,
+      bathrooms: 3,
+      sqft: 200,
+      description: "Luxurious penthouse with panoramic ocean views and private terrace.",
+      image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=300&fit=crop",
+      label: "Shortlet",
+      labelColor: "bg-blue-500"
+    },
+    {
+      id: 4,
+      title: "Elegant Townhouse in Maitama Island",
+      location: "Maitama, Abuja",
+      price: 75000000,
+      status: "For Sale",
+      bedrooms: 4,
+      bathrooms: 3,
+      sqft: 220,
+      description: "Contemporary townhouse with private garden and modern amenities.",
+      image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=300&fit=crop",
+      label: "New Development",
+      labelColor: "bg-red-500"
+    },
+    {
+      id: 5,
+      title: "Garden View Apartment in Ikeja GRA",
+      location: "Ikeja GRA, Lagos",
+      price: 120000000,
+      status: "For Sale",
+      bedrooms: 2,
+      bathrooms: 2,
+      sqft: 150,
+      description: "Beautiful apartment with lush garden views and modern kitchen.",
+      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop",
+      label: "Hot Deals",
+      labelColor: "bg-red-500"
+    },
+    {
+      id: 6,
+      title: "Beachfront Villa in Banana Island",
+      location: "Banana Island, Lagos",
+      price: 95000000,
+      status: "For Sale",
+      bedrooms: 5,
+      bathrooms: 5,
+      sqft: 400,
+      description: "Exclusive beachfront villa with private pool and direct beach access.",
+      image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    },
+    {
+      id: 7,
+      title: "Contemporary Apartment in Maryland",
+      location: "Maryland, Lagos",
+      price: 75000000,
+      status: "For Sale",
+      bedrooms: 3,
+      bathrooms: 2,
+      sqft: 180,
+      description: "Modern apartment with open-plan living and city views.",
+      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    },
+    {
+      id: 8,
+      title: "Luxury Villa in Asokoro",
+      location: "Asokoro, Abuja",
+      price: 120000000,
+      status: "For Sale",
+      bedrooms: 5,
+      bathrooms: 4,
+      sqft: 350,
+      description: "Spacious villa with swimming pool and landscaped garden.",
+      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    },
+    {
+      id: 9,
+      title: "Waterfront Condominium in Oniru",
+      location: "Oniru, Lagos",
+      price: 95000000,
+      status: "For Sale",
+      bedrooms: 3,
+      bathrooms: 3,
+      sqft: 200,
+      description: "Luxury condominium with panoramic lagoon views and private marina.",
+      image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
+      label: "For Sale",
+      labelColor: "bg-orange-500"
+    }
+  ];
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Handle search logic
+  const quickFilters = [
+    'All Properties', 'For Sale', 'For Rent', 'Shortlet', 'New Developments', 'Waterfront', 'Luxury'
+  ];
+
+  const locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
+  const propertyTypes = ['Apartment', 'House', 'Villa', 'Condo', 'Townhouse'];
+  const amenities = [
+    'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 
+    'WiFi', 'Furnished', 'Balcony', 'Garden', 'Terrace', 'Home Theater', 'Sauna'
+  ];
+
+  const handleAmenityToggle = (amenity) => {
+    setSelectedAmenities(prev => 
+      prev.includes(amenity) 
+        ? prev.filter(a => a !== amenity)
+        : [...prev, amenity]
+    );
+  };
+
+  const removeFilter = (filterType, value) => {
+    switch(filterType) {
+      case 'location':
+        setSelectedLocation('');
+        break;
+      case 'type':
+        setSelectedType('');
+        break;
+      case 'bedrooms':
+        setBedrooms('');
+        break;
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 via-red-800 to-black text-white py-20">
+      <div className="bg-gray-100 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Find Your Perfect
-              <span className="text-red-400"> Property</span>
+          <div className="text-center mb-8">
+            <p className="text-orange-500 text-sm font-medium mb-2">Discover Premium Listing</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Find Your Perfect Property in Nigeria
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Discover the best properties in your area. From luxury homes to affordable rentals, 
-              we have everything you need to find your dream property.
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Browse our curated collection of verified properties across Nigeria's most sought-after locations. 
+              Explore luxury homes, apartments, and investment opportunities with confidence.
             </p>
           </div>
+        </div>
+      </div>
 
-          {/* Search Form */}
-          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-4xl mx-auto">
-            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
-                <input
-                  type="text"
-                  placeholder="Search by location, property type, or keywords..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                />
-              </div>
-              <div>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                >
-                  <option value="">Property Type</option>
-                  <option value="house">House</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="condo">Condo</option>
-                  <option value="villa">Villa</option>
-                </select>
-              </div>
-              <div>
+      {/* Quick Filters */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">Quick Filters:</span>
+            <div className="flex space-x-2">
+              {quickFilters.map((filter) => (
                 <button
-                  type="submit"
-                  className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold"
+                  key={filter}
+                  onClick={() => setQuickFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    quickFilter === filter
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
-                  <FaSearch className="inline mr-2" />
-                  Search
+                  {filter}
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaHome className="text-2xl text-red-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">2,500+</h3>
-              <p className="text-gray-600">Properties Listed</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaUsers className="text-2xl text-red-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">1,200+</h3>
-              <p className="text-gray-600">Happy Clients</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaChartLine className="text-2xl text-red-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">98%</h3>
-              <p className="text-gray-600">Success Rate</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaShieldAlt className="text-2xl text-red-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">24/7</h3>
-              <p className="text-gray-600">Support Available</p>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Featured Properties */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Properties</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover our handpicked selection of premium properties
-            </p>
-          </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* Filters Sidebar */}
+          <div className="w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Property Filters</h3>
+              <button className="text-sm text-gray-300 hover:text-white">Reset All</button>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map((property) => (
-              <div key={property.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={property.images?.[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop'}
-                    alt={property.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+            {/* Active Filters */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2">
+                {selectedLocation && (
+                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedLocation} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('location')} />
+                  </span>
+                )}
+                {selectedType && (
+                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedType} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('type')} />
+                  </span>
+                )}
+                {bedrooms && (
+                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+                    {bedrooms} Bedrooms <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('bedrooms')} />
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Location</label>
+              <select
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {locations.map(location => (
+                  <option key={location} value={location}>{location}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Property Type */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Property Type</label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {propertyTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Price Range */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Price Range (N)</label>
+              <div className="space-y-3">
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    value={priceRange[0].toLocaleString()}
+                    onChange={(e) => setPriceRange([parseInt(e.target.value.replace(/,/g, '')), priceRange[1]])}
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Min"
                   />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">
-                      {property.status === 'for-sale' ? 'For Sale' : property.status === 'for-rent' ? 'For Rent' : 'For Lease'}
-                    </span>
+                  <input
+                    type="number"
+                    value={priceRange[1].toLocaleString()}
+                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value.replace(/,/g, ''))])}
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Max"
+                  />
+                </div>
+                <div className="relative">
+                  <div className="h-2 bg-gray-600 rounded-full">
+                    <div className="h-2 bg-orange-500 rounded-full" style={{width: '60%'}}></div>
                   </div>
-                  <div className="absolute top-4 right-4">
-                    <button className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-50 transition-colors duration-300">
-                      <FaHeart className="text-gray-400 hover:text-red-500 transition-colors duration-300" />
-                    </button>
+                  <div className="flex justify-between text-xs text-gray-300 mt-1">
+                    <span>N5M</span>
+                    <span>N250M+</span>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-gray-900 truncate">{property.title}</h3>
-                    <div className="flex items-center text-yellow-400">
-                      <FaStar className="text-sm" />
-                      <span className="ml-1 text-sm text-gray-600">4.8</span>
+            {/* Bedrooms */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Bedrooms</label>
+              <select
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Any</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5+">5+</option>
+              </select>
+            </div>
+
+            {/* Bathrooms */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Bathrooms</label>
+              <select
+                value={bathrooms}
+                onChange={(e) => setBathrooms(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Any</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5+">5+</option>
+              </select>
+            </div>
+
+            {/* Amenities */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-3">Amenities</label>
+              <div className="space-y-2">
+                {amenities.slice(0, showMoreAmenities ? amenities.length : 8).map((amenity) => (
+                  <label key={amenity} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedAmenities.includes(amenity)}
+                      onChange={() => handleAmenityToggle(amenity)}
+                      className="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500"
+                    />
+                    <span className="ml-2 text-sm">{amenity}</span>
+                  </label>
+                ))}
+                {!showMoreAmenities && (
+                  <button
+                    onClick={() => setShowMoreAmenities(true)}
+                    className="text-orange-500 text-sm hover:text-orange-400"
+                  >
+                    + Show more amenities
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Property Age */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-3">Property Age</label>
+              <div className="flex space-x-2">
+                {['Any Age', 'New 0-5 yrs', '5-10 yrs Age'].map((age) => (
+                  <button
+                    key={age}
+                    onClick={() => setPropertyAge(age)}
+                    className={`px-3 py-2 rounded-full text-sm transition-colors ${
+                      propertyAge === age
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {age}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="space-y-3">
+              <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors">
+                Apply Filters
+              </button>
+              <button className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          {/* Property Listings */}
+          <div className="flex-1">
+            {/* Results Header */}
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-gray-700">18 properties found</p>
+              <div className="flex items-center space-x-2">
+                <FaSort className="text-gray-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="Most Relevant">Most Relevant</option>
+                  <option value="Price Low to High">Price Low to High</option>
+                  <option value="Price High to Low">Price High to Low</option>
+                  <option value="Newest">Newest</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Property Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mockProperties.map((property) => (
+                <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative">
+                    <img
+                      src={property.image}
+                      alt={property.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className={`px-2 py-1 text-xs font-medium text-white rounded ${property.labelColor}`}>
+                        {property.label}
+                      </span>
+                    </div>
+                    <div className="absolute top-3 right-3 flex space-x-2">
+                      <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                        <FaHeart className="text-gray-400 text-sm" />
+                      </button>
+                      <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
+                        <FaShare className="text-gray-400 text-sm" />
+                      </button>
+                    </div>
+                    <div className="absolute bottom-3 left-3">
+                      <span className="text-2xl font-bold text-white">
+                        ₦{property.price.toLocaleString()}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <FaMapMarkerAlt className="mr-2" />
-                    <span className="text-sm">{property.location?.address}, {property.location?.city}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <FaBed className="mr-1" />
-                        <span>{property.details?.bedrooms || property.bedrooms} Beds</span>
-                      </div>
-                      <div className="flex items-center">
-                        <FaBath className="mr-1" />
-                        <span>{property.details?.bathrooms || property.bathrooms} Baths</span>
-                      </div>
-                      <div className="flex items-center">
-                        <FaRulerCombined className="mr-1" />
-                        <span>{property.details?.sqft || property.sqft} sqft</span>
-                      </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
+                    <div className="flex items-center text-gray-600 text-sm mb-2">
+                      <FaMapMarkerAlt className="mr-1" />
+                      <span>{property.location}</span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">
-                        ${property.price.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {property.status === 'for-rent' ? '/month' : ''}
-                      </p>
+                    <p className="text-gray-600 text-sm mb-3">{property.description}</p>
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                      <div className="flex items-center space-x-4">
+                        <span className="flex items-center">
+                          <FaBed className="mr-1" />
+                          {property.bedrooms} Beds
+                        </span>
+                        <span className="flex items-center">
+                          <FaBath className="mr-1" />
+                          {property.bathrooms} Baths
+                        </span>
+                        <span className="flex items-center">
+                          <FaRulerCombined className="mr-1" />
+                          {property.sqft}m²
+                        </span>
+                      </div>
                     </div>
                     <Link
                       to={`/property/${property.id}`}
-                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center"
+                      className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
                     >
                       View Details
                       <FaArrowRight className="ml-2 text-sm" />
                     </Link>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="text-center mt-12">
-            <Link
-              to="/properties"
-              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold"
-            >
-              View All Properties
-              <FaArrowRight className="ml-2" />
-            </Link>
+            {/* Pagination */}
+            <div className="flex items-center justify-center mt-8 space-x-2">
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
+                &lt;
+              </button>
+              <button className="px-3 py-2 bg-orange-500 text-white rounded-lg">1</button>
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">2</button>
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">3</button>
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">4</button>
+              <span className="px-3 py-2 text-gray-600">...</span>
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">25</button>
+              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
+                &gt;
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Why Choose Us */}
-      <div className="py-16 bg-white">
+      {/* Premium Property Discovery Section */}
+      <div className="bg-brand-blue text-white py-16 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Choose PropertyPro</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We provide exceptional service and the best properties in the market
+            <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Naija Luxury Homes offers exclusive features to enhance your property search. 
+              Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FaShieldAlt className="text-3xl text-red-600" />
+            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaPlay className="text-2xl text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Trusted & Secure</h3>
-              <p className="text-gray-600">
-                All our properties are verified and secure. Your safety and satisfaction are our top priorities.
+              <h3 className="text-xl font-semibold mb-3">Virtual Tours</h3>
+              <p className="text-gray-300 mb-4">
+                Experience immersive 3D tours of properties from the comfort of your home. 
+                Get a realistic feel of spaces before visiting in person.
               </p>
+              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                Learn More →
+              </a>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FaUsers className="text-3xl text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Expert Support</h3>
-              <p className="text-gray-600">
-                Our team of experts is here to help you find the perfect property and guide you through the process.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FaChartLine className="text-3xl text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Best Deals</h3>
-              <p className="text-gray-600">
-                We offer the best prices and deals in the market. Save money while getting quality properties.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-red-900 via-red-800 to-black text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Find Your Dream Property?</h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who found their perfect home with PropertyPro
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/properties"
-              className="px-8 py-4 bg-white text-red-600 rounded-xl hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold"
-            >
-              Browse Properties
-            </Link>
-            <Link
-              to="/register"
-              className="px-8 py-4 border-2 border-white text-white rounded-xl hover:bg-white hover:text-red-600 transition-all duration-300 transform hover:-translate-y-1 font-semibold"
-            >
-              Get Started
-            </Link>
+            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaCheck className="text-2xl text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Verified Properties</h3>
+              <p className="text-gray-300 mb-4">
+                Every property is verified by our expert team for authenticity and legal compliance. 
+                Buy with confidence knowing all details are accurate.
+              </p>
+              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                Learn More →
+              </a>
+            </div>
+
+            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaChartLine className="text-2xl text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Market Insights</h3>
+              <p className="text-gray-300 mb-4">
+                Access detailed market analysis and investment reports. 
+                Make informed decisions with comprehensive property data and trends.
+              </p>
+              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                Learn More →
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -272,4 +587,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;
