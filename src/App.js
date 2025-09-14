@@ -31,6 +31,8 @@ import PropertyAlerts from './pages/PropertyAlerts';
 import Messages from './pages/Messages';
 import Investment from './pages/Investment';
 import Mortgage from './pages/Mortgage';
+import HelpSupport from './pages/HelpSupport';
+import BillingPayments from './pages/BillingPayments';
 
 function App() {
   return (
@@ -219,6 +221,26 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <Messages />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/help" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <HelpSupport />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/billing" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <BillingPayments />
                         </main>
                       </div>
                     </ProtectedRoute>
