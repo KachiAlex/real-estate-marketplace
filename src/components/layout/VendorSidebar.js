@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   FaHome, 
   FaChartLine, 
@@ -15,12 +15,12 @@ import {
 } from 'react-icons/fa';
 
 const VendorSidebar = () => {
+  const location = useLocation();
+  
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
     { path: '/vendor/properties', label: 'My Properties', icon: FaHome },
     { path: '/vendor/add-property', label: 'Add Property', icon: FaPlus },
-    { path: '/vendor/inquiries', label: 'Inquiries', icon: FaEnvelope },
-    { path: '/vendor/analytics', label: 'Analytics', icon: FaChartLine },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },
     { path: '/vendor/team', label: 'Team', icon: FaUsers },
     { path: '/vendor/contracts', label: 'Contracts', icon: FaFileContract }
@@ -33,7 +33,7 @@ const VendorSidebar = () => {
   ];
 
   const isActive = (path) => {
-    return window.location.pathname === path;
+    return location.pathname === path;
   };
 
   return (

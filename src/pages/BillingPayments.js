@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEscrow } from '../contexts/EscrowContext';
+import EscrowDashboard from '../components/EscrowDashboard';
 import { FaCreditCard, FaShieldAlt, FaClock, FaCheck, FaTimes, FaDownload, FaEye, FaPlus, FaFilter, FaSearch, FaFileInvoice, FaMoneyBillWave, FaLock, FaUnlock, FaExclamationTriangle, FaInfoCircle, FaArrowRight, FaHistory, FaReceipt } from 'react-icons/fa';
 
 const BillingPayments = () => {
@@ -327,77 +328,7 @@ const BillingPayments = () => {
           )}
 
           {activeTab === 'escrow' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Escrow Transactions</h3>
-                <div className="flex space-x-3">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                  <button className="btn-outline flex items-center space-x-2">
-                    <FaFilter />
-                    <span>Filter</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {filteredTransactions.map((transaction) => (
-                  <div key={transaction.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="text-lg font-semibold text-gray-900">{transaction.propertyTitle}</h4>
-                          <span className={`px-3 py-1 text-sm rounded-full ${getStatusColor(transaction.status)}`}>
-                            {transaction.status}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 mb-2">{transaction.description}</p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Escrow ID</p>
-                            <p className="font-medium">{transaction.id}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Amount</p>
-                            <p className="font-medium">₦{transaction.amount.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Fees</p>
-                            <p className="font-medium">₦{transaction.fees.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Created</p>
-                            <p className="font-medium">{transaction.createdAt}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="btn-outline text-sm">
-                          <FaEye className="mr-1" />
-                          View Details
-                        </button>
-                        {transaction.status === 'pending' && (
-                          <button 
-                            onClick={() => handlePayment(transaction.id, transaction.amount)}
-                            className="btn-primary text-sm"
-                          >
-                            Complete Payment
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <EscrowDashboard userRole="buyer" />
           )}
 
           {activeTab === 'payments' && (

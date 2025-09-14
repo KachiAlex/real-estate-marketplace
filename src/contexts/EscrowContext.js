@@ -32,12 +32,14 @@ export const EscrowProvider = ({ children }) => {
       sellerEmail: 'john.smith@example.com',
       amount: 450000,
       currency: 'NGN',
-      status: 'pending', // pending, funded, completed, cancelled, disputed
+      status: 'funded', // pending, funded, in_escrow, buyer_confirmed, auto_released, completed, disputed, cancelled
       type: 'sale', // sale, rent, lease
       paymentMethod: 'card', // card, bank_transfer, ussd, etc.
-      flutterwaveTransactionId: null,
-      flutterwaveReference: null,
+      flutterwaveTransactionId: 'FLW_TXN_123456789',
+      flutterwaveReference: 'REF_123456789',
       createdAt: '2024-01-20T10:00:00Z',
+      paymentDate: '2024-01-20T10:30:00Z',
+      confirmationDeadline: '2024-01-27T10:30:00Z', // 7 days after payment
       expectedCompletion: '2024-02-20T10:00:00Z',
       documents: [
         { name: 'Purchase Agreement', status: 'uploaded' },
@@ -45,12 +47,52 @@ export const EscrowProvider = ({ children }) => {
         { name: 'Title Search', status: 'completed' }
       ],
       milestones: [
-        { name: 'Initial Payment', status: 'pending', date: null, amount: 45000 },
+        { name: 'Payment Made', status: 'completed', date: '2024-01-20T10:30:00Z', amount: 450000 },
         { name: 'Property Inspection', status: 'pending', date: null, amount: 0 },
-        { name: 'Final Payment', status: 'pending', date: null, amount: 405000 }
+        { name: 'Buyer Confirmation', status: 'pending', date: null, amount: 0 }
       ],
       escrowFee: 2250, // 0.5% of transaction amount
-      totalAmount: 452250
+      totalAmount: 452250,
+      disputeReason: null,
+      adminNotes: null,
+      autoReleaseTriggered: false
+    },
+    {
+      id: '2',
+      propertyId: '2',
+      propertyTitle: 'Luxury Villa in Ikoyi',
+      buyerId: '3',
+      buyerName: 'Sarah Johnson',
+      buyerEmail: 'sarah@example.com',
+      sellerId: '4',
+      sellerName: 'Michael Brown',
+      sellerEmail: 'michael@example.com',
+      amount: 15000000,
+      currency: 'NGN',
+      status: 'in_escrow',
+      type: 'sale',
+      paymentMethod: 'bank_transfer',
+      flutterwaveTransactionId: 'FLW_TXN_987654321',
+      flutterwaveReference: 'REF_987654321',
+      createdAt: '2024-01-15T14:00:00Z',
+      paymentDate: '2024-01-15T14:15:00Z',
+      confirmationDeadline: '2024-01-22T14:15:00Z',
+      expectedCompletion: '2024-02-15T14:00:00Z',
+      documents: [
+        { name: 'Purchase Agreement', status: 'uploaded' },
+        { name: 'Property Inspection Report', status: 'completed' },
+        { name: 'Title Search', status: 'completed' }
+      ],
+      milestones: [
+        { name: 'Payment Made', status: 'completed', date: '2024-01-15T14:15:00Z', amount: 15000000 },
+        { name: 'Property Inspection', status: 'completed', date: '2024-01-18T10:00:00Z', amount: 0 },
+        { name: 'Buyer Confirmation', status: 'pending', date: null, amount: 0 }
+      ],
+      escrowFee: 75000, // 0.5% of transaction amount
+      totalAmount: 15075000,
+      disputeReason: null,
+      adminNotes: null,
+      autoReleaseTriggered: false
     }
   ];
 
@@ -381,6 +423,206 @@ export const EscrowProvider = ({ children }) => {
     }
   };
 
+  // New escrow flow functions
+  const confirmPropertyPossession = async (escrowId, confirmationData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/escrow/${escrowId}/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(confirmationData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to confirm property possession');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setEscrowTransactions(prev => 
+          prev.map(transaction => 
+            transaction.id === escrowId 
+              ? { ...transaction, status: 'buyer_confirmed', ...data.data }
+              : transaction
+          )
+        );
+        toast.success('Property possession confirmed! Funds will be released to vendor.');
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to confirm property possession');
+      }
+    } catch (error) {
+      console.error('Error confirming property possession:', error);
+      toast.error('Failed to confirm property possession');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const disputeProperty = async (escrowId, disputeData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/escrow/${escrowId}/dispute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(disputeData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to file dispute');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setEscrowTransactions(prev => 
+          prev.map(transaction => 
+            transaction.id === escrowId 
+              ? { ...transaction, status: 'disputed', disputeReason: disputeData.reason, ...data.data }
+              : transaction
+          )
+        );
+        toast.success('Dispute filed successfully! Admin will review your case.');
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to file dispute');
+      }
+    } catch (error) {
+      console.error('Error filing dispute:', error);
+      toast.error('Failed to file dispute');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const releaseEscrowFunds = async (escrowId, releaseType = 'manual') => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/escrow/${escrowId}/release`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ releaseType }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to release escrow funds');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setEscrowTransactions(prev => 
+          prev.map(transaction => 
+            transaction.id === escrowId 
+              ? { ...transaction, status: 'completed', ...data.data }
+              : transaction
+          )
+        );
+        toast.success('Escrow funds released successfully!');
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to release escrow funds');
+      }
+    } catch (error) {
+      console.error('Error releasing escrow funds:', error);
+      toast.error('Failed to release escrow funds');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refundEscrowFunds = async (escrowId, refundReason) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/escrow/${escrowId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ refundReason }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refund escrow funds');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setEscrowTransactions(prev => 
+          prev.map(transaction => 
+            transaction.id === escrowId 
+              ? { ...transaction, status: 'cancelled', ...data.data }
+              : transaction
+          )
+        );
+        toast.success('Escrow funds refunded successfully!');
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Failed to refund escrow funds');
+      }
+    } catch (error) {
+      console.error('Error refunding escrow funds:', error);
+      toast.error('Failed to refund escrow funds');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEscrowTimer = (confirmationDeadline) => {
+    const deadline = new Date(confirmationDeadline);
+    const now = new Date();
+    const timeLeft = deadline.getTime() - now.getTime();
+    
+    if (timeLeft <= 0) {
+      return { expired: true, days: 0, hours: 0, minutes: 0 };
+    }
+    
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { expired: false, days, hours, minutes };
+  };
+
+  const checkAutoRelease = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/escrow/auto-release`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.length > 0) {
+          // Update local state with auto-released transactions
+          setEscrowTransactions(prev => 
+            prev.map(transaction => {
+              const autoReleased = data.data.find(auto => auto.id === transaction.id);
+              return autoReleased ? { ...transaction, status: 'auto_released' } : transaction;
+            })
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auto-release:', error);
+    }
+  };
+
   const value = {
     escrowTransactions,
     loading,
@@ -395,6 +637,13 @@ export const EscrowProvider = ({ children }) => {
     cancelEscrowTransaction,
     getEscrowTransactionsByUser,
     getEscrowTransactions,
+    // New escrow flow functions
+    confirmPropertyPossession,
+    disputeProperty,
+    releaseEscrowFunds,
+    refundEscrowFunds,
+    getEscrowTimer,
+    checkAutoRelease,
   };
 
   return (

@@ -59,47 +59,47 @@ const Header = () => {
                          <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
                 </div>
                 
-                <div className="relative">
-                         <button
-                           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                            className="flex items-center space-x-2 text-white hover:text-brand-orange transition-colors duration-300"
                          >
                            <div className="w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold">
                              {user.firstName?.[0]}{user.lastName?.[0]}
                            </div>
-                         </button>
+                </button>
 
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                      <Link
-                        to="/profile"
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <Link
+                      to="/profile"
                         className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        to="/dashboard"
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      to="/dashboard"
                         className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        Dashboard
-                      </Link>
-                      {user.role === 'admin' && (
-                        <Link
-                          to="/admin"
+                    >
+                      Dashboard
+                    </Link>
+                    {user.role === 'admin' && (
+                      <Link
+                        to="/admin"
                           className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                        >
-                          Admin Panel
-                        </Link>
-                      )}
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                       >
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
+                        Admin Panel
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
               </>
             ) : (
               <div className="flex items-center space-x-4">

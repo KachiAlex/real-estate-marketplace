@@ -33,6 +33,12 @@ import Mortgage from './pages/Mortgage';
 import HelpSupport from './pages/HelpSupport';
 import BillingPayments from './pages/BillingPayments';
 import VendorDashboard from './pages/VendorDashboard';
+import VendorEarnings from './pages/VendorEarnings';
+import VendorTeam from './pages/VendorTeam';
+import VendorContracts from './pages/VendorContracts';
+import VendorProfile from './pages/VendorProfile';
+import VendorNotifications from './pages/VendorNotifications';
+import VendorHelp from './pages/VendorHelp';
 
 function App() {
   return (
@@ -276,22 +282,62 @@ function App() {
                       </div>
                     </ProtectedRoute>
                   } />
-                  <Route path="/vendor/inquiries" element={
+                  <Route path="/vendor/earnings" element={
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <VendorSidebar />
                         <main className="flex-1 ml-64">
-                          <VendorDashboard />
+                          <VendorEarnings />
                         </main>
                       </div>
                     </ProtectedRoute>
                   } />
-                  <Route path="/vendor/analytics" element={
+                  <Route path="/vendor/team" element={
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <VendorSidebar />
                         <main className="flex-1 ml-64">
-                          <VendorDashboard />
+                          <VendorTeam />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/contracts" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorContracts />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/profile" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorProfile />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/notifications" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorNotifications />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/help" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorHelp />
                         </main>
                       </div>
                     </ProtectedRoute>
