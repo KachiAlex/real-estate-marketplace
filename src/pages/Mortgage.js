@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRefresh, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 
 const Mortgage = () => {
   const { user } = useAuth();
@@ -343,7 +343,7 @@ const Mortgage = () => {
             </button>
             
             <button className="p-2 text-gray-500 hover:text-gray-700">
-              <FaRefresh />
+              <FaRedo />
             </button>
           </div>
         </div>
