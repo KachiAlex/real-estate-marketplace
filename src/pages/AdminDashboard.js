@@ -237,7 +237,7 @@ const AdminDashboard = () => {
                         <div className="flex-shrink-0 h-12 w-12">
                           <img
                             className="h-12 w-12 rounded-lg object-cover"
-                            src={property.images[0]?.url || 'https://picsum.photos/100/100'}
+                            src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
                             alt={property.title}
                           />
                         </div>

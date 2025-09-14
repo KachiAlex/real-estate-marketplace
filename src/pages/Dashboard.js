@@ -57,7 +57,7 @@ const Dashboard = () => {
       bedrooms: 3,
       bathrooms: 2,
       area: 210,
-      image: "https://picsum.photos/400/300?random=4",
+      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
       tag: "Hot Deal",
       tagColor: "bg-red-500"
     },
@@ -69,7 +69,7 @@ const Dashboard = () => {
       bedrooms: 4,
       bathrooms: 3,
       area: 350,
-      image: "https://picsum.photos/400/300?random=5",
+      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
       tag: "Exclusive",
       tagColor: "bg-blue-500"
     },
@@ -81,7 +81,7 @@ const Dashboard = () => {
       bedrooms: 2,
       bathrooms: 2,
       area: 180,
-      image: "https://picsum.photos/400/300?random=6",
+      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
       tag: "Premium",
       tagColor: "bg-purple-500"
     }

@@ -122,7 +122,7 @@ const Home = () => {
               <div key={property.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src={property.images?.[0]?.url || 'https://picsum.photos/400/300'}
+                    src={property.images?.[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop'}
                     alt={property.title}
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                   />

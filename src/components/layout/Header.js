@@ -179,7 +179,7 @@ const Header = () => {
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex items-center space-x-2 mb-4">
                     <img
-                      src={user.avatar || 'https://picsum.photos/32/32'}
+                      src={user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'}
                       alt="User"
                       className="w-8 h-8 rounded-full"
                     />
