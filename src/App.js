@@ -7,6 +7,7 @@ import { EscrowProvider } from './contexts/EscrowContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
+import VendorSidebar from './components/layout/VendorSidebar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -31,6 +32,7 @@ import Investment from './pages/Investment';
 import Mortgage from './pages/Mortgage';
 import HelpSupport from './pages/HelpSupport';
 import BillingPayments from './pages/BillingPayments';
+import VendorDashboard from './pages/VendorDashboard';
 
 function App() {
   return (
@@ -238,6 +240,58 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <BillingPayments />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Vendor Routes with Vendor Sidebar */}
+                  <Route path="/vendor/dashboard" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/properties" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/add-property" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <AddProperty />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/inquiries" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/analytics" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorDashboard />
                         </main>
                       </div>
                     </ProtectedRoute>
