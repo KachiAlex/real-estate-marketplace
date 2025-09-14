@@ -14,10 +14,13 @@ import {
   FaCheck,
   FaUpload
 } from 'react-icons/fa';
+import AvatarUpload from '../components/AvatarUpload';
+import { useAuth } from '../contexts/AuthContext';
 
 const VendorProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const { user } = useAuth();
 
   // Mock vendor profile data
   const [profileData, setProfileData] = useState({
@@ -120,18 +123,25 @@ const VendorProfile = () => {
       {/* Profile Overview */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="flex items-center space-x-6">
-          <div className="relative">
-            <img
-              src={profileData.personal.avatar}
-              alt="Profile"
-              className="w-24 h-24 rounded-full object-cover"
-            />
-            {isEditing && (
-              <button className="absolute bottom-0 right-0 w-8 h-8 bg-brand-blue text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
-                <FaCamera className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          <AvatarUpload
+            currentAvatar={profileData.personal.avatar ? { url: profileData.personal.avatar } : null}
+            onAvatarChange={(avatarData) => {
+              if (avatarData) {
+                setProfileData(prev => ({
+                  ...prev,
+                  personal: { ...prev.personal, avatar: avatarData.url }
+                }));
+              } else {
+                setProfileData(prev => ({
+                  ...prev,
+                  personal: { ...prev.personal, avatar: null }
+                }));
+              }
+            }}
+            size="large"
+            disabled={!isEditing}
+            showEditButton={isEditing}
+          />
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-900">
               {profileData.personal.firstName} {profileData.personal.lastName}

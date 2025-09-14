@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import AvatarUpload from '../AvatarUpload';
 import { FaHome, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
 
 const Header = () => {
@@ -62,11 +63,21 @@ const Header = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                           className="flex items-center space-x-2 text-white hover:text-brand-orange transition-colors duration-300"
-                         >
-                           <div className="w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold">
-                             {user.firstName?.[0]}{user.lastName?.[0]}
-                           </div>
+                  className="flex items-center space-x-2 text-white hover:text-brand-orange transition-colors duration-300"
+                >
+                  <div className="w-8 h-8">
+                    {user.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt="User"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </div>
+                    )}
+                  </div>
                 </button>
 
                 {isUserMenuOpen && (

@@ -15,6 +15,7 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from './AuthContext';
 import { db, functions } from '../config/firebase';
+import storageService from '../services/storageService';
 import toast from 'react-hot-toast';
 
 const EscrowContext = createContext();
@@ -307,20 +308,38 @@ export const EscrowProvider = ({ children }) => {
     }
   };
 
-  const uploadDocument = async (transactionId, documentData) => {
+  const uploadDocument = async (transactionId, file, documentType) => {
     try {
       setLoading(true);
       
-      // In a real implementation, this would upload to Firebase Storage
-      // For now, we'll just update the escrow transaction with document info
-      const documentRef = await addDoc(collection(db, 'escrow', transactionId, 'documents'), {
-        ...documentData,
-        uploadedAt: serverTimestamp(),
-        uploadedBy: user?.uid
-      });
+      if (!user) throw new Error('User must be logged in');
       
-      toast.success('Document uploaded successfully!');
-      return { id: documentRef.id, ...documentData };
+      // Upload file to Firebase Storage
+      const uploadResult = await storageService.uploadEscrowDocument(
+        file,
+        transactionId,
+        documentType,
+        user.uid
+      );
+      
+      if (uploadResult.success) {
+        // Save document metadata to Firestore
+        const documentRef = await addDoc(collection(db, 'escrow', transactionId, 'documents'), {
+          name: uploadResult.name,
+          url: uploadResult.url,
+          path: uploadResult.path,
+          size: uploadResult.size,
+          type: uploadResult.type,
+          documentType,
+          uploadedAt: serverTimestamp(),
+          uploadedBy: user.uid
+        });
+        
+        toast.success('Document uploaded successfully!');
+        return { id: documentRef.id, ...uploadResult };
+      } else {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading document:', error);
       toast.error('Failed to upload document');
@@ -525,6 +544,38 @@ export const EscrowProvider = ({ children }) => {
     }
   };
 
+  const getEscrowDocuments = async (escrowId) => {
+    try {
+      const result = await storageService.getEscrowDocuments(escrowId);
+      
+      if (result.success) {
+        return result.files;
+      } else {
+        throw new Error(result.error || 'Failed to fetch documents');
+      }
+    } catch (error) {
+      console.error('Error fetching escrow documents:', error);
+      return [];
+    }
+  };
+
+  const deleteEscrowDocument = async (documentPath) => {
+    try {
+      const result = await storageService.deleteFile(documentPath);
+      
+      if (result.success) {
+        toast.success('Document deleted successfully');
+        return true;
+      } else {
+        throw new Error(result.error || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('Error deleting escrow document:', error);
+      toast.error('Failed to delete document');
+      return false;
+    }
+  };
+
   const value = {
     escrowTransactions,
     loading,
@@ -541,7 +592,9 @@ export const EscrowProvider = ({ children }) => {
     releaseEscrowFunds,
     refundEscrowFunds,
     getEscrowTimer,
-    checkAutoRelease
+    checkAutoRelease,
+    getEscrowDocuments,
+    deleteEscrowDocument
   };
 
   return (

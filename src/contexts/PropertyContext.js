@@ -16,6 +16,8 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import { db } from '../config/firebase';
+import storageService from '../services/storageService';
+import toast from 'react-hot-toast';
 
 const PropertyContext = createContext();
 
@@ -283,6 +285,58 @@ export const PropertyProvider = ({ children }) => {
     }
   }, []);
 
+  // Storage-related functions
+  const uploadPropertyImages = async (files, propertyId) => {
+    try {
+      if (!user) throw new Error('User must be logged in');
+      
+      const result = await storageService.uploadPropertyImages(files, propertyId, user.uid);
+      
+      if (result.success) {
+        toast.success(`${result.successful.length} image(s) uploaded successfully!`);
+        return result.successful;
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading property images:', error);
+      toast.error('Failed to upload images');
+      return null;
+    }
+  };
+
+  const deletePropertyImage = async (imagePath) => {
+    try {
+      const result = await storageService.deleteFile(imagePath);
+      
+      if (result.success) {
+        toast.success('Image deleted successfully');
+        return true;
+      } else {
+        throw new Error(result.error || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('Error deleting property image:', error);
+      toast.error('Failed to delete image');
+      return false;
+    }
+  };
+
+  const getPropertyImages = async (propertyId) => {
+    try {
+      const result = await storageService.getPropertyImages(propertyId);
+      
+      if (result.success) {
+        return result.files;
+      } else {
+        throw new Error(result.error || 'Failed to fetch images');
+      }
+    } catch (error) {
+      console.error('Error fetching property images:', error);
+      return [];
+    }
+  };
+
   const value = {
     properties,
     loading,
@@ -297,7 +351,10 @@ export const PropertyProvider = ({ children }) => {
     fetchUserProperties,
     searchProperties,
     setFilters,
-    setPagination
+    setPagination,
+    uploadPropertyImages,
+    deletePropertyImage,
+    getPropertyImages
   };
 
   return (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
+import PropertyImageUpload from '../components/PropertyImageUpload';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 
 const AddProperty = () => {
@@ -696,36 +697,12 @@ const AddProperty = () => {
                     <FaImage className="mr-2 text-blue-600" />
                     Property Images
                   </h4>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e, 'images')}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload images</p>
-                    </label>
-                  </div>
-                  {imageFiles.length > 0 && (
-                    <div className="space-y-2">
-                      {imageFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index, 'images')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <FaTimes />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <PropertyImageUpload
+                    propertyId={formData.id || 'temp'}
+                    onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                    initialImages={formData.images || []}
+                    maxImages={10}
+                  />
                 </div>
 
                 {/* Video Upload */}
