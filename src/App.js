@@ -29,6 +29,7 @@ import SavedProperties from './pages/SavedProperties';
 import MyInquiries from './pages/MyInquiries';
 import PropertyAlerts from './pages/PropertyAlerts';
 import Messages from './pages/Messages';
+import Investment from './pages/Investment';
 
 function App() {
   return (
@@ -50,6 +51,16 @@ function App() {
                         <Properties />
                       </main>
                     </div>
+                  } />
+                  <Route path="/investment" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Investment />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
                   } />
                   <Route path="/property/:id" element={
                     <div className="flex w-full">

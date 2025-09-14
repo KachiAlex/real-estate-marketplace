@@ -25,14 +25,15 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-  const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: FaHome },
-    { path: '/properties', label: 'Properties', icon: FaBuilding },
-    { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
-    { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
-    { path: '/alerts', label: 'Property Alerts', icon: FaBell },
-    { path: '/messages', label: 'Messages', icon: FaEnvelope },
-  ];
+         const menuItems = [
+           { path: '/dashboard', label: 'Dashboard', icon: FaHome },
+           { path: '/properties', label: 'Properties', icon: FaBuilding },
+           { path: '/investment', label: 'Investment', icon: FaChartLine },
+           { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
+           { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
+           { path: '/alerts', label: 'Property Alerts', icon: FaBell },
+           { path: '/messages', label: 'Messages', icon: FaEnvelope },
+         ];
 
   const accountItems = [
     { path: '/profile', label: 'Profile Settings', icon: FaUser },
