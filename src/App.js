@@ -6,7 +6,6 @@ import { InvestmentProvider } from './contexts/InvestmentContext';
 import { EscrowProvider } from './contexts/EscrowContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
 import Sidebar from './components/layout/Sidebar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -245,7 +244,6 @@ function App() {
                   } />
                 </Routes>
               </div>
-              <Footer />
             </div>
           </EscrowProvider>
         </InvestmentProvider>
