@@ -529,60 +529,161 @@ const Home = () => {
 
       {/* Premium Property Discovery Section */}
       <div className="bg-brand-blue text-white py-16 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-4xl mx-auto">
               Naija Luxury Homes offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
-              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaPlay className="text-2xl text-white" />
+          <div className="flex justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl">
+              <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+                <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaPlay className="text-2xl text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Virtual Tours</h3>
+                <p className="text-gray-300 mb-4">
+                  Experience immersive 3D tours of properties from the comfort of your home. 
+                  Get a realistic feel of spaces before visiting in person.
+                </p>
+                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                  Learn More →
+                </a>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Virtual Tours</h3>
-              <p className="text-gray-300 mb-4">
-                Experience immersive 3D tours of properties from the comfort of your home. 
-                Get a realistic feel of spaces before visiting in person.
-              </p>
-              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
-                Learn More →
-              </a>
-            </div>
 
-            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
-              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaCheck className="text-2xl text-white" />
+              <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+                <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaCheck className="text-2xl text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Verified Properties</h3>
+                <p className="text-gray-300 mb-4">
+                  Every property is verified by our expert team for authenticity and legal compliance. 
+                  Buy with confidence knowing all details are accurate.
+                </p>
+                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                  Learn More →
+                </a>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Verified Properties</h3>
-              <p className="text-gray-300 mb-4">
-                Every property is verified by our expert team for authenticity and legal compliance. 
-                Buy with confidence knowing all details are accurate.
-              </p>
-              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
-                Learn More →
-              </a>
-            </div>
 
-            <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
-              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaChartLine className="text-2xl text-white" />
+              <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
+                <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaChartLine className="text-2xl text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Market Insights</h3>
+                <p className="text-gray-300 mb-4">
+                  Access detailed market analysis and investment reports. 
+                  Make informed decisions with comprehensive property data and trends.
+                </p>
+                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                  Learn More →
+                </a>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Market Insights</h3>
-              <p className="text-gray-300 mb-4">
-                Access detailed market analysis and investment reports. 
-                Make informed decisions with comprehensive property data and trends.
-              </p>
-              <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
-                Learn More →
-              </a>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
+                  <FaBuilding className="text-white text-xl" />
+                </div>
+                <span className="text-2xl font-bold">Naija Luxury Homes</span>
+              </div>
+              <p className="text-gray-400 mb-6">
+                Your trusted partner in finding premium properties across Nigeria. 
+                We connect you with verified luxury homes, apartments, and investment opportunities.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-brand-orange transition-colors">
+                  <span className="text-sm font-bold">f</span>
+                </a>
+                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-brand-orange transition-colors">
+                  <span className="text-sm font-bold">t</span>
+                </a>
+                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-brand-orange transition-colors">
+                  <span className="text-sm font-bold">in</span>
+                </a>
+                <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-brand-orange transition-colors">
+                  <span className="text-sm font-bold">ig</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-3">
+                <li><Link to="/properties" className="text-gray-400 hover:text-white transition-colors">Browse Properties</Link></li>
+                <li><Link to="/mortgage" className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</Link></li>
+                <li><Link to="/investment" className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</Link></li>
+                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link to="/help" className="text-gray-400 hover:text-white transition-colors">Help & Support</Link></li>
+              </ul>
+            </div>
+
+            {/* Property Types */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Property Types</h3>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Luxury Apartments</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Family Houses</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Penthouses</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Beachfront Villas</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Commercial Properties</a></li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <FaMapMarkerAlt className="text-brand-orange mt-1" />
+                  <div>
+                    <p className="text-gray-400">123 Victoria Island</p>
+                    <p className="text-gray-400">Lagos, Nigeria</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-brand-orange">📞</span>
+                  <p className="text-gray-400">+234 800 123 4567</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-brand-orange">✉️</span>
+                  <p className="text-gray-400">info@naijaluxuryhomes.com</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-brand-orange">🕒</span>
+                  <p className="text-gray-400">Mon - Fri: 9:00 AM - 6:00 PM</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className="text-gray-400 text-sm">
+                © 2024 Naija Luxury Homes. All rights reserved.
+              </p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
+                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
