@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft } from 'react-icons/fa';
+import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const EscrowPaymentFlow = () => {
@@ -80,31 +80,91 @@ const EscrowPaymentFlow = () => {
 
   const handleProcessPayment = async () => {
     try {
-      // Validate payment data
-      if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
-        toast.error('Please fill in all payment details');
-        return;
+      // Validate payment data if card payment
+      if (paymentData.paymentMethod === 'card') {
+        if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
+          toast.error('Please fill in all payment details');
+          return;
+        }
       }
 
       setLoading(true);
 
-      // Create escrow transaction
-      const result = await createEscrowTransaction(
-        property.id,
-        property.price,
-        user.id,
-        property.owner?.id || 'seller-1'
-      );
+      // Step 1: Create escrow transaction
+      const escrowData = {
+        propertyId: property.id,
+        buyerId: user.id,
+        buyerName: `${user.firstName} ${user.lastName}`,
+        buyerEmail: user.email,
+        sellerId: property.owner?.id || 'seller-1',
+        sellerName: property.owner ? `${property.owner.firstName} ${property.owner.lastName}` : 'Property Owner',
+        sellerEmail: property.owner?.email || 'owner@example.com',
+        amount: property.price,
+        type: transactionType,
+        paymentMethod: paymentData.paymentMethod
+      };
 
-      if (result.success) {
-        setStep(3);
-        toast.success('Payment processed successfully! Escrow transaction created.');
+      // Create escrow transaction via API
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const escrowResponse = await fetch(`${API_URL}/escrow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(escrowData)
+      });
+
+      const escrowResult = await escrowResponse.json();
+
+      if (!escrowResult.success) {
+        throw new Error(escrowResult.message || 'Failed to create escrow transaction');
+      }
+
+      // Step 2: Initialize Flutterwave payment
+      const paymentResponse = await fetch(`${API_URL}/escrow/payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          escrowId: escrowResult.data.id,
+          paymentMethod: paymentData.paymentMethod
+        })
+      });
+
+      const paymentResult = await paymentResponse.json();
+
+      if (paymentResult.success) {
+        // For demo purposes, simulate successful payment
+        // In production, redirect to Flutterwave: window.location.href = paymentResult.data.payment_url;
+        
+        // Simulate payment verification
+        const verifyResponse = await fetch(`${API_URL}/escrow/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transaction_id: 'demo_' + Date.now(),
+            tx_ref: paymentResult.data.reference,
+            status: 'successful'
+          })
+        });
+
+        const verifyResult = await verifyResponse.json();
+
+        if (verifyResult.success) {
+          setStep(3);
+          toast.success('Payment successful! Funds are now held securely in escrow.');
+        } else {
+          throw new Error('Payment verification failed');
+        }
       } else {
-        toast.error('Payment failed. Please try again.');
+        throw new Error(paymentResult.message || 'Payment initialization failed');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment processing failed');
+      toast.error(`Payment failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -230,9 +290,15 @@ const EscrowPaymentFlow = () => {
               </div>
               
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center">
-                  <FaLock className="text-blue-600 mr-2" />
-                  <span className="text-sm text-blue-800">Secure escrow protection included</span>
+                <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+                  <FaLock className="mr-2" />
+                  Escrow Protection Process
+                </h4>
+                <div className="text-sm text-blue-800 space-y-1">
+                  <p>✅ Your payment is held securely in escrow (not sent to vendor)</p>
+                  <p>✅ Funds are only released after your approval</p>
+                  <p>✅ You can dispute if there are any issues</p>
+                  <p>✅ Full refund protection until you confirm satisfaction</p>
                 </div>
               </div>
               
@@ -372,17 +438,39 @@ const EscrowPaymentFlow = () => {
               
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
               <p className="text-gray-600 mb-6">
-                Your payment has been processed and the funds are now held securely in escrow.
+                Your payment of <strong>₦{calculateTotal().toLocaleString()}</strong> is now held securely in escrow.
               </p>
+              
+              <div className="bg-green-50 p-4 rounded-lg mb-6">
+                <h3 className="font-semibold text-green-900 mb-3 flex items-center">
+                  <FaLock className="mr-2" />
+                  Escrow Protection Active
+                </h3>
+                <div className="text-sm text-green-800 space-y-2">
+                  <div className="flex items-center">
+                    <FaCheckCircle className="mr-2 text-green-600" />
+                    <span><strong>Funds Secured:</strong> Your money is held in escrow (NOT sent to vendor)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FaUserCheck className="mr-2 text-green-600" />
+                    <span><strong>Your Control:</strong> Funds only released after your approval</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FaHandshake className="mr-2 text-green-600" />
+                    <span><strong>Dispute Protection:</strong> Full refund if property doesn't meet expectations</span>
+                  </div>
+                </div>
+              </div>
               
               <div className="bg-blue-50 p-4 rounded-lg mb-6">
                 <h3 className="font-semibold text-blue-900 mb-2">What happens next?</h3>
-                <ul className="text-sm text-blue-800 text-left space-y-1">
-                  <li>• Property documents will be verified</li>
-                  <li>• You'll be contacted to schedule property inspection</li>
-                  <li>• Funds will be released to seller after confirmation</li>
-                  <li>• You'll receive all property ownership documents</li>
-                </ul>
+                <ol className="text-sm text-blue-800 text-left space-y-1">
+                  <li>1. Property documents will be verified by our team</li>
+                  <li>2. You'll be contacted to schedule property inspection</li>
+                  <li>3. <strong>You inspect and approve</strong> the property condition</li>
+                  <li>4. <strong>Only after your approval</strong> - funds released to vendor</li>
+                  <li>5. You receive all property ownership documents</li>
+                </ol>
               </div>
               
               <div className="flex space-x-4">

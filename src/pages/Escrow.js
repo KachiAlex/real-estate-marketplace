@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaShieldAlt, FaCreditCard, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaEye } from 'react-icons/fa';
+import { FaShieldAlt, FaCreditCard, FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaEye, FaLock, FaUserCheck, FaHandshake } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Escrow = () => {
   const navigate = useNavigate();
