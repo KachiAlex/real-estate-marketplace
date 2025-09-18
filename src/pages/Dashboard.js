@@ -22,7 +22,32 @@ const Dashboard = () => {
     navigate('/properties');
   };
 
-  // Mock data for stats
+  const handleQuickAction = (action) => {
+    switch(action) {
+      case 'add-property':
+        navigate('/add-property');
+        break;
+      case 'saved-properties':
+        navigate('/saved-properties');
+        break;
+      case 'inquiries':
+        navigate('/inquiries');
+        break;
+      case 'alerts':
+        navigate('/alerts');
+        break;
+      case 'investments':
+        navigate('/investments');
+        break;
+      case 'escrow':
+        navigate('/escrow');
+        break;
+      default:
+        toast.success(`${action} clicked!`);
+    }
+  };
+
+  // Real data for stats
   const dashboardStats = {
     totalProperties: properties.length,
     savedProperties: 5,
@@ -205,46 +230,63 @@ const Dashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendedProperties.map((property) => (
-              <div key={property.id} className="property-card">
+            {(recentProperties.length > 0 ? recentProperties : mockProperties).map((property) => (
+              <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <img
-                    src={property.image}
+                    src={property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
                     alt={property.title}
-                    className="property-card-image"
+                    className="w-full h-48 object-cover"
                   />
                   {property.tag && (
-                    <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>
+                    <div className={`absolute top-2 left-2 ${property.tagColor || 'bg-orange-500'} text-white px-2 py-1 rounded text-xs font-medium`}>
                       {property.tag}
-              </div>
+                    </div>
                   )}
                   <div className="absolute top-2 right-2 flex space-x-2">
-                    <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
-                    <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
-            </div>
-          </div>
-
-                <div className="property-card-content">
-                  <div className="property-price">
-                    ₦{property.price.toLocaleString()}
+                    <button
+                      onClick={() => toast.success('Property shared!')}
+                      className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
+                    >
+                      <FaShare className="text-white text-sm" />
+                    </button>
+                    <button
+                      onClick={() => toast.success('Added to favorites!')}
+                      className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
+                    >
+                      <FaHeart className="text-white text-sm" />
+                    </button>
                   </div>
-                  <h3 className="property-title">{property.title}</h3>
-                  <p className="property-location">{property.location}</p>
+                </div>
+
+                <div className="p-4">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    ₦{property.price?.toLocaleString()}
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{property.location}</p>
                   
-                  <div className="property-features">
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                     <div className="flex items-center space-x-1">
                       <FaBed />
-                      <span>{property.bedrooms} Bedrooms</span>
-                </div>
+                      <span>{property.bedrooms || property.details?.bedrooms || 0} Bedrooms</span>
+                    </div>
                     <div className="flex items-center space-x-1">
                       <FaBath />
-                      <span>{property.bathrooms} Bathrooms</span>
-              </div>
+                      <span>{property.bathrooms || property.details?.bathrooms || 0} Bathrooms</span>
+                    </div>
                     <div className="flex items-center space-x-1">
                       <FaRuler />
-                      <span>{property.area}m² Area</span>
-              </div>
-            </div>
+                      <span>{property.area || property.details?.sqft || 0}m² Area</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleViewProperty(property.id)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  >
+                    View Details →
+                  </button>
                 </div>
               </div>
             ))}
