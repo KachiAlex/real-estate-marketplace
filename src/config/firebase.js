@@ -6,13 +6,13 @@ import { getFunctions } from 'firebase/functions';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCKPiM3fjQWqxrdN4UoyfLxsJKNk6h8lIU",
   authDomain: "real-estate-marketplace-37544.firebaseapp.com",
   projectId: "real-estate-marketplace-37544",
-  storageBucket: "real-estate-marketplace-37544.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdefghijklmnopqrstuvwxyz",
-  measurementId: "G-XXXXXXXXXX"
+  storageBucket: "real-estate-marketplace-37544.firebasestorage.app",
+  messagingSenderId: "759115682573",
+  appId: "1:759115682573:web:2dbddf9ba6dac14764d644",
+  measurementId: "G-BMDCTD4W5Q"
 };
 
 // Initialize Firebase

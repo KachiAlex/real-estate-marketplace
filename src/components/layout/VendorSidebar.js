@@ -1,5 +1,7 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useVendor } from '../../contexts/VendorContext';
 import { 
   FaHome, 
   FaChartLine, 
@@ -16,6 +18,9 @@ import {
 
 const VendorSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { isAgent, isPropertyOwner, documentStatus } = useVendor();
   
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
@@ -34,6 +39,23 @@ const VendorSidebar = () => {
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleNotifications = () => {
+    navigate('/vendor/notifications');
+  };
+
+  const handleHelpSupport = () => {
+    navigate('/vendor/help');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -107,25 +129,54 @@ const VendorSidebar = () => {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Vendor Account</p>
-              <p className="text-xs text-gray-500 mt-1">Premium Member</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {isAgent && (
+                  <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                    Agent
+                  </span>
+                )}
+                {isPropertyOwner && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    Owner
+                  </span>
+                )}
+                {isAgent && documentStatus && (
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    documentStatus.attestationStatus === 'verified' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {documentStatus.attestationStatus === 'verified' ? 'Verified' : 'Pending'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
         
         {/* Quick Actions */}
         <div className="mb-4 space-y-2">
-          <button className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <button 
+            onClick={handleNotifications}
+            className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <FaBell className="h-4 w-4" />
             <span>Notifications</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <button 
+            onClick={handleHelpSupport}
+            className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <FaQuestionCircle className="h-4 w-4" />
             <span>Help & Support</span>
           </button>
         </div>
         
         {/* Sign Out Button */}
-        <button className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <button 
+          onClick={handleSignOut}
+          className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
           <FaSignOutAlt className="h-4 w-4" />
           <span>Sign Out</span>
         </button>

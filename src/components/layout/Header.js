@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import AvatarUpload from '../AvatarUpload';
-import { FaHome, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isBuyer, isVendor, switchRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -81,7 +80,32 @@ const Header = () => {
                 </button>
 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    {/* Active role badge and switcher */}
+                    <div className="px-4 pb-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-500">Active Role</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {user?.activeRole === 'vendor' ? 'Vendor' : 'Buyer'}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => switchRole('buyer').then(() => setIsUserMenuOpen(false))}
+                          className={`text-xs px-2 py-1 rounded border ${isBuyer ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          disabled={!user?.roles?.includes('buyer')}
+                        >
+                          Buyer
+                        </button>
+                        <button
+                          onClick={() => switchRole('vendor').then(() => setIsUserMenuOpen(false))}
+                          className={`text-xs px-2 py-1 rounded border ${isVendor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          disabled={!user?.roles?.includes('vendor')}
+                        >
+                          Vendor
+                        </button>
+                      </div>
+                    </div>
                     <Link
                       to="/profile"
                         className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"

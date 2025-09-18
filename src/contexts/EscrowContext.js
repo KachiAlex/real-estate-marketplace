@@ -1,22 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db, storage } from '../config/firebase';
 import { 
   collection, 
-  query, 
-  where, 
-  orderBy, 
-  getDocs, 
   doc, 
   addDoc, 
   updateDoc, 
+  getDocs, 
   getDoc,
-  serverTimestamp,
-  onSnapshot 
+  query, 
+  where, 
+  orderBy,
+  onSnapshot,
+  serverTimestamp 
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from './AuthContext';
-import { db, functions } from '../config/firebase';
-import storageService from '../services/storageService';
-import toast from 'react-hot-toast';
 
 const EscrowContext = createContext();
 
@@ -29,572 +27,335 @@ export const useEscrow = () => {
 };
 
 export const EscrowProvider = ({ children }) => {
+  const { user } = useAuth();
   const [escrowTransactions, setEscrowTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const { user } = useAuth();
+  const [error, setError] = useState(null);
 
-  // Mock escrow transactions for demo
-  const mockEscrowTransactions = [
-    {
-      id: '1',
-      propertyId: 'prop_1',
-      propertyTitle: 'Luxury Villa in Ikoyi',
-      propertyImage: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400',
-      buyerId: 'buyer_1',
-      buyerName: 'John Doe',
-      buyerEmail: 'john@example.com',
-      sellerId: 'seller_1',
-      sellerName: 'Jane Smith',
-      sellerEmail: 'jane@example.com',
-      amount: 150000000,
-      currency: 'NGN',
-      status: 'funded',
-      paymentDate: '2024-01-15T10:30:00Z',
-      confirmationDeadline: '2024-01-22T10:30:00Z',
-      createdAt: '2024-01-15T10:00:00Z',
-      flutterwaveReference: 'ESCROW_1_1705312800000',
-      flutterwaveTransactionId: 'FLW_TXN_123456789'
-    },
-    {
-      id: '2',
-      propertyId: 'prop_2',
-      propertyTitle: 'Modern Apartment in Victoria Island',
-      propertyImage: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400',
-      buyerId: 'buyer_2',
-      buyerName: 'Alice Johnson',
-      buyerEmail: 'alice@example.com',
-      sellerId: 'seller_2',
-      sellerName: 'Bob Wilson',
-      sellerEmail: 'bob@example.com',
-      amount: 85000000,
-      currency: 'NGN',
-      status: 'in_escrow',
-      paymentDate: '2024-01-10T14:20:00Z',
-      confirmationDeadline: '2024-01-17T14:20:00Z',
-      createdAt: '2024-01-10T14:00:00Z',
-      flutterwaveReference: 'ESCROW_2_1704892800000',
-      flutterwaveTransactionId: 'FLW_TXN_987654321'
-    },
-    {
-      id: '3',
-      propertyId: 'prop_3',
-      propertyTitle: 'Penthouse in Lekki',
-      propertyImage: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400',
-      buyerId: 'buyer_3',
-      buyerName: 'Mike Brown',
-      buyerEmail: 'mike@example.com',
-      sellerId: 'seller_3',
-      sellerName: 'Sarah Davis',
-      sellerEmail: 'sarah@example.com',
-      amount: 200000000,
-      currency: 'NGN',
-      status: 'buyer_confirmed',
-      paymentDate: '2024-01-05T09:15:00Z',
-      confirmationDeadline: '2024-01-12T09:15:00Z',
-      createdAt: '2024-01-05T09:00:00Z',
-      flutterwaveReference: 'ESCROW_3_1704441600000',
-      flutterwaveTransactionId: 'FLW_TXN_456789123'
-    }
-  ];
-
-  useEffect(() => {
-    setEscrowTransactions(mockEscrowTransactions);
-  }, []);
-
-  const createEscrowTransaction = async (transactionData) => {
+  // Create escrow transaction for investment
+  const createEscrowTransaction = async (investmentId, amount, buyerId, vendorId) => {
     try {
       setLoading(true);
-      if (!user) throw new Error('User must be logged in');
+      setError(null);
 
       const escrowData = {
-        ...transactionData,
-        buyerId: user.uid,
-        buyerName: user.displayName || `${user.firstName} ${user.lastName}`,
-        buyerEmail: user.email,
-        status: 'pending',
+        investmentId,
+        amount,
+        buyerId,
+        vendorId,
+        status: 'pending_payment', // pending_payment, payment_received, documents_uploaded, buyer_confirmed, funds_released, completed, failed
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        confirmationDeadline: null, // Will be set after payment
-        paymentDate: null,
-        disputeReason: null,
-        adminNotes: null,
-        autoReleaseTriggered: false
+        // Investment-specific fields
+        type: 'investment',
+        propertyDocuments: null,
+        documentVerificationStatus: 'pending',
+        roiAmount: null,
+        roiDueDate: null,
+        agreementTerms: null
       };
 
-      const docRef = await addDoc(collection(db, 'escrow'), escrowData);
-      const newTransaction = { id: docRef.id, ...escrowData };
+      const docRef = await addDoc(collection(db, 'escrowTransactions'), escrowData);
       
-      setEscrowTransactions(prev => [newTransaction, ...prev]);
-      toast.success('Escrow transaction created successfully!');
-      return newTransaction;
-    } catch (error) {
-      console.error('Error creating escrow transaction:', error);
-      toast.error('Failed to create escrow transaction');
-      return null;
+      return docRef.id;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const initiatePayment = async (escrowId, paymentMethod = 'card') => {
+  // Upload property documents (deed, etc.)
+  const uploadPropertyDocuments = async (escrowId, documents) => {
     try {
-      setPaymentLoading(true);
-      
-      // Get escrow transaction details
-      const escrowDoc = await getDoc(doc(db, 'escrow', escrowId));
-      if (!escrowDoc.exists()) {
-        throw new Error('Escrow transaction not found');
-      }
-      
-      const escrowData = escrowDoc.data();
-      
-      // Generate Flutterwave payment data
-      const paymentData = {
-        tx_ref: `ESCROW_${escrowId}_${Date.now()}`,
-        amount: escrowData.totalAmount,
-        currency: escrowData.currency,
-        redirect_url: `${window.location.origin}/escrow/verify`,
-        customer: {
-          email: escrowData.buyerEmail,
-          name: escrowData.buyerName,
-          phone_number: 'N/A'
-        },
-        customizations: {
-          title: 'Property Escrow Payment',
-          description: `Payment for ${escrowData.propertyTitle}`,
-          logo: 'https://naijaluxuryhomes.com/logo.png'
-        },
-        meta: {
-          escrow_id: escrowId,
-          property_id: escrowData.propertyId,
-          buyer_id: escrowData.buyerId,
-          seller_id: escrowData.sellerId
-        }
-      };
+      setLoading(true);
+      setError(null);
 
-      // Update escrow with Flutterwave reference
-      await updateDoc(doc(db, 'escrow', escrowId), {
-        flutterwaveReference: paymentData.tx_ref,
+      const uploadedDocuments = [];
+      
+      for (const doc of documents) {
+        const fileName = `escrow/${escrowId}/${doc.name}`;
+        const storageRef = ref(storage, fileName);
+        
+        await uploadBytes(storageRef, doc.file);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        uploadedDocuments.push({
+          name: doc.name,
+          type: doc.type,
+          url: downloadURL,
+          uploadedAt: serverTimestamp()
+        });
+      }
+
+      // Update escrow transaction with document URLs
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        propertyDocuments: uploadedDocuments,
+        documentVerificationStatus: 'uploaded',
+        status: 'documents_uploaded',
         updatedAt: serverTimestamp()
       });
 
-      // In production, this would make a real API call to Flutterwave
-      const mockFlutterwaveResponse = {
-        status: 'success',
-        message: 'Payment initiated',
-        data: {
-          link: `https://checkout.flutterwave.com/v3/hosted/pay/${paymentData.tx_ref}`,
-          reference: paymentData.tx_ref,
-          amount: paymentData.amount,
-          currency: paymentData.currency
-        }
-      };
-
-      // Redirect to Flutterwave payment page
-      window.location.href = mockFlutterwaveResponse.data.link;
-      return mockFlutterwaveResponse.data;
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast.error('Failed to initiate payment');
-      return null;
+      return uploadedDocuments;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
-      setPaymentLoading(false);
+      setLoading(false);
     }
   };
 
-  const verifyPayment = async (transactionId, txRef, status) => {
-    try {
-      setPaymentLoading(true);
-      
-      // Find escrow transaction by Flutterwave reference
-      const escrowQuery = query(
-        collection(db, 'escrow'),
-        where('flutterwaveReference', '==', txRef)
-      );
-      const querySnapshot = await getDocs(escrowQuery);
-      
-      if (querySnapshot.empty) {
-        throw new Error('Escrow transaction not found');
-      }
-      
-      const escrowDoc = querySnapshot.docs[0];
-      const escrowData = escrowDoc.data();
-      
-      if (status === 'successful') {
-        // Update escrow transaction status
-        const confirmationDeadline = new Date();
-        confirmationDeadline.setDate(confirmationDeadline.getDate() + 7); // 7 days from now
-        
-        await updateDoc(escrowDoc.ref, {
-          status: 'funded',
-          flutterwaveTransactionId: transactionId,
-          paymentDate: serverTimestamp(),
-          confirmationDeadline: confirmationDeadline,
-          updatedAt: serverTimestamp()
-        });
-        
-        // Update local state
-        setEscrowTransactions(prev => 
-          prev.map(transaction => 
-            transaction.id === escrowDoc.id 
-              ? { ...transaction, status: 'funded' }
-              : transaction
-          )
-        );
-        toast.success('Payment verified successfully!');
-        return { success: true, escrow_id: escrowDoc.id, status: 'funded' };
-      } else {
-        // Payment failed
-        await updateDoc(escrowDoc.ref, {
-          status: 'failed',
-          updatedAt: serverTimestamp()
-        });
-        throw new Error('Payment verification failed');
-      }
-    } catch (error) {
-      console.error('Error verifying payment:', error);
-      toast.error('Failed to verify payment');
-      return null;
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
-
-  const getEscrowTransaction = async (id) => {
+  // Verify documents (admin action)
+  const verifyDocuments = async (escrowId, verificationStatus, adminNotes = '') => {
     try {
       setLoading(true);
-      const escrowDoc = await getDoc(doc(db, 'escrow', id));
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        documentVerificationStatus: verificationStatus,
+        adminNotes,
+        verifiedAt: serverTimestamp(),
+        verifiedBy: user.uid,
+        updatedAt: serverTimestamp()
+      });
+
+      // If documents are verified, notify buyer
+      if (verificationStatus === 'verified') {
+        await updateDoc(escrowRef, {
+          status: 'documents_verified',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Buyer confirms payment after document verification
+  const confirmPayment = async (escrowId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        status: 'buyer_confirmed',
+        buyerConfirmedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Release funds to vendor
+  const releaseFunds = async (escrowId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        status: 'funds_released',
+        fundsReleasedAt: serverTimestamp(),
+        releasedBy: user.uid,
+        updatedAt: serverTimestamp()
+      });
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Vendor pays ROI to buyer
+  const recordROIPayment = async (escrowId, roiAmount, paymentProof) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        roiAmount,
+        roiPaidAt: serverTimestamp(),
+        paymentProof,
+        status: 'roi_paid',
+        updatedAt: serverTimestamp()
+      });
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Complete transaction (return documents to vendor)
+  const completeTransaction = async (escrowId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        status: 'completed',
+        completedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle vendor default (transfer property to buyer)
+  const handleVendorDefault = async (escrowId, reason) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      await updateDoc(escrowRef, {
+        status: 'vendor_default',
+        defaultReason: reason,
+        defaultHandledAt: serverTimestamp(),
+        handledBy: user.uid,
+        updatedAt: serverTimestamp()
+      });
+
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get escrow transactions for user
+  const getEscrowTransactions = async (userId, userType) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      let q;
+      if (userType === 'buyer') {
+        q = query(
+          collection(db, 'escrowTransactions'),
+          where('buyerId', '==', userId),
+          orderBy('createdAt', 'desc')
+        );
+      } else if (userType === 'vendor') {
+        q = query(
+          collection(db, 'escrowTransactions'),
+          where('vendorId', '==', userId),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        // Admin - get all transactions
+        q = query(
+          collection(db, 'escrowTransactions'),
+          orderBy('createdAt', 'desc')
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+      const transactions = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setEscrowTransactions(transactions);
+      return transactions;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get single escrow transaction
+  const getEscrowTransaction = async (escrowId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const escrowRef = doc(db, 'escrowTransactions', escrowId);
+      const escrowDoc = await getDoc(escrowRef);
       
       if (escrowDoc.exists()) {
         return { id: escrowDoc.id, ...escrowDoc.data() };
       } else {
         throw new Error('Escrow transaction not found');
       }
-    } catch (error) {
-      console.error('Error fetching escrow transaction:', error);
-      toast.error('Failed to load escrow transaction details');
-      return null;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateEscrowStatus = async (id, status, notes = '') => {
-    try {
-      setLoading(true);
-      
-      await updateDoc(doc(db, 'escrow', id), {
-        status,
-        notes,
-        updatedAt: serverTimestamp()
-      });
-      
-      setEscrowTransactions(prev => 
-        prev.map(transaction => 
-          transaction.id === id 
-            ? { ...transaction, status, notes }
-            : transaction
-        )
+  // Real-time listener for escrow transactions
+  useEffect(() => {
+    if (!user) return;
+
+    let q;
+    if (user.role === 'admin') {
+      q = query(
+        collection(db, 'escrowTransactions'),
+        orderBy('createdAt', 'desc')
       );
-      toast.success('Escrow status updated successfully!');
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating escrow status:', error);
-      toast.error('Failed to update escrow status');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const uploadDocument = async (transactionId, file, documentType) => {
-    try {
-      setLoading(true);
-      
-      if (!user) throw new Error('User must be logged in');
-      
-      // Upload file to Firebase Storage
-      const uploadResult = await storageService.uploadEscrowDocument(
-        file,
-        transactionId,
-        documentType,
-        user.uid
+    } else {
+      q = query(
+        collection(db, 'escrowTransactions'),
+        where(user.role === 'buyer' ? 'buyerId' : 'vendorId', '==', user.uid),
+        orderBy('createdAt', 'desc')
       );
-      
-      if (uploadResult.success) {
-        // Save document metadata to Firestore
-        const documentRef = await addDoc(collection(db, 'escrow', transactionId, 'documents'), {
-          name: uploadResult.name,
-          url: uploadResult.url,
-          path: uploadResult.path,
-          size: uploadResult.size,
-          type: uploadResult.type,
-          documentType,
-          uploadedAt: serverTimestamp(),
-          uploadedBy: user.uid
-        });
-        
-        toast.success('Document uploaded successfully!');
-        return { id: documentRef.id, ...uploadResult };
-      } else {
-        throw new Error(uploadResult.error || 'Upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Failed to upload document');
-      return null;
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const completeMilestone = async (transactionId, milestoneName) => {
-    try {
-      setLoading(true);
-      
-      // Update milestone in escrow transaction
-      const escrowRef = doc(db, 'escrow', transactionId);
-      const escrowDoc = await getDoc(escrowRef);
-      
-      if (escrowDoc.exists()) {
-        const currentData = escrowDoc.data();
-        const milestones = currentData.milestones || {};
-        milestones[milestoneName] = {
-          completed: true,
-          completedAt: serverTimestamp(),
-          completedBy: user?.uid
-        };
-        
-        await updateDoc(escrowRef, {
-          milestones,
-          updatedAt: serverTimestamp()
-        });
-        
-        toast.success('Milestone completed successfully!');
-        return { success: true };
-      } else {
-        throw new Error('Escrow transaction not found');
-      }
-    } catch (error) {
-      console.error('Error completing milestone:', error);
-      toast.error('Failed to complete milestone');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const transactions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setEscrowTransactions(transactions);
+    });
 
-  // New escrow flow functions
-  const confirmPropertyPossession = async (escrowId, confirmationData) => {
-    try {
-      setLoading(true);
-      const confirmProperty = httpsCallable(functions, 'confirmProperty');
-      const result = await confirmProperty({
-        escrowId,
-        confirmationData
-      });
-
-      if (result.data.success) {
-        setEscrowTransactions(prev => 
-          prev.map(transaction => 
-            transaction.id === escrowId 
-              ? { ...transaction, status: 'buyer_confirmed' }
-              : transaction
-          )
-        );
-        toast.success('Property possession confirmed! Funds will be released to vendor.');
-        return result.data;
-      } else {
-        throw new Error(result.data.message || 'Failed to confirm property possession');
-      }
-    } catch (error) {
-      console.error('Error confirming property possession:', error);
-      toast.error('Failed to confirm property possession');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const disputeProperty = async (escrowId, disputeData) => {
-    try {
-      setLoading(true);
-      const fileDispute = httpsCallable(functions, 'fileDispute');
-      const result = await fileDispute({
-        escrowId,
-        disputeData
-      });
-
-      if (result.data.success) {
-        setEscrowTransactions(prev => 
-          prev.map(transaction => 
-            transaction.id === escrowId 
-              ? { ...transaction, status: 'disputed', disputeReason: disputeData.reason }
-              : transaction
-          )
-        );
-        toast.success('Dispute filed successfully! Admin will review your case.');
-        return result.data;
-      } else {
-        throw new Error(result.data.message || 'Failed to file dispute');
-      }
-    } catch (error) {
-      console.error('Error filing dispute:', error);
-      toast.error('Failed to file dispute');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const releaseEscrowFunds = async (escrowId, releaseType = 'manual') => {
-    try {
-      setLoading(true);
-      
-      await updateDoc(doc(db, 'escrow', escrowId), {
-        status: 'completed',
-        releaseType,
-        releasedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      
-      setEscrowTransactions(prev => 
-        prev.map(transaction => 
-          transaction.id === escrowId 
-            ? { ...transaction, status: 'completed' }
-            : transaction
-        )
-      );
-      toast.success('Funds released successfully!');
-      return { success: true };
-    } catch (error) {
-      console.error('Error releasing funds:', error);
-      toast.error('Failed to release funds');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refundEscrowFunds = async (escrowId, refundReason = '') => {
-    try {
-      setLoading(true);
-      
-      await updateDoc(doc(db, 'escrow', escrowId), {
-        status: 'refunded',
-        refundReason,
-        refundedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      
-      setEscrowTransactions(prev => 
-        prev.map(transaction => 
-          transaction.id === escrowId 
-            ? { ...transaction, status: 'refunded' }
-            : transaction
-        )
-      );
-      toast.success('Funds refunded successfully!');
-      return { success: true };
-    } catch (error) {
-      console.error('Error refunding funds:', error);
-      toast.error('Failed to refund funds');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getEscrowTimer = (confirmationDeadline) => {
-    if (!confirmationDeadline) return null;
-    
-    const deadline = new Date(confirmationDeadline);
-    const now = new Date();
-    const timeLeft = deadline.getTime() - now.getTime();
-    
-    if (timeLeft <= 0) return { expired: true, days: 0, hours: 0, minutes: 0 };
-    
-    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return { expired: false, days, hours, minutes };
-  };
-
-  const checkAutoRelease = async () => {
-    try {
-      const now = new Date();
-      const expiredTransactions = escrowTransactions.filter(transaction => {
-        if (transaction.status !== 'in_escrow') return false;
-        if (!transaction.confirmationDeadline) return false;
-        
-        const deadline = new Date(transaction.confirmationDeadline);
-        return deadline <= now;
-      });
-
-      for (const transaction of expiredTransactions) {
-        await releaseEscrowFunds(transaction.id, 'auto');
-      }
-
-      return expiredTransactions.length;
-    } catch (error) {
-      console.error('Error checking auto-release:', error);
-      return 0;
-    }
-  };
-
-  const getEscrowDocuments = async (escrowId) => {
-    try {
-      const result = await storageService.getEscrowDocuments(escrowId);
-      
-      if (result.success) {
-        return result.files;
-      } else {
-        throw new Error(result.error || 'Failed to fetch documents');
-      }
-    } catch (error) {
-      console.error('Error fetching escrow documents:', error);
-      return [];
-    }
-  };
-
-  const deleteEscrowDocument = async (documentPath) => {
-    try {
-      const result = await storageService.deleteFile(documentPath);
-      
-      if (result.success) {
-        toast.success('Document deleted successfully');
-        return true;
-      } else {
-        throw new Error(result.error || 'Delete failed');
-      }
-    } catch (error) {
-      console.error('Error deleting escrow document:', error);
-      toast.error('Failed to delete document');
-      return false;
-    }
-  };
+    return () => unsubscribe();
+  }, [user]);
 
   const value = {
     escrowTransactions,
     loading,
-    paymentLoading,
+    error,
     createEscrowTransaction,
-    initiatePayment,
-    verifyPayment,
-    getEscrowTransaction,
-    updateEscrowStatus,
-    uploadDocument,
-    completeMilestone,
-    confirmPropertyPossession,
-    disputeProperty,
-    releaseEscrowFunds,
-    refundEscrowFunds,
-    getEscrowTimer,
-    checkAutoRelease,
-    getEscrowDocuments,
-    deleteEscrowDocument
+    uploadPropertyDocuments,
+    verifyDocuments,
+    confirmPayment,
+    releaseFunds,
+    recordROIPayment,
+    completeTransaction,
+    handleVendorDefault,
+    getEscrowTransactions,
+    getEscrowTransaction
   };
 
   return (

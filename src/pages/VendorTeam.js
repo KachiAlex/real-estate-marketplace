@@ -16,6 +16,21 @@ const VendorTeam = () => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [editingMember, setEditingMember] = useState(null);
+
+  // Team management handlers
+  const handleEditMember = (member) => {
+    setEditingMember(member);
+    // You can open an edit modal or navigate to edit page
+    console.log('Edit member:', member.id);
+  };
+
+  const handleRemoveMember = (member) => {
+    if (window.confirm(`Are you sure you want to remove ${member.name} from the team?`)) {
+      console.log('Remove member:', member.id);
+      // You can implement member removal here
+    }
+  };
 
   // Mock team data
   const teamMembers = [
@@ -238,10 +253,18 @@ const VendorTeam = () => {
                   {member.status}
                 </span>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                  <button 
+                    onClick={() => handleEditMember(member)}
+                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Edit Member"
+                  >
                     <FaEdit className="h-4 w-4" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                  <button 
+                    onClick={() => handleRemoveMember(member)}
+                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                    title="Remove Member"
+                  >
                     <FaTrash className="h-4 w-4" />
                   </button>
                 </div>

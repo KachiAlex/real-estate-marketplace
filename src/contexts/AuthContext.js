@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
@@ -38,6 +38,8 @@ export const AuthProvider = ({ children }) => {
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
+            roles: userData?.roles || ['buyer'],
+            activeRole: userData?.activeRole || 'buyer',
             ...userData
           };
           
@@ -60,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       setLoading(true);
 
-      const { email, password, firstName, lastName, role = 'user' } = userData;
+      const { email, password, firstName, lastName } = userData;
       
       // Create user with Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -78,7 +80,8 @@ export const AuthProvider = ({ children }) => {
         firstName,
         lastName,
         displayName: `${firstName} ${lastName}`,
-        role,
+        roles: ['buyer'],
+        activeRole: 'buyer',
         avatar: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=1e40af&color=fff`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -114,6 +117,8 @@ export const AuthProvider = ({ children }) => {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
+        roles: userData?.roles || ['buyer'],
+        activeRole: userData?.activeRole || 'buyer',
         ...userData
       };
 
@@ -177,6 +182,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Role helpers and switching
+  const isBuyer = user?.activeRole === 'buyer';
+  const isVendor = user?.activeRole === 'vendor';
+
+  const switchRole = async (nextRole) => {
+    if (!user) throw new Error('No user logged in');
+    if (!user.roles?.includes(nextRole)) {
+      throw new Error('Role not assigned to this account');
+    }
+    if (user.activeRole === nextRole) return { success: true };
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, { activeRole: nextRole, updatedAt: new Date().toISOString() });
+    setUser(prev => ({ ...prev, activeRole: nextRole }));
+    return { success: true };
+  };
+
   const value = {
     user,
     loading,
@@ -184,7 +205,10 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
-    updateUserProfile
+    updateUserProfile,
+    isBuyer,
+    isVendor,
+    switchRole
   };
 
   return (

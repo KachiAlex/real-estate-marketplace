@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
 import { EscrowProvider } from './contexts/EscrowContext';
+import { VendorProvider } from './contexts/VendorContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -21,6 +22,9 @@ import About from './pages/About';
 import Escrow from './pages/Escrow';
 import Investments from './pages/Investments';
 import InvestmentDetail from './pages/InvestmentDetail';
+import InvestmentOpportunities from './pages/InvestmentOpportunities';
+import InvestmentCompanyDashboard from './pages/InvestmentCompanyDashboard';
+import EscrowTransaction from './pages/EscrowTransaction';
 import InvestorDashboard from './pages/InvestorDashboard';
 import Mortgages from './pages/Mortgages';
 import SearchResults from './pages/SearchResults';
@@ -43,12 +47,13 @@ import VendorHelp from './pages/VendorHelp';
 function App() {
   return (
     <AuthProvider>
-      <PropertyProvider>
-        <InvestmentProvider>
-          <EscrowProvider>
+      <VendorProvider>
+        <PropertyProvider>
+          <InvestmentProvider>
+            <EscrowProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
-              <div className="flex flex-grow">
+              <div className="flex flex-grow w-full">
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
@@ -160,6 +165,16 @@ function App() {
                       </div>
                     </ProtectedRoute>
                   } />
+                  <Route path="/investment-opportunities" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <InvestmentOpportunities />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/investor-dashboard" element={
                     <ProtectedRoute>
                       <div className="flex w-full">
@@ -176,6 +191,16 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <InvestmentDetail />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/escrow/:id" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <EscrowTransaction />
                         </main>
                       </div>
                     </ProtectedRoute>
@@ -246,6 +271,18 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <BillingPayments />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Investment Company Routes */}
+                  <Route path="/investment-company/dashboard" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <InvestmentCompanyDashboard />
                         </main>
                       </div>
                     </ProtectedRoute>
@@ -345,9 +382,10 @@ function App() {
                 </Routes>
               </div>
             </div>
-          </EscrowProvider>
-        </InvestmentProvider>
-      </PropertyProvider>
+            </EscrowProvider>
+          </InvestmentProvider>
+        </PropertyProvider>
+      </VendorProvider>
     </AuthProvider>
   );
 }

@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useVendor } from '../contexts/VendorContext';
 import PropertyImageUpload from '../components/PropertyImageUpload';
+import AgentPropertyListing from '../components/AgentPropertyListing';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 
 const AddProperty = () => {
   const navigate = useNavigate();
   const { createProperty } = useProperty();
   const { user } = useAuth();
+  const { isAgent, isPropertyOwner, checkDocumentStatus, uploadAgentDocument } = useVendor();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -56,10 +59,42 @@ const AddProperty = () => {
   const [imageFiles, setImageFiles] = useState([]);
   const [videoFiles, setVideoFiles] = useState([]);
   const [documentFiles, setDocumentFiles] = useState([]);
+  const [isListingAsAgent, setIsListingAsAgent] = useState(false);
+  const [attestationLetter, setAttestationLetter] = useState(null);
+  const [documentStatus, setDocumentStatus] = useState(null);
 
   const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'];
   const propertyStatuses = ['for-sale', 'for-rent', 'for-lease'];
   const commonAmenities = ['Parking', 'Garden', 'Balcony', 'Pool', 'Gym', 'Security', 'Air Conditioning', 'Heating', 'Hardwood Floors', 'Fireplace', 'Walk-in Closet', 'Patio', 'High-Speed Internet'];
+
+  // Check document status on component mount
+  useEffect(() => {
+    if (isAgent) {
+      const status = checkDocumentStatus();
+      setDocumentStatus(status);
+    }
+  }, [isAgent, checkDocumentStatus]);
+
+  const handleAttestationUpload = async (file) => {
+    try {
+      const result = await uploadAgentDocument({
+        type: 'attestation_letter',
+        file: file,
+        propertyId: null, // Will be set when property is created
+        description: 'Letter of attestation for property listing'
+      });
+      
+      if (result.success) {
+        // Refresh document status
+        const status = checkDocumentStatus();
+        setDocumentStatus(status);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error uploading attestation letter:', error);
+      return { success: false, error: error.message };
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -214,6 +249,16 @@ const AddProperty = () => {
     if (!formData.details.bedrooms) newErrors['details.bedrooms'] = 'Number of bedrooms is required';
     if (!formData.details.bathrooms) newErrors['details.bathrooms'] = 'Number of bathrooms is required';
     if (!formData.details.sqft) newErrors['details.sqft'] = 'Square footage is required';
+    
+    // Additional validation for agents
+    if (isListingAsAgent && isAgent) {
+      if (!documentStatus?.hasAttestationLetter) {
+        newErrors.attestationLetter = 'Attestation letter is required for agents';
+      } else if (documentStatus.attestationStatus !== 'verified') {
+        newErrors.attestationLetter = 'Attestation letter must be verified by admin before listing properties';
+      }
+    }
+    
     return newErrors;
   };
 
@@ -240,6 +285,12 @@ const AddProperty = () => {
       const propertyData = {
         ...formData,
         price: parseFloat(formData.price),
+        vendorId: user.uid,
+        vendorName: user.displayName || user.email,
+        isAgentListing: isListingAsAgent,
+        agentId: isListingAsAgent ? user.uid : null,
+        createdAt: new Date(),
+        status: isListingAsAgent ? 'pending_verification' : 'pending', // Agent listings need extra verification
         details: {
           ...formData.details,
           bedrooms: parseInt(formData.details.bedrooms),
@@ -285,6 +336,19 @@ const AddProperty = () => {
                 <p className="font-medium">{errors.general}</p>
               </div>
             )}
+
+            {/* Agent/Owner Selection */}
+            <AgentPropertyListing
+              isAgent={isAgent}
+              isPropertyOwner={isPropertyOwner}
+              isListingAsAgent={isListingAsAgent}
+              setIsListingAsAgent={setIsListingAsAgent}
+              attestationLetter={attestationLetter}
+              setAttestationLetter={setAttestationLetter}
+              documentStatus={documentStatus}
+              onAttestationUpload={handleAttestationUpload}
+              errors={errors}
+            />
 
             {/* Basic Information */}
             <div className="space-y-6">

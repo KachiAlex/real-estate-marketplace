@@ -18,6 +18,44 @@ const VendorContracts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedContract, setSelectedContract] = useState(null);
+  const [showContractModal, setShowContractModal] = useState(false);
+
+  // Contract action handlers
+  const handleViewContract = (contract) => {
+    setSelectedContract(contract);
+    setShowContractModal(true);
+  };
+
+  const handleEditContract = (contract) => {
+    // Navigate to edit contract page or open edit modal
+    console.log('Edit contract:', contract.id);
+    // You can implement navigation or modal here
+  };
+
+  const handleDownloadContract = (contract) => {
+    // Generate and download contract PDF
+    console.log('Download contract:', contract.id);
+    // You can implement PDF generation here
+  };
+
+  const handleDeleteContract = (contract) => {
+    if (window.confirm('Are you sure you want to delete this contract?')) {
+      console.log('Delete contract:', contract.id);
+      // You can implement contract deletion here
+    }
+  };
+
+  const handleAcceptContract = (contract) => {
+    console.log('Accept contract:', contract.id);
+    // You can implement contract acceptance here
+  };
+
+  const handleRejectContract = (contract) => {
+    if (window.confirm('Are you sure you want to reject this contract?')) {
+      console.log('Reject contract:', contract.id);
+      // You can implement contract rejection here
+    }
+  };
 
   // Mock contracts data
   const contracts = [
@@ -245,18 +283,31 @@ const VendorContracts = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button 
-                        onClick={() => setSelectedContract(contract)}
+                        onClick={() => handleViewContract(contract)}
                         className="text-blue-600 hover:text-blue-900 transition-colors"
+                        title="View Contract"
                       >
                         <FaEye className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                      <button 
+                        onClick={() => handleEditContract(contract)}
+                        className="text-gray-600 hover:text-gray-900 transition-colors"
+                        title="Edit Contract"
+                      >
                         <FaEdit className="h-4 w-4" />
                       </button>
-                      <button className="text-green-600 hover:text-green-900 transition-colors">
+                      <button 
+                        onClick={() => handleDownloadContract(contract)}
+                        className="text-green-600 hover:text-green-900 transition-colors"
+                        title="Download Contract"
+                      >
                         <FaDownload className="h-4 w-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-900 transition-colors">
+                      <button 
+                        onClick={() => handleDeleteContract(contract)}
+                        className="text-red-600 hover:text-red-900 transition-colors"
+                        title="Delete Contract"
+                      >
                         <FaTrash className="h-4 w-4" />
                       </button>
                     </div>
@@ -343,10 +394,16 @@ const VendorContracts = () => {
             </div>
             
             <div className="flex space-x-3 pt-6">
-              <button className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => handleEditContract(selectedContract)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Edit Contract
               </button>
-              <button className="flex-1 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button 
+                onClick={() => handleDownloadContract(selectedContract)}
+                className="flex-1 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 Download PDF
               </button>
             </div>

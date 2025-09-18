@@ -5,7 +5,6 @@ import {
   FaHome, 
   FaBuilding, 
   FaChartLine, 
-  FaCreditCard, 
   FaHeart, 
   FaQuestionCircle, 
   FaBell, 

@@ -229,6 +229,284 @@ const mockProperties = [
     verificationNotes: 'All documents verified successfully',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    title: 'Luxury Penthouse Suite',
+    description: 'Stunning penthouse with panoramic city views and premium finishes',
+    price: 1250000,
+    type: 'apartment',
+    status: 'for-sale',
+    location: {
+      address: '789 Park Avenue',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10021',
+      coordinates: {
+        latitude: 40.7614,
+        longitude: -73.9776
+      },
+      nearestBusStop: {
+        name: 'Park Ave & 72nd St',
+        distance: '0.1 miles',
+        coordinates: {
+          latitude: 40.7615,
+          longitude: -73.9775
+        }
+      }
+    },
+    details: {
+      bedrooms: 4,
+      bathrooms: 3,
+      sqft: 2800,
+      yearBuilt: 2018,
+      floor: 25,
+      totalFloors: 25,
+      parking: '2 assigned spaces',
+      heating: 'Central',
+      cooling: 'Central AC'
+    },
+    amenities: [
+      'Private Terrace',
+      'Concierge Service',
+      'Gym Access',
+      'Pool',
+      'Wine Storage',
+      'Smart Home System',
+      'High-Speed Internet'
+    ],
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+        isPrimary: true,
+        caption: 'Living Room'
+      }
+    ],
+    videos: [],
+    documentation: [
+      {
+        type: 'title-deed',
+        name: 'Property Title Deed',
+        url: 'https://example.com/documents/title-deed-3.pdf',
+        verified: true
+      }
+    ],
+    owner: mockUsers[1],
+    views: 89,
+    favorites: [],
+    isVerified: true,
+    verificationStatus: 'approved',
+    verificationNotes: 'Premium property verified',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    title: 'Cozy Studio Apartment',
+    description: 'Perfect starter home in a vibrant neighborhood',
+    price: 1800,
+    type: 'apartment',
+    status: 'for-rent',
+    location: {
+      address: '321 Brooklyn Heights',
+      city: 'Brooklyn',
+      state: 'NY',
+      zipCode: '11201',
+      coordinates: {
+        latitude: 40.6962,
+        longitude: -73.9942
+      },
+      nearestBusStop: {
+        name: 'Brooklyn Heights Promenade',
+        distance: '0.3 miles',
+        coordinates: {
+          latitude: 40.6960,
+          longitude: -73.9940
+        }
+      }
+    },
+    details: {
+      bedrooms: 1,
+      bathrooms: 1,
+      sqft: 650,
+      yearBuilt: 2010,
+      floor: 8,
+      totalFloors: 15,
+      parking: 'Street parking',
+      heating: 'Central',
+      cooling: 'Window AC'
+    },
+    amenities: [
+      'Hardwood Floors',
+      'Large Windows',
+      'Modern Kitchen',
+      'Laundry in Building',
+      'Pet Friendly',
+      'High-Speed Internet'
+    ],
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+        isPrimary: true,
+        caption: 'Studio Layout'
+      }
+    ],
+    videos: [],
+    documentation: [
+      {
+        type: 'rental-agreement',
+        name: 'Rental Agreement',
+        url: 'https://example.com/documents/rental-agreement-4.pdf',
+        verified: true
+      }
+    ],
+    owner: mockUsers[0],
+    views: 24,
+    favorites: [],
+    isVerified: true,
+    verificationStatus: 'approved',
+    verificationNotes: 'Standard rental verified',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '5',
+    title: 'Suburban Villa with Pool',
+    description: 'Spacious family villa with private pool and garden',
+    price: 750000,
+    type: 'house',
+    status: 'for-sale',
+    location: {
+      address: '456 Maple Drive',
+      city: 'Westchester',
+      state: 'NY',
+      zipCode: '10601',
+      coordinates: {
+        latitude: 41.1220,
+        longitude: -73.7949
+      },
+      nearestBusStop: {
+        name: 'Maple Dr & Oak St',
+        distance: '0.4 miles',
+        coordinates: {
+          latitude: 41.1225,
+          longitude: -73.7950
+        }
+      }
+    },
+    details: {
+      bedrooms: 5,
+      bathrooms: 4,
+      sqft: 3200,
+      yearBuilt: 2012,
+      lotSize: '0.5 acres',
+      parking: '3-car garage',
+      heating: 'Central',
+      cooling: 'Central AC'
+    },
+    amenities: [
+      'Swimming Pool',
+      'Large Garden',
+      'Home Office',
+      'Walk-in Closets',
+      'Fireplace',
+      'Security System',
+      'High-Speed Internet'
+    ],
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop',
+        isPrimary: true,
+        caption: 'Front Exterior'
+      }
+    ],
+    videos: [],
+    documentation: [
+      {
+        type: 'title-deed',
+        name: 'Property Title Deed',
+        url: 'https://example.com/documents/title-deed-5.pdf',
+        verified: true
+      }
+    ],
+    owner: mockUsers[1],
+    views: 67,
+    favorites: [],
+    isVerified: false,
+    verificationStatus: 'pending',
+    verificationNotes: 'Pending final inspection',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '6',
+    title: 'Commercial Office Space',
+    description: 'Prime commercial space perfect for business operations',
+    price: 8500,
+    type: 'commercial',
+    status: 'for-lease',
+    location: {
+      address: '123 Business Plaza',
+      city: 'Manhattan',
+      state: 'NY',
+      zipCode: '10016',
+      coordinates: {
+        latitude: 40.7505,
+        longitude: -73.9934
+      },
+      nearestBusStop: {
+        name: 'Business Plaza Station',
+        distance: '0.1 miles',
+        coordinates: {
+          latitude: 40.7506,
+          longitude: -73.9935
+        }
+      }
+    },
+    details: {
+      bedrooms: 0,
+      bathrooms: 2,
+      sqft: 1500,
+      yearBuilt: 2015,
+      floor: 12,
+      totalFloors: 20,
+      parking: '5 assigned spaces',
+      heating: 'Central',
+      cooling: 'Central AC'
+    },
+    amenities: [
+      'Conference Room',
+      'Reception Area',
+      'High-Speed Internet',
+      'Security System',
+      '24/7 Access',
+      'Elevator',
+      'Modern Finishes'
+    ],
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop',
+        isPrimary: true,
+        caption: 'Office Interior'
+      }
+    ],
+    videos: [],
+    documentation: [
+      {
+        type: 'lease-agreement',
+        name: 'Commercial Lease Agreement',
+        url: 'https://example.com/documents/lease-agreement-6.pdf',
+        verified: true
+      }
+    ],
+    owner: mockUsers[2],
+    views: 43,
+    favorites: [],
+    isVerified: true,
+    verificationStatus: 'approved',
+    verificationNotes: 'Commercial property verified',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 

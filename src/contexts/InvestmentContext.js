@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const InvestmentContext = createContext();
 
@@ -12,378 +14,291 @@ export const useInvestment = () => {
 };
 
 export const InvestmentProvider = ({ children }) => {
+  const { user } = useAuth();
   const [investments, setInvestments] = useState([]);
-  const [mortgages, setMortgages] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Mock investment data for demo
-  const mockInvestments = [
-    {
-      id: '1',
-      title: 'Downtown Land Development',
-      description: 'Prime downtown land parcel ready for mixed-use development. Zoned for commercial and residential use.',
-      type: 'land', // land, reit, crowdfunding
-      totalAmount: 5000000,
-      minimumInvestment: 50000,
-      raisedAmount: 3200000,
-      investors: 64,
-      expectedReturn: 12.5,
-      duration: 36, // months
-      location: {
-        address: 'Downtown Business District',
-        city: 'New York',
-        state: 'NY',
-        coordinates: { lat: 40.7128, lng: -74.0060 }
-      },
-      images: [
-        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop'
-      ],
-      documents: [
-        { name: 'Land Survey', status: 'available' },
-        { name: 'Zoning Report', status: 'available' },
-        { name: 'Environmental Assessment', status: 'available' }
-      ],
-      status: 'fundraising', // fundraising, funded, in_progress, completed
-      createdAt: '2024-01-15T10:00:00Z',
-      expectedCompletion: '2027-01-15T10:00:00Z',
-      sponsor: {
-        id: '1',
-        name: 'Real Estate Development Corp',
-        experience: '15+ years',
-        completedProjects: 25,
-        rating: 4.8
-      }
-    },
-    {
-      id: '2',
-      title: 'Suburban Residential REIT',
-      description: 'Diversified portfolio of suburban residential properties with stable rental income.',
-      type: 'reit',
-      totalAmount: 2000000,
-      minimumInvestment: 25000,
-      raisedAmount: 1800000,
-      investors: 72,
-      expectedReturn: 8.2,
-      duration: 60,
-      location: {
-        address: 'Multiple Suburban Locations',
-        city: 'Los Angeles',
-        state: 'CA',
-        coordinates: { lat: 34.0522, lng: -118.2437 }
-      },
-      images: [
-        'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&h=400&fit=crop'
-      ],
-      documents: [
-        { name: 'Property Portfolio', status: 'available' },
-        { name: 'Financial Statements', status: 'available' },
-        { name: 'Management Agreement', status: 'available' }
-      ],
-      status: 'funded',
-      createdAt: '2024-01-10T14:30:00Z',
-      expectedCompletion: '2029-01-10T14:30:00Z',
-      sponsor: {
-        id: '2',
-        name: 'Suburban Properties LLC',
-        experience: '20+ years',
-        completedProjects: 40,
-        rating: 4.9
-      }
-    }
-  ];
-
-  // Mock mortgage data for demo
-  const mockMortgages = [
-    {
-      id: '1',
-      propertyId: '1',
-      propertyTitle: 'Modern Downtown Apartment',
-      type: 'purchase', // purchase, refinance, home_equity
-      amount: 360000,
-      interestRate: 4.25,
-      term: 30, // years
-      monthlyPayment: 1772,
-      downPayment: 90000,
-      creditScore: 750,
-      income: 85000,
-      status: 'approved', // pending, approved, funded, closed
-      lender: {
-        id: '1',
-        name: 'Prime Mortgage Bank',
-        rating: 4.7,
-        processingTime: '15-20 days'
-      },
-      createdAt: '2024-01-20T10:00:00Z',
-      expectedClosing: '2024-02-20T10:00:00Z',
-      documents: [
-        { name: 'Income Verification', status: 'uploaded' },
-        { name: 'Bank Statements', status: 'uploaded' },
-        { name: 'Credit Report', status: 'pending' }
-      ]
-    },
-    {
-      id: '2',
-      propertyId: '2',
-      propertyTitle: 'Luxury Family Home',
-      type: 'refinance',
-      amount: 680000,
-      interestRate: 3.75,
-      term: 30,
-      monthlyPayment: 3148,
-      downPayment: 0,
-      creditScore: 780,
-      income: 120000,
-      status: 'pending',
-      lender: {
-        id: '2',
-        name: 'Elite Lending Group',
-        rating: 4.8,
-        processingTime: '10-15 days'
-      },
-      createdAt: '2024-01-18T14:30:00Z',
-      expectedClosing: '2024-02-18T14:30:00Z',
-      documents: [
-        { name: 'Income Verification', status: 'pending' },
-        { name: 'Bank Statements', status: 'uploaded' },
-        { name: 'Credit Report', status: 'uploaded' }
-      ]
-    }
-  ];
+  const [userInvestments, setUserInvestments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isInvestmentCompany, setIsInvestmentCompany] = useState(false);
 
   useEffect(() => {
-    setInvestments(mockInvestments);
-    setMortgages(mockMortgages);
-  }, []);
+    if (user) {
+      checkUserRole();
+      fetchInvestments();
+      fetchUserInvestments();
+    }
+  }, [user]);
 
-  // Investment functions
-  const getInvestments = async (filters = {}) => {
+  const checkUserRole = async () => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setIsInvestmentCompany(userData.roles?.includes('investment_company') || false);
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
+
+  const fetchInvestments = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      const response = await fetch('/api/investments?' + new URLSearchParams(filters));
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch investments');
-      }
-
-      const data = await response.json();
-      setInvestments(data);
+      const investmentsQuery = query(
+        collection(db, 'investments'),
+        where('status', 'in', ['active', 'funding', 'completed'])
+      );
+      const investmentsSnapshot = await getDocs(investmentsQuery);
+      const investmentsData = investmentsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setInvestments(investmentsData);
     } catch (error) {
       console.error('Error fetching investments:', error);
-      toast.error('Failed to load investments');
     } finally {
       setLoading(false);
     }
   };
 
-  const getInvestmentById = async (id) => {
+  const fetchUserInvestments = async () => {
+    if (!user) return;
+    
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch(`/api/investments/${id}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch investment');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching investment:', error);
-      toast.error('Failed to load investment details');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const investInProperty = async (investmentId, amount) => {
-    try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch(`/api/investments/${investmentId}/invest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ amount }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to invest in property');
-      }
-
-      const updatedInvestment = await response.json();
-      setInvestments(prev => 
-        prev.map(investment => 
-          investment.id === investmentId ? updatedInvestment : investment
-        )
+      const userInvestmentsQuery = query(
+        collection(db, 'userInvestments'),
+        where('userId', '==', user.uid)
       );
-      toast.success('Investment successful!');
-      return updatedInvestment;
+      const userInvestmentsSnapshot = await getDocs(userInvestmentsQuery);
+      const userInvestmentsData = userInvestmentsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUserInvestments(userInvestmentsData);
     } catch (error) {
-      console.error('Error investing in property:', error);
-      toast.error('Failed to invest in property');
-      return null;
-    } finally {
-      setLoading(false);
+      console.error('Error fetching user investments:', error);
     }
   };
 
-  // Mortgage functions
-  const getMortgages = async (filters = {}) => {
+  const createInvestment = async (investmentData) => {
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch('/api/mortgages?' + new URLSearchParams(filters));
+      const investmentRef = await addDoc(collection(db, 'investments'), {
+        ...investmentData,
+        companyId: user.uid,
+        companyName: user.displayName || user.email,
+        createdAt: serverTimestamp(),
+        status: 'pending_approval',
+        totalRaised: 0,
+        investors: []
+      });
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch mortgages');
-      }
-
-      const data = await response.json();
-      setMortgages(data);
+      await fetchInvestments();
+      return { success: true, investmentId: investmentRef.id };
     } catch (error) {
-      console.error('Error fetching mortgages:', error);
-      toast.error('Failed to load mortgages');
-    } finally {
-      setLoading(false);
+      console.error('Error creating investment:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const getMortgageById = async (id) => {
+  const investInOpportunity = async (investmentId, investmentAmount, investorDetails) => {
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch(`/api/mortgages/${id}`);
+      // Create user investment record
+      const userInvestmentRef = await addDoc(collection(db, 'userInvestments'), {
+        investmentId,
+        userId: user.uid,
+        investorName: user.displayName || user.email,
+        investmentAmount,
+        investorDetails,
+        status: 'pending_payment',
+        createdAt: serverTimestamp(),
+        ...investorDetails
+      });
+
+      // Update investment total raised
+      const investmentRef = doc(db, 'investments', investmentId);
+      const investmentDoc = await getDoc(investmentRef);
+      const currentInvestment = investmentDoc.data();
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch mortgage');
-      }
+      await updateDoc(investmentRef, {
+        totalRaised: currentInvestment.totalRaised + investmentAmount,
+        investors: [...(currentInvestment.investors || []), {
+          userId: user.uid,
+          amount: investmentAmount,
+          investedAt: serverTimestamp()
+        }]
+      });
 
-      const data = await response.json();
-      return data;
+      await fetchUserInvestments();
+      return { success: true, userInvestmentId: userInvestmentRef.id };
     } catch (error) {
-      console.error('Error fetching mortgage:', error);
-      toast.error('Failed to load mortgage details');
-      return null;
-    } finally {
-      setLoading(false);
+      console.error('Error investing in opportunity:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const applyForMortgage = async (mortgageData) => {
+  const updateInvestmentStatus = async (investmentId, status, additionalData = {}) => {
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch('/api/mortgages/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(mortgageData),
+      const investmentRef = doc(db, 'investments', investmentId);
+      await updateDoc(investmentRef, {
+        status,
+        updatedAt: serverTimestamp(),
+        ...additionalData
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to apply for mortgage');
-      }
-
-      const newMortgage = await response.json();
-      setMortgages(prev => [newMortgage, ...prev]);
-      toast.success('Mortgage application submitted successfully!');
-      return newMortgage;
+      
+      await fetchInvestments();
+      return { success: true };
     } catch (error) {
-      console.error('Error applying for mortgage:', error);
-      toast.error('Failed to apply for mortgage');
-      return null;
-    } finally {
-      setLoading(false);
+      console.error('Error updating investment status:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const updateMortgageStatus = async (id, status) => {
+  const uploadPropertyDeed = async (investmentId, deedData) => {
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch(`/api/mortgages/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ status }),
+      const deedRef = await addDoc(collection(db, 'propertyDeeds'), {
+        investmentId,
+        companyId: user.uid,
+        deedData,
+        status: 'pending_verification',
+        uploadedAt: serverTimestamp()
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update mortgage status');
+      // Update investment status
+      await updateInvestmentStatus(investmentId, 'deed_uploaded', {
+        deedId: deedRef.id
+      });
+
+      return { success: true, deedId: deedRef.id };
+    } catch (error) {
+      console.error('Error uploading property deed:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const verifyPropertyDeed = async (deedId, verificationStatus, adminNotes = '') => {
+    try {
+      const deedRef = doc(db, 'propertyDeeds', deedId);
+      await updateDoc(deedRef, {
+        status: verificationStatus,
+        verifiedAt: serverTimestamp(),
+        adminNotes,
+        verifiedBy: user.uid
+      });
+
+      // Get investment ID from deed
+      const deedDoc = await getDoc(deedRef);
+      const deedData = deedDoc.data();
+      
+      if (verificationStatus === 'verified') {
+        await updateInvestmentStatus(deedData.investmentId, 'deed_verified');
+      } else {
+        await updateInvestmentStatus(deedData.investmentId, 'deed_rejected');
       }
 
-      const updatedMortgage = await response.json();
-      setMortgages(prev => 
-        prev.map(mortgage => 
-          mortgage.id === id ? updatedMortgage : mortgage
-        )
+      return { success: true };
+    } catch (error) {
+      console.error('Error verifying property deed:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const processInvestmentPayment = async (userInvestmentId, paymentData) => {
+    try {
+      const userInvestmentRef = doc(db, 'userInvestments', userInvestmentId);
+      await updateDoc(userInvestmentRef, {
+        status: 'payment_confirmed',
+        paymentData,
+        paymentConfirmedAt: serverTimestamp()
+      });
+
+      await fetchUserInvestments();
+      return { success: true };
+    } catch (error) {
+      console.error('Error processing investment payment:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const handleInvestmentCompletion = async (investmentId, completionData) => {
+    try {
+      // Update investment status
+      await updateInvestmentStatus(investmentId, 'completed', {
+        completedAt: serverTimestamp(),
+        ...completionData
+      });
+
+      // Update all user investments
+      const userInvestmentsQuery = query(
+        collection(db, 'userInvestments'),
+        where('investmentId', '==', investmentId)
       );
-      toast.success('Mortgage status updated successfully!');
-      return updatedMortgage;
+      const userInvestmentsSnapshot = await getDocs(userInvestmentsQuery);
+      
+      const updatePromises = userInvestmentsSnapshot.docs.map(doc => 
+        updateDoc(doc.ref, {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+          ...completionData
+        })
+      );
+
+      await Promise.all(updatePromises);
+      await fetchUserInvestments();
+      
+      return { success: true };
     } catch (error) {
-      console.error('Error updating mortgage status:', error);
-      toast.error('Failed to update mortgage status');
-      return null;
-    } finally {
-      setLoading(false);
+      console.error('Error handling investment completion:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const uploadMortgageDocument = async (mortgageId, documentData) => {
+  const handleInvestmentDefault = async (investmentId, defaultData) => {
     try {
-      setLoading(true);
-      // Simulate API call
-      const response = await fetch(`/api/mortgages/${mortgageId}/documents`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: documentData,
+      // Update investment status
+      await updateInvestmentStatus(investmentId, 'defaulted', {
+        defaultedAt: serverTimestamp(),
+        ...defaultData
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload document');
-      }
-
-      const updatedMortgage = await response.json();
-      setMortgages(prev => 
-        prev.map(mortgage => 
-          mortgage.id === mortgageId ? updatedMortgage : mortgage
-        )
+      // Update all user investments to transfer property ownership
+      const userInvestmentsQuery = query(
+        collection(db, 'userInvestments'),
+        where('investmentId', '==', investmentId)
       );
-      toast.success('Document uploaded successfully!');
-      return updatedMortgage;
+      const userInvestmentsSnapshot = await getDocs(userInvestmentsQuery);
+      
+      const updatePromises = userInvestmentsSnapshot.docs.map(doc => 
+        updateDoc(doc.ref, {
+          status: 'property_transferred',
+          propertyTransferredAt: serverTimestamp(),
+          ...defaultData
+        })
+      );
+
+      await Promise.all(updatePromises);
+      await fetchUserInvestments();
+      
+      return { success: true };
     } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Failed to upload document');
-      return null;
-    } finally {
-      setLoading(false);
+      console.error('Error handling investment default:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const value = {
     investments,
-    mortgages,
+    userInvestments,
     loading,
-    getInvestments,
-    getInvestmentById,
-    investInProperty,
-    getMortgages,
-    getMortgageById,
-    applyForMortgage,
-    updateMortgageStatus,
-    uploadMortgageDocument,
+    isInvestmentCompany,
+    createInvestment,
+    investInOpportunity,
+    updateInvestmentStatus,
+    uploadPropertyDeed,
+    verifyPropertyDeed,
+    processInvestmentPayment,
+    handleInvestmentCompletion,
+    handleInvestmentDefault,
+    fetchInvestments,
+    fetchUserInvestments
   };
 
   return (
@@ -391,4 +306,4 @@ export const InvestmentProvider = ({ children }) => {
       {children}
     </InvestmentContext.Provider>
   );
-}; 
+};

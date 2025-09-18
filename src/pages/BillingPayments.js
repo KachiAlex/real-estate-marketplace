@@ -182,6 +182,16 @@ const BillingPayments = () => {
     alert('Redirecting to Flutterwave payment gateway...');
   };
 
+  const handleViewTransaction = (transaction) => {
+    console.log('View transaction:', transaction.id);
+    // You can implement transaction details modal or navigation
+  };
+
+  const handleDownloadReceipt = (transaction) => {
+    console.log('Download receipt for transaction:', transaction.id);
+    // You can implement receipt generation and download
+  };
+
   const filteredTransactions = mockEscrowTransactions.filter(transaction => {
     if (filterStatus === 'all') return true;
     return transaction.status === filterStatus;
@@ -460,10 +470,18 @@ const BillingPayments = () => {
                           {transaction.date}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-brand-blue hover:text-brand-orange mr-3">
+                          <button 
+                            onClick={() => handleViewTransaction(transaction)}
+                            className="text-brand-blue hover:text-brand-orange mr-3"
+                            title="View Transaction"
+                          >
                             <FaEye />
                           </button>
-                          <button className="text-brand-blue hover:text-brand-orange">
+                          <button 
+                            onClick={() => handleDownloadReceipt(transaction)}
+                            className="text-brand-blue hover:text-brand-orange"
+                            title="Download Receipt"
+                          >
                             <FaDownload />
                           </button>
                         </td>

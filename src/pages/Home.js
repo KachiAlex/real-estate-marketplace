@@ -199,8 +199,39 @@ const Home = () => {
     }
   };
 
+  const handleResetAllFilters = () => {
+    setSelectedLocation('');
+    setSelectedType('');
+    setBedrooms('');
+    setBathrooms('');
+    setPriceRange([20000000, 120000000]);
+    setSearchQuery('');
+  };
+
+  const handleApplyFilters = () => {
+    // Apply filters logic - you can implement actual filtering here
+    console.log('Applying filters:', {
+      location: selectedLocation,
+      type: selectedType,
+      bedrooms,
+      bathrooms,
+      priceRange,
+      searchQuery
+    });
+  };
+
+  const handleGetStarted = () => {
+    // Navigate to registration or properties page
+    window.location.href = '/register';
+  };
+
+  const handleLearnMore = () => {
+    // Navigate to about page or scroll to features section
+    window.location.href = '/about';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full">
       {/* Hero Section */}
       <div className="bg-gray-100 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -248,7 +279,12 @@ const Home = () => {
           <div className="w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold">Property Filters</h3>
-              <button className="text-sm text-gray-300 hover:text-white">Reset All</button>
+              <button 
+                onClick={handleResetAllFilters}
+                className="text-sm text-gray-300 hover:text-white"
+              >
+                Reset All
+              </button>
             </div>
 
             {/* Active Filters */}
@@ -414,10 +450,16 @@ const Home = () => {
 
             {/* Filter Buttons */}
             <div className="space-y-3">
-              <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors">
+              <button 
+                onClick={handleApplyFilters}
+                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              >
                 Apply Filters
               </button>
-              <button className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+              <button 
+                onClick={handleResetAllFilters}
+                className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+              >
                 Reset
               </button>
             </div>
@@ -529,17 +571,17 @@ const Home = () => {
 
       {/* Premium Property Discovery Section */}
       <div className="bg-brand-blue text-white py-16 mt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
-            <p className="text-xl text-gray-300 max-w-4xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               Naija Luxury Homes offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
 
           <div className="flex justify-center">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
                 <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FaPlay className="text-2xl text-white" />
@@ -549,9 +591,12 @@ const Home = () => {
                   Experience immersive 3D tours of properties from the comfort of your home. 
                   Get a realistic feel of spaces before visiting in person.
                 </p>
-                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                <button 
+                  onClick={handleLearnMore}
+                  className="text-yellow-400 hover:text-yellow-300 font-medium"
+                >
                   Learn More →
-                </a>
+                </button>
               </div>
 
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
@@ -563,9 +608,12 @@ const Home = () => {
                   Every property is verified by our expert team for authenticity and legal compliance. 
                   Buy with confidence knowing all details are accurate.
                 </p>
-                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                <button 
+                  onClick={handleLearnMore}
+                  className="text-yellow-400 hover:text-yellow-300 font-medium"
+                >
                   Learn More →
-                </a>
+                </button>
               </div>
 
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
@@ -577,9 +625,12 @@ const Home = () => {
                   Access detailed market analysis and investment reports. 
                   Make informed decisions with comprehensive property data and trends.
                 </p>
-                <a href="#" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                <button 
+                  onClick={handleLearnMore}
+                  className="text-yellow-400 hover:text-yellow-300 font-medium"
+                >
                   Learn More →
-                </a>
+                </button>
               </div>
             </div>
           </div>
