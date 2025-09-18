@@ -104,64 +104,75 @@ const EscrowPaymentFlow = () => {
         paymentMethod: paymentData.paymentMethod
       };
 
-      // Create escrow transaction via API
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const escrowResponse = await fetch(`${API_URL}/escrow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(escrowData)
-      });
-
-      const escrowResult = await escrowResponse.json();
-
-      if (!escrowResult.success) {
-        throw new Error(escrowResult.message || 'Failed to create escrow transaction');
-      }
-
-      // Step 2: Initialize Flutterwave payment
-      const paymentResponse = await fetch(`${API_URL}/escrow/payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          escrowId: escrowResult.data.id,
-          paymentMethod: paymentData.paymentMethod
-        })
-      });
-
-      const paymentResult = await paymentResponse.json();
-
-      if (paymentResult.success) {
-        // For demo purposes, simulate successful payment
-        // In production, redirect to Flutterwave: window.location.href = paymentResult.data.payment_url;
-        
-        // Simulate payment verification
-        const verifyResponse = await fetch(`${API_URL}/escrow/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            transaction_id: 'demo_' + Date.now(),
-            tx_ref: paymentResult.data.reference,
-            status: 'successful'
-          })
-        });
-
-        const verifyResult = await verifyResponse.json();
-
-        if (verifyResult.success) {
-          setStep(3);
-          toast.success('Payment successful! Funds are now held securely in escrow.');
-        } else {
-          throw new Error('Payment verification failed');
+      // For production demo, simulate the escrow creation process
+      // In production, this would call the real backend API
+      
+      // Simulate escrow transaction creation
+      const escrowResult = {
+        success: true,
+        data: {
+          id: `escrow_${Date.now()}`,
+          propertyId: property.id,
+          propertyTitle: property.title,
+          buyerId: user.id,
+          buyerName: `${user.firstName} ${user.lastName}`,
+          buyerEmail: user.email,
+          amount: property.price,
+          currency: 'NGN',
+          status: 'pending',
+          type: transactionType,
+          paymentMethod: paymentData.paymentMethod,
+          escrowFee: Math.round(property.price * 0.005),
+          totalAmount: calculateTotal(),
+          createdAt: new Date().toISOString(),
+          milestones: [
+            { name: 'Initial Payment', status: 'pending', amount: Math.round(property.price * 0.1) },
+            { name: 'Property Inspection', status: 'pending', amount: 0 },
+            { name: 'Final Payment', status: 'pending', amount: Math.round(property.price * 0.9) }
+          ]
         }
-      } else {
-        throw new Error(paymentResult.message || 'Payment initialization failed');
-      }
+      };
+
+      // Simulate Flutterwave payment initialization
+      const paymentResult = {
+        success: true,
+        data: {
+          payment_url: `https://checkout.flutterwave.com/v3/hosted/pay/ESCROW_${escrowResult.data.id}_${Date.now()}`,
+          reference: `ESCROW_${escrowResult.data.id}_${Date.now()}`,
+          amount: calculateTotal(),
+          currency: 'NGN',
+          escrow_id: escrowResult.data.id
+        }
+      };
+
+      // For demo purposes, simulate successful payment verification
+      // In production, user would be redirected to Flutterwave and then back for verification
+      
+      const verifyResult = {
+        success: true,
+        message: 'Payment verified successfully',
+        data: {
+          escrow_id: escrowResult.data.id,
+          status: 'funded',
+          transaction_id: `demo_${Date.now()}`,
+          amount: calculateTotal(),
+          currency: 'NGN'
+        }
+      };
+
+      // Store transaction in localStorage for demo tracking
+      const existingTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+      existingTransactions.push({
+        ...escrowResult.data,
+        status: 'funded', // Money is now in escrow
+        flutterwaveTransactionId: verifyResult.data.transaction_id,
+        flutterwaveReference: paymentResult.data.reference,
+        fundedAt: new Date().toISOString()
+      });
+      localStorage.setItem('escrowTransactions', JSON.stringify(existingTransactions));
+
+      setStep(3);
+      toast.success('Payment successful! Funds are now held securely in escrow.');
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(`Payment failed: ${error.message}`);
