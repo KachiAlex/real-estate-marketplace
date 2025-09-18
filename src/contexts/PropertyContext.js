@@ -40,8 +40,27 @@ export const PropertyProvider = ({ children }) => {
 
   // Load properties on mount
   useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+    const loadProperties = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/properties`);
+        if (response.data.success) {
+          const propertiesData = response.data.data.map(property => ({
+            ...property,
+            bedrooms: property.details?.bedrooms || 0,
+            bathrooms: property.details?.bathrooms || 0,
+            area: property.details?.sqft || 0,
+            location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
+            image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+          }));
+          setProperties(propertiesData);
+        }
+      } catch (error) {
+        console.error('Error loading properties:', error);
+      }
+    };
+    
+    loadProperties();
+  }, []);
 
   // Fetch properties with filters
   const fetchProperties = useCallback(async (newFilters = {}, page = 1) => {
