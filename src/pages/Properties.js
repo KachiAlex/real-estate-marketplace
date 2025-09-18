@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Properties = () => {
+  const navigate = useNavigate();
   const { properties = [], filters = {}, setFilters, fetchProperties, toggleFavorite, saveSearch } = useProperty();
   const safeProperties = useMemo(() => Array.isArray(properties) ? properties : [], [properties]);
   const [showFilters, setShowFilters] = useState(false);
@@ -49,6 +52,45 @@ const Properties = () => {
 
   const handleToggleFavorite = async (id) => {
     await toggleFavorite(id);
+  };
+
+  const handleViewDetails = (propertyId) => {
+    navigate(`/property/${propertyId}`);
+  };
+
+  const handleShareProperty = async (property) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: property.title,
+          text: property.description,
+          url: `${window.location.origin}/property/${property.id}`
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+        handleCopyLink(property);
+      }
+    } else {
+      handleCopyLink(property);
+    }
+  };
+
+  const handleCopyLink = (property) => {
+    const url = `${window.location.origin}/property/${property.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Property link copied to clipboard!');
+    }).catch(() => {
+      toast.error('Failed to copy link');
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSelectedType('');
+    setSelectedStatus('');
+    setPriceRange({ min: '', max: '' });
+    setFilters({});
+    setCurrentPage(1);
+    toast.success('Filters cleared');
   };
 
   // Pagination logic
@@ -183,12 +225,7 @@ const Properties = () => {
               Apply Filters
             </button>
             <button 
-              onClick={() => {
-                setSelectedType('');
-                setSelectedStatus('');
-                setPriceRange({ min: '', max: '' });
-                setFilters({});
-              }} 
+              onClick={handleResetFilters}
               className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Reset
@@ -236,7 +273,15 @@ const Properties = () => {
                     >
                       <FaHeart className="text-white text-lg" />
                     </button>
-                    <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareProperty(property);
+                      }}
+                      className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
+                    >
+                      <FaShare className="text-white text-sm" />
+                    </button>
                   </div>
                 </div>
 
@@ -262,7 +307,10 @@ const Properties = () => {
                     </div>
                   </div>
 
-                  <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                  <button 
+                    onClick={() => handleViewDetails(property.id)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  >
                     View Details →
                   </button>
                 </div>
@@ -271,7 +319,7 @@ const Properties = () => {
               <div className="col-span-full text-center py-12">
                 <p className="text-gray-500 text-lg">No properties found matching your criteria.</p>
                 <button 
-                  onClick={() => setFilters({})}
+                  onClick={handleResetFilters}
                   className="mt-4 text-blue-600 hover:text-blue-800"
                 >
                   Clear all filters

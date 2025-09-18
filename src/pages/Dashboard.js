@@ -1,14 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { properties, loading } = useProperty();
 
-  // Mock data for the dashboard
+  // Get recent properties (first 3)
+  const recentProperties = properties.slice(0, 3);
+
+  const handleViewProperty = (propertyId) => {
+    navigate(`/property/${propertyId}`);
+  };
+
+  const handleViewAllProperties = () => {
+    navigate('/properties');
+  };
+
+  // Mock data for stats
+  const dashboardStats = {
+    totalProperties: properties.length,
+    savedProperties: 5,
+    activeInquiries: 3,
+    scheduledViewings: 2
+  };
+
+  // Mock data for recent properties (fallback if no properties loaded)
   const mockProperties = [
     {
       id: 1,

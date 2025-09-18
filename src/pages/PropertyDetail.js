@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const PropertyDetail = () => {
   const { id } = useParams();
-  const { properties, loading, error } = useProperty();
+  const navigate = useNavigate();
+  const { properties, loading, error, toggleFavorite } = useProperty();
   const { user } = useAuth();
   const [property, setProperty] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [inquiryMessage, setInquiryMessage] = useState('');
 
   useEffect(() => {
     if (properties && id) {
@@ -16,6 +21,79 @@ const PropertyDetail = () => {
       setProperty(foundProperty);
     }
   }, [properties, id]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error('Please login to add favorites');
+      navigate('/login');
+      return;
+    }
+    await toggleFavorite(property.id);
+  };
+
+  const handleShareProperty = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: property.title,
+          text: property.description,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+        handleCopyLink();
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast.success('Property link copied to clipboard!');
+    }).catch(() => {
+      toast.error('Failed to copy link');
+    });
+  };
+
+  const handleContactOwner = () => {
+    if (!user) {
+      toast.error('Please login to contact property owner');
+      navigate('/login');
+      return;
+    }
+    setShowInquiryModal(true);
+  };
+
+  const handleSendInquiry = () => {
+    if (!inquiryMessage.trim()) {
+      toast.error('Please enter your message');
+      return;
+    }
+    
+    // Simulate sending inquiry
+    toast.success('Inquiry sent successfully! The owner will contact you soon.');
+    setShowInquiryModal(false);
+    setInquiryMessage('');
+  };
+
+  const handleScheduleViewing = () => {
+    if (!user) {
+      toast.error('Please login to schedule a viewing');
+      navigate('/login');
+      return;
+    }
+    toast.success('Viewing request sent! The agent will contact you to confirm.');
+  };
+
+  const handleStartEscrow = () => {
+    if (!user) {
+      toast.error('Please login to start escrow process');
+      navigate('/login');
+      return;
+    }
+    navigate(`/escrow/create?propertyId=${property.id}`);
+  };
 
   if (loading) {
     return (
@@ -75,10 +153,22 @@ const PropertyDetail = () => {
                   alt={property.title}
                   className="w-full h-96 object-cover rounded-lg"
                 />
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 flex gap-2">
                   <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ${property.price.toLocaleString()}
+                    ₦{property.price?.toLocaleString()}
                   </span>
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
+                  >
+                    <FaHeart />
+                  </button>
+                  <button
+                    onClick={handleShareProperty}
+                    className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
+                  >
+                    <FaShare />
+                  </button>
                 </div>
               </div>
               
@@ -111,19 +201,30 @@ const PropertyDetail = () => {
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{property.bedrooms}</div>
+                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                    <FaBed className="mr-2" />
+                    {property.bedrooms || property.details?.bedrooms || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Bedrooms</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{property.bathrooms}</div>
+                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                    <FaBath className="mr-2" />
+                    {property.bathrooms || property.details?.bathrooms || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Bathrooms</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{property.sqft}</div>
+                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                    <FaRulerCombined className="mr-2" />
+                    {property.area || property.details?.sqft || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Sq Ft</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{property.type}</div>
+                  <div className="text-2xl font-bold text-blue-600 capitalize">
+                    {property.type}
+                  </div>
                   <div className="text-sm text-gray-500">Type</div>
                 </div>
               </div>
@@ -154,49 +255,64 @@ const PropertyDetail = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            {/* Contact Form */}
+            {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Owner</h3>
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="your@email.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Your phone number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                  <textarea
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="I'm interested in this property..."
-                  ></textarea>
-                </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
                 <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={handleContactOwner}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
-                  Send Message
+                  <FaEnvelope className="mr-2" />
+                  Contact Owner
                 </button>
-              </form>
+                <button
+                  onClick={handleScheduleViewing}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
+                >
+                  <FaCalendar className="mr-2" />
+                  Schedule Viewing
+                </button>
+                <button
+                  onClick={handleStartEscrow}
+                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  Start Escrow Process
+                </button>
+              </div>
+            </div>
+
+            {/* Owner Information */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Owner</h3>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-gray-600 font-semibold">
+                      {property.owner?.firstName?.[0]}{property.owner?.lastName?.[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {property.owner?.firstName} {property.owner?.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500">Property Owner</div>
+                  </div>
+                </div>
+                <div className="pt-3 border-t">
+                  <div className="flex items-center text-gray-600 mb-2">
+                    <FaMapMarkerAlt className="mr-2" />
+                    <span>{property.location}</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <span className="text-sm">Views: {property.views || 0}</span>
+                    <span className="mx-2">•</span>
+                    <span className="text-sm">
+                      {property.isVerified ? '✅ Verified' : '⏳ Pending Verification'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Investment Section */}
@@ -284,6 +400,59 @@ const PropertyDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Inquiry Modal */}
+      {showInquiryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Send Inquiry</h3>
+              <button
+                onClick={() => setShowInquiryModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Send a message to the property owner about <strong>{property.title}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
+                <textarea
+                  value={inquiryMessage}
+                  onChange={(e) => setInquiryMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="I'm interested in this property. Could you please provide more information about..."
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowInquiryModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendInquiry}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Send Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
