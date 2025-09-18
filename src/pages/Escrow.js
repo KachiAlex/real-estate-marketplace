@@ -9,6 +9,9 @@ const Escrow = () => {
   const { user } = useAuth();
   const [userTransactions, setUserTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [approvalLoading, setApprovalLoading] = useState(false);
 
   // Load user's escrow transactions from localStorage
   useEffect(() => {
@@ -27,6 +30,63 @@ const Escrow = () => {
 
   const handleViewTransaction = (transactionId) => {
     navigate(`/escrow/${transactionId}`);
+  };
+
+  const handleApproveTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowApprovalModal(true);
+  };
+
+  const handleConfirmApproval = async () => {
+    if (!selectedTransaction) return;
+
+    setApprovalLoading(true);
+    
+    try {
+      // Update transaction status to completed
+      const storedTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+      const updatedTransactions = storedTransactions.map(t => 
+        t.id === selectedTransaction.id 
+          ? { 
+              ...t, 
+              status: 'completed', 
+              completedAt: new Date().toISOString(),
+              buyerApprovalDate: new Date().toISOString(),
+              fundsReleasedToVendor: true
+            }
+          : t
+      );
+      
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
+      
+      // Update local state
+      setUserTransactions(prev => prev.map(t => 
+        t.id === selectedTransaction.id 
+          ? { 
+              ...t, 
+              status: 'completed', 
+              completedAt: new Date().toISOString(),
+              buyerApprovalDate: new Date().toISOString(),
+              fundsReleasedToVendor: true
+            }
+          : t
+      ));
+
+      setShowApprovalModal(false);
+      setSelectedTransaction(null);
+      
+      toast.success(`Funds released to vendor! Transaction completed successfully.`);
+    } catch (error) {
+      console.error('Error approving transaction:', error);
+      toast.error('Failed to approve transaction');
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const handleCancelApproval = () => {
+    setShowApprovalModal(false);
+    setSelectedTransaction(null);
   };
 
   const getStatusColor = (status) => {
@@ -216,13 +276,28 @@ const Escrow = () => {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleViewTransaction(transaction.id)}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
-                    >
-                      <FaEye className="mr-1" />
-                      View Details
-                    </button>
+                    {transaction.status === 'funded' ? (
+                      <button
+                        onClick={() => handleApproveTransaction(transaction)}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                      >
+                        <FaUserCheck className="mr-1" />
+                        Approve & Release Funds
+                      </button>
+                    ) : transaction.status === 'completed' ? (
+                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center">
+                        <FaCheckCircle className="mr-1" />
+                        Funds Released
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleViewTransaction(transaction.id)}
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
+                      >
+                        <FaEye className="mr-1" />
+                        View Details
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -230,6 +305,80 @@ const Escrow = () => {
           </div>
         )}
       </div>
+
+      {/* Approval Confirmation Modal */}
+      {showApprovalModal && selectedTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaTimesCircle className="text-red-600 text-2xl" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2">⚠️ WARNING: Approve Fund Release</h3>
+              <p className="text-gray-600 mb-4">
+                You are about to release <strong>₦{selectedTransaction.totalAmount?.toLocaleString()}</strong> to the vendor for:
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg mb-4 text-left">
+                <h4 className="font-semibold text-gray-900">{selectedTransaction.propertyTitle}</h4>
+                <p className="text-sm text-gray-600">Transaction ID: {selectedTransaction.id}</p>
+                <p className="text-sm text-gray-600">Amount: ₦{selectedTransaction.amount?.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Escrow Fee: ₦{selectedTransaction.escrowFee?.toLocaleString()}</p>
+              </div>
+
+              <div className="bg-red-50 p-4 rounded-lg mb-6">
+                <div className="text-sm text-red-800 space-y-2">
+                  <p><strong>⚠️ IMPORTANT WARNING:</strong></p>
+                  <ul className="text-left space-y-1">
+                    <li>• Once approved, the money will be sent directly to the vendor</li>
+                    <li>• This action is <strong>IRREVERSIBLE</strong></li>
+                    <li>• You will NOT be able to get a refund after approval</li>
+                    <li>• Only approve if you are completely satisfied with the property</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600 mb-6">
+                <p>Have you:</p>
+                <ul className="text-left space-y-1 mt-2">
+                  <li>✅ Inspected the property thoroughly?</li>
+                  <li>✅ Verified all documents are correct?</li>
+                  <li>✅ Confirmed the property meets your expectations?</li>
+                  <li>✅ Received all necessary paperwork?</li>
+                </ul>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelApproval}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmApproval}
+                  disabled={approvalLoading}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                >
+                  {approvalLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <>
+                      <FaHandshake className="mr-2" />
+                      Yes, Release Funds
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                By clicking "Yes, Release Funds", you confirm that you are satisfied with the property and authorize the irreversible release of funds to the vendor.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
