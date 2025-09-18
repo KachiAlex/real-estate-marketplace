@@ -1,13 +1,36 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import toast from 'react-hot-toast';
+
+// Mock users for authentication
+const mockUsers = [
+  {
+    id: '1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    password: 'password123',
+    role: 'user',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: '2',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    password: 'admin123',
+    role: 'admin',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: '3',
+    firstName: 'Onyedikachi',
+    lastName: 'Akoma',
+    email: 'onyedika.akoma@gmail.com',
+    password: 'dikaoliver2660',
+    role: 'user',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+  }
+];
 
 const AuthContext = createContext();
 
@@ -21,112 +44,83 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check if user is logged in on app start
+  // Check for existing session on load
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Get additional user data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          const userData = userDoc.exists() ? userDoc.data() : null;
-          
-          const userWithData = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            roles: userData?.roles || ['buyer'],
-            activeRole: userData?.activeRole || 'buyer',
-            ...userData
-          };
-          
-          setUser(userWithData);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          setUser(firebaseUser);
-        }
-      } else {
-        setUser(null);
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('currentUser');
       }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
   }, []);
 
-  const register = async (userData) => {
+  const login = async (email, password) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-
-      const { email, password, firstName, lastName } = userData;
+      const foundUser = mockUsers.find(u => u.email === email && u.password === password);
       
-      // Create user with Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      if (!foundUser) {
+        throw new Error('Invalid email or password');
+      }
 
-      // Update profile with display name
-      await updateProfile(user, {
-        displayName: `${firstName} ${lastName}`
-      });
-
-      // Create user document in Firestore
-      const userDocData = {
-        uid: user.uid,
-        email: user.email,
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        roles: ['buyer'],
-        activeRole: 'buyer',
-        avatar: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=1e40af&color=fff`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      await setDoc(doc(db, 'users', user.uid), userDocData);
-
-      setUser(userDocData);
-      return { success: true, user: userDocData };
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      
+      toast.success('Login successful!');
+      return { success: true, user: userWithoutPassword };
     } catch (error) {
-      console.error('Registration error:', error);
       setError(error.message);
+      toast.error(error.message);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
+  const register = async (userData) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
+      const { firstName, lastName, email, password } = userData;
+      
+      // Check if user already exists
+      const existingUser = mockUsers.find(u => u.email === email);
+      if (existingUser) {
+        throw new Error('User with this email already exists');
+      }
 
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Get additional user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.exists() ? userDoc.data() : null;
-
-      const userWithData = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        roles: userData?.roles || ['buyer'],
-        activeRole: userData?.activeRole || 'buyer',
-        ...userData
+      const newUser = {
+        id: Date.now().toString(),
+        firstName,
+        lastName,
+        email,
+        role: 'user',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       };
 
-      setUser(userWithData);
-      return { success: true, user: userWithData };
+      // Add to mock users (in real app, this would be saved to database)
+      mockUsers.push({ ...newUser, password });
+      
+      const { password: _, ...userWithoutPassword } = newUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      
+      toast.success('Registration successful!');
+      return { success: true, user: userWithoutPassword };
     } catch (error) {
-      console.error('Login error:', error);
       setError(error.message);
+      toast.error(error.message);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -135,80 +129,42 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      setError(null);
-      await signOut(auth);
       setUser(null);
+      localStorage.removeItem('currentUser');
+      toast.success('Logged out successfully');
       return { success: true };
     } catch (error) {
-      console.error('Logout error:', error);
-      setError(error.message);
+      console.error('Error logging out:', error);
+      toast.error('Error logging out');
       return { success: false, error: error.message };
     }
   };
 
   const updateUserProfile = async (updates) => {
     try {
-      if (!user) throw new Error('No user logged in');
-
-      setError(null);
+      if (!user) throw new Error('User must be logged in');
       
-      // Update Firebase Auth profile if needed
-      if (updates.displayName || updates.photoURL) {
-        await updateProfile(auth.currentUser, {
-          displayName: updates.displayName || user.displayName,
-          photoURL: updates.photoURL || user.photoURL
-        });
-      }
-
-      // Update Firestore document
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, {
-        ...updates,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-
-      // Update local state
-      setUser(prev => ({
-        ...prev,
-        ...updates,
-        updatedAt: new Date().toISOString()
-      }));
-
-      return { success: true };
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      toast.success('Profile updated successfully!');
+      return { success: true, user: updatedUser };
     } catch (error) {
-      console.error('Profile update error:', error);
-      setError(error.message);
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
       return { success: false, error: error.message };
     }
-  };
-
-  // Role helpers and switching
-  const isBuyer = user?.activeRole === 'buyer';
-  const isVendor = user?.activeRole === 'vendor';
-
-  const switchRole = async (nextRole) => {
-    if (!user) throw new Error('No user logged in');
-    if (!user.roles?.includes(nextRole)) {
-      throw new Error('Role not assigned to this account');
-    }
-    if (user.activeRole === nextRole) return { success: true };
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, { activeRole: nextRole, updatedAt: new Date().toISOString() });
-    setUser(prev => ({ ...prev, activeRole: nextRole }));
-    return { success: true };
   };
 
   const value = {
     user,
     loading,
     error,
-    register,
     login,
+    register,
     logout,
-    updateUserProfile,
-    isBuyer,
-    isVendor,
-    switchRole
+    updateUserProfile
   };
 
   return (
