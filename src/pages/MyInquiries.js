@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaQuestionCircle, FaPhone, FaEnvelope, FaCalendar, FaMapMarkerAlt, FaBed, FaBath, FaRuler, FaEye, FaReply, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaQuestionCircle, FaPhone, FaEnvelope, FaCalendar, FaMapMarkerAlt, FaBed, FaBath, FaRuler, FaEye, FaReply, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaShoppingCart } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const MyInquiries = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterBy, setFilterBy] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+
+  const handlePurchaseProperty = (property) => {
+    if (!user) {
+      toast.error('Please login to purchase properties');
+      navigate('/login');
+      return;
+    }
+    
+    // Navigate to escrow process for purchase
+    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
+    toast.success('Redirecting to secure purchase process...');
+  };
+
+  const handleScheduleViewing = (property) => {
+    toast.success(`Viewing scheduled for ${property.title}! You'll receive confirmation soon.`);
+  };
 
   // Mock inquiries data
   useEffect(() => {
@@ -398,18 +416,45 @@ const MyInquiries = () => {
                   <div className="flex space-x-2">
                     <a
                       href={`tel:${inquiry.agent.phone}`}
-                      className="btn-outline py-2 px-4"
+                      className="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                       <FaPhone className="inline mr-1" />
                       Call
                     </a>
                     <a
                       href={`mailto:${inquiry.agent.email}`}
-                      className="btn-primary py-2 px-4"
+                      className="bg-blue-100 text-blue-700 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors"
                     >
                       <FaEnvelope className="inline mr-1" />
                       Email
                     </a>
+                  </div>
+                  
+                  {/* Property Purchase Actions */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handlePurchaseProperty(inquiry.property)}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                      >
+                        <FaShoppingCart className="mr-2" />
+                        Buy Property - ₦{inquiry.property.price.toLocaleString()}
+                      </button>
+                      <button 
+                        onClick={() => handleScheduleViewing(inquiry.property)}
+                        className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center"
+                      >
+                        <FaCalendar className="mr-2" />
+                        Schedule Viewing
+                      </button>
+                      <Link
+                        to={`/property/${inquiry.property.id}`}
+                        className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center"
+                      >
+                        <FaEye className="mr-2" />
+                        View Details
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

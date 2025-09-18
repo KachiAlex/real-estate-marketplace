@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHeart, FaShare, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaTrash, FaEye, FaPhone, FaEnvelope, FaFilter, FaSort } from 'react-icons/fa';
+import { FaHeart, FaShare, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaTrash, FaEye, FaPhone, FaEnvelope, FaFilter, FaSort, FaShoppingCart, FaCalendar } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const SavedProperties = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('dateAdded');
@@ -113,6 +115,43 @@ const SavedProperties = () => {
 
   const handleRemoveFromSaved = (propertyId) => {
     setSavedProperties(prev => prev.filter(property => property.id !== propertyId));
+    toast.success('Property removed from saved list');
+  };
+
+  const handleBuyProperty = (property) => {
+    if (!user) {
+      toast.error('Please login to purchase properties');
+      navigate('/login');
+      return;
+    }
+    
+    if (property.status === 'sold') {
+      toast.error('This property has already been sold');
+      return;
+    }
+    
+    // Navigate to escrow process for purchase
+    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
+  };
+
+  const handleScheduleViewing = (property) => {
+    if (!user) {
+      toast.error('Please login to schedule viewings');
+      navigate('/login');
+      return;
+    }
+    
+    toast.success(`Viewing request sent for ${property.title}! The agent will contact you soon.`);
+  };
+
+  const handleContactAgent = (property) => {
+    if (!user) {
+      toast.error('Please login to contact agents');
+      navigate('/login');
+      return;
+    }
+    
+    toast.success(`Contact request sent to ${property.agent.name}!`);
   };
 
   const handleSortChange = (e) => {
@@ -358,17 +397,63 @@ const SavedProperties = () => {
                     <span>Agent: {property.agent.name}</span>
                   </div>
                   
-                  <div className="flex space-x-2">
-                    <Link
-                      to={`/property/${property.id}`}
-                      className="flex-1 btn-outline text-center py-2"
-                    >
-                      View Details
-                    </Link>
-                    <button className="flex-1 btn-primary py-2">
-                      <FaPhone className="inline mr-1" />
-                      Contact
-                    </button>
+                  <div className="space-y-2">
+                    {/* Primary action based on property type and status */}
+                    {property.type === 'sale' && property.status === 'available' && (
+                      <button 
+                        onClick={() => handleBuyProperty(property)}
+                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                      >
+                        <FaShoppingCart className="mr-2" />
+                        Buy Property - ₦{property.price.toLocaleString()}
+                      </button>
+                    )}
+                    
+                    {property.type === 'rent' && property.status === 'available' && (
+                      <button 
+                        onClick={() => handleBuyProperty(property)}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                      >
+                        <FaShoppingCart className="mr-2" />
+                        Rent Property - ₦{property.price.toLocaleString()}/month
+                      </button>
+                    )}
+                    
+                    {property.status === 'sold' && (
+                      <div className="w-full bg-red-100 text-red-800 py-2 px-4 rounded-lg text-center">
+                        Property Sold
+                      </div>
+                    )}
+                    
+                    {property.status === 'rented' && (
+                      <div className="w-full bg-blue-100 text-blue-800 py-2 px-4 rounded-lg text-center">
+                        Property Rented
+                      </div>
+                    )}
+                    
+                    {/* Secondary actions */}
+                    <div className="flex space-x-2">
+                      <Link
+                        to={`/property/${property.id}`}
+                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                      >
+                        View Details
+                      </Link>
+                      <button 
+                        onClick={() => handleScheduleViewing(property)}
+                        className="flex-1 bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors flex items-center justify-center"
+                      >
+                        <FaCalendar className="mr-1" />
+                        Schedule Viewing
+                      </button>
+                      <button 
+                        onClick={() => handleContactAgent(property)}
+                        className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
+                      >
+                        <FaPhone className="mr-1" />
+                        Contact Agent
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

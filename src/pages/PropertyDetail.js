@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const PropertyDetail = () => {
@@ -315,29 +315,41 @@ const PropertyDetail = () => {
               </div>
             </div>
 
-            {/* Investment Section */}
+            {/* Purchase Information */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Opportunity</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Purchase Information</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Property Value:</span>
-                  <span className="font-semibold">${property.price.toLocaleString()}</span>
+                  <span className="font-semibold">₦{property.price?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Available for Investment:</span>
-                  <span className="font-semibold text-green-600">Yes</span>
+                  <span className="text-gray-600">Property Type:</span>
+                  <span className="font-semibold capitalize">{property.status?.replace('-', ' ')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Minimum Investment:</span>
-                  <span className="font-semibold">$10,000</span>
+                  <span className="text-gray-600">Escrow Fee (0.5%):</span>
+                  <span className="font-semibold">₦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between border-t pt-3">
+                  <span className="text-gray-900 font-semibold">Total Amount:</span>
+                  <span className="font-bold text-lg">₦{Math.round((property.price || 0) * 1.005).toLocaleString()}</span>
                 </div>
               </div>
-              <Link
-                to={`/investments/${property.id}`}
-                className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors block text-center"
-              >
-                Invest Now
-              </Link>
+              
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={handleStartEscrow}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
+                >
+                  <FaShoppingCart className="mr-2" />
+                  {property.status === 'for-sale' ? 'Buy Property' : property.status === 'for-rent' ? 'Rent Property' : 'Lease Property'}
+                </button>
+                
+                <p className="text-xs text-gray-500 text-center">
+                  Secure transaction protected by escrow service
+                </p>
+              </div>
             </div>
 
             {/* Property Info */}
