@@ -16,17 +16,17 @@ export const useProperty = () => {
 // For now, use mock data directly since backend is not deployed to production
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Mock properties data for production use
+// Mock properties data for production use - All prices in Nigerian Naira (₦)
 const mockProperties = [
   {
     id: '1',
     title: 'Beautiful Family Home',
     description: 'Spacious 3-bedroom home with modern amenities and stunning views',
-    price: 450000,
+    price: 185000000, // ₦185,000,000
     type: 'house',
     status: 'for-sale',
     details: { bedrooms: 3, bathrooms: 2, sqft: 1800 },
-    location: { address: '123 Main St', city: 'New York', state: 'NY' },
+    location: { address: '123 Lekki Phase 1', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'John', lastName: 'Doe' },
     views: 45,
@@ -36,12 +36,12 @@ const mockProperties = [
   {
     id: '2',
     title: 'Modern Downtown Apartment',
-    description: 'Luxury 2-bedroom apartment in the heart of downtown',
-    price: 2500,
+    description: 'Luxury 2-bedroom apartment in the heart of Victoria Island',
+    price: 1200000, // ₦1,200,000/month
     type: 'apartment',
     status: 'for-rent',
     details: { bedrooms: 2, bathrooms: 1, sqft: 1200 },
-    location: { address: '456 Downtown Ave', city: 'New York', state: 'NY' },
+    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'John', lastName: 'Doe' },
     views: 32,
@@ -52,11 +52,11 @@ const mockProperties = [
     id: '3',
     title: 'Luxury Penthouse Suite',
     description: 'Stunning penthouse with panoramic city views and premium finishes',
-    price: 1250000,
+    price: 520000000, // ₦520,000,000
     type: 'apartment',
     status: 'for-sale',
     details: { bedrooms: 4, bathrooms: 3, sqft: 2800 },
-    location: { address: '789 Park Avenue', city: 'New York', state: 'NY' },
+    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'Admin', lastName: 'User' },
     views: 89,
@@ -67,11 +67,11 @@ const mockProperties = [
     id: '4',
     title: 'Cozy Studio Apartment',
     description: 'Perfect starter home in a vibrant neighborhood',
-    price: 1800,
+    price: 800000, // ₦800,000/month
     type: 'apartment',
     status: 'for-rent',
     details: { bedrooms: 1, bathrooms: 1, sqft: 650 },
-    location: { address: '321 Brooklyn Heights', city: 'Brooklyn', state: 'NY' },
+    location: { address: '321 Surulere', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'John', lastName: 'Doe' },
     views: 24,
@@ -82,11 +82,11 @@ const mockProperties = [
     id: '5',
     title: 'Suburban Villa with Pool',
     description: 'Spacious family villa with private pool and garden',
-    price: 750000,
+    price: 310000000, // ₦310,000,000
     type: 'house',
     status: 'for-sale',
     details: { bedrooms: 5, bathrooms: 4, sqft: 3200 },
-    location: { address: '456 Maple Drive', city: 'Westchester', state: 'NY' },
+    location: { address: '456 Magodo GRA', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'Admin', lastName: 'User' },
     views: 67,
@@ -97,11 +97,11 @@ const mockProperties = [
     id: '6',
     title: 'Commercial Office Space',
     description: 'Prime commercial space perfect for business operations',
-    price: 8500,
+    price: 3500000, // ₦3,500,000/month
     type: 'commercial',
     status: 'for-lease',
     details: { bedrooms: 0, bathrooms: 2, sqft: 1500 },
-    location: { address: '123 Business Plaza', city: 'Manhattan', state: 'NY' },
+    location: { address: '123 Ikeja GRA', city: 'Lagos', state: 'Lagos' },
     images: [{ url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop', isPrimary: true }],
     owner: { firstName: 'Onyedikachi', lastName: 'Akoma' },
     views: 43,
@@ -164,7 +164,7 @@ export const PropertyProvider = ({ children }) => {
     try {
       // Use mock data and filter client-side
       let filteredProperties = [...mockProperties];
-      
+
       // Apply filters
       if (newFilters.search) {
         const searchLower = newFilters.search.toLowerCase();
@@ -226,8 +226,8 @@ export const PropertyProvider = ({ children }) => {
         totalItems: propertiesData.length
       }));
 
-      if (Object.keys(newFilters).length > 0) {
-        setFilters(newFilters);
+        if (Object.keys(newFilters).length > 0) {
+          setFilters(newFilters);
       }
     } catch (error) {
       setError('Failed to fetch properties');
@@ -417,8 +417,8 @@ export const PropertyProvider = ({ children }) => {
 
   const deletePropertyImage = async (imagePath) => {
     try {
-      toast.success('Image deleted successfully');
-      return true;
+        toast.success('Image deleted successfully');
+        return true;
     } catch (error) {
       console.error('Error deleting property image:', error);
       toast.error('Failed to delete image');
