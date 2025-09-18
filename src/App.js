@@ -43,6 +43,7 @@ import VendorContracts from './pages/VendorContracts';
 import VendorProfile from './pages/VendorProfile';
 import VendorNotifications from './pages/VendorNotifications';
 import VendorHelp from './pages/VendorHelp';
+import EscrowPaymentFlow from './components/EscrowPaymentFlow';
 
 function App() {
   return (
@@ -201,6 +202,16 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <EscrowTransaction />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/escrow/create" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <EscrowPaymentFlow />
                         </main>
                       </div>
                     </ProtectedRoute>

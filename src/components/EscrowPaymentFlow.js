@@ -1,323 +1,407 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useProperty } from '../contexts/PropertyContext';
 import { useEscrow } from '../contexts/EscrowContext';
-import { 
-  FaCreditCard, 
-  FaClock, 
-  FaCheck, 
-  FaTimes, 
-  FaExclamationTriangle,
-  FaShieldAlt,
-  FaUser,
-  FaHome,
-  FaDollarSign,
-  FaCalendarAlt,
-  FaFileContract,
-  FaBell,
-  FaQuestionCircle
-} from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
-const EscrowPaymentFlow = ({ property, onClose }) => {
-  const { 
-    createEscrowTransaction, 
-    initiatePayment, 
-    paymentLoading,
-    getEscrowTimer 
-  } = useEscrow();
+const EscrowPaymentFlow = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { fetchProperty } = useProperty();
+  const { createEscrowTransaction } = useEscrow();
   
-  const [step, setStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [escrowData, setEscrowData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
+  const [paymentData, setPaymentData] = useState({
+    paymentMethod: 'card',
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: ''
+  });
 
-  const escrowFee = property.price * 0.005; // 0.5% escrow fee
-  const totalAmount = property.price + escrowFee;
+  const propertyId = searchParams.get('propertyId');
+  const transactionType = searchParams.get('type') || 'purchase';
 
-  const handleCreateEscrow = async () => {
-    setLoading(true);
+  useEffect(() => {
+    const loadProperty = async () => {
+      if (!propertyId) {
+        toast.error('No property specified');
+        navigate('/properties');
+        return;
+      }
+
+      if (!user) {
+        toast.error('Please login to continue');
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const propertyData = await fetchProperty(propertyId);
+        if (propertyData) {
+          setProperty(propertyData);
+        } else {
+          toast.error('Property not found');
+          navigate('/properties');
+        }
+      } catch (error) {
+        console.error('Error loading property:', error);
+        toast.error('Failed to load property details');
+        navigate('/properties');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProperty();
+  }, [propertyId, user, fetchProperty, navigate]);
+
+  const calculateTotal = () => {
+    if (!property) return 0;
+    const escrowFee = Math.round(property.price * 0.005); // 0.5% escrow fee
+    return property.price + escrowFee;
+  };
+
+  const handlePaymentDataChange = (field, value) => {
+    setPaymentData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleProceedToPayment = () => {
+    setStep(2);
+  };
+
+  const handleProcessPayment = async () => {
     try {
-      const transactionData = {
-        propertyId: property.id,
-        propertyTitle: property.title,
-        amount: property.price,
-        currency: 'NGN',
-        type: 'sale',
-        paymentMethod,
-        escrowFee,
-        totalAmount
-      };
+      // Validate payment data
+      if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
+        toast.error('Please fill in all payment details');
+        return;
+      }
 
-      const result = await createEscrowTransaction(transactionData);
-      if (result) {
-        setEscrowData(result);
-        setStep(2);
+      setLoading(true);
+
+      // Create escrow transaction
+      const result = await createEscrowTransaction(
+        property.id,
+        property.price,
+        user.id,
+        property.owner?.id || 'seller-1'
+      );
+
+      if (result.success) {
+        setStep(3);
+        toast.success('Payment processed successfully! Escrow transaction created.');
+      } else {
+        toast.error('Payment failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating escrow:', error);
+      console.error('Payment error:', error);
+      toast.error('Payment processing failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInitiatePayment = async () => {
-    if (!escrowData) return;
-    
-    try {
-      const result = await initiatePayment(escrowData.id, paymentMethod);
-      if (result) {
-        setStep(3);
-      }
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-    }
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
   };
 
-  const steps = [
-    { id: 1, title: 'Create Escrow', description: 'Set up secure escrow transaction' },
-    { id: 2, title: 'Make Payment', description: 'Pay through Flutterwave' },
-    { id: 3, title: 'Confirmation', description: 'Confirm property possession' },
-    { id: 4, title: 'Release Funds', description: 'Funds released to vendor' }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Not Found</h2>
+          <button
+            onClick={() => navigate('/properties')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Properties
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Secure Escrow Payment</h2>
-              <p className="text-gray-600 mt-1">Your payment is protected with our escrow system</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <FaTimes className="h-6 w-6" />
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            {steps.map((stepItem, index) => (
-              <div key={stepItem.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                  step >= stepItem.id 
-                    ? 'bg-brand-blue border-brand-blue text-white' 
-                    : 'border-gray-300 text-gray-400'
+        <div className="mb-8">
+          <button
+            onClick={() => step === 1 ? navigate(-1) : setStep(step - 1)}
+            className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
+          >
+            <FaArrowLeft className="mr-2" />
+            {step === 1 ? 'Back to Property' : 'Previous Step'}
+          </button>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {step === 1 ? 'Review Purchase' : step === 2 ? 'Payment Details' : 'Payment Confirmation'}
+          </h1>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center space-x-4 mt-4">
+            {[1, 2, 3].map((stepNum) => (
+              <div key={stepNum} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step >= stepNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
                 }`}>
-                  {step > stepItem.id ? (
-                    <FaCheck className="h-5 w-5" />
-                  ) : (
-                    <span className="text-sm font-semibold">{stepItem.id}</span>
-                  )}
+                  {step > stepNum ? <FaCheck /> : stepNum}
                 </div>
-                <div className="ml-3">
-                  <p className={`text-sm font-medium ${
-                    step >= stepItem.id ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
-                    {stepItem.title}
-                  </p>
-                  <p className="text-xs text-gray-500">{stepItem.description}</p>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-4 ${
-                    step > stepItem.id ? 'bg-brand-blue' : 'bg-gray-300'
-                  }`} />
+                {stepNum < 3 && (
+                  <div className={`w-16 h-1 mx-2 ${step > stepNum ? 'bg-blue-600' : 'bg-gray-200'}`} />
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {step === 1 && (
-            <div className="space-y-6">
-              {/* Property Summary */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <FaHome className="text-gray-400 h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-gray-500">Property</p>
-                        <p className="font-medium text-gray-900">{property.title}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <FaUser className="text-gray-400 h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-gray-500">Vendor</p>
-                        <p className="font-medium text-gray-900">{property.vendor}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <FaDollarSign className="text-gray-400 h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-gray-500">Property Price</p>
-                        <p className="font-medium text-gray-900">₦{property.price.toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <FaShieldAlt className="text-gray-400 h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-gray-500">Escrow Fee (0.5%)</p>
-                        <p className="font-medium text-gray-900">₦{escrowFee.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
+        {/* Step 1: Review Purchase */}
+        {step === 1 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Property Details */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Property Details</h2>
+              
+              <div className="flex items-start space-x-4 mb-6">
+                <img
+                  src={property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop'}
+                  alt={property.title}
+                  className="w-32 h-24 object-cover rounded-lg"
+                />
+                <div>
+                  <h3 className="font-semibold text-gray-900">{property.title}</h3>
+                  <p className="text-gray-600">{property.location}</p>
+                  <p className="text-sm text-gray-500 mt-1">{property.description}</p>
                 </div>
               </div>
-
-              {/* Payment Method Selection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { id: 'card', name: 'Credit/Debit Card', icon: FaCreditCard },
-                    { id: 'bank_transfer', name: 'Bank Transfer', icon: FaDollarSign },
-                    { id: 'ussd', name: 'USSD', icon: FaCreditCard }
-                  ].map((method) => {
-                    const Icon = method.icon;
-                    return (
-                      <button
-                        key={method.id}
-                        onClick={() => setPaymentMethod(method.id)}
-                        className={`p-4 border-2 rounded-lg text-left transition-colors ${
-                          paymentMethod === method.id
-                            ? 'border-brand-blue bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <Icon className="h-6 w-6 text-gray-600 mb-2" />
-                        <p className="font-medium text-gray-900">{method.name}</p>
-                      </button>
-                    );
-                  })}
+              
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{property.bedrooms || property.details?.bedrooms || 0}</div>
+                  <div className="text-sm text-gray-500">Bedrooms</div>
                 </div>
-              </div>
-
-              {/* Escrow Protection Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <div className="flex items-start space-x-3">
-                  <FaShieldAlt className="text-blue-600 h-6 w-6 mt-1" />
-                  <div>
-                    <h4 className="text-lg font-semibold text-blue-900 mb-2">Escrow Protection</h4>
-                    <ul className="space-y-2 text-sm text-blue-800">
-                      <li className="flex items-center space-x-2">
-                        <FaCheck className="h-4 w-4" />
-                        <span>Your payment is held securely until you confirm property possession</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <FaCheck className="h-4 w-4" />
-                        <span>7-day confirmation period after payment</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <FaCheck className="h-4 w-4" />
-                        <span>Automatic release if no action taken</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <FaCheck className="h-4 w-4" />
-                        <span>Dispute resolution available</span>
-                      </li>
-                    </ul>
-                  </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{property.bathrooms || property.details?.bathrooms || 0}</div>
+                  <div className="text-sm text-gray-500">Bathrooms</div>
                 </div>
-              </div>
-
-              {/* Total Amount */}
-              <div className="bg-gray-900 text-white rounded-lg p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300">Total Amount to Pay</p>
-                    <p className="text-3xl font-bold">₦{totalAmount.toLocaleString()}</p>
-                  </div>
-                  <button
-                    onClick={handleCreateEscrow}
-                    disabled={loading}
-                    className="bg-brand-orange hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Creating Escrow...' : 'Create Escrow & Pay'}
-                  </button>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{property.area || property.details?.sqft || 0}</div>
+                  <div className="text-sm text-gray-500">Sq Ft</div>
                 </div>
               </div>
             </div>
-          )}
 
-          {step === 2 && escrowData && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaCheck className="text-green-600 text-2xl" />
+            {/* Payment Summary */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Summary</h2>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Property Price:</span>
+                  <span className="font-semibold">₦{property.price?.toLocaleString()}</span>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Escrow Created Successfully!</h3>
-                <p className="text-gray-600">Your escrow transaction has been created. Proceed to make payment.</p>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h4 className="font-semibold text-gray-900 mb-4">Transaction Details</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Escrow ID</p>
-                    <p className="font-medium text-gray-900">{escrowData.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Amount</p>
-                    <p className="font-medium text-gray-900">₦{escrowData.totalAmount.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Payment Method</p>
-                    <p className="font-medium text-gray-900 capitalize">{paymentMethod.replace('_', ' ')}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Status</p>
-                    <p className="font-medium text-gray-900 capitalize">{escrowData.status}</p>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Escrow Fee (0.5%):</span>
+                  <span className="font-semibold">₦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-lg font-bold text-gray-900">Total Amount:</span>
+                    <span className="text-lg font-bold text-green-600">₦{calculateTotal().toLocaleString()}</span>
                   </div>
                 </div>
               </div>
+              
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center">
+                  <FaLock className="text-blue-600 mr-2" />
+                  <span className="text-sm text-blue-800">Secure escrow protection included</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleProceedToPayment}
+                className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+              >
+                <FaShoppingCart className="mr-2" />
+                Proceed to Payment
+              </button>
+            </div>
+          </div>
+        )}
 
-              <div className="text-center">
+        {/* Step 2: Payment Details */}
+        {step === 2 && (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Payment Information</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={paymentData.paymentMethod}
+                    onChange={(e) => handlePaymentDataChange('paymentMethod', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="ussd">USSD</option>
+                  </select>
+                </div>
+
+                {paymentData.paymentMethod === 'card' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                      <input
+                        type="text"
+                        value={paymentData.cardholderName}
+                        onChange={(e) => handlePaymentDataChange('cardholderName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                      <input
+                        type="text"
+                        value={paymentData.cardNumber}
+                        onChange={(e) => handlePaymentDataChange('cardNumber', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                        <input
+                          type="text"
+                          value={paymentData.expiryDate}
+                          onChange={(e) => handlePaymentDataChange('expiryDate', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                        <input
+                          type="text"
+                          value={paymentData.cvv}
+                          onChange={(e) => handlePaymentDataChange('cvv', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="123"
+                          maxLength={4}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {paymentData.paymentMethod === 'bank_transfer' && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">Bank Transfer Details</h4>
+                    <div className="text-sm text-blue-800">
+                      <p><strong>Bank:</strong> GTBank</p>
+                      <p><strong>Account Number:</strong> 0123456789</p>
+                      <p><strong>Account Name:</strong> Naija Luxury Homes Escrow</p>
+                      <p><strong>Amount:</strong> ₦{calculateTotal().toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+
+                {paymentData.paymentMethod === 'ussd' && (
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-semibold text-green-900 mb-2">USSD Payment</h4>
+                    <div className="text-sm text-green-800">
+                      <p>Dial <strong>*737*1*{calculateTotal()}#</strong> to complete payment</p>
+                      <p>You will receive a confirmation SMS after payment</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Summary */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-900">Total to Pay:</span>
+                  <span className="text-xl font-bold text-green-600">₦{calculateTotal().toLocaleString()}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleProcessPayment}
+                disabled={loading}
+                className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center disabled:opacity-50"
+              >
+                <FaCreditCard className="mr-2" />
+                {loading ? 'Processing...' : `Pay ₦${calculateTotal().toLocaleString()}`}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Confirmation */}
+        {step === 3 && (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaCheck className="text-green-600 text-2xl" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+              <p className="text-gray-600 mb-6">
+                Your payment has been processed and the funds are now held securely in escrow.
+              </p>
+              
+              <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">What happens next?</h3>
+                <ul className="text-sm text-blue-800 text-left space-y-1">
+                  <li>• Property documents will be verified</li>
+                  <li>• You'll be contacted to schedule property inspection</li>
+                  <li>• Funds will be released to seller after confirmation</li>
+                  <li>• You'll receive all property ownership documents</li>
+                </ul>
+              </div>
+              
+              <div className="flex space-x-4">
                 <button
-                  onClick={handleInitiatePayment}
-                  disabled={paymentLoading}
-                  className="bg-brand-blue hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  onClick={() => navigate('/escrow')}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {paymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                  View Escrow Status
+                </button>
+                <button
+                  onClick={handleBackToDashboard}
+                  className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Back to Dashboard
                 </button>
               </div>
             </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaCreditCard className="text-blue-600 text-2xl" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Redirecting to Payment</h3>
-                <p className="text-gray-600">You will be redirected to Flutterwave to complete your payment securely.</p>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <div className="flex items-start space-x-3">
-                  <FaBell className="text-yellow-600 h-6 w-6 mt-1" />
-                  <div>
-                    <h4 className="text-lg font-semibold text-yellow-900 mb-2">Important Reminder</h4>
-                    <p className="text-sm text-yellow-800">
-                      After successful payment, you will have 7 days to confirm property possession. 
-                      If no action is taken, funds will automatically be released to the vendor.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

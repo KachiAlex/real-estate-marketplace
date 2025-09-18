@@ -92,7 +92,7 @@ const PropertyDetail = () => {
       navigate('/login');
       return;
     }
-    navigate(`/escrow/create?propertyId=${property.id}`);
+    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
   };
 
   if (loading) {
@@ -149,7 +149,7 @@ const PropertyDetail = () => {
             <div className="mb-8">
               <div className="relative">
                 <img
-                  src={property.images?.[activeImage] || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop'}
+                  src={property.images?.[activeImage]?.url || property.image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop'}
                   alt={property.title}
                   className="w-full h-96 object-cover rounded-lg"
                 />
@@ -184,7 +184,7 @@ const PropertyDetail = () => {
                       }`}
                     >
                       <img
-                        src={image}
+                        src={image?.url || image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=80&h=80&fit=crop'}
                         alt={`${property.title} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
