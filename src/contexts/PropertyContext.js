@@ -13,7 +13,102 @@ export const useProperty = () => {
   return context;
 };
 
+// For now, use mock data directly since backend is not deployed to production
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Mock properties data for production use
+const mockProperties = [
+  {
+    id: '1',
+    title: 'Beautiful Family Home',
+    description: 'Spacious 3-bedroom home with modern amenities and stunning views',
+    price: 450000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 2, sqft: 1800 },
+    location: { address: '123 Main St', city: 'New York', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'John', lastName: 'Doe' },
+    views: 45,
+    isVerified: false,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Modern Downtown Apartment',
+    description: 'Luxury 2-bedroom apartment in the heart of downtown',
+    price: 2500,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 2, bathrooms: 1, sqft: 1200 },
+    location: { address: '456 Downtown Ave', city: 'New York', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'John', lastName: 'Doe' },
+    views: 32,
+    isVerified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    title: 'Luxury Penthouse Suite',
+    description: 'Stunning penthouse with panoramic city views and premium finishes',
+    price: 1250000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2800 },
+    location: { address: '789 Park Avenue', city: 'New York', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'Admin', lastName: 'User' },
+    views: 89,
+    isVerified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    title: 'Cozy Studio Apartment',
+    description: 'Perfect starter home in a vibrant neighborhood',
+    price: 1800,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 1, bathrooms: 1, sqft: 650 },
+    location: { address: '321 Brooklyn Heights', city: 'Brooklyn', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'John', lastName: 'Doe' },
+    views: 24,
+    isVerified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '5',
+    title: 'Suburban Villa with Pool',
+    description: 'Spacious family villa with private pool and garden',
+    price: 750000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 5, bathrooms: 4, sqft: 3200 },
+    location: { address: '456 Maple Drive', city: 'Westchester', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'Admin', lastName: 'User' },
+    views: 67,
+    isVerified: false,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '6',
+    title: 'Commercial Office Space',
+    description: 'Prime commercial space perfect for business operations',
+    price: 8500,
+    type: 'commercial',
+    status: 'for-lease',
+    details: { bedrooms: 0, bathrooms: 2, sqft: 1500 },
+    location: { address: '123 Business Plaza', city: 'Manhattan', state: 'NY' },
+    images: [{ url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop', isPrimary: true }],
+    owner: { firstName: 'Onyedikachi', lastName: 'Akoma' },
+    views: 43,
+    isVerified: true,
+    createdAt: new Date().toISOString()
+  }
+];
 
 export const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState([]);
@@ -40,20 +135,19 @@ export const PropertyProvider = ({ children }) => {
 
   // Load properties on mount
   useEffect(() => {
-    const loadProperties = async () => {
+    const loadProperties = () => {
       try {
-        const response = await axios.get(`${API_URL}/properties`);
-        if (response.data.success) {
-          const propertiesData = response.data.data.map(property => ({
-            ...property,
-            bedrooms: property.details?.bedrooms || 0,
-            bathrooms: property.details?.bathrooms || 0,
-            area: property.details?.sqft || 0,
-            location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-            image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
-          }));
-          setProperties(propertiesData);
-        }
+        // Use mock data directly for now (since backend is not deployed to production)
+        const propertiesData = mockProperties.map(property => ({
+          ...property,
+          bedrooms: property.details?.bedrooms || 0,
+          bathrooms: property.details?.bathrooms || 0,
+          area: property.details?.sqft || 0,
+          location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
+          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+        }));
+        setProperties(propertiesData);
+        console.log('Loaded mock properties:', propertiesData.length);
       } catch (error) {
         console.error('Error loading properties:', error);
       }
@@ -68,49 +162,72 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Build query parameters
-      const params = new URLSearchParams();
+      // Use mock data and filter client-side
+      let filteredProperties = [...mockProperties];
       
-      if (newFilters.search) params.append('search', newFilters.search);
-      if (newFilters.type) params.append('type', newFilters.type);
-      if (newFilters.status) params.append('status', newFilters.status);
-      if (newFilters.minPrice) params.append('minPrice', newFilters.minPrice);
-      if (newFilters.maxPrice) params.append('maxPrice', newFilters.maxPrice);
-      if (newFilters.bedrooms) params.append('bedrooms', newFilters.bedrooms);
-      if (newFilters.bathrooms) params.append('bathrooms', newFilters.bathrooms);
-      if (newFilters.verified !== undefined) params.append('verified', newFilters.verified);
-      params.append('page', page);
-      params.append('limit', pagination.itemsPerPage);
-
-      const response = await axios.get(`${API_URL}/properties?${params}`);
+      // Apply filters
+      if (newFilters.search) {
+        const searchLower = newFilters.search.toLowerCase();
+        filteredProperties = filteredProperties.filter(p => 
+          p.title.toLowerCase().includes(searchLower) ||
+          p.description.toLowerCase().includes(searchLower) ||
+          p.location.address.toLowerCase().includes(searchLower) ||
+          p.location.city.toLowerCase().includes(searchLower)
+        );
+      }
       
-      if (response.data.success) {
-        const propertiesData = response.data.data.map(property => ({
-          ...property,
-          // Map backend property structure to frontend expected structure
-          bedrooms: property.details?.bedrooms || 0,
-          bathrooms: property.details?.bathrooms || 0,
-          area: property.details?.sqft || 0,
-          location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
-        }));
+      if (newFilters.type) {
+        filteredProperties = filteredProperties.filter(p => p.type === newFilters.type);
+      }
+      
+      if (newFilters.status) {
+        filteredProperties = filteredProperties.filter(p => p.status === newFilters.status);
+      }
+      
+      if (newFilters.minPrice) {
+        filteredProperties = filteredProperties.filter(p => p.price >= parseInt(newFilters.minPrice));
+      }
+      
+      if (newFilters.maxPrice) {
+        filteredProperties = filteredProperties.filter(p => p.price <= parseInt(newFilters.maxPrice));
+      }
+      
+      if (newFilters.bedrooms) {
+        filteredProperties = filteredProperties.filter(p => p.details.bedrooms >= parseInt(newFilters.bedrooms));
+      }
+      
+      if (newFilters.bathrooms) {
+        filteredProperties = filteredProperties.filter(p => p.details.bathrooms >= parseInt(newFilters.bathrooms));
+      }
+      
+      if (newFilters.verified === 'true') {
+        filteredProperties = filteredProperties.filter(p => p.isVerified === true);
+      } else if (newFilters.verified === 'false') {
+        filteredProperties = filteredProperties.filter(p => p.isVerified === false);
+      }
 
-        setProperties(propertiesData);
-        
-        if (response.data.pagination) {
-          setPagination(prev => ({
-            ...prev,
-            currentPage: response.data.pagination.currentPage,
-            totalPages: response.data.pagination.totalPages,
-            totalItems: response.data.pagination.totalItems
-          }));
-        }
+      // Map to frontend expected structure
+      const propertiesData = filteredProperties.map(property => ({
+        ...property,
+        bedrooms: property.details?.bedrooms || 0,
+        bathrooms: property.details?.bathrooms || 0,
+        area: property.details?.sqft || 0,
+        location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
+        image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+      }));
 
-        if (Object.keys(newFilters).length > 0) {
-          setFilters(newFilters);
-        }
-      } else {
-        throw new Error(response.data.message || 'Failed to fetch properties');
+      setProperties(propertiesData);
+      
+      // Update pagination
+      setPagination(prev => ({
+        ...prev,
+        currentPage: page,
+        totalPages: Math.ceil(propertiesData.length / pagination.itemsPerPage),
+        totalItems: propertiesData.length
+      }));
+
+      if (Object.keys(newFilters).length > 0) {
+        setFilters(newFilters);
       }
     } catch (error) {
       setError('Failed to fetch properties');
@@ -127,10 +244,9 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.get(`${API_URL}/properties/${propertyId}`);
+      const property = mockProperties.find(p => p.id === propertyId);
       
-      if (response.data.success) {
-        const property = response.data.data;
+      if (property) {
         return {
           ...property,
           bedrooms: property.details?.bedrooms || 0,
@@ -140,7 +256,7 @@ export const PropertyProvider = ({ children }) => {
           image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
         };
       } else {
-        throw new Error(response.data.message || 'Property not found');
+        throw new Error('Property not found');
       }
     } catch (error) {
       setError('Failed to fetch property');
