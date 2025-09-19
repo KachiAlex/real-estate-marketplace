@@ -13,9 +13,18 @@ const BillingPayments = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [filterStatus, setFilterStatus] = useState('all');
   const [allTransactions, setAllTransactions] = useState([]);
+  const [newPaymentMethod, setNewPaymentMethod] = useState({
+    type: 'card',
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: '',
+    bankName: ''
+  });
 
   // Mock payment methods
   const paymentMethods = [
@@ -253,6 +262,36 @@ const BillingPayments = () => {
     setSelectedTransaction(null);
   };
 
+  const handleAddPaymentMethod = () => {
+    setShowAddPaymentModal(true);
+  };
+
+  const handleSavePaymentMethod = () => {
+    // In a real app, this would save to the backend
+    toast.success('Payment method added successfully!');
+    setShowAddPaymentModal(false);
+    setNewPaymentMethod({
+      type: 'card',
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      cardholderName: '',
+      bankName: ''
+    });
+  };
+
+  const closeAddPaymentModal = () => {
+    setShowAddPaymentModal(false);
+    setNewPaymentMethod({
+      type: 'card',
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      cardholderName: '',
+      bankName: ''
+    });
+  };
+
   const handleFlutterwavePayment = async (amount, description) => {
     // Mock Flutterwave integration
     const paymentData = {
@@ -359,7 +398,6 @@ const BillingPayments = () => {
           <nav className="flex space-x-8 px-6">
             {[
               { key: 'overview', label: 'Overview' },
-              { key: 'escrow', label: 'Escrow Transactions' },
               { key: 'payments', label: 'Payment Methods' },
               { key: 'history', label: 'Transaction History' },
               { key: 'invoices', label: 'Invoices & Receipts' }
@@ -388,55 +426,66 @@ const BillingPayments = () => {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <h4 className="font-semibold text-gray-900 mb-4">Recent Transactions</h4>
                   <div className="space-y-3">
-                    {transactionHistory.slice(0, 3).map((transaction) => (
+                    {allTransactions.slice(0, 3).map((transaction) => (
                       <div key={transaction.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-900">{transaction.description}</p>
-                          <p className="text-sm text-gray-600">{transaction.date}</p>
+                          <p className="font-medium text-gray-900">{transaction.description || transaction.propertyTitle}</p>
+                          <p className="text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">₦{transaction.amount.toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900">₦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
                         </div>
                       </div>
                     ))}
+                    {allTransactions.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No recent transactions found.</p>
+                        <p className="text-sm">Complete a property purchase to see transactions here.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-6">
                   <h4 className="font-semibold text-gray-900 mb-4">Escrow Status</h4>
                   <div className="space-y-3">
-                    {mockEscrowTransactions.slice(0, 2).map((escrow) => (
+                    {allTransactions.filter(t => t.escrowId && (t.status === 'pending' || t.status === 'in-progress')).slice(0, 2).map((escrow) => (
                       <div key={escrow.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-900">{escrow.propertyTitle}</p>
-                          <p className="text-sm text-gray-600">ID: {escrow.id}</p>
+                          <p className="font-medium text-gray-900">{escrow.propertyTitle || escrow.description}</p>
+                          <p className="text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">₦{escrow.amount.toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900">₦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(escrow.status)}`}>
                             {escrow.status}
                           </span>
                         </div>
                       </div>
                     ))}
+                    {allTransactions.filter(t => t.escrowId && (t.status === 'pending' || t.status === 'in-progress')).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No active escrow transactions.</p>
+                        <p className="text-sm">Your completed escrow transactions will appear in transaction history.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'escrow' && (
-            <EscrowDashboard userRole="buyer" />
-          )}
-
           {activeTab === 'payments' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">Payment Methods</h3>
-                <button className="btn-primary flex items-center space-x-2">
+                <button 
+                  onClick={handleAddPaymentMethod}
+                  className="btn-primary flex items-center space-x-2"
+                >
                   <FaPlus />
                   <span>Add Payment Method</span>
                 </button>
@@ -700,6 +749,151 @@ const BillingPayments = () => {
           transaction={selectedTransaction} 
           onClose={closeReceiptModal}
         />
+      )}
+
+      {/* Add Payment Method Modal */}
+      {showAddPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900">Add Payment Method</h3>
+              <button
+                onClick={closeAddPaymentModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Payment Method Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method Type
+                </label>
+                <select
+                  value={newPaymentMethod.type}
+                  onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, type: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="card">Credit/Debit Card</option>
+                  <option value="bank">Bank Transfer</option>
+                </select>
+              </div>
+
+              {newPaymentMethod.type === 'card' ? (
+                <>
+                  {/* Card Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Card Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="1234 5678 9012 3456"
+                      value={newPaymentMethod.cardNumber}
+                      onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, cardNumber: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Expiry Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        value={newPaymentMethod.expiryDate}
+                        onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, expiryDate: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    {/* CVV */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        CVV
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="123"
+                        value={newPaymentMethod.cvv}
+                        onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, cvv: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cardholder Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cardholder Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      value={newPaymentMethod.cardholderName}
+                      onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, cardholderName: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Bank Transfer Fields */
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bank Name
+                  </label>
+                  <select
+                    value={newPaymentMethod.bankName}
+                    onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, bankName: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Select Bank</option>
+                    <option value="First Bank">First Bank of Nigeria</option>
+                    <option value="GTBank">Guaranty Trust Bank</option>
+                    <option value="Access Bank">Access Bank</option>
+                    <option value="Zenith Bank">Zenith Bank</option>
+                    <option value="UBA">United Bank for Africa</option>
+                    <option value="Fidelity Bank">Fidelity Bank</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Security Notice */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <FaShieldAlt className="text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-blue-800">
+                      Your payment information is encrypted and secure. We use Flutterwave's 
+                      secure payment processing and never store your card details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={closeAddPaymentModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePaymentMethod}
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Add Payment Method
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
