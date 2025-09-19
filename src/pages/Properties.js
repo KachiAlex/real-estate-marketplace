@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Properties = () => {
   const navigate = useNavigate();
   const { properties = [], filters = {}, setFilters, fetchProperties, toggleFavorite, saveSearch } = useProperty();
+  const { user, setAuthRedirect } = useAuth();
   const safeProperties = useMemo(() => Array.isArray(properties) ? properties : [], [properties]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,6 +17,9 @@ const Properties = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
+  const [favorites, setFavorites] = useState(new Set());
+  const [saveSearchName, setSaveSearchName] = useState('');
+  const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -46,12 +51,74 @@ const Properties = () => {
     fetchProperties(next, 1);
   };
 
-  const handleSaveSearch = async () => {
-    await saveSearch('Quick Saved Search', filters);
+  const handleSaveSearch = () => {
+    if (!user) {
+      toast.error('Please login to save searches');
+      navigate('/login');
+      return;
+    }
+    setShowSaveSearchModal(true);
   };
 
-  const handleToggleFavorite = async (id) => {
-    await toggleFavorite(id);
+  const handleConfirmSaveSearch = async () => {
+    if (!saveSearchName.trim()) {
+      toast.error('Please enter a name for your search');
+      return;
+    }
+
+    try {
+      const searchCriteria = {
+        type: selectedType,
+        status: selectedStatus,
+        priceRange,
+        searchQuery,
+        location: filters.location,
+        bedrooms: filters.bedrooms,
+        bathrooms: filters.bathrooms
+      };
+
+      await saveSearch(saveSearchName, searchCriteria);
+      toast.success(`Search "${saveSearchName}" saved successfully!`);
+      setShowSaveSearchModal(false);
+      setSaveSearchName('');
+    } catch (error) {
+      console.error('Error saving search:', error);
+      toast.error('Failed to save search');
+    }
+  };
+
+  const closeSaveSearchModal = () => {
+    setShowSaveSearchModal(false);
+    setSaveSearchName('');
+  };
+
+  const handleToggleFavorite = async (propertyId) => {
+    if (!user) {
+      // Set redirect URL to return to current page after login
+      const currentUrl = `/properties`;
+      setAuthRedirect(currentUrl);
+      toast.error('Please login to save properties to favorites');
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      const newFavorites = new Set(favorites);
+      if (newFavorites.has(propertyId)) {
+        newFavorites.delete(propertyId);
+        toast.success('Removed from favorites');
+      } else {
+        newFavorites.add(propertyId);
+        toast.success('Added to favorites');
+      }
+      setFavorites(newFavorites);
+      
+      // Also call the context function
+      await toggleFavorite(propertyId);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
+    }
   };
 
   const handleViewDetails = (propertyId) => {
@@ -270,8 +337,11 @@ const Properties = () => {
                     <button
                       onClick={() => handleToggleFavorite(property.id)}
                       className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
+                      title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
                     >
-                      <FaHeart className="text-white text-lg" />
+                      <FaHeart className={`text-lg transition-colors ${
+                        favorites.has(property.id) ? 'text-red-500' : 'text-white'
+                      }`} />
                     </button>
                     <button
                       onClick={(e) => {
@@ -392,6 +462,66 @@ const Properties = () => {
           )}
         </div>
       </div>
+
+      {/* Save Search Modal */}
+      {showSaveSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Save Search</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Name
+                </label>
+                <input
+                  type="text"
+                  value={saveSearchName}
+                  onChange={(e) => setSaveSearchName(e.target.value)}
+                  placeholder="e.g., 3-bedroom apartments in Lagos"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <h4 className="font-medium text-gray-900 mb-2">Search Criteria:</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {selectedType && <p>• Type: {selectedType}</p>}
+                  {selectedStatus && <p>• Status: {selectedStatus}</p>}
+                  {priceRange.min && <p>• Min Price: ₦{parseInt(priceRange.min).toLocaleString()}</p>}
+                  {priceRange.max && <p>• Max Price: ₦{parseInt(priceRange.max).toLocaleString()}</p>}
+                  {searchQuery && <p>• Search: "{searchQuery}"</p>}
+                  {(!selectedType && !selectedStatus && !priceRange.min && !priceRange.max && !searchQuery) && (
+                    <p className="text-gray-500">No specific filters applied</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  💡 You'll receive notifications when new properties matching these criteria become available.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={closeSaveSearchModal}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSaveSearch}
+                disabled={!saveSearchName.trim()}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Save Search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
