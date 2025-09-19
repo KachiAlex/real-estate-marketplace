@@ -17,7 +17,16 @@ const Receipt = ({ transaction, onClose }) => {
   };
 
   const generateReceiptNumber = (transactionId) => {
-    return `RCP-${transactionId}-${Date.now().toString().slice(-6)}`;
+    // Generate a consistent receipt number based on transaction ID
+    // Extract numbers from transaction ID and create a fixed receipt number
+    const numericPart = transactionId.replace(/[^0-9]/g, '') || '1';
+    const paddedId = numericPart.padStart(6, '0');
+    
+    // Add prefix based on transaction type
+    const prefix = transactionId.includes('ESC') ? 'RCP-ESC' : 
+                  transactionId.includes('TXN') ? 'RCP-TXN' : 'RCP';
+    
+    return `${prefix}-${paddedId}`;
   };
 
   const downloadReceipt = () => {
