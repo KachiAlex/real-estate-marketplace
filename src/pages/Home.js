@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   FaSearch, 
   FaMapMarkerAlt, 
@@ -19,9 +20,15 @@ import {
   FaChartLine,
   FaPlay
 } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import AIAssistant from '../components/AIAssistant';
 
 const Home = () => {
-  const { properties } = useProperty();
+  const { properties, toggleFavorite } = useProperty();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [favorites, setFavorites] = useState(new Set());
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Lagos');
   const [selectedType, setSelectedType] = useState('Apartment');
@@ -35,6 +42,8 @@ const Home = () => {
   const [quickFilter, setQuickFilter] = useState('All Properties');
   const [sortBy, setSortBy] = useState('Most Relevant');
   const [showMoreAmenities, setShowMoreAmenities] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [propertiesPerPage] = useState(9);
 
   // Mock data for the properties shown in the screenshot
   const mockProperties = [
@@ -208,26 +217,163 @@ const Home = () => {
     setSearchQuery('');
   };
 
+  // Initialize filtered properties on component mount
+  useEffect(() => {
+    setFilteredProperties(mockProperties);
+  }, []);
+  
+  // Calculate pagination
+  const displayProperties = filteredProperties.length > 0 ? filteredProperties : mockProperties;
+  const indexOfLastProperty = currentPage * propertiesPerPage;
+  const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
+  const currentProperties = displayProperties.slice(indexOfFirstProperty, indexOfLastProperty);
+  const totalPages = Math.ceil(displayProperties.length / propertiesPerPage);
+
   const handleApplyFilters = () => {
-    // Apply filters logic - you can implement actual filtering here
-    console.log('Applying filters:', {
-      location: selectedLocation,
-      type: selectedType,
-      bedrooms,
-      bathrooms,
-      priceRange,
-      searchQuery
-    });
+    let filtered = [...mockProperties];
+    
+    // Apply location filter
+    if (selectedLocation) {
+      filtered = filtered.filter(property => 
+        property.location.toLowerCase().includes(selectedLocation.toLowerCase())
+      );
+    }
+    
+    // Apply property type filter
+    if (selectedType) {
+      filtered = filtered.filter(property => 
+        property.title.toLowerCase().includes(selectedType.toLowerCase())
+      );
+    }
+    
+    // Apply bedrooms filter
+    if (bedrooms) {
+      const bedroomCount = parseInt(bedrooms);
+      filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
+    }
+    
+    // Apply bathrooms filter
+    if (bathrooms) {
+      const bathroomCount = parseInt(bathrooms);
+      filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
+    }
+    
+    // Apply price range filter
+    filtered = filtered.filter(property => 
+      property.price >= priceRange[0] && property.price <= priceRange[1]
+    );
+    
+    // Apply search query filter
+    if (searchQuery) {
+      filtered = filtered.filter(property => 
+        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    setFilteredProperties(filtered);
+    setCurrentPage(1);
+    toast.success(`Found ${filtered.length} properties matching your criteria!`);
   };
 
   const handleGetStarted = () => {
-    // Navigate to registration or properties page
-    window.location.href = '/register';
+    navigate('/register');
   };
 
   const handleLearnMore = () => {
-    // Navigate to about page or scroll to features section
-    window.location.href = '/about';
+    navigate('/about');
+  };
+  
+  const handleToggleFavorite = (propertyId) => {
+    if (!user) {
+      toast.error('Please login to save properties to favorites');
+      navigate('/login');
+      return;
+    }
+    
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(propertyId)) {
+      newFavorites.delete(propertyId);
+      toast.success('Removed from favorites');
+    } else {
+      newFavorites.add(propertyId);
+      toast.success('Added to favorites');
+    }
+    setFavorites(newFavorites);
+    toggleFavorite(propertyId);
+  };
+  
+  const handleShareProperty = async (property) => {
+    const shareData = {
+      title: property.title,
+      text: `Check out this amazing property: ${property.title}`,
+      url: `${window.location.origin}/property/${property.id}`
+    };
+    
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success('Property shared successfully!');
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.success('Property link copied to clipboard!');
+      }
+    } catch (error) {
+      toast.error('Failed to share property');
+    }
+  };
+  
+  const handleQuickFilterChange = (filter) => {
+    setQuickFilter(filter);
+    let filtered = [...mockProperties];
+    
+    if (filter !== 'All Properties') {
+      if (filter === 'Luxury') {
+        filtered = filtered.filter(property => 
+          property.price > 80000000 || 
+          property.title.toLowerCase().includes('luxury') ||
+          property.title.toLowerCase().includes('penthouse') ||
+          property.title.toLowerCase().includes('villa')
+        );
+      } else {
+        filtered = filtered.filter(property => 
+          property.label === filter || property.status === filter
+        );
+      }
+    }
+    
+    setFilteredProperties(filtered);
+    setCurrentPage(1);
+    toast.success(`Showing ${filter.toLowerCase()} properties`);
+  };
+  
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+    let sorted = [...(filteredProperties.length > 0 ? filteredProperties : mockProperties)];
+    
+    switch (newSortBy) {
+      case 'Price Low to High':
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case 'Price High to Low':
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case 'Newest':
+        sorted.sort((a, b) => b.id - a.id);
+        break;
+      default:
+        // Most Relevant - keep original order
+        break;
+    }
+    
+    setFilteredProperties(sorted);
+    toast.success(`Sorted by ${newSortBy.toLowerCase()}`);
+  };
+  
+  const handlePaginationClick = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -257,12 +403,13 @@ const Home = () => {
               {quickFilters.map((filter) => (
                 <button
                   key={filter}
-                  onClick={() => setQuickFilter(filter)}
+                  onClick={() => handleQuickFilterChange(filter)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     quickFilter === filter
                       ? 'bg-orange-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
+                  title={`Filter properties by ${filter.toLowerCase()}`}
                 >
                   {filter}
                 </button>
@@ -469,13 +616,14 @@ const Home = () => {
           <div className="flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-700">18 properties found</p>
+              <p className="text-gray-700">{displayProperties.length} properties found</p>
               <div className="flex items-center space-x-2">
-                <FaSort className="text-gray-400" />
+                <FaSort className="text-gray-400" title="Sort properties" />
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => handleSortChange(e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  title="Sort properties by preference"
                 >
                   <option value="Most Relevant">Most Relevant</option>
                   <option value="Price Low to High">Price Low to High</option>
@@ -487,7 +635,7 @@ const Home = () => {
 
             {/* Property Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockProperties.map((property) => (
+              {currentProperties.map((property) => (
                 <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img
@@ -501,11 +649,21 @@ const Home = () => {
                       </span>
                     </div>
                     <div className="absolute top-3 right-3 flex space-x-2">
-                      <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
-                        <FaHeart className="text-gray-400 text-sm" />
+                      <button 
+                        onClick={() => handleToggleFavorite(property.id)}
+                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+                        title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <FaHeart className={`text-sm transition-colors ${
+                          favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'
+                        }`} />
                       </button>
-                      <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50">
-                        <FaShare className="text-gray-400 text-sm" />
+                      <button 
+                        onClick={() => handleShareProperty(property)}
+                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+                        title="Share property"
+                      >
+                        <FaShare className="text-gray-400 text-sm hover:text-blue-500 transition-colors" />
                       </button>
                     </div>
                     <div className="absolute bottom-3 left-3">
@@ -541,6 +699,7 @@ const Home = () => {
                     <Link
                       to={`/property/${property.id}`}
                       className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                      title={`View details for ${property.title}`}
                     >
                       View Details
                       <FaArrowRight className="ml-2 text-sm" />
@@ -551,20 +710,58 @@ const Home = () => {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-center mt-8 space-x-2">
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
-                &lt;
-              </button>
-              <button className="px-3 py-2 bg-orange-500 text-white rounded-lg">1</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">2</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">3</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">4</button>
-              <span className="px-3 py-2 text-gray-600">...</span>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">25</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
-                &gt;
-              </button>
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center mt-8 space-x-2">
+                <button 
+                  onClick={() => handlePaginationClick(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  &lt;
+                </button>
+                
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const pageNumber = i + 1;
+                  return (
+                    <button 
+                      key={pageNumber}
+                      onClick={() => handlePaginationClick(pageNumber)}
+                      className={`px-3 py-2 rounded-lg ${
+                        currentPage === pageNumber
+                          ? 'bg-orange-500 text-white'
+                          : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                      title={`Go to page ${pageNumber}`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                
+                {totalPages > 5 && (
+                  <>
+                    <span className="px-3 py-2 text-gray-600">...</span>
+                    <button 
+                      onClick={() => handlePaginationClick(totalPages)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                      title={`Go to page ${totalPages}`}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+                
+                <button 
+                  onClick={() => handlePaginationClick(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -735,6 +932,9 @@ const Home = () => {
           </div>
         </div>
       </footer>
+      
+      {/* AI Assistant */}
+      <AIAssistant />
     </div>
   );
 };
