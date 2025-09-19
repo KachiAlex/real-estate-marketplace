@@ -90,7 +90,9 @@ const PropertyDetail = () => {
     if (!user) {
       // Set redirect URL to return to payment flow after login
       const redirectUrl = `/escrow/create?propertyId=${property.id}&type=purchase`;
+      console.log('PropertyDetail: Setting redirect URL:', redirectUrl);
       setAuthRedirect(redirectUrl);
+      console.log('PropertyDetail: Redirect URL set, localStorage check:', localStorage.getItem('authRedirectUrl'));
       toast.error('Please login to start escrow process');
       navigate('/login');
       return;

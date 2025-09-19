@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import EscrowDashboard from '../components/EscrowDashboard';
+import Receipt from '../components/Receipt';
 import { FaCreditCard, FaShieldAlt, FaClock, FaCheck, FaTimes, FaDownload, FaEye, FaPlus, FaFilter, FaSearch, FaFileInvoice, FaMoneyBillWave, FaLock, FaUnlock, FaExclamationTriangle, FaInfoCircle, FaArrowRight, FaHistory, FaReceipt } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const BillingPayments = () => {
   const { user } = useAuth();
@@ -10,8 +12,10 @@ const BillingPayments = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [allTransactions, setAllTransactions] = useState([]);
 
   // Mock payment methods
   const paymentMethods = [
@@ -35,15 +39,40 @@ const BillingPayments = () => {
     }
   ];
 
-  // Mock billing summary
-  const billingSummary = {
-    totalSpent: 2500000,
-    pendingPayments: 450000,
-    completedTransactions: 12,
-    escrowBalance: 1250000,
-    monthlySpend: 180000,
-    lastPayment: '2024-01-15'
+  // Calculate real billing summary from transactions
+  const getBillingSummary = () => {
+    const completed = allTransactions.filter(t => t.status === 'completed');
+    const pending = allTransactions.filter(t => t.status === 'pending' || t.status === 'in-progress');
+    
+    const totalSpent = completed.reduce((sum, t) => sum + (t.totalAmount || t.amount), 0);
+    const pendingPayments = pending.reduce((sum, t) => sum + (t.totalAmount || t.amount), 0);
+    const escrowBalance = pending.reduce((sum, t) => sum + (t.totalAmount || t.amount), 0);
+    
+    // Calculate monthly spend (current month)
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const monthlyTransactions = completed.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+    });
+    const monthlySpend = monthlyTransactions.reduce((sum, t) => sum + (t.totalAmount || t.amount), 0);
+    
+    // Get last payment date
+    const lastPayment = completed.length > 0 
+      ? completed.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+      : null;
+
+    return {
+      totalSpent,
+      pendingPayments,
+      completedTransactions: completed.length,
+      escrowBalance,
+      monthlySpend,
+      lastPayment
+    };
   };
+
+  const billingSummary = getBillingSummary();
 
   // Mock transaction history
   const transactionHistory = [
@@ -122,6 +151,55 @@ const BillingPayments = () => {
     }
   ];
 
+  // Load all transactions (escrow + mock) on component mount
+  useEffect(() => {
+    const loadAllTransactions = () => {
+      try {
+        // Load real escrow transactions from localStorage
+        const storedEscrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+        
+        // Convert escrow transactions to billing format
+        const escrowBillingTransactions = storedEscrowTransactions.map(escrow => ({
+          id: `TXN-${escrow.id}`,
+          type: 'Property Purchase',
+          amount: escrow.amount,
+          totalAmount: escrow.totalAmount,
+          status: escrow.status === 'funded' ? 'completed' : escrow.status,
+          date: escrow.createdAt,
+          description: escrow.propertyTitle,
+          propertyTitle: escrow.propertyTitle,
+          buyer: user?.firstName + ' ' + user?.lastName || 'Current User',
+          seller: 'Property Owner',
+          paymentMethod: 'Flutterwave',
+          escrowId: escrow.id,
+          fees: escrow.escrowFee,
+          completedAt: escrow.completedAt,
+          paymentReference: escrow.paymentReference
+        }));
+
+        // Combine with existing mock transactions
+        const combinedTransactions = [
+          ...escrowBillingTransactions,
+          ...transactionHistory.filter(mock => 
+            !escrowBillingTransactions.find(escrow => escrow.escrowId === mock.escrowId)
+          )
+        ];
+
+        // Sort by date (newest first)
+        combinedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        setAllTransactions(combinedTransactions);
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+        setAllTransactions(transactionHistory);
+      }
+    };
+
+    loadAllTransactions();
+    
+    // Reload when user changes or component mounts
+  }, [user, transactionHistory]);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
@@ -158,6 +236,23 @@ const BillingPayments = () => {
     console.log('Processing payment:', { transactionId, amount, paymentMethod });
   };
 
+  const handleViewReceipt = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowReceiptModal(true);
+  };
+
+  const handleDownloadReceipt = (transaction) => {
+    // Create a temporary receipt component for download
+    setSelectedTransaction(transaction);
+    setShowReceiptModal(true);
+    toast.success('Opening receipt for download...');
+  };
+
+  const closeReceiptModal = () => {
+    setShowReceiptModal(false);
+    setSelectedTransaction(null);
+  };
+
   const handleFlutterwavePayment = async (amount, description) => {
     // Mock Flutterwave integration
     const paymentData = {
@@ -187,10 +282,6 @@ const BillingPayments = () => {
     // You can implement transaction details modal or navigation
   };
 
-  const handleDownloadReceipt = (transaction) => {
-    console.log('Download receipt for transaction:', transaction.id);
-    // You can implement receipt generation and download
-  };
 
   const filteredTransactions = mockEscrowTransactions.filter(transaction => {
     if (filterStatus === 'all') return true;
@@ -447,7 +538,9 @@ const BillingPayments = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {transactionHistory.map((transaction) => (
+                    {allTransactions.filter(transaction => 
+                      filterStatus === 'all' || transaction.status === filterStatus
+                    ).map((transaction) => (
                       <tr key={transaction.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -504,7 +597,9 @@ const BillingPayments = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {transactionHistory.map((transaction) => (
+                {allTransactions.filter(transaction => 
+                  filterStatus === 'all' || transaction.status === filterStatus
+                ).map((transaction) => (
                   <div key={transaction.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="p-3 bg-gray-100 rounded-lg">
@@ -520,8 +615,20 @@ const BillingPayments = () => {
                     <p className="text-lg font-bold text-gray-900 mb-4">₦{transaction.amount.toLocaleString()}</p>
                     
                     <div className="flex space-x-2">
-                      <button className="btn-outline text-sm flex-1">View</button>
-                      <button className="btn-outline text-sm flex-1">Download</button>
+                      <button 
+                        onClick={() => handleViewReceipt(transaction)}
+                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                      >
+                        <FaEye className="mr-1" />
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadReceipt(transaction)}
+                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                      >
+                        <FaDownload className="mr-1" />
+                        Receipt
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -585,6 +692,14 @@ const BillingPayments = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Receipt Modal */}
+      {showReceiptModal && selectedTransaction && (
+        <Receipt 
+          transaction={selectedTransaction} 
+          onClose={closeReceiptModal}
+        />
       )}
     </div>
   );

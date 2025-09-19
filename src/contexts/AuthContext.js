@@ -85,6 +85,11 @@ export const AuthProvider = ({ children }) => {
       
       // Handle redirect after login
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      console.log('AuthContext: Login successful, checking redirect...');
+      console.log('AuthContext: redirectUrl state:', redirectUrl);
+      console.log('AuthContext: localStorage authRedirectUrl:', localStorage.getItem('authRedirectUrl'));
+      console.log('AuthContext: final redirectTo:', redirectTo);
+      
       if (redirectTo) {
         setRedirectUrl(null);
         localStorage.removeItem('authRedirectUrl');
