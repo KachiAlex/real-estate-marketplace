@@ -84,7 +84,12 @@ const Register = () => {
       
       const result = await register(userData);
       if (result.success) {
-        navigate('/dashboard');
+        // Check if there's a redirect URL
+        if (result.redirectUrl) {
+          navigate(result.redirectUrl);
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setErrors({ general: result.message || 'Registration failed. Please try again.' });
       }

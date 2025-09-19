@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const EscrowPaymentFlow = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, clearAuthRedirect } = useAuth();
   const { fetchProperty } = useProperty();
   const { createEscrowTransaction } = useEscrow();
   
@@ -36,10 +36,16 @@ const EscrowPaymentFlow = () => {
       }
 
       if (!user) {
+        // Set redirect URL to return here after login
+        const currentUrl = `/escrow/create?propertyId=${propertyId}&type=${transactionType}`;
+        localStorage.setItem('authRedirectUrl', currentUrl);
         toast.error('Please login to continue');
         navigate('/login');
         return;
       }
+
+      // Clear any existing redirect URL since user is authenticated and accessing this page
+      clearAuthRedirect();
 
       try {
         const propertyData = await fetchProperty(propertyId);

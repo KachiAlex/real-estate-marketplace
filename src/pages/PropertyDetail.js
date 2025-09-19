@@ -9,7 +9,7 @@ const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { properties, loading, error, toggleFavorite } = useProperty();
-  const { user } = useAuth();
+  const { user, setAuthRedirect } = useAuth();
   const [property, setProperty] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
@@ -88,6 +88,9 @@ const PropertyDetail = () => {
 
   const handleStartEscrow = () => {
     if (!user) {
+      // Set redirect URL to return to payment flow after login
+      const redirectUrl = `/escrow/create?propertyId=${property.id}&type=purchase`;
+      setAuthRedirect(redirectUrl);
       toast.error('Please login to start escrow process');
       navigate('/login');
       return;

@@ -64,8 +64,16 @@ const Login = () => {
       console.log('Login: Login result:', result);
       
       if (result.success) {
-        console.log('Login: Login successful, navigating to dashboard');
-        navigate('/dashboard');
+        console.log('Login: Login successful, navigating...');
+        
+        // Check if there's a redirect URL
+        if (result.redirectUrl) {
+          console.log('Login: Redirecting to:', result.redirectUrl);
+          navigate(result.redirectUrl);
+        } else {
+          console.log('Login: No redirect URL, going to dashboard');
+          navigate('/dashboard');
+        }
       } else {
         console.log('Login: Login failed:', result.message);
         setErrors({ general: result.message });

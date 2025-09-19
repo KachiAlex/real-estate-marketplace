@@ -46,18 +46,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [redirectUrl, setRedirectUrl] = useState(null);
 
-  // Check for existing session on load
+  // Check for existing session and redirect URL on load
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
+    const savedRedirectUrl = localStorage.getItem('authRedirectUrl');
+    
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
-      } catch (error) {
+        } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('currentUser');
       }
+    }
+    
+    if (savedRedirectUrl) {
+      setRedirectUrl(savedRedirectUrl);
     }
   }, []);
 
@@ -76,8 +83,15 @@ export const AuthProvider = ({ children }) => {
       setUser(userWithoutPassword);
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       
+      // Handle redirect after login
+      const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      if (redirectTo) {
+        setRedirectUrl(null);
+        localStorage.removeItem('authRedirectUrl');
+      }
+      
       toast.success('Login successful!');
-      return { success: true, user: userWithoutPassword };
+      return { success: true, user: userWithoutPassword, redirectUrl: redirectTo };
     } catch (error) {
       setError(error.message);
       toast.error(error.message);
@@ -116,8 +130,15 @@ export const AuthProvider = ({ children }) => {
       setUser(userWithoutPassword);
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       
+      // Handle redirect after registration
+      const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      if (redirectTo) {
+        setRedirectUrl(null);
+        localStorage.removeItem('authRedirectUrl');
+      }
+      
       toast.success('Registration successful!');
-      return { success: true, user: userWithoutPassword };
+      return { success: true, user: userWithoutPassword, redirectUrl: redirectTo };
     } catch (error) {
       setError(error.message);
       toast.error(error.message);
@@ -157,14 +178,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const setAuthRedirect = (url) => {
+    setRedirectUrl(url);
+    localStorage.setItem('authRedirectUrl', url);
+  };
+
+  const clearAuthRedirect = () => {
+    setRedirectUrl(null);
+    localStorage.removeItem('authRedirectUrl');
+  };
+
   const value = {
     user,
     loading,
     error,
+    redirectUrl,
     login,
     register,
     logout,
-    updateUserProfile
+    updateUserProfile,
+    setAuthRedirect,
+    clearAuthRedirect
   };
 
   return (
