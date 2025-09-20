@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Mortgage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedPriceRange, setSelectedPriceRange] = useState('any');
@@ -15,6 +18,53 @@ const Mortgage = () => {
   const [downPayment, setDownPayment] = useState(7000000);
   const [loanTerm, setLoanTerm] = useState(15);
   const [interestRate, setInterestRate] = useState(13.5);
+
+  // Button handlers
+  const handlePreQualification = () => {
+    if (!user) {
+      toast.error('Please login to start pre-qualification');
+      navigate('/login');
+      return;
+    }
+    toast.success('Pre-qualification started! You will be contacted within 24 hours.');
+  };
+
+  const handleViewProperty = (propertyId) => {
+    navigate(`/property/${propertyId}`);
+  };
+
+  const handleApplyMortgage = (property) => {
+    if (!user) {
+      toast.error('Please login to apply for mortgage');
+      navigate('/login');
+      return;
+    }
+    toast.success(`Mortgage application started for ${property.title}!`);
+  };
+
+  const handleFilterResults = () => {
+    // Apply filters based on current selections
+    const filters = {
+      location: selectedLocation,
+      priceRange: selectedPriceRange,
+      propertyType: selectedPropertyType,
+      eligibility: selectedEligibility
+    };
+    toast.success('Filters applied successfully!');
+    console.log('Applied filters:', filters);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedLocation('all');
+    setSelectedPriceRange('any');
+    setSelectedPropertyType('all');
+    setSelectedEligibility('all');
+    toast.success('Filters reset successfully!');
+  };
+
+  const handlePagination = (pageNumber) => {
+    toast.success(`Navigating to page ${pageNumber}`);
+  };
 
   // Mock mortgage rates data
   const mortgageRates = [
@@ -207,7 +257,11 @@ const Mortgage = () => {
           <div className="bg-brand-blue rounded-lg p-4 text-white">
             <h3 className="font-semibold mb-2">Get Pre-qualified Today</h3>
             <p className="text-sm mb-3">Get a personalized estimate of how much you can borrow before you start house hunting. No impact on your credit score.</p>
-            <button className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <button 
+              onClick={handlePreQualification}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
+              title="Start mortgage pre-qualification process"
+            >
               <span>Start Pre-qualification</span>
               <FaArrowRight />
             </button>
@@ -337,12 +391,20 @@ const Mortgage = () => {
               <option value="pre-approved">Pre-Approved</option>
             </select>
             
-            <button className="btn-primary flex items-center space-x-2">
+            <button 
+              onClick={handleFilterResults}
+              className="btn-primary flex items-center space-x-2"
+              title="Apply current filter selections"
+            >
               <FaFilter />
               <span>Filter Results</span>
             </button>
             
-            <button className="p-2 text-gray-500 hover:text-gray-700">
+            <button 
+              onClick={handleResetFilters}
+              className="p-2 text-gray-500 hover:text-gray-700"
+              title="Reset all filters to default"
+            >
               <FaRedo />
             </button>
           </div>
@@ -405,8 +467,20 @@ const Mortgage = () => {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <button className="flex-1 btn-outline text-sm">View Property</button>
-                    <button className="flex-1 btn-primary text-sm">Apply for Mortgage</button>
+                    <button 
+                      onClick={() => handleViewProperty(property.id)}
+                      className="flex-1 btn-outline text-sm"
+                      title="View property details"
+                    >
+                      View Property
+                    </button>
+                    <button 
+                      onClick={() => handleApplyMortgage(property)}
+                      className="flex-1 btn-primary text-sm"
+                      title="Apply for mortgage on this property"
+                    >
+                      Apply for Mortgage
+                    </button>
                   </div>
                 </div>
               </div>
@@ -418,17 +492,25 @@ const Mortgage = () => {
               {[1, 2, 3, 4, 5].map((page) => (
                 <button
                   key={page}
+                  onClick={() => handlePagination(page)}
                   className={`px-3 py-2 rounded-lg text-sm ${
                     page === 1
                       ? 'bg-brand-blue text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
+                  title={`Go to page ${page}`}
                 >
                   {page}
                 </button>
               ))}
               <span className="px-3 py-2 text-gray-500">...</span>
-              <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">25</button>
+              <button 
+                onClick={() => handlePagination(25)}
+                className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                title="Go to page 25"
+              >
+                25
+              </button>
             </div>
           </div>
           

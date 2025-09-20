@@ -164,7 +164,15 @@ const Investment = () => {
       navigate('/login');
       return;
     }
-    setSelectedProject(project);
+    
+    // Ensure we have a project to work with
+    const projectToUse = project || projects[0];
+    if (!projectToUse) {
+      toast.error('No investment project available');
+      return;
+    }
+    
+    setSelectedProject(projectToUse);
     setShowInvestmentModal(true);
   };
 
@@ -571,6 +579,7 @@ const Investment = () => {
                   <button 
                     onClick={() => handleInvestNow(selectedProject || projects[0])}
                     className="btn-primary flex items-center space-x-2"
+                    disabled={!projects.length}
                   >
                     <FaCheck />
                     <span>Invest Now</span>
