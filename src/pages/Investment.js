@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import InvestmentChart from '../components/InvestmentChart';
 
 const Investment = () => {
   const navigate = useNavigate();
@@ -551,41 +552,19 @@ const Investment = () => {
                 </div>
 
                 {/* Projected Returns Chart */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Projected Returns</h3>
-                  <p className="text-gray-600 mb-4">Based on historical performance and project timeline</p>
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="h-64 flex items-end justify-between space-x-2">
-                      {[
-                        { quarter: 'Q1', value: 15, amount: 2.1 },
-                        { quarter: 'Q2', value: 18, amount: 2.8 },
-                        { quarter: 'Q3', value: 22, amount: 3.2 },
-                        { quarter: 'Q4', value: 25, amount: 3.8 },
-                        { quarter: 'Q5', value: 28, amount: 4.1 },
-                        { quarter: 'Q6', value: 30, amount: 4.5 },
-                        { quarter: 'Q7', value: 32, amount: 4.8 },
-                        { quarter: 'Q8', value: 35, amount: 5.2 }
-                      ].map((data, index) => (
-                        <div key={index} className="flex flex-col items-center group relative">
-                          <div className="absolute -top-8 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                            ₦{data.amount}M
-                          </div>
-                          <div
-                            className="w-8 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t mb-2 transition-all duration-300 hover:from-orange-600 hover:to-orange-400 cursor-pointer"
-                            style={{ height: `${data.value * 2}px` }}
-                            title={`${data.quarter}: ₦${data.amount}M projected return`}
-                          ></div>
-                          <span className="text-xs text-gray-600 font-medium">{data.quarter}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex justify-between text-sm text-gray-500">
-                      <span>0%</span>
-                      <span className="text-center">Investment Growth Timeline</span>
-                      <span>35%</span>
-                    </div>
-                  </div>
-                </div>
+                <InvestmentChart 
+                  title="Projected Returns"
+                  data={[
+                    { quarter: 'Q1 2024', value: 15, amount: 2.1 },
+                    { quarter: 'Q2 2024', value: 18, amount: 2.8 },
+                    { quarter: 'Q3 2024', value: 22, amount: 3.2 },
+                    { quarter: 'Q4 2024', value: 25, amount: 3.8 },
+                    { quarter: 'Q1 2025', value: 28, amount: 4.1 },
+                    { quarter: 'Q2 2025', value: 30, amount: 4.5 },
+                    { quarter: 'Q3 2025', value: 32, amount: 4.8 },
+                    { quarter: 'Q4 2025', value: 35, amount: 5.2 }
+                  ]}
+                />
 
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
