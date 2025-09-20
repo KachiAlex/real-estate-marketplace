@@ -208,12 +208,19 @@ export const AuthProvider = ({ children }) => {
     
     if (!user) {
       toast.error('Please login to switch roles');
-      return { success: false, error: 'User not logged in' };
+      return { success: false, error: 'User not logged in', requiresLogin: true };
     }
     
+    // Check if user has the requested role
     if (!user.roles || !user.roles.includes(newRole)) {
-      toast.error(`You don't have access to ${newRole} role`);
-      return { success: false, error: `Access denied for ${newRole} role` };
+      if (newRole === 'vendor') {
+        // For vendor role, show registration prompt instead of error
+        console.log('User does not have vendor role, prompting for vendor registration');
+        return { success: false, error: 'Vendor registration required', requiresVendorRegistration: true };
+      } else {
+        toast.error(`You don't have access to ${newRole} role`);
+        return { success: false, error: `Access denied for ${newRole} role` };
+      }
     }
     
     try {
@@ -257,6 +264,50 @@ export const AuthProvider = ({ children }) => {
     return activeRole === 'admin' && user?.roles?.includes('admin');
   };
 
+  // Vendor registration function
+  const registerAsVendor = async (vendorData = {}) => {
+    console.log('Registering user as vendor:', vendorData);
+    
+    if (!user) {
+      toast.error('Please login to register as vendor');
+      return { success: false, error: 'User not logged in' };
+    }
+    
+    try {
+      // Update user with vendor role and data
+      const updatedRoles = user.roles ? [...user.roles, 'vendor'] : ['buyer', 'vendor'];
+      const updatedUser = {
+        ...user,
+        roles: updatedRoles,
+        activeRole: 'vendor',
+        vendorData: {
+          ...vendorData,
+          registeredAt: new Date().toISOString(),
+          status: 'active'
+        }
+      };
+      
+      // Update state and localStorage
+      setUser(updatedUser);
+      setActiveRole('vendor');
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      localStorage.setItem('activeRole', 'vendor');
+      
+      toast.success('Successfully registered as vendor!');
+      
+      // Navigate to vendor dashboard
+      setTimeout(() => {
+        window.location.href = '/vendor/dashboard';
+      }, 1000);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      console.error('Error registering as vendor:', error);
+      toast.error('Failed to register as vendor');
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -272,7 +323,8 @@ export const AuthProvider = ({ children }) => {
     switchRole,
     isBuyer,
     isVendor,
-    isAdmin
+    isAdmin,
+    registerAsVendor
   };
 
   return (

@@ -4,13 +4,38 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
 
 const Header = () => {
-  const { user, logout, isBuyer, isVendor, switchRole } = useAuth();
+  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
 
   const handleLogout = () => {
     logout();
     setIsUserMenuOpen(false);
+  };
+
+  const handleVendorSwitch = async () => {
+    const result = await switchRole('vendor');
+    
+    if (result.requiresVendorRegistration) {
+      // Show vendor registration modal
+      setShowVendorRegistrationModal(true);
+      setIsUserMenuOpen(false);
+    } else if (result.success) {
+      setIsUserMenuOpen(false);
+    }
+  };
+
+  const handleVendorRegistration = async () => {
+    const result = await registerAsVendor({
+      businessName: user?.firstName + ' ' + user?.lastName + ' Properties',
+      businessType: 'Real Estate Agent',
+      experience: '1+ years'
+    });
+    
+    if (result.success) {
+      setShowVendorRegistrationModal(false);
+    }
   };
 
   return (
@@ -92,15 +117,14 @@ const Header = () => {
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <button
                           onClick={() => switchRole('buyer').then(() => setIsUserMenuOpen(false))}
-                          className={`text-xs px-2 py-1 rounded border ${isBuyer ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
                         >
                           Buyer
                         </button>
                         <button
-                          onClick={() => switchRole('vendor').then(() => setIsUserMenuOpen(false))}
-                          className={`text-xs px-2 py-1 rounded border ${isVendor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          disabled={!user?.roles?.includes('vendor')}
+                          onClick={handleVendorSwitch}
+                          className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                         >
                           Vendor
                         </button>
@@ -274,6 +298,63 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      {/* Vendor Registration Modal */}
+      {showVendorRegistrationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Register as Vendor</h3>
+              <button
+                onClick={() => setShowVendorRegistrationModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Join our network of verified property vendors and start listing your properties to reach thousands of potential buyers.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>List unlimited properties</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Access to buyer leads</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Secure escrow payments</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Professional support</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowVendorRegistrationModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVendorRegistration}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Register as Vendor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
