@@ -10,6 +10,7 @@ const mockUsers = [
     email: 'john@example.com',
     password: 'password123',
     role: 'user',
+    roles: ['buyer', 'vendor'], // User can be both buyer and vendor
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -19,6 +20,7 @@ const mockUsers = [
     email: 'admin@example.com',
     password: 'admin123',
     role: 'admin',
+    roles: ['admin', 'buyer', 'vendor'], // Admin can access all roles
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -28,6 +30,7 @@ const mockUsers = [
     email: 'onyedika.akoma@gmail.com',
     password: 'dikaoliver2660',
     role: 'user',
+    roles: ['buyer', 'vendor'], // User can be both buyer and vendor
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
   }
 ];
@@ -47,11 +50,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [redirectUrl, setRedirectUrl] = useState(null);
+  const [activeRole, setActiveRole] = useState('buyer'); // Default role
 
   // Check for existing session and redirect URL on load
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
     const savedRedirectUrl = localStorage.getItem('authRedirectUrl');
+    const savedActiveRole = localStorage.getItem('activeRole');
     
     if (savedUser) {
       try {
@@ -65,6 +70,10 @@ export const AuthProvider = ({ children }) => {
     
     if (savedRedirectUrl) {
       setRedirectUrl(savedRedirectUrl);
+    }
+    
+    if (savedActiveRole) {
+      setActiveRole(savedActiveRole);
     }
   }, []);
 
@@ -193,17 +202,77 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authRedirectUrl');
   };
 
+  // Role switching functions
+  const switchRole = async (newRole) => {
+    console.log('Switching role to:', newRole);
+    
+    if (!user) {
+      toast.error('Please login to switch roles');
+      return { success: false, error: 'User not logged in' };
+    }
+    
+    if (!user.roles || !user.roles.includes(newRole)) {
+      toast.error(`You don't have access to ${newRole} role`);
+      return { success: false, error: `Access denied for ${newRole} role` };
+    }
+    
+    try {
+      setActiveRole(newRole);
+      localStorage.setItem('activeRole', newRole);
+      
+      // Update user object with active role
+      const updatedUser = { ...user, activeRole: newRole };
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      toast.success(`Switched to ${newRole} dashboard`);
+      
+      // Navigate to appropriate dashboard
+      if (newRole === 'vendor') {
+        window.location.href = '/vendor/dashboard';
+      } else if (newRole === 'buyer') {
+        window.location.href = '/dashboard';
+      } else if (newRole === 'admin') {
+        window.location.href = '/admin/dashboard';
+      }
+      
+      return { success: true, role: newRole };
+    } catch (error) {
+      console.error('Error switching role:', error);
+      toast.error('Failed to switch role');
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Role checking functions
+  const isBuyer = () => {
+    return activeRole === 'buyer' && user?.roles?.includes('buyer');
+  };
+
+  const isVendor = () => {
+    return activeRole === 'vendor' && user?.roles?.includes('vendor');
+  };
+
+  const isAdmin = () => {
+    return activeRole === 'admin' && user?.roles?.includes('admin');
+  };
+
   const value = {
     user,
     loading,
     error,
     redirectUrl,
+    activeRole,
     login,
     register,
     logout,
     updateUserProfile,
     setAuthRedirect,
-    clearAuthRedirect
+    clearAuthRedirect,
+    switchRole,
+    isBuyer,
+    isVendor,
+    isAdmin
   };
 
   return (
