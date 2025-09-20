@@ -57,11 +57,15 @@ const PropertyDetail = () => {
   };
 
   const handleContactOwner = () => {
+    console.log('Contact Owner clicked, property:', property, 'user:', user);
+    
     if (!user) {
       toast.error('Please login to contact property owner');
       navigate('/login');
       return;
     }
+    
+    console.log('Opening inquiry modal for property:', property?.title);
     setShowInquiryModal(true);
   };
 

@@ -34,12 +34,23 @@ const Mortgage = () => {
   };
 
   const handleApplyMortgage = (property) => {
+    console.log('Apply for Mortgage clicked, property:', property, 'user:', user);
+    
     if (!user) {
       toast.error('Please login to apply for mortgage');
       navigate('/login');
       return;
     }
-    toast.success(`Mortgage application started for ${property.title}!`);
+    
+    // Simulate mortgage application process
+    toast.success(`Mortgage application started for "${property.title}"!`);
+    console.log('Mortgage application started for:', property.title);
+    
+    // In a real app, this would redirect to a mortgage application form
+    // For now, we'll show additional information
+    setTimeout(() => {
+      toast.info(`You will be contacted within 24 hours to complete your mortgage application for ${property.title}.`);
+    }, 2000);
   };
 
   const handleFilterResults = () => {

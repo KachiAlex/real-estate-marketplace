@@ -158,6 +158,8 @@ const Investment = () => {
   };
 
   const handleInvestNow = (project) => {
+    console.log('Invest Now clicked, project:', project, 'user:', user);
+    
     if (!user) {
       setAuthRedirect('/investment');
       toast.error('Please login to invest');
@@ -172,8 +174,10 @@ const Investment = () => {
       return;
     }
     
+    console.log('Setting selected project:', projectToUse);
     setSelectedProject(projectToUse);
     setShowInvestmentModal(true);
+    console.log('Investment modal should now be visible');
   };
 
   const handleConfirmInvestment = async () => {
@@ -586,14 +590,23 @@ const Investment = () => {
                   </button>
                   <button 
                     onClick={() => {
+                      console.log('Add to Wishlist clicked, user:', user);
                       if (!user) {
                         toast.error('Please login to add to wishlist');
                         navigate('/login');
                         return;
                       }
-                      toast.success('Added to wishlist!');
+                      const projectToUse = selectedProject || projects[0];
+                      if (projectToUse) {
+                        toast.success(`Added "${projectToUse.name}" to your wishlist!`);
+                        // In a real app, this would save to user's wishlist
+                        console.log('Added to wishlist:', projectToUse.name);
+                      } else {
+                        toast.success('Added to wishlist!');
+                      }
                     }}
                     className="btn-outline flex items-center space-x-2"
+                    title="Add this investment to your wishlist"
                   >
                     <FaBookmark />
                     <span>Add to Wishlist</span>

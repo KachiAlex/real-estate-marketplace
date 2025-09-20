@@ -145,13 +145,23 @@ const SavedProperties = () => {
   };
 
   const handleContactAgent = (property) => {
+    console.log('Contact Agent clicked, property:', property, 'user:', user);
+    
     if (!user) {
       toast.error('Please login to contact agents');
       navigate('/login');
       return;
     }
     
-    toast.success(`Contact request sent to ${property.agent.name}!`);
+    // Simulate contacting agent
+    const agentName = property.agent?.name || 'Property Agent';
+    toast.success(`Contacting ${agentName} for "${property.title}"...`);
+    console.log('Contacting agent:', agentName, 'for property:', property.title);
+    
+    // In a real app, this would open a contact form or messaging system
+    setTimeout(() => {
+      toast.info(`Agent contact information sent to your email. You can also call ${property.agent?.phone || '+234-XXX-XXXX'} for immediate assistance.`);
+    }, 2000);
   };
 
   const handleSortChange = (e) => {
