@@ -32,7 +32,7 @@ const Investment = () => {
       totalEarnings,
       activeInvestments,
       projectedReturns,
-      portfolio: {
+    portfolio: {
         investedCapital: totalInvested,
         currentValue: totalInvested + totalEarnings,
         totalProjects: activeInvestments,
@@ -136,6 +136,13 @@ const Investment = () => {
     }
   ]);
 
+  // Set default selected project
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProject) {
+      setSelectedProject(projects[0]);
+    }
+  }, [projects, selectedProject]);
+
   const filteredProjects = projects.filter(project => {
     if (filterType === 'all') return true;
     if (filterType === 'land') return project.type === 'Land';
@@ -214,10 +221,10 @@ const Investment = () => {
     setShowDocumentModal(true);
   };
 
-  const handleDownloadDocument = (docType) => {
+  const handleDownloadDocument = (docType, investment = selectedInvestment) => {
     // Generate and download investment documents
-    const docContent = generateInvestmentDocument(docType, selectedInvestment);
-    downloadDocument(docContent, `${docType}-${selectedInvestment?.id || 'investment'}.html`);
+    const docContent = generateInvestmentDocument(docType, investment);
+    downloadDocument(docContent, `${docType}-${investment?.id || 'investment'}.html`);
     toast.success(`${docType} document downloaded successfully!`);
   };
 
@@ -548,16 +555,34 @@ const Investment = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Projected Returns</h3>
                   <p className="text-gray-600 mb-4">Based on historical performance and project timeline</p>
                   <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="h-64 flex items-end justify-between">
-                      {[15, 18, 22, 25, 28, 30, 32, 35].map((height, index) => (
-                        <div key={index} className="flex flex-col items-center">
+                    <div className="h-64 flex items-end justify-between space-x-2">
+                      {[
+                        { quarter: 'Q1', value: 15, amount: 2.1 },
+                        { quarter: 'Q2', value: 18, amount: 2.8 },
+                        { quarter: 'Q3', value: 22, amount: 3.2 },
+                        { quarter: 'Q4', value: 25, amount: 3.8 },
+                        { quarter: 'Q5', value: 28, amount: 4.1 },
+                        { quarter: 'Q6', value: 30, amount: 4.5 },
+                        { quarter: 'Q7', value: 32, amount: 4.8 },
+                        { quarter: 'Q8', value: 35, amount: 5.2 }
+                      ].map((data, index) => (
+                        <div key={index} className="flex flex-col items-center group relative">
+                          <div className="absolute -top-8 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                            ₦{data.amount}M
+                          </div>
                           <div
-                            className="w-8 bg-brand-blue rounded-t mb-2"
-                            style={{ height: `${height}%` }}
+                            className="w-8 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t mb-2 transition-all duration-300 hover:from-orange-600 hover:to-orange-400 cursor-pointer"
+                            style={{ height: `${data.value * 2}px` }}
+                            title={`${data.quarter}: ₦${data.amount}M projected return`}
                           ></div>
-                          <span className="text-xs text-gray-600">Q{index + 1}</span>
+                          <span className="text-xs text-gray-600 font-medium">{data.quarter}</span>
                         </div>
                       ))}
+                    </div>
+                    <div className="mt-4 flex justify-between text-sm text-gray-500">
+                      <span>0%</span>
+                      <span className="text-center">Investment Growth Timeline</span>
+                      <span>35%</span>
                     </div>
                   </div>
                 </div>
@@ -565,21 +590,41 @@ const Investment = () => {
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
                   <button 
-                    onClick={() => handleInvestNow(selectedProject)}
+                    onClick={() => handleInvestNow(selectedProject || projects[0])}
                     className="btn-primary flex items-center space-x-2"
                   >
                     <FaCheck />
                     <span>Invest Now</span>
                   </button>
                   <button 
-                    onClick={() => toast.success('Added to wishlist!')}
+                    onClick={() => {
+                      if (!user) {
+                        toast.error('Please login to add to wishlist');
+                        navigate('/login');
+                        return;
+                      }
+                      toast.success('Added to wishlist!');
+                    }}
                     className="btn-outline flex items-center space-x-2"
                   >
                     <FaBookmark />
                     <span>Add to Wishlist</span>
                   </button>
                   <button 
-                    onClick={() => handleDownloadDocument('Investment Agreement')}
+                    onClick={() => {
+                      const dummyInvestment = {
+                        id: 'SAMPLE-001',
+                        investmentTitle: selectedProject?.name || 'Sample Investment',
+                        amount: 500000,
+                        expectedROI: selectedProject?.expectedROI || 18,
+                        lockPeriod: selectedProject?.lockPeriod || 24,
+                        investor: user ? `${user.firstName} ${user.lastName}` : 'Sample Investor',
+                        vendor: selectedProject?.sponsor?.name || 'Sample Vendor',
+                        documentStatus: 'sample_document',
+                        collateralProperty: 'Sample Property Collateral'
+                      };
+                      handleDownloadDocument('Investment Agreement', dummyInvestment);
+                    }}
                     className="btn-outline flex items-center space-x-2"
                   >
                     <FaDownload />
