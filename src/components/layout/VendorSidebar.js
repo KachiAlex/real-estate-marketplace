@@ -6,7 +6,7 @@ import {
   FaHome, 
   FaChartLine, 
   FaPlus, 
-  FaEnvelope, 
+  FaBuilding, 
   FaUsers, 
   FaDollarSign, 
   FaCog, 
@@ -24,7 +24,7 @@ const VendorSidebar = () => {
   
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
-    { path: '/vendor/properties', label: 'My Properties', icon: FaHome },
+    { path: '/vendor/properties', label: 'My Properties', icon: FaBuilding },
     { path: '/vendor/add-property', label: 'Add Property', icon: FaPlus },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },
     { path: '/vendor/team', label: 'Team', icon: FaUsers },
@@ -32,21 +32,11 @@ const VendorSidebar = () => {
   ];
 
   const accountItems = [
-    { path: '/vendor/profile', label: 'Profile Settings', icon: FaCog },
-    { path: '/vendor/notifications', label: 'Notifications', icon: FaBell },
-    { path: '/vendor/help', label: 'Help & Support', icon: FaQuestionCircle }
+    { path: '/vendor/profile', label: 'Profile Settings', icon: FaCog }
   ];
 
   const isActive = (path) => {
     return location.pathname === path;
-  };
-
-  const handleNotifications = () => {
-    navigate('/vendor/notifications');
-  };
-
-  const handleHelpSupport = () => {
-    navigate('/vendor/help');
   };
 
   const handleSignOut = async () => {
@@ -97,7 +87,7 @@ const VendorSidebar = () => {
         </div>
 
         {/* Account Section */}
-        <div>
+        <div className="mb-8">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</h3>
           <ul className="space-y-1">
             {accountItems.map((item) => (
@@ -115,6 +105,39 @@ const VendorSidebar = () => {
                 </NavLink>
               </li>
             ))}
+          </ul>
+        </div>
+
+        {/* Support Section */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Support</h3>
+          <ul className="space-y-1">
+            <li>
+              <NavLink
+                to="/vendor/notifications"
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/vendor/notifications')
+                    ? 'bg-brand-blue text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <FaBell className="h-4 w-4" />
+                <span>Notifications</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/vendor/help"
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/vendor/help')
+                    ? 'bg-brand-blue text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <FaQuestionCircle className="h-4 w-4" />
+                <span>Help & Support</span>
+              </NavLink>
+            </li>
           </ul>
         </div>
       </nav>
@@ -152,24 +175,6 @@ const VendorSidebar = () => {
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="mb-4 space-y-2">
-          <button 
-            onClick={handleNotifications}
-            className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <FaBell className="h-4 w-4" />
-            <span>Notifications</span>
-          </button>
-          <button 
-            onClick={handleHelpSupport}
-            className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <FaQuestionCircle className="h-4 w-4" />
-            <span>Help & Support</span>
-          </button>
         </div>
         
         {/* Sign Out Button */}
