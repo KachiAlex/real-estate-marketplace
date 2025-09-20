@@ -1,9 +1,49 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import toast from 'react-hot-toast';
 
 const VendorContext = createContext();
+
+// Mock vendor data
+const mockVendorProfile = {
+  id: 'vendor-1',
+  businessName: 'Luxury Properties Nigeria',
+  businessType: 'Real Estate Agency',
+  licenseNumber: 'REA-2024-001',
+  isAgent: true,
+  isPropertyOwner: true,
+  experience: '5+ years',
+  specializations: ['Luxury Homes', 'Commercial Properties', 'Investment Properties'],
+  contactInfo: {
+    phone: '+234-XXX-XXXX',
+    email: 'info@luxuryproperties.ng',
+    address: 'Victoria Island, Lagos'
+  },
+  rating: 4.8,
+  totalProperties: 45,
+  totalSales: 1200000000,
+  joinedDate: '2020-01-15T00:00:00Z',
+  status: 'verified'
+};
+
+const mockAgentDocuments = [
+  {
+    id: 'doc-1',
+    type: 'attestation_letter',
+    name: 'Real Estate License',
+    status: 'verified',
+    uploadedAt: '2024-01-01T00:00:00Z',
+    url: 'https://example.com/license.pdf'
+  },
+  {
+    id: 'doc-2',
+    type: 'identity_verification',
+    name: 'Government ID',
+    status: 'verified',
+    uploadedAt: '2024-01-02T00:00:00Z',
+    url: 'https://example.com/id.pdf'
+  }
+];
 
 export const useVendor = () => {
   const context = useContext(VendorContext);
@@ -32,19 +72,26 @@ export const VendorProvider = ({ children }) => {
   const fetchVendorProfile = async () => {
     try {
       setLoading(true);
-      const vendorDoc = await getDoc(doc(db, 'vendors', user.uid));
+      console.log('Loading mock vendor profile for user:', user?.email);
       
-      if (vendorDoc.exists()) {
-        const vendorData = vendorDoc.data();
-        setVendorProfile(vendorData);
-        setIsAgent(vendorData.isAgent || false);
-        setIsPropertyOwner(vendorData.isPropertyOwner || false);
-        
-        // Fetch agent documents if user is an agent
-        if (vendorData.isAgent) {
-          await fetchAgentDocuments();
-        }
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Use mock data
+      const vendorData = {
+        ...mockVendorProfile,
+        // Add user-specific data if available
+        ...(user?.vendorData || {})
+      };
+      
+      setVendorProfile(vendorData);
+      setIsAgent(vendorData.isAgent || false);
+      setIsPropertyOwner(vendorData.isPropertyOwner || false);
+      
+      // Set mock agent documents
+      setAgentDocuments(mockAgentDocuments);
+      
+      console.log('Mock vendor profile loaded:', vendorData);
     } catch (error) {
       console.error('Error fetching vendor profile:', error);
     } finally {
@@ -54,16 +101,13 @@ export const VendorProvider = ({ children }) => {
 
   const fetchAgentDocuments = async () => {
     try {
-      const documentsQuery = query(
-        collection(db, 'agentDocuments'),
-        where('agentId', '==', user.uid)
-      );
-      const documentsSnapshot = await getDocs(documentsQuery);
-      const documents = documentsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAgentDocuments(documents);
+      console.log('Loading mock agent documents');
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Return mock documents
+      setAgentDocuments(mockAgentDocuments);
+      console.log('Mock agent documents loaded:', mockAgentDocuments);
     } catch (error) {
       console.error('Error fetching agent documents:', error);
     }
@@ -71,35 +115,53 @@ export const VendorProvider = ({ children }) => {
 
   const updateVendorProfile = async (profileData) => {
     try {
-      const vendorRef = doc(db, 'vendors', user.uid);
-      await updateDoc(vendorRef, {
-        ...profileData,
-        updatedAt: new Date()
-      });
+      console.log('Updating vendor profile:', profileData);
       
-      setVendorProfile(prev => ({ ...prev, ...profileData }));
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Update mock data
+      const updatedProfile = {
+        ...vendorProfile,
+        ...profileData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      setVendorProfile(updatedProfile);
+      toast.success('Vendor profile updated successfully!');
+      
       return { success: true };
     } catch (error) {
       console.error('Error updating vendor profile:', error);
+      toast.error('Failed to update vendor profile');
       return { success: false, error: error.message };
     }
   };
 
   const uploadAgentDocument = async (documentData) => {
     try {
-      // This would integrate with your file upload service
-      const documentRef = doc(collection(db, 'agentDocuments'));
-      await setDoc(documentRef, {
-        ...documentData,
-        agentId: user.uid,
-        uploadedAt: new Date(),
-        status: 'pending'
-      });
+      console.log('Uploading agent document:', documentData);
       
-      await fetchAgentDocuments();
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Create mock document
+      const newDocument = {
+        id: `doc-${Date.now()}`,
+        ...documentData,
+        agentId: user?.id || 'mock-agent-id',
+        uploadedAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      
+      // Add to mock documents
+      setAgentDocuments(prev => [...prev, newDocument]);
+      
+      toast.success('Document uploaded successfully!');
       return { success: true };
     } catch (error) {
       console.error('Error uploading agent document:', error);
+      toast.error('Failed to upload document');
       return { success: false, error: error.message };
     }
   };
@@ -109,7 +171,8 @@ export const VendorProvider = ({ children }) => {
     return {
       hasAttestationLetter: !!attestationLetter,
       attestationStatus: attestationLetter?.status || 'missing',
-      canListProperties: attestationLetter?.status === 'verified'
+      canListProperties: attestationLetter?.status === 'verified',
+      documentStatus: attestationLetter?.status || 'missing'
     };
   };
 
