@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useVendor } from '../../contexts/VendorContext';
 import { 
   FaHome, 
-  FaChartLine, 
   FaPlus, 
   FaBuilding, 
   FaUsers, 
@@ -65,6 +64,7 @@ const VendorSidebar = () => {
 
       {/* Navigation Menu */}
       <nav className="p-4">
+        {/* Main Menu Section */}
         <div className="mb-8">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Main Menu</h3>
           <ul className="space-y-1">
@@ -109,7 +109,7 @@ const VendorSidebar = () => {
         </div>
 
         {/* Support Section */}
-        <div>
+        <div className="mb-8">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Support</h3>
           <ul className="space-y-1">
             <li>
