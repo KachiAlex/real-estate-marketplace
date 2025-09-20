@@ -5,6 +5,7 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import PriceTrendsChart from '../components/PriceTrendsChart';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -438,45 +439,7 @@ const Dashboard = () => {
         {/* Market Insight Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Price Trends Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Price Trends in Lagos</h3>
-              <FaChartLine className="text-brand-blue" />
-              </div>
-            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-full h-48 bg-white rounded border p-4">
-                  <div className="flex items-end justify-between h-full">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '60%'}}></div>
-                      <span className="text-xs text-gray-600">Jan</span>
-              </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '70%'}}></div>
-                      <span className="text-xs text-gray-600">Feb</span>
-              </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '80%'}}></div>
-                      <span className="text-xs text-gray-600">Mar</span>
-              </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '75%'}}></div>
-                      <span className="text-xs text-gray-600">Apr</span>
-              </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '85%'}}></div>
-                      <span className="text-xs text-gray-600">May</span>
-              </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '90%'}}></div>
-                      <span className="text-xs text-gray-600">Jun</span>
-          </div>
-        </div>
-          </div>
-                <p className="text-sm text-gray-500 mt-2">Victoria Island (Green), Lagos (Yellow), Ikoyi (Blue)</p>
-                </div>
-            </div>
-        </div>
+          <PriceTrendsChart />
 
           {/* Recent Transactions */}
         <div className="bg-white rounded-lg shadow p-6">
