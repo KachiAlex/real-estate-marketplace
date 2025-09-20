@@ -324,7 +324,8 @@ export const AuthProvider = ({ children }) => {
     isBuyer,
     isVendor,
     isAdmin,
-    registerAsVendor
+    registerAsVendor,
+    setUser
   };
 
   return (

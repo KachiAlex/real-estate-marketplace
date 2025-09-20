@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const { login, switchRole } = useAuth();
+  const { login, switchRole, setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -98,13 +99,37 @@ const Login = () => {
   // Handle role selection
   const handleRoleSelection = async (selectedRole) => {
     try {
-      const result = await switchRole(selectedRole);
-      if (result.success) {
-        setShowRoleSelection(false);
-        // Role switching will handle navigation automatically
-      }
+      console.log('Login: Role selection clicked:', selectedRole);
+      
+      // Update the user's active role locally first
+      const updatedUser = { ...loggedInUser, activeRole: selectedRole };
+      
+      // Update localStorage
+      localStorage.setItem('activeRole', selectedRole);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      // Update AuthContext state
+      setUser(updatedUser);
+      
+      console.log('Login: Updated user with active role:', updatedUser);
+      
+      // Show success message
+      toast.success(`Switched to ${selectedRole} dashboard`);
+      
+      // Close the modal
+      setShowRoleSelection(false);
+      
+      // Navigate directly using React Router
+      const dashboardPath = selectedRole === 'vendor' ? '/vendor/dashboard' : '/dashboard';
+      console.log('Login: Navigating to:', dashboardPath);
+      
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        navigate(dashboardPath);
+      }, 100);
+      
     } catch (error) {
-      console.error('Error switching role:', error);
+      console.error('Error in role selection:', error);
     }
   };
 
