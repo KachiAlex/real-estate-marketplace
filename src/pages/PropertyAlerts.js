@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaBell, FaPlus, FaEdit, FaTrash, FaMapMarkerAlt, FaBed, FaBath, FaRuler, FaFilter, FaSort, FaToggleOn, FaToggleOff, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const PropertyAlerts = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -159,6 +162,75 @@ const PropertyAlerts = () => {
         ? { ...alert, isActive: !alert.isActive }
         : alert
     ));
+  };
+
+  const handleViewMatches = (alert) => {
+    console.log('View Matches clicked for alert:', alert.name);
+    
+    if (!user) {
+      toast.error('Please login to view property matches');
+      navigate('/login');
+      return;
+    }
+
+    // Create search parameters based on alert criteria
+    const searchParams = new URLSearchParams();
+    
+    // Add location filter
+    if (alert.location) {
+      searchParams.set('location', alert.location);
+    }
+    
+    // Add property type filter
+    if (alert.propertyType && alert.propertyType !== 'all') {
+      searchParams.set('type', alert.propertyType);
+    }
+    
+    // Add price range filters
+    if (alert.minPrice) {
+      searchParams.set('minPrice', alert.minPrice.toString());
+    }
+    if (alert.maxPrice) {
+      searchParams.set('maxPrice', alert.maxPrice.toString());
+    }
+    
+    // Add bedroom/bathroom filters
+    if (alert.minBedrooms) {
+      searchParams.set('minBedrooms', alert.minBedrooms.toString());
+    }
+    if (alert.maxBedrooms) {
+      searchParams.set('maxBedrooms', alert.maxBedrooms.toString());
+    }
+    if (alert.minBathrooms) {
+      searchParams.set('minBathrooms', alert.minBathrooms.toString());
+    }
+    if (alert.maxBathrooms) {
+      searchParams.set('maxBathrooms', alert.maxBathrooms.toString());
+    }
+    
+    // Add area filters
+    if (alert.minArea) {
+      searchParams.set('minArea', alert.minArea.toString());
+    }
+    if (alert.maxArea) {
+      searchParams.set('maxArea', alert.maxArea.toString());
+    }
+    
+    // Add features filter
+    if (alert.features && alert.features.length > 0) {
+      searchParams.set('features', alert.features.join(','));
+    }
+    
+    // Add a special parameter to indicate this is from an alert
+    searchParams.set('fromAlert', alert.id.toString());
+    searchParams.set('alertName', alert.name);
+
+    // Navigate to properties page with search parameters
+    const propertiesUrl = `/properties?${searchParams.toString()}`;
+    console.log('Navigating to properties with search params:', propertiesUrl);
+    
+    toast.success(`Showing properties matching "${alert.name}" criteria`);
+    navigate(propertiesUrl);
   };
 
   const resetForm = () => {
@@ -689,7 +761,11 @@ const PropertyAlerts = () => {
                   </div>
                   
                   {alert.matches > 0 && (
-                    <button className="btn-primary py-2 px-4">
+                    <button 
+                      onClick={() => handleViewMatches(alert)}
+                      className="btn-primary py-2 px-4"
+                      title={`View ${alert.matches} properties matching this alert criteria`}
+                    >
                       <FaEye className="inline mr-1" />
                       View Matches
                     </button>

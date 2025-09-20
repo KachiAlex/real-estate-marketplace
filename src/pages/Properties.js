@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaBell } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Properties = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { properties = [], filters = {}, setFilters, fetchProperties, toggleFavorite, saveSearch } = useProperty();
   const { user, setAuthRedirect } = useAuth();
   const safeProperties = useMemo(() => Array.isArray(properties) ? properties : [], [properties]);
@@ -20,6 +21,7 @@ const Properties = () => {
   const [favorites, setFavorites] = useState(new Set());
   const [saveSearchName, setSaveSearchName] = useState('');
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
+  const [alertName, setAlertName] = useState('');
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -35,6 +37,54 @@ const Properties = () => {
   useEffect(() => {
     // Properties are loaded automatically by the context
   }, []);
+
+  // Handle URL parameters from property alerts
+  useEffect(() => {
+    const fromAlert = searchParams.get('fromAlert');
+    const alertNameParam = searchParams.get('alertName');
+    
+    if (fromAlert && alertNameParam) {
+      console.log('Loading properties from alert:', alertNameParam);
+      setAlertName(alertNameParam);
+      
+      // Apply filters from URL parameters
+      const location = searchParams.get('location');
+      const type = searchParams.get('type');
+      const minPrice = searchParams.get('minPrice');
+      const maxPrice = searchParams.get('maxPrice');
+      const minBedrooms = searchParams.get('minBedrooms');
+      const maxBedrooms = searchParams.get('maxBedrooms');
+      const minBathrooms = searchParams.get('minBathrooms');
+      const maxBathrooms = searchParams.get('maxBathrooms');
+      const minArea = searchParams.get('minArea');
+      const maxArea = searchParams.get('maxArea');
+      const features = searchParams.get('features');
+      
+      // Update local filter states
+      if (location) setSearchQuery(location);
+      if (type) setSelectedType(type);
+      if (minPrice) setPriceRange(prev => ({ ...prev, min: minPrice }));
+      if (maxPrice) setPriceRange(prev => ({ ...prev, max: maxPrice }));
+      
+      // Apply filters to context
+      const alertFilters = {
+        location: location || '',
+        type: type || '',
+        minPrice: minPrice ? parseInt(minPrice) : '',
+        maxPrice: maxPrice ? parseInt(maxPrice) : '',
+        minBedrooms: minBedrooms ? parseInt(minBedrooms) : '',
+        maxBedrooms: maxBedrooms ? parseInt(maxBedrooms) : '',
+        minBathrooms: minBathrooms ? parseInt(minBathrooms) : '',
+        maxBathrooms: maxBathrooms ? parseInt(maxBathrooms) : '',
+        minArea: minArea ? parseInt(minArea) : '',
+        maxArea: maxArea ? parseInt(maxArea) : '',
+        features: features ? features.split(',') : []
+      };
+      
+      setFilters(alertFilters);
+      toast.success(`Showing properties matching "${alertNameParam}" alert criteria`);
+    }
+  }, [searchParams, setFilters]);
 
   // Reserved for future granular filter controls
   const handleFilterChange = () => {};
@@ -191,8 +241,21 @@ const Properties = () => {
     <div className="p-6">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Properties</h1>
-        <p className="text-gray-600">Browse and filter properties to find your perfect match</p>
+        <div className="flex items-center space-x-3 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
+          {alertName && (
+            <div className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <FaBell className="text-xs" />
+              <span>From Alert: {alertName}</span>
+            </div>
+          )}
+        </div>
+        <p className="text-gray-600">
+          {alertName 
+            ? `Properties matching your "${alertName}" alert criteria`
+            : "Browse and filter properties to find your perfect match"
+          }
+        </p>
       </div>
 
       {/* Active Filters Bar */}
