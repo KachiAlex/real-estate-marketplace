@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +10,11 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    userType: 'buyer', // Default to buyer
+    businessName: '',
+    businessType: 'Real Estate Agent',
+    phone: '',
+    experience: '1-2 years'
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -61,6 +66,16 @@ const Register = () => {
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+
+    // Vendor-specific validation
+    if (formData.userType === 'vendor') {
+      if (!formData.businessName) {
+        newErrors.businessName = 'Business name is required';
+      }
+      if (!formData.phone) {
+        newErrors.phone = 'Phone number is required';
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -79,7 +94,20 @@ const Register = () => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        roles: [formData.userType], // Set initial role
+        activeRole: formData.userType,
+        // Include vendor data if registering as vendor
+        ...(formData.userType === 'vendor' && {
+          vendorData: {
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            phone: formData.phone,
+            experience: formData.experience,
+            registeredAt: new Date().toISOString(),
+            status: 'active'
+          }
+        })
       };
       
       const result = await register(userData);
@@ -88,7 +116,9 @@ const Register = () => {
         if (result.redirectUrl) {
           navigate(result.redirectUrl);
         } else {
-          navigate('/dashboard');
+          // Navigate to appropriate dashboard based on user type
+          const dashboardPath = formData.userType === 'vendor' ? '/vendor/dashboard' : '/dashboard';
+          navigate(dashboardPath);
         }
       } else {
         setErrors({ general: result.message || 'Registration failed. Please try again.' });
@@ -121,6 +151,49 @@ const Register = () => {
           <p className="text-gray-600">
             Join thousands of satisfied customers
           </p>
+        </div>
+
+        {/* User Type Selection */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+            Choose Your Account Type
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, userType: 'buyer' }))}
+              className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                formData.userType === 'buyer'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex flex-col items-center space-y-2">
+                <FaShoppingCart className={`text-2xl ${formData.userType === 'buyer' ? 'text-blue-600' : 'text-gray-400'}`} />
+                <span className="font-medium">Buyer</span>
+                <span className="text-xs text-gray-600 text-center">
+                  Find and purchase properties
+                </span>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, userType: 'vendor' }))}
+              className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                formData.userType === 'vendor'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex flex-col items-center space-y-2">
+                <FaBuilding className={`text-2xl ${formData.userType === 'vendor' ? 'text-blue-600' : 'text-gray-400'}`} />
+                <span className="font-medium">Vendor</span>
+                <span className="text-xs text-gray-600 text-center">
+                  List and sell properties
+                </span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Register Form */}
@@ -295,6 +368,123 @@ const Register = () => {
               )}
             </div>
 
+            {/* Vendor-Specific Fields */}
+            {formData.userType === 'vendor' && (
+              <div className="space-y-6 border-t border-gray-200 pt-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <FaBuilding className="text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+                </div>
+
+                {/* Business Name */}
+                <div>
+                  <label htmlFor="businessName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Business Name *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBuilding className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="businessName"
+                      name="businessName"
+                      type="text"
+                      required
+                      value={formData.businessName}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-4 border-2 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
+                        errors.businessName ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                      placeholder="Enter your business name"
+                    />
+                  </div>
+                  {errors.businessName && (
+                    <p className="mt-2 text-sm text-red-600">{errors.businessName}</p>
+                  )}
+                </div>
+
+                {/* Business Type */}
+                <div>
+                  <label htmlFor="businessType" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Business Type
+                  </label>
+                  <select
+                    id="businessType"
+                    name="businessType"
+                    value={formData.businessType}
+                    onChange={handleChange}
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  >
+                    <option value="Real Estate Agent">Real Estate Agent</option>
+                    <option value="Real Estate Agency">Real Estate Agency</option>
+                    <option value="Property Developer">Property Developer</option>
+                    <option value="Property Management">Property Management</option>
+                    <option value="Investment Company">Investment Company</option>
+                    <option value="Individual Property Owner">Individual Property Owner</option>
+                  </select>
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400">+234</span>
+                    </div>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
+                        errors.phone ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                      placeholder="XXX XXX XXXX"
+                    />
+                  </div>
+                  {errors.phone && (
+                    <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
+                  )}
+                </div>
+
+                {/* Experience */}
+                <div>
+                  <label htmlFor="experience" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Years of Experience
+                  </label>
+                  <select
+                    id="experience"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleChange}
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  >
+                    <option value="Less than 1 year">Less than 1 year</option>
+                    <option value="1-2 years">1-2 years</option>
+                    <option value="3-5 years">3-5 years</option>
+                    <option value="6-10 years">6-10 years</option>
+                    <option value="10+ years">10+ years</option>
+                  </select>
+                </div>
+
+                {/* Vendor Benefits Info */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">Vendor Benefits:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• List unlimited properties</li>
+                    <li>• Access to buyer leads</li>
+                    <li>• Secure escrow payments</li>
+                    <li>• Professional support</li>
+                    <li>• Marketing tools</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {/* Terms and Conditions */}
             <div className="flex items-start">
               <div className="flex items-center h-5">
@@ -330,10 +520,10 @@ const Register = () => {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Creating account...
+                    {formData.userType === 'vendor' ? 'Creating vendor account...' : 'Creating account...'}
                   </div>
                 ) : (
-                  'Create Account'
+                  formData.userType === 'vendor' ? 'Create Vendor Account' : 'Create Account'
                 )}
               </button>
             </div>
