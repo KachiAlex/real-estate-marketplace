@@ -566,9 +566,8 @@ const Home = () => {
                         return;
                       }
                       const value = parseInt(inputValue) || 0;
-                      if (value >= 0 && value <= priceRange[1]) {
-                        setPriceRange([value, priceRange[1]]);
-                      }
+                      // Allow any minimum value - no restrictions
+                      setPriceRange([value, priceRange[1]]);
                     }}
                     onBlur={(e) => {
                       const inputValue = e.target.value.replace(/,/g, '');
@@ -577,28 +576,39 @@ const Home = () => {
                         return;
                       }
                       const value = parseInt(inputValue) || 0;
-                      const clampedValue = Math.max(0, Math.min(value, priceRange[1]));
+                      // Only ensure non-negative values, no upper limit restriction
+                      const clampedValue = Math.max(0, value);
                       setPriceRange([clampedValue, priceRange[1]]);
                     }}
                     className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Min Price (₦0)"
+                    placeholder="Min Price (Any amount)"
                   />
                   <input
                     type="text"
                     value={priceRange[1].toLocaleString()}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value.replace(/,/g, '')) || 200000000;
-                      if (value >= priceRange[0] && value <= 500000000) {
-                        setPriceRange([priceRange[0], value]);
+                      const inputValue = e.target.value.replace(/,/g, '');
+                      if (inputValue === '') {
+                        setPriceRange([priceRange[0], 1000000000]); // Default to 1B if empty
+                        return;
                       }
+                      const value = parseInt(inputValue) || 200000000;
+                      // Allow any maximum value - no restrictions
+                      setPriceRange([priceRange[0], value]);
                     }}
                     onBlur={(e) => {
-                      const value = parseInt(e.target.value.replace(/,/g, '')) || 200000000;
-                      const clampedValue = Math.min(500000000, Math.max(value, priceRange[0]));
+                      const inputValue = e.target.value.replace(/,/g, '');
+                      if (inputValue === '') {
+                        setPriceRange([priceRange[0], 1000000000]);
+                        return;
+                      }
+                      const value = parseInt(inputValue) || 200000000;
+                      // Only ensure it's not less than minimum
+                      const clampedValue = Math.max(value, priceRange[0]);
                       setPriceRange([priceRange[0], clampedValue]);
                     }}
                     className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Max Price (₦500,000,000)"
+                    placeholder="Max Price (Any amount)"
                   />
                 </div>
                 
@@ -608,21 +618,20 @@ const Home = () => {
                     <div 
                       className="absolute h-2 bg-orange-500 rounded-full"
                       style={{
-                        left: `${(priceRange[0] / 200000000) * 100}%`,
-                        width: `${((priceRange[1] - priceRange[0]) / 200000000) * 100}%`
+                        left: `${Math.min((priceRange[0] / Math.max(priceRange[1], 200000000)) * 100, 95)}%`,
+                        width: `${Math.max(((priceRange[1] - priceRange[0]) / Math.max(priceRange[1], 200000000)) * 100, 5)}%`
                       }}
                     ></div>
                     <input
                       type="range"
                       min="0"
-                      max="200000000"
+                      max={Math.max(priceRange[1], 200000000)}
                       step="500000"
                       value={priceRange[0]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
-                        if (value <= priceRange[1]) {
-                          setPriceRange([value, priceRange[1]]);
-                        }
+                        // Allow any minimum value without restriction
+                        setPriceRange([value, priceRange[1]]);
                       }}
                       className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
                       style={{ zIndex: 2 }}
@@ -630,14 +639,13 @@ const Home = () => {
                     <input
                       type="range"
                       min="0"
-                      max="200000000"
+                      max={Math.max(priceRange[1], 200000000)}
                       step="500000"
                       value={priceRange[1]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
-                        if (value >= priceRange[0]) {
-                          setPriceRange([priceRange[0], value]);
-                        }
+                        // Allow any maximum value without restriction
+                        setPriceRange([priceRange[0], value]);
                       }}
                       className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
                       style={{ zIndex: 3 }}
@@ -648,10 +656,10 @@ const Home = () => {
                     <span className="text-orange-500 font-medium bg-gray-800 px-2 py-1 rounded">
                       ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
                     </span>
-                    <span>₦{(200000000).toLocaleString()}+</span>
+                    <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
-                    Drag the slider handles or type in the input fields above
+                    Drag the slider handles or type any amount in the input fields above
                   </div>
                 </div>
               </div>
