@@ -1276,7 +1276,7 @@ const Investment = () => {
         </div>
       </div>
 
-      {/* Investment Modal (Multi-step) */}
+      {/* Investment Modal (Simplified, robust) */}
       {showInvestmentModal && selectedProject && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1295,25 +1295,6 @@ const Investment = () => {
                 ✕
               </button>
             </div>
-
-            {/* Stepper */}
-            <div className="flex items-center mb-6 text-sm">
-              <div className={`flex-1 flex items-center ${currentStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 1 ? 'border-orange-600' : 'border-gray-300'}`}>1</div>
-                <span className="ml-2">Amount</span>
-                <div className="flex-1 h-px bg-gray-200 mx-3"></div>
-              </div>
-              <div className={`flex-1 flex items-center ${currentStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 2 ? 'border-orange-600' : 'border-gray-300'}`}>2</div>
-                <span className="ml-2">Method & Terms</span>
-                <div className="flex-1 h-px bg-gray-200 mx-3"></div>
-              </div>
-              <div className={`flex items-center ${currentStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 3 ? 'border-orange-600' : 'border-gray-300'}`}>3</div>
-                <span className="ml-2">Review & Pay</span>
-              </div>
-            </div>
-
             {/* Project Summary */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1336,14 +1317,14 @@ const Investment = () => {
               </div>
             </div>
 
-            {/* Step 1: Amount */}
-            {currentStep === 1 && (
+            {/* Single-step form */}
+            {!paymentSuccess && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount (₦)</label>
                 <input
                   type="number"
-                  value={investmentAmount}
-                  onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
+                  value={Number.isFinite(investmentAmount) ? investmentAmount : ''}
+                  onChange={(e) => setInvestmentAmount(parseInt(e.target.value) || 0)}
                   min={selectedProject.minInvestment}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder={`Minimum: ₦${selectedProject.minInvestment.toLocaleString()}`}
@@ -1374,27 +1355,7 @@ const Investment = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end mt-6">
-                  <button
-                    onClick={() => {
-                      if (!investmentAmount || investmentAmount < selectedProject.minInvestment) {
-                        toast.error(`Minimum investment is ₦${selectedProject.minInvestment.toLocaleString()}`);
-                        return;
-                      }
-                      setCurrentStep(2);
-                    }}
-                    className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Method & Terms */}
-            {currentStep === 2 && (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
                     <select
@@ -1423,52 +1384,10 @@ const Investment = () => {
                 </label>
 
                 <div className="flex justify-between mt-6">
-                  <button onClick={() => setCurrentStep(1)} className="px-5 py-2 border rounded-lg">Back</button>
-                  <button
-                    onClick={() => {
-                      if (!acceptInvestmentTerms) {
-                        toast.error('Please accept the investment terms to proceed');
-                        return;
-                      }
-                      setCurrentStep(3);
-                    }}
-                    className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Review & Pay */}
-            {currentStep === 3 && (
-              <div>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-600">Amount</p>
-                      <p className="font-semibold">₦{investmentAmount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Payment Method</p>
-                      <p className="font-semibold">{paymentMethod === 'flutterwave' ? 'Flutterwave' : 'Bank Transfer'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Escrow Fee (0.5%)</p>
-                      <p className="font-semibold">₦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Total</p>
-                      <p className="font-semibold">₦{(investmentAmount + Math.round(investmentAmount * 0.005)).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between mt-6">
-                  <button onClick={() => setCurrentStep(2)} className="px-5 py-2 border rounded-lg">Back</button>
+                  <button onClick={() => setShowInvestmentModal(false)} className="px-5 py-2 border rounded-lg">Cancel</button>
                   <button
                     onClick={handleConfirmInvestment}
-                    disabled={isProcessingPayment}
+                    disabled={isProcessingPayment || !investmentAmount || investmentAmount < selectedProject.minInvestment || !acceptInvestmentTerms}
                     className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
                   >
                     {isProcessingPayment ? 'Processing...' : 'Pay Now (via Escrow)'}
@@ -1477,7 +1396,7 @@ const Investment = () => {
               </div>
             )}
 
-            {/* Success State (same as before) */}
+            {/* Success State */}
             {paymentSuccess && createdEscrow && (
               <div className="mt-6">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
