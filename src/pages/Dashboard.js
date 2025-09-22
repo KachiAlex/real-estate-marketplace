@@ -49,16 +49,47 @@ const Dashboard = () => {
   };
 
   // Real data for stats - calculate from actual data
-  const dashboardStats = {
-    totalProperties: properties.length || 0,
-    savedProperties: user?.savedProperties?.length || 5, // From user data or default
-    activeInquiries: user?.inquiries?.length || 3, // From user data or default
-    scheduledViewings: user?.viewings?.length || 2, // From user data or default
-    totalInvested: user?.totalInvested || 0, // Investment amount
-    activeInvestments: user?.activeInvestments || 0, // Active investments
-    escrowTransactions: user?.escrowTransactions?.length || 0, // Escrow transactions
-    monthlyBudget: user?.monthlyBudget || 5000000 // Monthly property budget
+  const calculateDashboardStats = () => {
+    // Get escrow transactions from localStorage
+    const escrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+    const userEscrowTransactions = escrowTransactions.filter(t => t.buyerId === user?.id);
+    
+    // Get viewing requests from localStorage
+    const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const userViewingRequests = viewingRequests.filter(v => v.userId === user?.id);
+    
+    // Get investment escrows from localStorage
+    const investmentEscrows = JSON.parse(localStorage.getItem('investmentEscrows') || '[]');
+    const userInvestmentEscrows = investmentEscrows.filter(i => i.investorId === user?.id);
+    
+    // Calculate total invested from escrow transactions
+    const totalInvested = userEscrowTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    
+    // Calculate total invested from investment escrows
+    const totalInvestmentAmount = userInvestmentEscrows.reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    return {
+      totalProperties: properties.length || 0,
+      savedProperties: user?.savedProperties?.length || 5,
+      activeInquiries: user?.inquiries?.length || 3,
+      scheduledViewings: userViewingRequests.filter(v => v.status === 'pending' || v.status === 'confirmed').length,
+      totalInvested: totalInvested + totalInvestmentAmount,
+      activeInvestments: userInvestmentEscrows.filter(i => i.status === 'pending_documents' || i.status === 'active').length,
+      escrowTransactions: userEscrowTransactions.length,
+      monthlyBudget: user?.monthlyBudget || 5000000,
+      // Additional stats
+      completedViewings: userViewingRequests.filter(v => v.status === 'completed').length,
+      pendingPayments: userEscrowTransactions.filter(t => t.status === 'pending' || t.status === 'in-progress').length,
+      totalEarnings: user?.totalEarnings || 0
+    };
   };
+
+  const dashboardStats = calculateDashboardStats();
+
+  // Recalculate stats when user or properties change
+  useEffect(() => {
+    // This will trigger a re-render when dependencies change
+  }, [user, properties]);
 
   // Mock data for recent properties (fallback if no properties loaded)
   const mockProperties = [

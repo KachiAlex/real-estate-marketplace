@@ -32,7 +32,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Lagos');
   const [selectedType, setSelectedType] = useState('Apartment');
-  const [priceRange, setPriceRange] = useState([20000000, 120000000]);
+  const [priceRange, setPriceRange] = useState([10000000, 100000000]);
   const [bedrooms, setBedrooms] = useState('2');
   const [bathrooms, setBathrooms] = useState('3');
   const [selectedAmenities, setSelectedAmenities] = useState([
@@ -213,7 +213,7 @@ const Home = () => {
     setSelectedType('');
     setBedrooms('');
     setBathrooms('');
-    setPriceRange([20000000, 120000000]);
+    setPriceRange([10000000, 100000000]);
     setSearchQuery('');
   };
 
@@ -378,6 +378,44 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
+      {/* Custom CSS for Range Slider */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .slider-thumb::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #f97316;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          }
+          
+          .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #f97316;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          }
+          
+          .slider-thumb:focus {
+            outline: none;
+          }
+          
+          .slider-thumb:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+          }
+          
+          .slider-thumb:focus::-moz-range-thumb {
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+          }
+        `
+      }} />
+      
       {/* Hero Section */}
       <div className="bg-gray-100 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -485,31 +523,78 @@ const Home = () => {
 
             {/* Price Range */}
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Price Range (N)</label>
-              <div className="space-y-3">
+              <label className="block text-sm font-medium mb-2">Price Range (₦)</label>
+              <div className="space-y-4">
                 <div className="flex space-x-2">
                   <input
                     type="number"
                     value={priceRange[0].toLocaleString()}
-                    onChange={(e) => setPriceRange([parseInt(e.target.value.replace(/,/g, '')), priceRange[1]])}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value.replace(/,/g, '')) || 0;
+                      setPriceRange([Math.min(value, priceRange[1]), priceRange[1]]);
+                    }}
                     className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                    placeholder="Min"
+                    placeholder="Min Price"
+                    min="0"
+                    max={priceRange[1]}
                   />
                   <input
                     type="number"
                     value={priceRange[1].toLocaleString()}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value.replace(/,/g, ''))])}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value.replace(/,/g, '')) || 200000000;
+                      setPriceRange([priceRange[0], Math.max(value, priceRange[0])]);
+                    }}
                     className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                    placeholder="Max"
+                    placeholder="Max Price"
+                    min={priceRange[0]}
+                    max="500000000"
                   />
                 </div>
+                
+                {/* Interactive Range Slider */}
                 <div className="relative">
-                  <div className="h-2 bg-gray-600 rounded-full">
-                    <div className="h-2 bg-orange-500 rounded-full" style={{width: '60%'}}></div>
+                  <div className="relative h-2 bg-gray-600 rounded-full">
+                    <div 
+                      className="absolute h-2 bg-orange-500 rounded-full"
+                      style={{
+                        left: `${((priceRange[0] - 5000000) / (200000000 - 5000000)) * 100}%`,
+                        width: `${((priceRange[1] - priceRange[0]) / (200000000 - 5000000)) * 100}%`
+                      }}
+                    ></div>
+                    <input
+                      type="range"
+                      min="5000000"
+                      max="200000000"
+                      step="1000000"
+                      value={priceRange[0]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setPriceRange([value, Math.max(value, priceRange[1])]);
+                      }}
+                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
+                      style={{ zIndex: 2 }}
+                    />
+                    <input
+                      type="range"
+                      min="5000000"
+                      max="200000000"
+                      step="1000000"
+                      value={priceRange[1]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setPriceRange([Math.min(value, priceRange[0]), value]);
+                      }}
+                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
+                      style={{ zIndex: 3 }}
+                    />
                   </div>
-                  <div className="flex justify-between text-xs text-gray-300 mt-1">
-                    <span>N5M</span>
-                    <span>N250M+</span>
+                  <div className="flex justify-between text-xs text-gray-300 mt-2">
+                    <span>₦{(5000000).toLocaleString()}</span>
+                    <span className="text-orange-500 font-medium">
+                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
+                    </span>
+                    <span>₦{(200000000).toLocaleString()}+</span>
                   </div>
                 </div>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
-import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding } from 'react-icons/fa';
+import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import InvestmentChart from '../components/InvestmentChart';
 
@@ -631,6 +631,374 @@ const Investment = () => {
                     <FaDownload />
                     <span>Download Prospectus</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Documents Tab */}
+            {activeTab === 'documents' && (
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <FaFileContract className="mx-auto text-4xl text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Investment Documents</h3>
+                  <p className="text-gray-600 mb-6">Access all legal documents and agreements for your investments</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <FaFileContract className="text-orange-600 mr-3" />
+                        <h4 className="font-semibold">Investment Agreement</h4>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadDocument('Investment Agreement')}
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <FaDownload />
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">Complete investment terms and conditions</p>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <span>PDF • 2.3 MB</span>
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <FaShieldAlt className="text-green-600 mr-3" />
+                        <h4 className="font-semibold">Escrow Terms</h4>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadDocument('Escrow Terms')}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <FaDownload />
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">Fund protection and release conditions</p>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <span>PDF • 1.8 MB</span>
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <FaExclamationTriangle className="text-red-600 mr-3" />
+                        <h4 className="font-semibold">Risk Disclosure</h4>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadDocument('Risk Disclosure')}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <FaDownload />
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">Investment risks and considerations</p>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <span>PDF • 1.2 MB</span>
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <FaBuilding className="text-blue-600 mr-3" />
+                        <h4 className="font-semibold">Property Documents</h4>
+                      </div>
+                      <button
+                        onClick={() => toast.info('Property documents will be available after vendor submission')}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <FaEye />
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">C of O, deed, and survey plans</p>
+                    <div className="flex items-center text-xs text-yellow-600">
+                      <FaClock className="mr-1" />
+                      <span>Pending vendor submission</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Project Updates Tab */}
+            {activeTab === 'projectupdates' && (
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <FaChartLine className="mx-auto text-4xl text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Project Updates</h3>
+                  <p className="text-gray-600 mb-6">Stay informed about your investment progress</p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="border-l-4 border-green-500 bg-green-50 p-6 rounded-r-lg">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-green-900 mb-2">Phase 1 Construction Complete</h4>
+                        <p className="text-green-800 mb-3">Foundation and structural work completed ahead of schedule. Quality inspections passed with excellent ratings.</p>
+                        <div className="flex items-center text-sm text-green-700">
+                          <FaCalendar className="mr-2" />
+                          <span>December 15, 2024</span>
+                        </div>
+                      </div>
+                      <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Completed</span>
+                    </div>
+                  </div>
+
+                  <div className="border-l-4 border-blue-500 bg-blue-50 p-6 rounded-r-lg">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-2">Phase 2 Development Started</h4>
+                        <p className="text-blue-800 mb-3">Interior work and finishing has begun. Expected completion: Q2 2025. Progress: 35% complete.</p>
+                        <div className="flex items-center text-sm text-blue-700 mb-3">
+                          <FaCalendar className="mr-2" />
+                          <span>January 8, 2025</span>
+                        </div>
+                        <div className="w-full bg-blue-200 rounded-full h-2">
+                          <div className="bg-blue-500 h-2 rounded-full" style={{width: '35%'}}></div>
+                        </div>
+                      </div>
+                      <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">In Progress</span>
+                    </div>
+                  </div>
+
+                  <div className="border-l-4 border-orange-500 bg-orange-50 p-6 rounded-r-lg">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-orange-900 mb-2">Market Valuation Update</h4>
+                        <p className="text-orange-800 mb-3">Independent property valuation shows 18% appreciation since investment. Current market value: ₦95M (up from ₦80M).</p>
+                        <div className="flex items-center text-sm text-orange-700">
+                          <FaCalendar className="mr-2" />
+                          <span>January 3, 2025</span>
+                        </div>
+                      </div>
+                      <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs">Update</span>
+                    </div>
+                  </div>
+
+                  <div className="border-l-4 border-purple-500 bg-purple-50 p-6 rounded-r-lg">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-purple-900 mb-2">Regulatory Approval Received</h4>
+                        <p className="text-purple-800 mb-3">All necessary permits and approvals have been obtained. Project is fully compliant with local regulations.</p>
+                        <div className="flex items-center text-sm text-purple-700">
+                          <FaCalendar className="mr-2" />
+                          <span>December 22, 2024</span>
+                        </div>
+                      </div>
+                      <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs">Approved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Developer Info Tab */}
+            {activeTab === 'developerinfo' && (
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <FaBuilding className="mx-auto text-4xl text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Developer Information</h3>
+                  <p className="text-gray-600 mb-6">Learn about the project developer and their track record</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Company Overview</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <span className="font-medium text-gray-700">Company Name:</span>
+                          <span className="ml-2 text-gray-900">Luxury Developments Nigeria Ltd.</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Established:</span>
+                          <span className="ml-2 text-gray-900">2018</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Experience:</span>
+                          <span className="ml-2 text-gray-900">7+ years in real estate development</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Projects Completed:</span>
+                          <span className="ml-2 text-gray-900">12 luxury developments</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Total Value Delivered:</span>
+                          <span className="ml-2 text-gray-900">₦2.5B+ in property value</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center">
+                          <FaMapMarkerAlt className="text-gray-400 mr-3" />
+                          <span>123 Victoria Island, Lagos, Nigeria</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaPhone className="text-gray-400 mr-3" />
+                          <span>+234-XXX-XXXX</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaEnvelope className="text-gray-400 mr-3" />
+                          <span>info@luxurydevelopments.ng</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaGlobe className="text-gray-400 mr-3" />
+                          <span>www.luxurydevelopments.ng</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Track Record</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700">Project Delivery Rate</span>
+                          <span className="font-semibold text-green-600">100%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700">On-Time Delivery</span>
+                          <span className="font-semibold text-green-600">92%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700">Average ROI Delivered</span>
+                          <span className="font-semibold text-green-600">22%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700">Investor Satisfaction</span>
+                          <span className="font-semibold text-green-600">4.8/5</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Recent Projects</h4>
+                      <div className="space-y-3">
+                        <div className="border-b border-gray-100 pb-2">
+                          <div className="font-medium text-gray-900">Lagos Luxury Towers</div>
+                          <div className="text-sm text-gray-600">Completed 2023 • ₦450M project</div>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2">
+                          <div className="font-medium text-gray-900">Victoria Gardens</div>
+                          <div className="text-sm text-gray-600">Completed 2022 • ₦320M project</div>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2">
+                          <div className="font-medium text-gray-900">Ikoyi Heights</div>
+                          <div className="text-sm text-gray-600">Completed 2021 • ₦280M project</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Certifications</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <FaCheck className="text-green-600 mr-2" />
+                          <span className="text-sm">Nigerian Real Estate Developers Association</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaCheck className="text-green-600 mr-2" />
+                          <span className="text-sm">Lagos State Property Development Authority</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaCheck className="text-green-600 mr-2" />
+                          <span className="text-sm">ISO 9001:2015 Quality Management</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FAQs Tab */}
+            {activeTab === 'faqs' && (
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <FaQuestionCircle className="mx-auto text-4xl text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Frequently Asked Questions</h3>
+                  <p className="text-gray-600 mb-6">Find answers to common investment questions</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">How does the escrow protection work?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">Your investment funds are held in a secure escrow account until the vendor provides all required property documents (C of O, deed, survey plan). Once verified by our legal team, the documents serve as collateral equal to your investment value. Funds are only released after this verification process is complete.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">What is the minimum investment amount?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">The minimum investment varies by project, typically ranging from ₦100,000 to ₦500,000. Each project listing clearly shows the minimum investment requirement. This ensures that property investments are accessible to a wide range of investors while maintaining project viability.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">How are returns calculated and paid?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">Returns are calculated based on the project's performance and market appreciation. Returns are typically paid quarterly or annually, depending on the project structure. All returns are distributed proportionally based on your ownership percentage in the project.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">What happens if the project is delayed?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">Project delays are handled according to the terms in your investment agreement. Typically, the lock period may be extended, and investors are notified of any significant delays. Our escrow protection ensures your funds remain secure during any project timeline adjustments.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">Can I withdraw my investment early?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">Investments are subject to the lock period specified in your agreement, typically 12-36 months. Early withdrawal may be possible under certain circumstances but may incur penalties or reduced returns. We recommend reviewing the specific terms of your investment agreement.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">How do I track my investment performance?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">You can track your investment performance through your investor dashboard, which shows real-time updates on project progress, returns, and market valuations. You'll also receive regular email updates and can access detailed reports through the platform.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <button className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50">
+                      <span className="font-medium text-gray-900">What are the tax implications of my investment?</span>
+                      <FaChevronDown className="text-gray-400" />
+                    </button>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600">Investment returns may be subject to capital gains tax and other applicable taxes in Nigeria. We provide annual tax statements for your investments, but we recommend consulting with a tax professional for specific advice on your individual tax situation.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
