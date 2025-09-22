@@ -32,7 +32,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Lagos');
   const [selectedType, setSelectedType] = useState('Apartment');
-  const [priceRange, setPriceRange] = useState([10000000, 100000000]);
+  const [priceRange, setPriceRange] = useState([0, 100000000]);
   const [bedrooms, setBedrooms] = useState('2');
   const [bathrooms, setBathrooms] = useState('3');
   const [selectedAmenities, setSelectedAmenities] = useState([
@@ -213,7 +213,7 @@ const Home = () => {
     setSelectedType('');
     setBedrooms('');
     setBathrooms('');
-    setPriceRange([10000000, 100000000]);
+    setPriceRange([0, 100000000]);
     setSearchQuery('');
   };
 
@@ -560,18 +560,28 @@ const Home = () => {
                     type="text"
                     value={priceRange[0].toLocaleString()}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value.replace(/,/g, '')) || 5000000;
-                      if (value >= 5000000 && value <= priceRange[1]) {
+                      const inputValue = e.target.value.replace(/,/g, '');
+                      if (inputValue === '') {
+                        setPriceRange([0, priceRange[1]]);
+                        return;
+                      }
+                      const value = parseInt(inputValue) || 0;
+                      if (value >= 0 && value <= priceRange[1]) {
                         setPriceRange([value, priceRange[1]]);
                       }
                     }}
                     onBlur={(e) => {
-                      const value = parseInt(e.target.value.replace(/,/g, '')) || 5000000;
-                      const clampedValue = Math.max(5000000, Math.min(value, priceRange[1]));
+                      const inputValue = e.target.value.replace(/,/g, '');
+                      if (inputValue === '') {
+                        setPriceRange([0, priceRange[1]]);
+                        return;
+                      }
+                      const value = parseInt(inputValue) || 0;
+                      const clampedValue = Math.max(0, Math.min(value, priceRange[1]));
                       setPriceRange([clampedValue, priceRange[1]]);
                     }}
                     className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Min Price (₦5,000,000)"
+                    placeholder="Min Price (₦0)"
                   />
                   <input
                     type="text"
@@ -598,15 +608,15 @@ const Home = () => {
                     <div 
                       className="absolute h-2 bg-orange-500 rounded-full"
                       style={{
-                        left: `${((priceRange[0] - 5000000) / (200000000 - 5000000)) * 100}%`,
-                        width: `${((priceRange[1] - priceRange[0]) / (200000000 - 5000000)) * 100}%`
+                        left: `${(priceRange[0] / 200000000) * 100}%`,
+                        width: `${((priceRange[1] - priceRange[0]) / 200000000) * 100}%`
                       }}
                     ></div>
                     <input
                       type="range"
-                      min="5000000"
+                      min="0"
                       max="200000000"
-                      step="1000000"
+                      step="500000"
                       value={priceRange[0]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
@@ -619,9 +629,9 @@ const Home = () => {
                     />
                     <input
                       type="range"
-                      min="5000000"
+                      min="0"
                       max="200000000"
-                      step="1000000"
+                      step="500000"
                       value={priceRange[1]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
@@ -634,7 +644,7 @@ const Home = () => {
                     />
                   </div>
                   <div className="flex justify-between text-xs text-gray-300 mt-2">
-                    <span>₦{(5000000).toLocaleString()}</span>
+                    <span>₦0</span>
                     <span className="text-orange-500 font-medium bg-gray-800 px-2 py-1 rounded">
                       ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
                     </span>
