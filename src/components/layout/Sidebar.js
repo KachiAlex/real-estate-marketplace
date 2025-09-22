@@ -32,10 +32,8 @@ const Sidebar = () => {
            { path: '/properties', label: 'Properties', icon: FaBuilding },
            { path: '/investment', label: 'Investment', icon: FaChartLine },
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
-           { path: '/mortgage-applications', label: 'Mortgage Applications', icon: FaFileAlt },
            { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
            { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
-           { path: '/scheduled-viewings', label: 'Scheduled Viewings', icon: FaCalendar },
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
          ];

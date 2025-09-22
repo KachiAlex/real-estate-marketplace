@@ -24,6 +24,12 @@ const MyInquiries = () => {
     toast.success('Redirecting to secure purchase process...');
   };
 
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [viewingMessage, setViewingMessage] = useState('');
+
   const handleScheduleViewing = (property) => {
     if (!user) {
       toast.error('Please login to schedule viewings');
@@ -31,25 +37,38 @@ const MyInquiries = () => {
       return;
     }
     
+    setSelectedProperty(property);
+    setShowScheduleModal(true);
+  };
+
+  const handleConfirmScheduleViewing = () => {
+    if (!selectedDate || !selectedTime) {
+      toast.error('Please select both date and time');
+      return;
+    }
+
     // Create viewing request data
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
-      propertyId: property.id,
-      propertyTitle: property.title,
-      propertyLocation: property.location,
+      propertyId: selectedProperty.id,
+      propertyTitle: selectedProperty.title,
+      propertyLocation: selectedProperty.location,
       userId: user.id,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
-      status: 'pending',
+      status: 'pending_vendor_confirmation',
       requestedAt: new Date().toISOString(),
-      preferredDate: null,
-      preferredTime: null,
-      message: '',
-      agentContact: property.agent || {
+      preferredDate: selectedDate,
+      preferredTime: selectedTime,
+      message: viewingMessage,
+      agentContact: selectedProperty.agent || {
         name: 'Property Agent',
         phone: '+234-XXX-XXXX',
         email: 'agent@example.com'
-      }
+      },
+      vendorResponse: null,
+      confirmedDate: null,
+      confirmedTime: null
     };
     
     // Store in localStorage for demo
@@ -57,12 +76,14 @@ const MyInquiries = () => {
     existingRequests.push(viewingRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
     
-    toast.success(`Viewing request sent for "${property.title}"! The agent will contact you within 24 hours.`);
+    toast.success(`Viewing request sent for "${selectedProperty.title}"! The vendor will confirm or suggest an alternative time.`);
     
-    // Show additional info
-    setTimeout(() => {
-      toast.info(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
-    }, 2000);
+    // Reset modal
+    setShowScheduleModal(false);
+    setSelectedProperty(null);
+    setSelectedDate('');
+    setSelectedTime('');
+    setViewingMessage('');
   };
 
   // Mock inquiries data
@@ -526,6 +547,81 @@ const MyInquiries = () => {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Schedule Viewing Modal */}
+      {showScheduleModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Schedule Property Viewing</h3>
+            <p className="text-gray-600 mb-4">{selectedProperty.title}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+                <select
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Time</option>
+                  <option value="09:00">9:00 AM</option>
+                  <option value="10:00">10:00 AM</option>
+                  <option value="11:00">11:00 AM</option>
+                  <option value="12:00">12:00 PM</option>
+                  <option value="13:00">1:00 PM</option>
+                  <option value="14:00">2:00 PM</option>
+                  <option value="15:00">3:00 PM</option>
+                  <option value="16:00">4:00 PM</option>
+                  <option value="17:00">5:00 PM</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Additional Message (Optional)</label>
+                <textarea
+                  value={viewingMessage}
+                  onChange={(e) => setViewingMessage(e.target.value)}
+                  placeholder="Any specific requirements or questions..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowScheduleModal(false);
+                  setSelectedProperty(null);
+                  setSelectedDate('');
+                  setSelectedTime('');
+                  setViewingMessage('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmScheduleViewing}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Request Viewing
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -33,6 +33,19 @@ const Mortgage = () => {
     navigate(`/property/${propertyId}`);
   };
 
+  const [showMortgageModal, setShowMortgageModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [employmentType, setEmploymentType] = useState('employed');
+  const [employerName, setEmployerName] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [monthlyIncome, setMonthlyIncome] = useState('');
+  const [yearsOfEmployment, setYearsOfEmployment] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [businessMonthlyIncome, setBusinessMonthlyIncome] = useState('');
+  const [bankStatements, setBankStatements] = useState([]);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
   const handleApplyMortgage = (property) => {
     console.log('Apply for Mortgage clicked, property:', property, 'user:', user);
     
@@ -42,24 +55,65 @@ const Mortgage = () => {
       return;
     }
     
+    setSelectedProperty(property);
+    setShowMortgageModal(true);
+  };
+
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    setBankStatements(files);
+  };
+
+  const handleConfirmMortgageApplication = () => {
+    if (!acceptTerms) {
+      toast.error('Please accept the terms and conditions');
+      return;
+    }
+
+    if (employmentType === 'employed' && (!employerName || !jobTitle || !monthlyIncome || !yearsOfEmployment)) {
+      toast.error('Please fill in all employment details');
+      return;
+    }
+
+    if (employmentType === 'self-employed' && (!businessName || !businessType || !businessMonthlyIncome)) {
+      toast.error('Please fill in all business details');
+      return;
+    }
+
     // Create mortgage application data
     const mortgageApplication = {
       id: `MORT-${Date.now()}`,
-      propertyId: property.id,
-      propertyTitle: property.title,
-      propertyLocation: property.location,
-      propertyPrice: property.price,
+      propertyId: selectedProperty.id,
+      propertyTitle: selectedProperty.title,
+      propertyLocation: selectedProperty.location,
+      propertyPrice: selectedProperty.price,
       userId: user.id,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
-      status: 'pending_review',
+      status: 'pending_vendor_review',
       requestedAt: new Date().toISOString(),
-      requestedAmount: Math.round(property.price * 0.8), // 80% of property value
-      downPayment: Math.round(property.price * 0.2), // 20% down payment
+      requestedAmount: Math.round(selectedProperty.price * 0.8), // 80% of property value
+      downPayment: Math.round(selectedProperty.price * 0.2), // 20% down payment
       loanTerm: '25 years',
       interestRate: '18.5%',
-      monthlyPayment: Math.round((property.price * 0.8 * 0.185) / 12), // Rough calculation
+      monthlyPayment: Math.round((selectedProperty.price * 0.8 * 0.185) / 12), // Rough calculation
       applicationType: 'residential_mortgage',
+      employmentDetails: {
+        type: employmentType,
+        employerName,
+        jobTitle,
+        monthlyIncome: employmentType === 'employed' ? monthlyIncome : businessMonthlyIncome,
+        yearsOfEmployment,
+        businessName,
+        businessType
+      },
+      bankStatements: bankStatements.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date().toISOString()
+      })),
+      vendorResponse: null,
       documentsRequired: [
         'Proof of Income',
         'Bank Statements (6 months)',
@@ -81,7 +135,7 @@ const Mortgage = () => {
     localStorage.setItem('mortgageApplications', JSON.stringify(existingApplications));
     
     // Show success message with detailed information
-    toast.success(`Mortgage application submitted for "${property.title}"!`);
+    toast.success(`Mortgage application submitted for "${selectedProperty.title}"! The vendor will review your application.`);
     
     // Show additional info with mortgage details
     setTimeout(() => {
@@ -91,6 +145,20 @@ const Mortgage = () => {
     setTimeout(() => {
       toast.info(`You will be contacted within 24 hours by ${mortgageApplication.agentContact.name} (${mortgageApplication.agentContact.phone})`);
     }, 3000);
+    
+    // Reset modal
+    setShowMortgageModal(false);
+    setSelectedProperty(null);
+    setEmploymentType('employed');
+    setEmployerName('');
+    setJobTitle('');
+    setMonthlyIncome('');
+    setYearsOfEmployment('');
+    setBusinessName('');
+    setBusinessType('');
+    setBusinessMonthlyIncome('');
+    setBankStatements([]);
+    setAcceptTerms(false);
     
     console.log('Mortgage application created:', mortgageApplication);
   };
@@ -736,6 +804,207 @@ const Mortgage = () => {
           <a href="#" className="text-sm text-brand-blue hover:underline">Compare All</a>
         </div>
       </div>
+
+      {/* Mortgage Application Modal */}
+      {showMortgageModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Apply for Mortgage</h3>
+            <p className="text-gray-600 mb-6">{selectedProperty.title}</p>
+            
+            {/* Property Summary */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <h4 className="font-semibold text-gray-900 mb-2">Property Details</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Property Price:</strong> ₦{selectedProperty.price.toLocaleString()}</p>
+                  <p><strong>Loan Amount:</strong> ₦{Math.round(selectedProperty.price * 0.8).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p><strong>Down Payment:</strong> ₦{Math.round(selectedProperty.price * 0.2).toLocaleString()}</p>
+                  <p><strong>Monthly Payment:</strong> ₦{Math.round((selectedProperty.price * 0.8 * 0.185) / 12).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Employment Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="employed"
+                      checked={employmentType === 'employed'}
+                      onChange={(e) => setEmploymentType(e.target.value)}
+                      className="mr-2"
+                    />
+                    Employed
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="self-employed"
+                      checked={employmentType === 'self-employed'}
+                      onChange={(e) => setEmploymentType(e.target.value)}
+                      className="mr-2"
+                    />
+                    Self-Employed
+                  </label>
+                </div>
+              </div>
+
+              {/* Employment Details */}
+              {employmentType === 'employed' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Employer Name</label>
+                    <input
+                      type="text"
+                      value={employerName}
+                      onChange={(e) => setEmployerName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Company Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                    <input
+                      type="text"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Your Position"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income (₦)</label>
+                    <input
+                      type="number"
+                      value={monthlyIncome}
+                      onChange={(e) => setMonthlyIncome(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="500000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Years of Employment</label>
+                    <input
+                      type="number"
+                      value={yearsOfEmployment}
+                      onChange={(e) => setYearsOfEmployment(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="5"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Business Details */}
+              {employmentType === 'self-employed' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                    <input
+                      type="text"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Business Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                    <input
+                      type="text"
+                      value={businessType}
+                      onChange={(e) => setBusinessType(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Consulting, Trading"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Business Income (₦)</label>
+                    <input
+                      type="number"
+                      value={businessMonthlyIncome}
+                      onChange={(e) => setBusinessMonthlyIncome(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="750000"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Bank Statements Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Statements (Last 6 months)</label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileUpload}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {bankStatements.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">Uploaded files:</p>
+                    <ul className="text-sm text-gray-500">
+                      {bankStatements.map((file, index) => (
+                        <li key={index}>• {file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
+              <div>
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mr-2 mt-1"
+                  />
+                  <span className="text-sm text-gray-700">
+                    I accept the mortgage terms and conditions and agree to provide additional documents as required by the vendor.
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowMortgageModal(false);
+                  setSelectedProperty(null);
+                  setEmploymentType('employed');
+                  setEmployerName('');
+                  setJobTitle('');
+                  setMonthlyIncome('');
+                  setYearsOfEmployment('');
+                  setBusinessName('');
+                  setBusinessType('');
+                  setBusinessMonthlyIncome('');
+                  setBankStatements([]);
+                  setAcceptTerms(false);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmMortgageApplication}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Submit Application
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

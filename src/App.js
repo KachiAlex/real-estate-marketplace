@@ -44,8 +44,6 @@ import VendorProfile from './pages/VendorProfile';
 import VendorNotifications from './pages/VendorNotifications';
 import VendorHelp from './pages/VendorHelp';
 import EscrowPaymentFlow from './components/EscrowPaymentFlow';
-import ScheduledViewings from './pages/ScheduledViewings';
-import MortgageApplications from './pages/MortgageApplications';
 
 function App() {
   return (
@@ -244,26 +242,6 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <MyInquiries />
-                        </main>
-                      </div>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/scheduled-viewings" element={
-                    <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <ScheduledViewings />
-                        </main>
-                      </div>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/mortgage-applications" element={
-                    <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <MortgageApplications />
                         </main>
                       </div>
                     </ProtectedRoute>
