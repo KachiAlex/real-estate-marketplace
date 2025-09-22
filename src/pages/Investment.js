@@ -21,6 +21,9 @@ const Investment = () => {
   const [paymentMethod, setPaymentMethod] = useState('flutterwave');
   const [acceptInvestmentTerms, setAcceptInvestmentTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentReference, setPaymentReference] = useState('');
+  const [createdEscrow, setCreatedEscrow] = useState(null);
 
   // Calculate real investment data from context
   const calculateInvestmentData = () => {
@@ -204,6 +207,7 @@ const Investment = () => {
       setIsProcessingPayment(true);
 
       // Create investment escrow transaction
+      const reference = `FLW-${Math.floor(100000 + Math.random()*900000)}`;
       const investmentEscrow = {
         id: `INV-${Date.now()}`,
         investmentId: selectedProject.id,
@@ -219,7 +223,7 @@ const Investment = () => {
         documentStatus: 'awaiting_vendor_documents',
         payment: {
           method: paymentMethod,
-          reference: `FLW-${Math.floor(100000 + Math.random()*900000)}`,
+          reference,
           paidAt: new Date().toISOString()
         },
         collateralProperty: selectedProject.collateralProperty || 'Property deed pending vendor submission',
@@ -235,8 +239,10 @@ const Investment = () => {
       // Record user investment in context (mock)
       await investInOpportunity(selectedProject.id, investmentAmount);
 
+      setPaymentReference(reference);
+      setCreatedEscrow(investmentEscrow);
+      setPaymentSuccess(true);
       toast.success('Payment successful! Funds held in escrow pending vendor document submission.');
-      setShowInvestmentModal(false);
       setSelectedProject(null);
       setInvestmentAmount(500000);
       setAcceptInvestmentTerms(false);
@@ -1374,6 +1380,61 @@ const Investment = () => {
                 </div>
               </div>
             </div>
+
+            {/* Success State */}
+            {paymentSuccess && createdEscrow ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-green-900 mb-2">Payment Successful</h4>
+                <p className="text-green-800 text-sm">Your funds are now held in escrow pending vendor document submission and verification.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3">
+                  <div>
+                    <p><strong>Reference:</strong> {paymentReference}</p>
+                    <p><strong>Amount:</strong> ₦{createdEscrow.amount.toLocaleString()}</p>
+                    <p><strong>Escrow Fee:</strong> ₦{createdEscrow.escrowFee.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p><strong>Project:</strong> {createdEscrow.investmentTitle}</p>
+                    <p><strong>Status:</strong> {createdEscrow.status.replaceAll('_',' ')}</p>
+                    <p><strong>Vendor:</strong> {createdEscrow.vendor}</p>
+                  </div>
+                </div>
+                <div className="flex space-x-3 mt-4">
+                  <button
+                    onClick={() => {
+                      // Download simple receipt
+                      const receiptHtml = `<!DOCTYPE html><html><body><h2>Investment Receipt</h2><p>Ref: ${paymentReference}</p><p>Project: ${createdEscrow.investmentTitle}</p><p>Amount: ₦${createdEscrow.amount.toLocaleString()}</p><p>Escrow Fee: ₦${createdEscrow.escrowFee.toLocaleString()}</p><p>Total: ₦${createdEscrow.totalAmount.toLocaleString()}</p><p>Status: ${createdEscrow.status.replaceAll('_',' ')}</p><p>Date: ${new Date(createdEscrow.createdAt).toLocaleString()}</p></body></html>`;
+                      const blob = new Blob([receiptHtml], { type: 'text/html' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `receipt-${paymentReference}.html`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    className="flex-1 px-4 py-2 bg-white text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Download Receipt
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPaymentSuccess(false);
+                      setShowInvestmentModal(false);
+                    }}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Done
+                  </button>
+                  <button
+                    onClick={() => window.location.assign('/escrow')}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Go to Escrow
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {/* Action Buttons */}
             <div className="flex space-x-3">
