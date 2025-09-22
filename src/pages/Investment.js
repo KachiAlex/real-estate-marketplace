@@ -17,6 +17,10 @@ const Investment = () => {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState(null);
+  // Payment flow state (modal-based)
+  const [paymentMethod, setPaymentMethod] = useState('flutterwave');
+  const [acceptInvestmentTerms, setAcceptInvestmentTerms] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Calculate real investment data from context
   const calculateInvestmentData = () => {
@@ -191,7 +195,14 @@ const Investment = () => {
       return;
     }
 
+    if (!acceptInvestmentTerms) {
+      toast.error('Please accept the investment terms to proceed');
+      return;
+    }
+
     try {
+      setIsProcessingPayment(true);
+
       // Create investment escrow transaction
       const investmentEscrow = {
         id: `INV-${Date.now()}`,
@@ -200,12 +211,17 @@ const Investment = () => {
         amount: investmentAmount,
         escrowFee: Math.round(investmentAmount * 0.005), // 0.5% escrow fee
         totalAmount: investmentAmount + Math.round(investmentAmount * 0.005),
-        status: 'pending_documents',
+        status: 'paid_held_in_escrow',
         createdAt: new Date().toISOString(),
         investor: `${user.firstName} ${user.lastName}`,
         vendor: selectedProject.sponsor?.name || 'Investment Sponsor',
         type: 'investment',
         documentStatus: 'awaiting_vendor_documents',
+        payment: {
+          method: paymentMethod,
+          reference: `FLW-${Math.floor(100000 + Math.random()*900000)}`,
+          paidAt: new Date().toISOString()
+        },
         collateralProperty: selectedProject.collateralProperty || 'Property deed pending vendor submission',
         expectedROI: selectedProject.expectedROI,
         lockPeriod: selectedProject.lockPeriod
@@ -216,16 +232,20 @@ const Investment = () => {
       existingEscrows.push(investmentEscrow);
       localStorage.setItem('escrowTransactions', JSON.stringify(existingEscrows));
 
-      // Call context function
+      // Record user investment in context (mock)
       await investInOpportunity(selectedProject.id, investmentAmount);
 
-      toast.success('Investment initiated! Funds held in escrow pending document verification.');
+      toast.success('Payment successful! Funds held in escrow pending vendor document submission.');
       setShowInvestmentModal(false);
       setSelectedProject(null);
       setInvestmentAmount(500000);
+      setAcceptInvestmentTerms(false);
+      setPaymentMethod('flutterwave');
     } catch (error) {
       console.error('Investment error:', error);
       toast.error('Failed to process investment');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -1327,6 +1347,34 @@ const Investment = () => {
               </div>
             </div>
 
+            {/* Payment & Terms */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="flutterwave">Flutterwave (Card/Bank/USSD)</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                  </select>
+                </div>
+                <div className="flex items-start mt-1">
+                  <label className="flex items-start text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      className="mr-2 mt-1"
+                      checked={acceptInvestmentTerms}
+                      onChange={(e) => setAcceptInvestmentTerms(e.target.checked)}
+                    />
+                    I accept the escrow terms and investment risk disclosure.
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex space-x-3">
               <button
@@ -1337,10 +1385,10 @@ const Investment = () => {
               </button>
               <button
                 onClick={handleConfirmInvestment}
-                disabled={!investmentAmount || investmentAmount < selectedProject.minInvestment}
+                disabled={isProcessingPayment || !investmentAmount || investmentAmount < selectedProject.minInvestment || !acceptInvestmentTerms}
                 className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Confirm Investment
+                {isProcessingPayment ? 'Processing...' : 'Pay Now (via Escrow)'}
               </button>
             </div>
           </div>
