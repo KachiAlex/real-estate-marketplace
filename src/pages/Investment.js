@@ -24,6 +24,17 @@ const Investment = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentReference, setPaymentReference] = useState('');
   const [createdEscrow, setCreatedEscrow] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1); // 1: Amount, 2: Method & Terms, 3: Review & Pay
+
+  const resetInvestmentModal = () => {
+    setCurrentStep(1);
+    setPaymentSuccess(false);
+    setIsProcessingPayment(false);
+    setAcceptInvestmentTerms(false);
+    setPaymentMethod('flutterwave');
+    setPaymentReference('');
+    setCreatedEscrow(null);
+  };
 
   // Calculate real investment data from context
   const calculateInvestmentData = () => {
@@ -180,9 +191,15 @@ const Investment = () => {
       toast.error('No investment project available');
       return;
     }
+
+    // Prevent duplicate opens if modal already visible for same project
+    if (showInvestmentModal && selectedProject && selectedProject.id === projectToUse.id) {
+      return;
+    }
     
     console.log('Setting selected project:', projectToUse);
     setSelectedProject(projectToUse);
+    resetInvestmentModal();
     setShowInvestmentModal(true);
     console.log('Investment modal should now be visible');
   };
@@ -1251,157 +1268,229 @@ const Investment = () => {
         </div>
       </div>
 
-      {/* Investment Modal */}
+      {/* Investment Modal (Multi-step) */}
       {showInvestmentModal && selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          role="dialog" aria-modal="true" aria-label={`Invest in ${selectedProject.name}`}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowInvestmentModal(false); }}
+        >
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Invest in {selectedProject.name}</h3>
-            
-            {/* Investment Summary */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-2xl font-bold text-gray-900">Invest in {selectedProject.name}</h3>
+              <button
+                onClick={() => setShowInvestmentModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Stepper */}
+            <div className="flex items-center mb-6 text-sm">
+              <div className={`flex-1 flex items-center ${currentStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 1 ? 'border-orange-600' : 'border-gray-300'}`}>1</div>
+                <span className="ml-2">Amount</span>
+                <div className="flex-1 h-px bg-gray-200 mx-3"></div>
+              </div>
+              <div className={`flex-1 flex items-center ${currentStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 2 ? 'border-orange-600' : 'border-gray-300'}`}>2</div>
+                <span className="ml-2">Method & Terms</span>
+                <div className="flex-1 h-px bg-gray-200 mx-3"></div>
+              </div>
+              <div className={`flex items-center ${currentStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${currentStep >= 3 ? 'border-orange-600' : 'border-gray-300'}`}>3</div>
+                <span className="ml-2">Review & Pay</span>
+              </div>
+            </div>
+
+            {/* Project Summary */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-sm text-gray-600">Project</p>
+                  <p className="text-gray-600">Project</p>
                   <p className="font-semibold">{selectedProject.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Location</p>
+                  <p className="text-gray-600">Location</p>
                   <p className="font-semibold">{selectedProject.location}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Expected ROI</p>
+                  <p className="text-gray-600">Expected ROI</p>
                   <p className="font-semibold text-green-600">{selectedProject.expectedROI}% per annum</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Lock Period</p>
+                  <p className="text-gray-600">Lock Period</p>
                   <p className="font-semibold">{selectedProject.lockPeriod} months</p>
                 </div>
               </div>
             </div>
 
-            {/* Investment Amount */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Investment Amount (₦)
-              </label>
-              <input
-                type="number"
-                value={investmentAmount}
-                onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
-                min={selectedProject.minInvestment}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder={`Minimum: ₦${selectedProject.minInvestment.toLocaleString()}`}
-              />
-              <p className="text-sm text-gray-600 mt-1">
-                Minimum investment: ₦{selectedProject.minInvestment.toLocaleString()}
-              </p>
-            </div>
+            {/* Step 1: Amount */}
+            {currentStep === 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount (₦)</label>
+                <input
+                  type="number"
+                  value={investmentAmount}
+                  onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
+                  min={selectedProject.minInvestment}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder={`Minimum: ₦${selectedProject.minInvestment.toLocaleString()}`}
+                />
+                <p className="text-sm text-gray-600 mt-1">Minimum investment: ₦{selectedProject.minInvestment.toLocaleString()}</p>
 
-            {/* Investment Calculation */}
-            {investmentAmount >= selectedProject.minInvestment && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-3">Investment Projection</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Your Investment</p>
-                    <p className="font-bold text-lg">₦{investmentAmount.toLocaleString()}</p>
+                {investmentAmount >= selectedProject.minInvestment && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-semibold text-blue-900 mb-3">Investment Projection</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Your Investment</p>
+                        <p className="font-bold text-lg">₦{investmentAmount.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Projected Annual Return</p>
+                        <p className="font-bold text-lg text-green-600">₦{calculateReturns(investmentAmount, selectedProject.expectedROI)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Ownership Percentage</p>
+                        <p className="font-bold">{calculateOwnership(investmentAmount)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Escrow Fee (0.5%)</p>
+                        <p className="font-bold">₦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-600">Projected Annual Return</p>
-                    <p className="font-bold text-lg text-green-600">₦{calculateReturns(investmentAmount, selectedProject.expectedROI)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Ownership Percentage</p>
-                    <p className="font-bold">{calculateOwnership(investmentAmount)}%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Escrow Fee (0.5%)</p>
-                    <p className="font-bold">₦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
-                  </div>
+                )}
+
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={() => {
+                      if (!investmentAmount || investmentAmount < selectedProject.minInvestment) {
+                        toast.error(`Minimum investment is ₦${selectedProject.minInvestment.toLocaleString()}`);
+                        return;
+                      }
+                      setCurrentStep(2);
+                    }}
+                    className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    Continue
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* Escrow Protection Notice */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start space-x-3">
-                <FaShieldAlt className="text-orange-600 mt-1" />
-                <div>
-                  <h4 className="font-semibold text-orange-900 mb-2">🔒 Escrow Protection</h4>
-                  <div className="text-sm text-orange-800 space-y-1">
-                    <p>• Your investment is held in secure escrow until vendor provides property documents</p>
-                    <p>• Vendor must submit original property deed as collateral equal to investment value</p>
-                    <p>• Funds released only after legal verification of documents</p>
-                    <p>• You have legal claim on collateral property if vendor defaults</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Requirements */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                <FaFileContract className="mr-2" />
-                Required Vendor Documents
-              </h4>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p>✅ Original Certificate of Occupancy (C of O)</p>
-                <p>✅ Property deed and title documents</p>
-                <p>✅ Survey plan and property valuation</p>
-                <p>✅ Property insurance documentation</p>
-                <p>✅ Vendor identification and business registration</p>
-              </div>
-            </div>
-
-            {/* Payment & Terms */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="flutterwave">Flutterwave (Card/Bank/USSD)</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                  </select>
-                </div>
-                <div className="flex items-start mt-1">
-                  <label className="flex items-start text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      className="mr-2 mt-1"
-                      checked={acceptInvestmentTerms}
-                      onChange={(e) => setAcceptInvestmentTerms(e.target.checked)}
-                    />
-                    I accept the escrow terms and investment risk disclosure.
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Success State */}
-            {paymentSuccess && createdEscrow ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-green-900 mb-2">Payment Successful</h4>
-                <p className="text-green-800 text-sm">Your funds are now held in escrow pending vendor document submission and verification.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3">
+            {/* Step 2: Method & Terms */}
+            {currentStep === 2 && (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p><strong>Reference:</strong> {paymentReference}</p>
-                    <p><strong>Amount:</strong> ₦{createdEscrow.amount.toLocaleString()}</p>
-                    <p><strong>Escrow Fee:</strong> ₦{createdEscrow.escrowFee.toLocaleString()}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="flutterwave">Flutterwave (Card/Bank/USSD)</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                    </select>
                   </div>
-                  <div>
-                    <p><strong>Project:</strong> {createdEscrow.investmentTitle}</p>
-                    <p><strong>Status:</strong> {createdEscrow.status.replaceAll('_',' ')}</p>
-                    <p><strong>Vendor:</strong> {createdEscrow.vendor}</p>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-900">
+                    <p className="font-semibold mb-1">Escrow Protection</p>
+                    <p>Funds are held in escrow pending original document submission and verification.</p>
                   </div>
                 </div>
-                <div className="flex space-x-3 mt-4">
+
+                <label className="flex items-start mt-4 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="mr-2 mt-1"
+                    checked={acceptInvestmentTerms}
+                    onChange={(e) => setAcceptInvestmentTerms(e.target.checked)}
+                  />
+                  I accept the escrow terms and investment risk disclosure.
+                </label>
+
+                <div className="flex justify-between mt-6">
+                  <button onClick={() => setCurrentStep(1)} className="px-5 py-2 border rounded-lg">Back</button>
                   <button
                     onClick={() => {
-                      // Download simple receipt
+                      if (!acceptInvestmentTerms) {
+                        toast.error('Please accept the investment terms to proceed');
+                        return;
+                      }
+                      setCurrentStep(3);
+                    }}
+                    className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Review & Pay */}
+            {currentStep === 3 && (
+              <div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-600">Amount</p>
+                      <p className="font-semibold">₦{investmentAmount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Payment Method</p>
+                      <p className="font-semibold">{paymentMethod === 'flutterwave' ? 'Flutterwave' : 'Bank Transfer'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Escrow Fee (0.5%)</p>
+                      <p className="font-semibold">₦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Total</p>
+                      <p className="font-semibold">₦{(investmentAmount + Math.round(investmentAmount * 0.005)).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-6">
+                  <button onClick={() => setCurrentStep(2)} className="px-5 py-2 border rounded-lg">Back</button>
+                  <button
+                    onClick={handleConfirmInvestment}
+                    disabled={isProcessingPayment}
+                    className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {isProcessingPayment ? 'Processing...' : 'Pay Now (via Escrow)'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Success State (same as before) */}
+            {paymentSuccess && createdEscrow && (
+              <div className="mt-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-semibold text-green-900 mb-2">Payment Successful</h4>
+                  <p className="text-green-800 text-sm">Your funds are now held in escrow pending vendor document submission and verification.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3">
+                    <div>
+                      <p><strong>Reference:</strong> {paymentReference}</p>
+                      <p><strong>Amount:</strong> ₦{createdEscrow.amount.toLocaleString()}</p>
+                      <p><strong>Escrow Fee:</strong> ₦{createdEscrow.escrowFee.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p><strong>Project:</strong> {createdEscrow.investmentTitle}</p>
+                      <p><strong>Status:</strong> {createdEscrow.status.replaceAll('_',' ')}</p>
+                      <p><strong>Vendor:</strong> {createdEscrow.vendor}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
                       const receiptHtml = `<!DOCTYPE html><html><body><h2>Investment Receipt</h2><p>Ref: ${paymentReference}</p><p>Project: ${createdEscrow.investmentTitle}</p><p>Amount: ₦${createdEscrow.amount.toLocaleString()}</p><p>Escrow Fee: ₦${createdEscrow.escrowFee.toLocaleString()}</p><p>Total: ₦${createdEscrow.totalAmount.toLocaleString()}</p><p>Status: ${createdEscrow.status.replaceAll('_',' ')}</p><p>Date: ${new Date(createdEscrow.createdAt).toLocaleString()}</p></body></html>`;
                       const blob = new Blob([receiptHtml], { type: 'text/html' });
                       const url = window.URL.createObjectURL(blob);
@@ -1418,40 +1507,20 @@ const Investment = () => {
                     Download Receipt
                   </button>
                   <button
-                    onClick={() => {
-                      setPaymentSuccess(false);
-                      setShowInvestmentModal(false);
-                    }}
-                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                  >
-                    Done
-                  </button>
-                  <button
                     onClick={() => window.location.assign('/escrow')}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Go to Escrow
                   </button>
+                  <button
+                    onClick={() => { setPaymentSuccess(false); setShowInvestmentModal(false); }}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
-            ) : null}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowInvestmentModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmInvestment}
-                disabled={isProcessingPayment || !investmentAmount || investmentAmount < selectedProject.minInvestment || !acceptInvestmentTerms}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isProcessingPayment ? 'Processing...' : 'Pay Now (via Escrow)'}
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
