@@ -25,6 +25,7 @@ const Investment = () => {
   const [paymentReference, setPaymentReference] = useState('');
   const [createdEscrow, setCreatedEscrow] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // 1: Amount, 2: Method & Terms, 3: Review & Pay
+  const [isOpeningModal, setIsOpeningModal] = useState(false);
 
   const resetInvestmentModal = () => {
     setCurrentStep(1);
@@ -193,15 +194,17 @@ const Investment = () => {
     }
 
     // Prevent duplicate opens if modal already visible for same project
-    if (showInvestmentModal && selectedProject && selectedProject.id === projectToUse.id) {
+    if (isOpeningModal || (showInvestmentModal && selectedProject && selectedProject.id === projectToUse.id)) {
       return;
     }
     
     console.log('Setting selected project:', projectToUse);
+    setIsOpeningModal(true);
     setSelectedProject(projectToUse);
     resetInvestmentModal();
     setShowInvestmentModal(true);
     console.log('Investment modal should now be visible');
+    setTimeout(() => setIsOpeningModal(false), 300);
   };
 
   const handleConfirmInvestment = async () => {
@@ -229,11 +232,16 @@ const Investment = () => {
         id: `INV-${Date.now()}`,
         investmentId: selectedProject.id,
         investmentTitle: selectedProject.name,
+        propertyTitle: selectedProject.name,
         amount: investmentAmount,
         escrowFee: Math.round(investmentAmount * 0.005), // 0.5% escrow fee
         totalAmount: investmentAmount + Math.round(investmentAmount * 0.005),
-        status: 'paid_held_in_escrow',
+        // Use a status compatible with Escrow page rendering
+        status: 'funded',
         createdAt: new Date().toISOString(),
+        buyerId: user.id,
+        buyerName: `${user.firstName} ${user.lastName}`,
+        buyerEmail: user.email,
         investor: `${user.firstName} ${user.lastName}`,
         vendor: selectedProject.sponsor?.name || 'Investment Sponsor',
         type: 'investment',
