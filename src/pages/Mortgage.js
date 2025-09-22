@@ -42,15 +42,57 @@ const Mortgage = () => {
       return;
     }
     
-    // Simulate mortgage application process
-    toast.success(`Mortgage application started for "${property.title}"!`);
-    console.log('Mortgage application started for:', property.title);
+    // Create mortgage application data
+    const mortgageApplication = {
+      id: `MORT-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: property.location,
+      propertyPrice: property.price,
+      userId: user.id,
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      status: 'pending_review',
+      requestedAt: new Date().toISOString(),
+      requestedAmount: Math.round(property.price * 0.8), // 80% of property value
+      downPayment: Math.round(property.price * 0.2), // 20% down payment
+      loanTerm: '25 years',
+      interestRate: '18.5%',
+      monthlyPayment: Math.round((property.price * 0.8 * 0.185) / 12), // Rough calculation
+      applicationType: 'residential_mortgage',
+      documentsRequired: [
+        'Proof of Income',
+        'Bank Statements (6 months)',
+        'Employment Letter',
+        'Tax Returns',
+        'Property Valuation Report',
+        'Identity Documents'
+      ],
+      agentContact: {
+        name: 'Mortgage Specialist',
+        phone: '+234-800-MORTGAGE',
+        email: 'mortgage@realestate.com'
+      }
+    };
     
-    // In a real app, this would redirect to a mortgage application form
-    // For now, we'll show additional information
+    // Store in localStorage for demo
+    const existingApplications = JSON.parse(localStorage.getItem('mortgageApplications') || '[]');
+    existingApplications.push(mortgageApplication);
+    localStorage.setItem('mortgageApplications', JSON.stringify(existingApplications));
+    
+    // Show success message with detailed information
+    toast.success(`Mortgage application submitted for "${property.title}"!`);
+    
+    // Show additional info with mortgage details
     setTimeout(() => {
-      toast.info(`You will be contacted within 24 hours to complete your mortgage application for ${property.title}.`);
-    }, 2000);
+      toast.info(`Loan Amount: ₦${mortgageApplication.requestedAmount.toLocaleString()} | Monthly Payment: ₦${mortgageApplication.monthlyPayment.toLocaleString()}`);
+    }, 1500);
+    
+    setTimeout(() => {
+      toast.info(`You will be contacted within 24 hours by ${mortgageApplication.agentContact.name} (${mortgageApplication.agentContact.phone})`);
+    }, 3000);
+    
+    console.log('Mortgage application created:', mortgageApplication);
   };
 
   const handleFilterResults = () => {
