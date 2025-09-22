@@ -383,23 +383,44 @@ const Home = () => {
         __html: `
           .slider-thumb::-webkit-slider-thumb {
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            background: #f97316;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            cursor: grab;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+          }
+          
+          .slider-thumb::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+          }
+          
+          .slider-thumb::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.05);
           }
           
           .slider-thumb::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            background: #f97316;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            cursor: grab;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+          }
+          
+          .slider-thumb::-moz-range-thumb:hover {
+            transform: scale(1.1);
+          }
+          
+          .slider-thumb::-moz-range-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.05);
           }
           
           .slider-thumb:focus {
@@ -407,11 +428,20 @@ const Home = () => {
           }
           
           .slider-thumb:focus::-webkit-slider-thumb {
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.3), 0 3px 8px rgba(0, 0, 0, 0.3);
           }
           
           .slider-thumb:focus::-moz-range-thumb {
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.3), 0 3px 8px rgba(0, 0, 0, 0.3);
+          }
+
+          .slider-thumb::-webkit-slider-track {
+            background: transparent;
+          }
+          
+          .slider-thumb::-moz-range-track {
+            background: transparent;
+            border: none;
           }
         `
       }} />
@@ -527,28 +557,38 @@ const Home = () => {
               <div className="space-y-4">
                 <div className="flex space-x-2">
                   <input
-                    type="number"
+                    type="text"
                     value={priceRange[0].toLocaleString()}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value.replace(/,/g, '')) || 0;
-                      setPriceRange([Math.min(value, priceRange[1]), priceRange[1]]);
+                      const value = parseInt(e.target.value.replace(/,/g, '')) || 5000000;
+                      if (value >= 5000000 && value <= priceRange[1]) {
+                        setPriceRange([value, priceRange[1]]);
+                      }
                     }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                    placeholder="Min Price"
-                    min="0"
-                    max={priceRange[1]}
+                    onBlur={(e) => {
+                      const value = parseInt(e.target.value.replace(/,/g, '')) || 5000000;
+                      const clampedValue = Math.max(5000000, Math.min(value, priceRange[1]));
+                      setPriceRange([clampedValue, priceRange[1]]);
+                    }}
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="Min Price (₦5,000,000)"
                   />
                   <input
-                    type="number"
+                    type="text"
                     value={priceRange[1].toLocaleString()}
                     onChange={(e) => {
                       const value = parseInt(e.target.value.replace(/,/g, '')) || 200000000;
-                      setPriceRange([priceRange[0], Math.max(value, priceRange[0])]);
+                      if (value >= priceRange[0] && value <= 500000000) {
+                        setPriceRange([priceRange[0], value]);
+                      }
                     }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                    placeholder="Max Price"
-                    min={priceRange[0]}
-                    max="500000000"
+                    onBlur={(e) => {
+                      const value = parseInt(e.target.value.replace(/,/g, '')) || 200000000;
+                      const clampedValue = Math.min(500000000, Math.max(value, priceRange[0]));
+                      setPriceRange([priceRange[0], clampedValue]);
+                    }}
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="Max Price (₦500,000,000)"
                   />
                 </div>
                 
@@ -570,7 +610,9 @@ const Home = () => {
                       value={priceRange[0]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
-                        setPriceRange([value, Math.max(value, priceRange[1])]);
+                        if (value <= priceRange[1]) {
+                          setPriceRange([value, priceRange[1]]);
+                        }
                       }}
                       className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
                       style={{ zIndex: 2 }}
@@ -583,7 +625,9 @@ const Home = () => {
                       value={priceRange[1]}
                       onChange={(e) => {
                         const value = parseInt(e.target.value);
-                        setPriceRange([Math.min(value, priceRange[0]), value]);
+                        if (value >= priceRange[0]) {
+                          setPriceRange([priceRange[0], value]);
+                        }
                       }}
                       className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
                       style={{ zIndex: 3 }}
@@ -591,10 +635,13 @@ const Home = () => {
                   </div>
                   <div className="flex justify-between text-xs text-gray-300 mt-2">
                     <span>₦{(5000000).toLocaleString()}</span>
-                    <span className="text-orange-500 font-medium">
+                    <span className="text-orange-500 font-medium bg-gray-800 px-2 py-1 rounded">
                       ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
                     </span>
                     <span>₦{(200000000).toLocaleString()}+</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1 text-center">
+                    Drag the slider handles or type in the input fields above
                   </div>
                 </div>
               </div>
