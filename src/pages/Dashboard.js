@@ -48,6 +48,47 @@ const Dashboard = () => {
     }
   };
 
+  const handleScheduleViewing = (property) => {
+    if (!user) {
+      toast.error('Please login to schedule viewings');
+      navigate('/login');
+      return;
+    }
+    
+    // Create viewing request data
+    const viewingRequest = {
+      id: `viewing-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: property.location,
+      userId: user.id,
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      preferredDate: null,
+      preferredTime: null,
+      message: '',
+      agentContact: property.agent || {
+        name: 'Property Agent',
+        phone: '+234-XXX-XXXX',
+        email: 'agent@example.com'
+      }
+    };
+    
+    // Store in localStorage for demo
+    const existingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    existingRequests.push(viewingRequest);
+    localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
+    
+    toast.success(`Viewing request sent for "${property.title}"! The agent will contact you within 24 hours.`);
+    
+    // Show additional info
+    setTimeout(() => {
+      toast.info(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
+    }, 2000);
+  };
+
   // Real data for stats - calculate from actual data
   const calculateDashboardStats = () => {
     // Get escrow transactions from localStorage
@@ -204,7 +245,11 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/scheduled-viewings')}
+                title="View all scheduled viewings"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.scheduledViewings}</div>
@@ -455,12 +500,22 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <button 
-                    onClick={() => handleViewProperty(property.id)}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                  >
-                    View Details →
-                  </button>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => handleViewProperty(property.id)}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    >
+                      View Details →
+                    </button>
+                    <button 
+                      onClick={() => handleScheduleViewing(property)}
+                      className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                      title={`Schedule a viewing for ${property.title}`}
+                    >
+                      <FaCalendar className="mr-2" />
+                      Schedule Viewing
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

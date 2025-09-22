@@ -14,7 +14,8 @@ import {
   FaCog,
   FaFileInvoiceDollar,
   FaQuestionCircle as FaHelp,
-  FaFileContract
+  FaFileContract,
+  FaCalendar
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -32,6 +33,7 @@ const Sidebar = () => {
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
            { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
            { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
+           { path: '/scheduled-viewings', label: 'Scheduled Viewings', icon: FaCalendar },
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
          ];

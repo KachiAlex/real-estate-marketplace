@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaBell } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaBell, FaCalendar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Properties = () => {
@@ -173,6 +173,47 @@ const Properties = () => {
 
   const handleViewDetails = (propertyId) => {
     navigate(`/property/${propertyId}`);
+  };
+
+  const handleScheduleViewing = (property) => {
+    if (!user) {
+      toast.error('Please login to schedule viewings');
+      navigate('/login');
+      return;
+    }
+    
+    // Create viewing request data
+    const viewingRequest = {
+      id: `viewing-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: property.location,
+      userId: user.id,
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      preferredDate: null,
+      preferredTime: null,
+      message: '',
+      agentContact: property.agent || {
+        name: 'Property Agent',
+        phone: '+234-XXX-XXXX',
+        email: 'agent@example.com'
+      }
+    };
+    
+    // Store in localStorage for demo
+    const existingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    existingRequests.push(viewingRequest);
+    localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
+    
+    toast.success(`Viewing request sent for "${property.title}"! The agent will contact you within 24 hours.`);
+    
+    // Show additional info
+    setTimeout(() => {
+      toast.info(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
+    }, 2000);
   };
 
   const handleShareProperty = async (property) => {
@@ -440,12 +481,22 @@ const Properties = () => {
                     </div>
                   </div>
 
-                  <button 
-                    onClick={() => handleViewDetails(property.id)}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                  >
-                    View Details →
-                  </button>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => handleViewDetails(property.id)}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    >
+                      View Details →
+                    </button>
+                    <button 
+                      onClick={() => handleScheduleViewing(property)}
+                      className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                      title={`Schedule a viewing for ${property.title}`}
+                    >
+                      <FaCalendar className="mr-2" />
+                      Schedule Viewing
+                    </button>
+                  </div>
                 </div>
               </div>
             )) : (

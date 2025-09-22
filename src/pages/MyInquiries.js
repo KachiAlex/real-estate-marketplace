@@ -25,7 +25,44 @@ const MyInquiries = () => {
   };
 
   const handleScheduleViewing = (property) => {
-    toast.success(`Viewing scheduled for ${property.title}! You'll receive confirmation soon.`);
+    if (!user) {
+      toast.error('Please login to schedule viewings');
+      navigate('/login');
+      return;
+    }
+    
+    // Create viewing request data
+    const viewingRequest = {
+      id: `viewing-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: property.location,
+      userId: user.id,
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      preferredDate: null,
+      preferredTime: null,
+      message: '',
+      agentContact: property.agent || {
+        name: 'Property Agent',
+        phone: '+234-XXX-XXXX',
+        email: 'agent@example.com'
+      }
+    };
+    
+    // Store in localStorage for demo
+    const existingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    existingRequests.push(viewingRequest);
+    localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
+    
+    toast.success(`Viewing request sent for "${property.title}"! The agent will contact you within 24 hours.`);
+    
+    // Show additional info
+    setTimeout(() => {
+      toast.info(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
+    }, 2000);
   };
 
   // Mock inquiries data
