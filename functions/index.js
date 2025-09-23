@@ -379,6 +379,11 @@ exports.onInspectionRequestWrite = functions.firestore
     }
   });
 
+// Lightweight health check HTTP function to ensure cold start loads succeed
+exports.health = functions.https.onRequest((req, res) => {
+  res.status(200).send('ok');
+});
+
 // Property verification trigger
 exports.onPropertyCreate = functions.firestore
   .document('properties/{propertyId}')
