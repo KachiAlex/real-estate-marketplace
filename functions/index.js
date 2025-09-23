@@ -7,8 +7,8 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-// Flutterwave payment verification
-exports.verifyPayment = functions.https.onCall(async (data, context) => {
+// Flutterwave payment verification (TEMP disabled for deploy isolation)
+// exports.verifyPayment = functions.https.onCall(async (data, context) => {
   try {
     const { transaction_id, tx_ref, status } = data;
 
@@ -85,10 +85,10 @@ exports.verifyPayment = functions.https.onCall(async (data, context) => {
     console.error('Payment verification error:', error);
     throw new functions.https.HttpsError('internal', 'Payment verification failed');
   }
-});
+// });
 
 // Auto-release escrow funds after 7 days
-exports.autoReleaseEscrow = functions.https.onRequest(async (req, res) => {
+// exports.autoReleaseEscrow = functions.https.onRequest(async (req, res) => {
   try {
     const now = admin.firestore.Timestamp.now();
     
@@ -154,10 +154,10 @@ exports.autoReleaseEscrow = functions.https.onRequest(async (req, res) => {
       error: error.message 
     });
   }
-});
+// });
 
 // Confirm property possession
-exports.confirmProperty = functions.https.onCall(async (data, context) => {
+// exports.confirmProperty = functions.https.onCall(async (data, context) => {
   try {
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
@@ -206,10 +206,10 @@ exports.confirmProperty = functions.https.onCall(async (data, context) => {
     console.error('Property confirmation error:', error);
     throw new functions.https.HttpsError('internal', 'Property confirmation failed');
   }
-});
+// });
 
 // File dispute
-exports.fileDispute = functions.https.onCall(async (data, context) => {
+// exports.fileDispute = functions.https.onCall(async (data, context) => {
   try {
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
@@ -259,7 +259,7 @@ exports.fileDispute = functions.https.onCall(async (data, context) => {
     console.error('Dispute filing error:', error);
     throw new functions.https.HttpsError('internal', 'Dispute filing failed');
   }
-});
+// });
 
 // Helper function to send notifications
 async function sendNotification(userId, notification) {
@@ -319,9 +319,9 @@ async function sendFcmToUser(userId, payload) {
   }
 }
 
-exports.onInspectionRequestWrite = functions.firestore
-  .document('inspectionRequests/{requestId}')
-  .onWrite(async (change, context) => {
+// exports.onInspectionRequestWrite = functions.firestore
+//   .document('inspectionRequests/{requestId}')
+//   .onWrite(async (change, context) => {
     try {
       const before = change.before.exists ? change.before.data() : null;
       const after = change.after.exists ? change.after.data() : null;
@@ -377,7 +377,7 @@ exports.onInspectionRequestWrite = functions.firestore
     } catch (e) {
       console.error('onInspectionRequestWrite error:', e);
     }
-  });
+//   });
 
 // Lightweight health check HTTP function to ensure cold start loads succeed
 exports.health = functions.https.onRequest((req, res) => {
@@ -385,9 +385,9 @@ exports.health = functions.https.onRequest((req, res) => {
 });
 
 // Property verification trigger
-exports.onPropertyCreate = functions.firestore
-  .document('properties/{propertyId}')
-  .onCreate(async (snap, context) => {
+// exports.onPropertyCreate = functions.firestore
+//   .document('properties/{propertyId}')
+//   .onCreate(async (snap, context) => {
     try {
       const propertyData = snap.data();
       
@@ -403,12 +403,12 @@ exports.onPropertyCreate = functions.firestore
     } catch (error) {
       console.error('Property creation trigger error:', error);
     }
-  });
+//   });
 
 // User registration trigger
-exports.onUserCreate = functions.firestore
-  .document('users/{userId}')
-  .onCreate(async (snap, context) => {
+// exports.onUserCreate = functions.firestore
+//   .document('users/{userId}')
+//   .onCreate(async (snap, context) => {
     try {
       const userData = snap.data();
       
@@ -424,4 +424,4 @@ exports.onUserCreate = functions.firestore
     } catch (error) {
       console.error('User creation trigger error:', error);
     }
-  });
+//   });
