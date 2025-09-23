@@ -1,0 +1,78 @@
+[debug] [2025-09-22T15:34:39.798Z] ----------------------------------------------------------------------
+[debug] [2025-09-22T15:34:39.841Z] Command:       C:\nvm4w\nodejs\node.exe C:\Users\user\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting --non-interactive
+[debug] [2025-09-22T15:34:39.842Z] CLI Version:   14.17.0
+[debug] [2025-09-22T15:34:39.842Z] Platform:      win32
+[debug] [2025-09-22T15:34:39.842Z] Node Version:  v22.19.0
+[debug] [2025-09-22T15:34:39.843Z] Time:          Mon Sep 22 2025 16:34:39 GMT+0100 (Wẹ́st Áfríká Fíksd Taim)
+[debug] [2025-09-22T15:34:39.844Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-22T15:34:44.019Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-09-22T15:34:44.021Z] > authorizing via signed-in user (onyedika.akoma@gmail.com)
+[debug] [2025-09-22T15:34:44.021Z] [iam] checking project real-estate-marketplace-37544 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-09-22T15:34:44.060Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:44.067Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:44.085Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/real-estate-marketplace-37544:testIamPermissions [none]
+[debug] [2025-09-22T15:34:44.086Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/real-estate-marketplace-37544:testIamPermissions x-goog-quota-user=projects/real-estate-marketplace-37544
+[debug] [2025-09-22T15:34:44.087Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/real-estate-marketplace-37544:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-09-22T15:34:48.111Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/real-estate-marketplace-37544:testIamPermissions 200
+[debug] [2025-09-22T15:34:48.114Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/real-estate-marketplace-37544:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-09-22T15:34:48.118Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:48.119Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:48.124Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544 [none]
+[debug] [2025-09-22T15:34:49.290Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544 200
+[debug] [2025-09-22T15:34:49.291Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544 {"projectId":"real-estate-marketplace-37544","projectNumber":"759115682573","displayName":"real estate marketplace","name":"projects/real-estate-marketplace-37544","resources":{"hostingSite":"real-estate-marketplace-37544"},"state":"ACTIVE","etag":"1_aa79f1dd-bb2f-4862-a900-2415808365a3"}
+[info] 
+[info] === Deploying to 'real-estate-marketplace-37544'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2025-09-22T15:34:49.344Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:49.344Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:34:49.344Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/real-estate-marketplace-37544/versions [none]
+[debug] [2025-09-22T15:34:49.344Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/real-estate-marketplace-37544/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-09-22T15:34:51.149Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/real-estate-marketplace-37544/versions 200
+[debug] [2025-09-22T15:34:51.149Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/real-estate-marketplace-37544/versions {"name":"projects/759115682573/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[real-estate-marketplace-37544]: beginning deploy... 
+[info] i  hosting[real-estate-marketplace-37544]: found 8 files in build 
+[debug] [2025-09-22T15:34:51.719Z] [hosting] uploading with 200 concurrency
+[info] i  hosting: hashing files [6/8] (75%) 
+[info] i  hosting: hashing files [7/8] (87%) 
+[info] i  hosting: hashing files [7/8] (87%) 
+[info] i  hosting: hashing files [7/8] (87%) 
+[info] i  hosting: hashing files [7/8] (87%) 
+[debug] [2025-09-22T15:35:04.167Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:04.168Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:04.177Z] [hosting] hash cache [YnVpbGQ] stored for 8 files
+[debug] [2025-09-22T15:35:04.178Z] [hosting][hash queue][FINAL] {"max":12215,"min":125,"avg":2256.125,"active":0,"complete":8,"success":8,"errored":0,"retried":0,"total":8,"elapsed":12298}
+[debug] [2025-09-22T15:35:04.179Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/759115682573/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c:populateFiles [none]
+[debug] [2025-09-22T15:35:04.179Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/759115682573/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c:populateFiles {"files":{"/manifest.json":"2dbe4d60d5000834493bc7fe5cdcd7975ca4e1f95d0d073edaa8c6396ff10f36","/asset-manifest.json":"e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99","/index.html":"ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf","/static/js/main.724499ad.js.LICENSE.txt":"91da7e4df9d57183998efcbb43818ad2e55b4b5e51fe8fbd30d19dd22ff03c49","/static/css/main.c7dbcec3.css.map":"f2d98d7a6fd9f14b781ad1ad4eea8fba203b0cd3fa68bd6fe00b5229bea1f557","/static/css/main.c7dbcec3.css":"73017529ea594985b7d3cd6bde0ea2df1311a07d0bc46e0dc4321e0ec44cb77c","/static/js/main.724499ad.js":"b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd","/static/js/main.724499ad.js.map":"a9b010b856b82ff07f4da99478eca097c742cbbac18ab622e035f2fefc4357de"}}
+[info] i  hosting: adding files to version [0/8] (0%) 
+[debug] [2025-09-22T15:35:05.534Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/759115682573/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c:populateFiles 200
+[debug] [2025-09-22T15:35:05.534Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/759115682573/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c:populateFiles {"uploadRequiredHashes":["a9b010b856b82ff07f4da99478eca097c742cbbac18ab622e035f2fefc4357de","e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99","ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf","b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files"}
+[debug] [2025-09-22T15:35:05.537Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.538Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.539Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.539Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.540Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.540Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.541Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.541Z] Checked if tokens are valid: true, expires at: 1758556929883
+[debug] [2025-09-22T15:35:05.541Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/a9b010b856b82ff07f4da99478eca097c742cbbac18ab622e035f2fefc4357de [none]
+[debug] [2025-09-22T15:35:05.542Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/a9b010b856b82ff07f4da99478eca097c742cbbac18ab622e035f2fefc4357de [stream]
+[debug] [2025-09-22T15:35:05.545Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99 [none]
+[debug] [2025-09-22T15:35:05.545Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99 [stream]
+[debug] [2025-09-22T15:35:05.547Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf [none]
+[debug] [2025-09-22T15:35:05.548Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf [stream]
+[debug] [2025-09-22T15:35:05.551Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd [none]
+[debug] [2025-09-22T15:35:05.551Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd [stream]
+[debug] [2025-09-22T15:35:05.558Z] [hosting][populate queue][FINAL] {"max":1374,"min":1374,"avg":1374,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":1391}
+[debug] [2025-09-22T15:35:05.558Z] [hosting] uploads queued: 4
+[info] i  hosting: uploading new files [0/4] (0%) 
+[debug] [2025-09-22T15:35:09.230Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99 200
+[debug] [2025-09-22T15:35:09.230Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/e0151602fbc61ad0d359133f952660b6f0935c0ca15115dd7fc3c2df03e4dd99 [stream]
+[info] i  hosting: uploading new files [1/4] (25%) 
+[debug] [2025-09-22T15:35:10.613Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf 200
+[debug] [2025-09-22T15:35:10.613Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/ae20fa0685808ec52c778f4841d4c471b8ea8addbdc52528895764d5e32ca0cf [stream]
+[debug] [2025-09-22T15:35:10.615Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd 200
+[debug] [2025-09-22T15:35:10.616Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/real-estate-marketplace-37544/versions/4ffc3b1f823b4b9c/files/b916864c431c4d39daccc292902831e2fec8b7a8766445ec7fd55dabf6d16edd [stream]
+[info] i  hosting: uploading new files [3/4] (75%) 
+[info] i  hosting: uploading new files [3/4] (75%) 

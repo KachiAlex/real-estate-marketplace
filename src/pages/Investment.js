@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { createInspectionRequest } from '../services/inspectionService';
 import InvestmentChart from '../components/InvestmentChart';
 
 const Investment = () => {
@@ -26,6 +27,22 @@ const Investment = () => {
   const [createdEscrow, setCreatedEscrow] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // 1: Amount, 2: Method & Terms, 3: Review & Pay
   const [isOpeningModal, setIsOpeningModal] = useState(false);
+
+  // Viewing schedule state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleProject, setScheduleProject] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleNote, setScheduleNote] = useState('');
+  const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
+
+  // Vendor inspection requests state
+  const [inspectionRequests, setInspectionRequests] = useState([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [showProposeModal, setShowProposeModal] = useState(false);
+  const [requestToRespond, setRequestToRespond] = useState(null);
+  const [proposalDate, setProposalDate] = useState('');
+  const [proposalTime, setProposalTime] = useState('');
 
   const resetInvestmentModal = () => {
     setCurrentStep(1);
@@ -193,18 +210,12 @@ const Investment = () => {
       return;
     }
 
-    // Prevent duplicate opens if modal already visible for same project
-    if (isOpeningModal || (showInvestmentModal && selectedProject && selectedProject.id === projectToUse.id)) {
-      return;
-    }
-    
     console.log('Setting selected project:', projectToUse);
-    setIsOpeningModal(true);
     setSelectedProject(projectToUse);
     resetInvestmentModal();
     setShowInvestmentModal(true);
     console.log('Investment modal should now be visible');
-    setTimeout(() => setIsOpeningModal(false), 300);
+    toast.success('Opening investment payment modal...');
   };
 
   const handleConfirmInvestment = async () => {
@@ -283,6 +294,170 @@ const Investment = () => {
   const handleViewDocuments = (investment) => {
     setSelectedInvestment(investment);
     setShowDocumentModal(true);
+  };
+
+  const openScheduleModal = (project) => {
+    if (!user) {
+      setAuthRedirect('/investment');
+      toast.error('Please login to schedule a viewing');
+      navigate('/login');
+      return;
+    }
+    const projectToUse = project || selectedProject || projects[0];
+    if (!projectToUse) {
+      toast.error('No project selected to schedule');
+      return;
+    }
+    setScheduleProject(projectToUse);
+    setScheduleDate('');
+    setScheduleTime('');
+    setScheduleNote('');
+    setShowScheduleModal(true);
+  };
+
+  const submitScheduleRequest = async () => {
+    if (!scheduleProject) {
+      toast.error('No project selected');
+      return;
+    }
+    if (!scheduleDate || !scheduleTime) {
+      toast.error('Select preferred date and time');
+      return;
+    }
+    try {
+      setIsSubmittingSchedule(true);
+      const request = {
+        id: `VW-${Date.now()}`,
+        projectId: scheduleProject.id,
+        projectName: scheduleProject.name,
+        projectLocation: scheduleProject.location,
+        vendor: scheduleProject.sponsor?.name || 'Investment Sponsor',
+        vendorId: scheduleProject.sponsor?.id || scheduleProject.vendorId || 'mock-vendor-id',
+        vendorEmail: scheduleProject.sponsor?.email || scheduleProject.vendorEmail || user?.email,
+        buyerId: user?.id,
+        buyerName: user ? `${user.firstName} ${user.lastName}` : 'Guest',
+        buyerEmail: user?.email,
+        preferredDate: scheduleDate,
+        preferredTime: scheduleTime,
+        note: scheduleNote,
+        status: 'pending_vendor', // pending_vendor | accepted | proposed_new_time | declined
+        createdAt: new Date().toISOString(),
+        history: []
+      };
+
+      await createInspectionRequest(request);
+
+      toast.success('Viewing request sent. Vendor will confirm or propose a new time.');
+      setShowScheduleModal(false);
+      setScheduleProject(null);
+    } catch (e) {
+      console.error('Failed to submit viewing request', e);
+      toast.error('Failed to send viewing request');
+    } finally {
+      setIsSubmittingSchedule(false);
+    }
+  };
+
+  // Load vendor inspection requests for the selected project
+  const loadInspectionRequests = () => {
+    try {
+      setIsLoadingRequests(true);
+      const all = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const filtered = all.filter((r) => {
+        const matchesProject = selectedProject ? r.projectId === selectedProject.id : true;
+        const matchesVendor = true; // In real app, filter by vendor account
+        return matchesProject && matchesVendor;
+      });
+      // Sort newest first
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setInspectionRequests(filtered);
+    } catch (e) {
+      console.error('Failed to load inspection requests', e);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
+
+  useEffect(() => {
+    // Refresh when switching tabs or project changes
+    loadInspectionRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject]);
+
+  const updateRequestsStorage = (updatedList) => {
+    localStorage.setItem('viewingRequests', JSON.stringify(updatedList));
+    setInspectionRequests(updatedList.filter((r) => (selectedProject ? r.projectId === selectedProject.id : true))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+  };
+
+  const acceptViewingRequest = (request) => {
+    const all = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const updated = all.map((r) => {
+      if (r.id === request.id) {
+        const acceptedAt = new Date().toISOString();
+        return {
+          ...r,
+          status: 'accepted',
+          acceptedAt,
+          confirmedDate: r.preferredDate,
+          confirmedTime: r.preferredTime,
+          history: [...(r.history || []), { action: 'accepted', at: acceptedAt }]
+        };
+      }
+      return r;
+    });
+    updateRequestsStorage(updated);
+    toast.success('Viewing request accepted');
+  };
+
+  const declineViewingRequest = (request) => {
+    const all = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const updated = all.map((r) => {
+      if (r.id === request.id) {
+        const declinedAt = new Date().toISOString();
+        return {
+          ...r,
+          status: 'declined',
+          declinedAt,
+          history: [...(r.history || []), { action: 'declined', at: declinedAt }]
+        };
+      }
+      return r;
+    });
+    updateRequestsStorage(updated);
+    toast.success('Viewing request declined');
+  };
+
+  const openProposeTime = (request) => {
+    setRequestToRespond(request);
+    setProposalDate('');
+    setProposalTime('');
+    setShowProposeModal(true);
+  };
+
+  const submitProposedTime = () => {
+    if (!proposalDate || !proposalTime || !requestToRespond) {
+      toast.error('Provide a proposed date and time');
+      return;
+    }
+    const all = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const updated = all.map((r) => {
+      if (r.id === requestToRespond.id) {
+        const proposedAt = new Date().toISOString();
+        return {
+          ...r,
+          status: 'proposed_new_time',
+          proposedDate: proposalDate,
+          proposedTime: proposalTime,
+          history: [...(r.history || []), { action: 'proposed_new_time', at: proposedAt, date: proposalDate, time: proposalTime }]
+        };
+      }
+      return r;
+    });
+    updateRequestsStorage(updated);
+    setShowProposeModal(false);
+    setRequestToRespond(null);
+    toast.success('Proposed a new time to the buyer');
   };
 
   const handleDownloadDocument = (docType, investment = selectedInvestment) => {
@@ -544,7 +719,7 @@ const Investment = () => {
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              {['Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs'].map((tab) => (
+              {[ 'Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs', ...(user?.role === 'vendor' ? ['Inspection Requests'] : [])].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab.toLowerCase().replace(' ', ''))}
@@ -638,6 +813,15 @@ const Investment = () => {
                   >
                     <FaCheck />
                     <span>Invest Now</span>
+                  </button>
+                  <button
+                    onClick={() => openScheduleModal(selectedProject || projects[0])}
+                    className="btn-outline flex items-center space-x-2"
+                    disabled={!projects.length}
+                    title="Schedule a property viewing"
+                  >
+                    <FaCalendar />
+                    <span>Schedule Viewing</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -843,6 +1027,69 @@ const Investment = () => {
                       </div>
                       <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs">Approved</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Inspection Requests (Vendor) */}
+            {activeTab === 'inspectionrequests' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Inspection Requests</h3>
+                    <p className="text-sm text-gray-600">Manage buyers' viewing requests for this project</p>
+                  </div>
+                  <button onClick={loadInspectionRequests} className="btn-outline text-sm">Refresh</button>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg">
+                  <div className="p-4 border-b border-gray-200 flex text-sm text-gray-600">
+                    <div className="w-1/5">Buyer</div>
+                    <div className="w-1/5">Preferred Date/Time</div>
+                    <div className="w-1/5">Status</div>
+                    <div className="w-2/5">Actions</div>
+                  </div>
+                  <div className="divide-y">
+                    {isLoadingRequests && (
+                      <div className="p-4 text-sm text-gray-600">Loading requests...</div>
+                    )}
+                    {!isLoadingRequests && inspectionRequests.length === 0 && (
+                      <div className="p-4 text-sm text-gray-600">No inspection requests yet.</div>
+                    )}
+                    {!isLoadingRequests && inspectionRequests.map((req) => (
+                      <div key={req.id} className="p-4 flex items-center text-sm">
+                        <div className="w-1/5">
+                          <div className="font-medium text-gray-900">{req.buyerName || 'Unknown'}</div>
+                          <div className="text-gray-600">{req.buyerEmail || ''}</div>
+                        </div>
+                        <div className="w-1/5">
+                          <div>{req.preferredDate} {req.preferredTime}</div>
+                          {req.proposedDate && req.proposedTime && (
+                            <div className="text-xs text-gray-600">Proposed: {req.proposedDate} {req.proposedTime}</div>
+                          )}
+                        </div>
+                        <div className="w-1/5">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            req.status === 'pending_vendor' ? 'bg-yellow-100 text-yellow-800' :
+                            req.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                            req.status === 'proposed_new_time' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {req.status.replaceAll('_',' ')}
+                          </span>
+                        </div>
+                        <div className="w-2/5 flex flex-wrap gap-2">
+                          {req.status !== 'accepted' && (
+                            <button onClick={() => acceptViewingRequest(req)} className="px-3 py-1 bg-green-600 text-white rounded">Accept</button>
+                          )}
+                          <button onClick={() => openProposeTime(req)} className="px-3 py-1 bg-blue-600 text-white rounded">Propose Time</button>
+                          {req.status !== 'declined' && (
+                            <button onClick={() => declineViewingRequest(req)} className="px-3 py-1 bg-red-600 text-white rounded">Decline</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1218,6 +1465,14 @@ const Investment = () => {
               >
                 Invest Now
               </button>
+              <button
+                onClick={() => openScheduleModal(project)}
+                className="w-full mt-2 btn-outline flex items-center justify-center space-x-2"
+                title="Schedule a property viewing"
+              >
+                <FaCalendar />
+                <span>Schedule Viewing</span>
+              </button>
             </div>
           </div>
         ))}
@@ -1499,6 +1754,131 @@ const Investment = () => {
                 className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Viewing Modal */}
+      {showScheduleModal && scheduleProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Schedule Viewing</h3>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
+              <p className="font-semibold">{scheduleProject.name}</p>
+              <p className="text-gray-600">{scheduleProject.location}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred date</label>
+                <input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred time</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+                <textarea
+                  value={scheduleNote}
+                  onChange={(e) => setScheduleNote(e.target.value)}
+                  rows="3"
+                  placeholder="Share any availability constraints or questions"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-6">
+              <button onClick={() => setShowScheduleModal(false)} className="px-5 py-2 border rounded-lg">Cancel</button>
+              <button
+                onClick={submitScheduleRequest}
+                disabled={isSubmittingSchedule || !scheduleDate || !scheduleTime}
+                className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {isSubmittingSchedule ? 'Sending...' : 'Send Request'}
+              </button>
+            </div>
+
+            <div className="mt-4 text-xs text-gray-600">
+              The vendor will either accept your proposed time or suggest a different date/time.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Propose New Time Modal (Vendor) */}
+      {showProposeModal && requestToRespond && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Propose New Time</h3>
+              <button
+                onClick={() => setShowProposeModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
+              <p className="font-semibold">{requestToRespond.projectName}</p>
+              <p className="text-gray-600">Buyer: {requestToRespond.buyerName || 'Unknown'}</p>
+              <p className="text-gray-600">Preferred: {requestToRespond.preferredDate} {requestToRespond.preferredTime}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
+                <input
+                  type="date"
+                  value={proposalDate}
+                  onChange={(e) => setProposalDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New time</label>
+                <input
+                  type="time"
+                  value={proposalTime}
+                  onChange={(e) => setProposalTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-6">
+              <button onClick={() => setShowProposeModal(false)} className="px-5 py-2 border rounded-lg">Cancel</button>
+              <button
+                onClick={submitProposedTime}
+                disabled={!proposalDate || !proposalTime}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                Send Proposal
               </button>
             </div>
           </div>

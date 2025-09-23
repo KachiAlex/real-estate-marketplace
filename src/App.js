@@ -44,6 +44,8 @@ import VendorProfile from './pages/VendorProfile';
 import VendorNotifications from './pages/VendorNotifications';
 import VendorHelp from './pages/VendorHelp';
 import EscrowPaymentFlow from './components/EscrowPaymentFlow';
+import VendorInspectionRequests from './pages/VendorInspectionRequests';
+import BuyerInspectionRequests from './pages/BuyerInspectionRequests';
 
 function App() {
   return (
@@ -66,6 +68,16 @@ function App() {
                         <Properties />
                       </main>
                     </div>
+                  } />
+                  <Route path="/my-inspections" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <BuyerInspectionRequests />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
                   } />
                   <Route path="/investment" element={
                     <ProtectedRoute>
@@ -356,6 +368,16 @@ function App() {
                         <VendorSidebar />
                         <main className="flex-1 ml-64">
                           <VendorContracts />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/vendor/inspection-requests" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <VendorSidebar />
+                        <main className="flex-1 ml-64">
+                          <VendorInspectionRequests />
                         </main>
                       </div>
                     </ProtectedRoute>

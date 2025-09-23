@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { db } from '../config/firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -405,9 +407,36 @@ export const PropertyProvider = ({ children }) => {
     try {
       if (!user) throw new Error('User must be logged in');
 
-      // For now, just show a success message since favorites aren't implemented in backend yet
-      toast.success('Favorite toggled!');
-      return { success: true, favorited: true };
+      // Local persistence per user
+      const key = `favorites_${user.id}`;
+      const existing = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+      let isNowFavorited = false;
+      if (existing.has(propertyId)) {
+        existing.delete(propertyId);
+        isNowFavorited = false;
+      } else {
+        existing.add(propertyId);
+        isNowFavorited = true;
+      }
+      localStorage.setItem(key, JSON.stringify(Array.from(existing)));
+
+      // Best-effort Firestore sync under users/{userId}/favorites/{propertyId}
+      try {
+        const favoriteRef = doc(db, 'users', user.id, 'favorites', String(propertyId));
+        if (isNowFavorited) {
+          await setDoc(favoriteRef, {
+            propertyId,
+            createdAt: new Date().toISOString()
+          });
+        } else {
+          await deleteDoc(favoriteRef);
+        }
+      } catch (e) {
+        // Non-fatal; local storage already updated
+      }
+
+      toast.success(isNowFavorited ? 'Added to favorites' : 'Removed from favorites');
+      return { success: true, favorited: isNowFavorited };
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorite');

@@ -105,6 +105,25 @@ export const AuthProvider = ({ children }) => {
       }
       
       toast.success('Login successful!');
+      // Attempt to sync any locally stored inspection requests now that user is logged in
+      try {
+        const { syncLocalInspectionRequests } = await import('../services/inspectionService');
+        await syncLocalInspectionRequests();
+      } catch (e) {
+        console.warn('Inspection requests sync skipped or failed:', e?.message || e);
+      }
+      // Register FCM token after login
+      try {
+        const { registerFcmToken } = await import('../services/messagingService');
+        const token = await registerFcmToken(process.env.REACT_APP_FIREBASE_VAPID_KEY);
+        if (token) {
+          const { db } = await import('../config/firebase');
+          const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
+          await setDoc(doc(db, 'userFcmTokens', userWithoutPassword.id), { tokens: arrayUnion(token) }, { merge: true });
+        }
+      } catch (e) {
+        console.warn('FCM registration skipped or failed:', e?.message || e);
+      }
       return { success: true, user: userWithoutPassword, redirectUrl: redirectTo };
     } catch (error) {
       setError(error.message);

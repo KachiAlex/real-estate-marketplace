@@ -52,5 +52,26 @@ service cloud.firestore {
       allow read, write: if request.auth != null && 
         request.auth.token.role == 'admin';
     }
+
+    // Inspection Requests: secure access for involved buyer/vendor
+    match /inspectionRequests/{requestId} {
+      function isInvolved() {
+        return request.auth != null && (
+          request.auth.uid == resource.data.buyerId ||
+          request.auth.uid == resource.data.vendorId ||
+          request.auth.token.role == 'admin'
+        );
+      }
+
+      function isBuyer() { return request.auth != null && request.auth.uid == resource.data.buyerId; }
+      function isVendor() { return request.auth != null && request.auth.uid == resource.data.vendorId; }
+
+      allow create: if request.auth != null; // creation by buyer via backend/client; validate in app layer
+      allow read: if isInvolved();
+
+      // Buyer can accept/decline vendor proposals
+      allow update: if isBuyer() || isVendor() || (request.auth != null && request.auth.token.role == 'admin');
+      allow delete: if false;
+    }
   }
 }

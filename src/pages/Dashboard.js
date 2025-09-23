@@ -10,7 +10,7 @@ import PriceTrendsChart from '../components/PriceTrendsChart';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { properties, loading } = useProperty();
+  const { properties, loading, toggleFavorite } = useProperty();
 
   // Get recent properties (first 3)
   const recentProperties = properties.slice(0, 3);
@@ -428,8 +428,34 @@ const Dashboard = () => {
                     </div>
                   )}
                   <div className="absolute top-2 right-2 flex space-x-2">
-                    <FaShare className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
-                    <FaHeart className="text-white bg-black bg-opacity-50 p-1 rounded cursor-pointer" />
+                    <button
+                      onClick={async () => {
+                        const url = `${window.location.origin}/property/${property.id}`;
+                        try {
+                          if (navigator.share) {
+                            await navigator.share({ title: property.title, text: property.title, url });
+                          } else {
+                            await navigator.clipboard.writeText(url);
+                            toast.success('Link copied');
+                          }
+                        } catch (e) {}
+                      }}
+                      className="text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all"
+                    >
+                      <FaShare className="text-sm" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleFavorite(property.id);
+                        } catch (e) {
+                          toast.error('Failed to update favorite');
+                        }
+                      }}
+                      className="text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all"
+                    >
+                      <FaHeart className="text-sm" />
+                    </button>
                 </div>
               </div>
                 

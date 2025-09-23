@@ -25,6 +25,7 @@ const VendorSidebar = () => {
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
     { path: '/vendor/properties', label: 'My Properties', icon: FaBuilding },
     { path: '/vendor/add-property', label: 'Add Property', icon: FaPlus },
+    { path: '/vendor/inspection-requests', label: 'Inspection Requests', icon: FaBell },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },
     { path: '/vendor/team', label: 'Team', icon: FaUsers },
     { path: '/vendor/contracts', label: 'Contracts', icon: FaFileContract }

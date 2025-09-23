@@ -36,6 +36,7 @@ const Sidebar = () => {
            { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
+           { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
          ];
 
   const accountItems = [

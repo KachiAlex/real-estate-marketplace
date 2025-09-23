@@ -394,7 +394,19 @@ const SavedProperties = () => {
                   </span>
                 </div>
                 <div className="absolute top-2 right-2 flex space-x-2">
-                  <button className="text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all">
+                  <button 
+                    onClick={async () => {
+                      const url = `${window.location.origin}/property/${property.id}`;
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({ title: property.title, text: property.title, url });
+                        } else {
+                          await navigator.clipboard.writeText(url);
+                          toast.success('Link copied');
+                        }
+                      } catch (e) {}
+                    }}
+                    className="text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all">
                     <FaShare className="text-sm" />
                   </button>
                   <button 
