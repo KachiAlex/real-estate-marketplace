@@ -4,8 +4,6 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin
 admin.initializeApp();
 
-const db = admin.firestore();
-
 // Inspection request trigger (simplified without FCM for now)
 exports.onInspectionRequestWrite = functions.firestore
   .document('inspectionRequests/{requestId}')

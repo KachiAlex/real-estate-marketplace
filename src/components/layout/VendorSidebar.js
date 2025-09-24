@@ -49,7 +49,7 @@ const VendorSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg h-full fixed left-0 top-0 overflow-y-auto">
+    <div className="w-64 bg-white shadow-lg h-full fixed left-0 top-0 overflow-y-auto flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
@@ -64,7 +64,7 @@ const VendorSidebar = () => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="p-4">
+      <nav className="p-4 flex-1">
         {/* Main Menu Section */}
         <div className="mb-8">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Main Menu</h3>
@@ -73,10 +73,9 @@ const VendorSidebar = () => {
               <li key={item.path}>
                 <NavLink
                   to={item.path}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-brand-blue text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                  end
+                  className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
@@ -95,10 +94,9 @@ const VendorSidebar = () => {
               <li key={item.path}>
                 <NavLink
                   to={item.path}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-brand-blue text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                  end
+                  className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
@@ -116,10 +114,9 @@ const VendorSidebar = () => {
             <li>
               <NavLink
                 to="/vendor/notifications"
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/vendor/notifications')
-                    ? 'bg-brand-blue text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                end
+                className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <FaBell className="h-4 w-4" />
@@ -129,10 +126,9 @@ const VendorSidebar = () => {
             <li>
               <NavLink
                 to="/vendor/help"
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/vendor/help')
-                    ? 'bg-brand-blue text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                end
+                className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <FaQuestionCircle className="h-4 w-4" />
@@ -144,9 +140,9 @@ const VendorSidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+      <div className="mt-auto p-4 border-t border-gray-200 bg-white">
         {/* User Profile Section */}
-        <div className="mb-4">
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <span className="text-sm font-medium text-gray-600">V</span>
