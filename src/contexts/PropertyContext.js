@@ -548,6 +548,7 @@ export const PropertyProvider = ({ children }) => {
     fetchProperties,
     fetchProperty,
     addProperty,
+    createProperty: addProperty,
     updateProperty,
     deleteProperty,
     fetchUserProperties,

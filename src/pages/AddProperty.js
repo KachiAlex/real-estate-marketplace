@@ -35,7 +35,8 @@ const AddProperty = () => {
           latitude: '',
           longitude: ''
         }
-      }
+      },
+      googleMapsUrl: ''
     },
     details: {
       bedrooms: '',
@@ -50,7 +51,8 @@ const AddProperty = () => {
     amenities: [],
     images: [],
     videos: [],
-    documentation: []
+    documentation: [],
+    mortgageDetails: {} // Added for mortgage status
   });
   
   const [errors, setErrors] = useState({});
@@ -62,9 +64,16 @@ const AddProperty = () => {
   const [isListingAsAgent, setIsListingAsAgent] = useState(false);
   const [attestationLetter, setAttestationLetter] = useState(null);
   const [documentStatus, setDocumentStatus] = useState(null);
+  const [mortgageDetails, setMortgageDetails] = useState({
+    mortgageProvider: '',
+    minDownPaymentPercent: '',
+    tenorMonths: '',
+    interestRate: '',
+    monthlyIncomeRequirement: ''
+  });
 
   const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'];
-  const propertyStatuses = ['for-sale', 'for-rent', 'for-lease'];
+  const propertyStatuses = ['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment'];
   const commonAmenities = ['Parking', 'Garden', 'Balcony', 'Pool', 'Gym', 'Security', 'Air Conditioning', 'Heating', 'Hardwood Floors', 'Fireplace', 'Walk-in Closet', 'Patio', 'High-Speed Internet'];
 
   // Check document status on component mount
@@ -131,6 +140,14 @@ const AddProperty = () => {
           location: {
             ...prev.location,
             zipCode: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'googleMapsUrl') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            googleMapsUrl: value
           }
         }));
       } else if (name.includes('coordinates.')) {
@@ -249,6 +266,7 @@ const AddProperty = () => {
     if (!formData.details.bedrooms) newErrors['details.bedrooms'] = 'Number of bedrooms is required';
     if (!formData.details.bathrooms) newErrors['details.bathrooms'] = 'Number of bathrooms is required';
     if (!formData.details.sqft) newErrors['details.sqft'] = 'Square footage is required';
+    if (!formData.location.googleMapsUrl) newErrors['location.googleMapsUrl'] = 'Google Maps link is required';
     
     // Additional validation for agents
     if (isListingAsAgent && isAgent) {
@@ -257,6 +275,15 @@ const AddProperty = () => {
       } else if (documentStatus.attestationStatus !== 'verified') {
         newErrors.attestationLetter = 'Attestation letter must be verified by admin before listing properties';
       }
+    }
+
+    // Mortgage-specific validation
+    if (formData.status === 'for-mortgage') {
+      if (!mortgageDetails.mortgageProvider) newErrors.mortgageProvider = 'Mortgage provider is required';
+      if (!mortgageDetails.minDownPaymentPercent) newErrors.minDownPaymentPercent = 'Minimum down payment is required';
+      if (!mortgageDetails.tenorMonths) newErrors.tenorMonths = 'Tenor (months) is required';
+      if (!mortgageDetails.interestRate) newErrors.interestRate = 'Interest rate is required';
+      if (!mortgageDetails.monthlyIncomeRequirement) newErrors.monthlyIncomeRequirement = 'Monthly income requirement is required';
     }
     
     return newErrors;
@@ -300,7 +327,14 @@ const AddProperty = () => {
         },
         images: processFiles(imageFiles),
         videos: processFiles(videoFiles),
-        documentation: processFiles(documentFiles)
+        documentation: processFiles(documentFiles),
+        mortgageDetails: formData.status === 'for-mortgage' ? {
+          mortgageProvider: mortgageDetails.mortgageProvider,
+          minDownPaymentPercent: Number(mortgageDetails.minDownPaymentPercent),
+          tenorMonths: Number(mortgageDetails.tenorMonths),
+          interestRate: Number(mortgageDetails.interestRate),
+          monthlyIncomeRequirement: Number(mortgageDetails.monthlyIncomeRequirement)
+        } : undefined
       };
       
       const result = await createProperty(propertyData);
@@ -414,7 +448,9 @@ const AddProperty = () => {
                       {propertyStatuses.map(status => (
                         <option key={status} value={status}>
                           {status === 'for-sale' ? 'For Sale' : 
-                           status === 'for-rent' ? 'For Rent' : 'For Lease'}
+                           status === 'for-rent' ? 'For Rent' : 
+                           status === 'for-lease' ? 'For Lease' :
+                           status === 'for-mortgage' ? 'For Mortgage' : 'For Investment'}
                         </option>
                       ))}
                     </select>
@@ -537,7 +573,7 @@ const AddProperty = () => {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Latitude</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Latitude (optional)</label>
                     <input
                       type="number"
                       step="any"
@@ -549,7 +585,7 @@ const AddProperty = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Longitude</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Longitude (optional)</label>
                     <input
                       type="number"
                       step="any"
@@ -563,27 +599,22 @@ const AddProperty = () => {
                 </div>
                 
                 {/* Google Maps Link */}
-                {formData.location.coordinates.latitude && formData.location.coordinates.longitude && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-sm font-semibold text-blue-800 mb-2">Google Maps Link</h5>
-                        <p className="text-sm text-blue-600">
-                          Coordinates: {formData.location.coordinates.latitude}, {formData.location.coordinates.longitude}
-                        </p>
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps?q=${formData.location.coordinates.latitude},${formData.location.coordinates.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                      >
-                        <FaMapPin className="mr-2" />
-                        View on Google Maps
-                      </a>
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-sm font-semibold text-blue-800 mb-2">Google Maps Link</h5>
+                      <input
+                        type="text"
+                        name="location.googleMapsUrl"
+                        value={formData.location.googleMapsUrl}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                        placeholder="https://www.google.com/maps/..."
+                      />
                     </div>
+                    {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Nearest Bus Stop */}
@@ -926,6 +957,80 @@ const AddProperty = () => {
                 </div>
               )}
             </div>
+
+            {/* Mortgage Details (conditional) */}
+            {formData.status === 'for-mortgage' && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
+                    <FaDollarSign className="text-white text-lg" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">Mortgage Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Mortgage Provider</label>
+                    <input
+                      type="text"
+                      name="mortgageDetails.mortgageProvider"
+                      value={mortgageDetails.mortgageProvider}
+                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, mortgageProvider: e.target.value }))}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="Bank of America"
+                    />
+                    {errors.mortgageProvider && <p className="mt-2 text-sm text-red-600">{errors.mortgageProvider}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Minimum Down Payment (%)</label>
+                    <input
+                      type="number"
+                      name="mortgageDetails.minDownPaymentPercent"
+                      value={mortgageDetails.minDownPaymentPercent}
+                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, minDownPaymentPercent: e.target.value }))}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="20"
+                    />
+                    {errors.minDownPaymentPercent && <p className="mt-2 text-sm text-red-600">{errors.minDownPaymentPercent}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Tenor (Months)</label>
+                    <input
+                      type="number"
+                      name="mortgageDetails.tenorMonths"
+                      value={mortgageDetails.tenorMonths}
+                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, tenorMonths: e.target.value }))}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="300"
+                    />
+                    {errors.tenorMonths && <p className="mt-2 text-sm text-red-600">{errors.tenorMonths}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Interest Rate (%)</label>
+                    <input
+                      type="number"
+                      name="mortgageDetails.interestRate"
+                      value={mortgageDetails.interestRate}
+                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, interestRate: e.target.value }))}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="3.5"
+                    />
+                    {errors.interestRate && <p className="mt-2 text-sm text-red-600">{errors.interestRate}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Monthly Income Requirement ($)</label>
+                    <input
+                      type="number"
+                      name="mortgageDetails.monthlyIncomeRequirement"
+                      value={mortgageDetails.monthlyIncomeRequirement}
+                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, monthlyIncomeRequirement: e.target.value }))}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="3000"
+                    />
+                    {errors.monthlyIncomeRequirement && <p className="mt-2 text-sm text-red-600">{errors.monthlyIncomeRequirement}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Submit Buttons */}
             <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6">

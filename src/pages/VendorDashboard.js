@@ -29,6 +29,8 @@ const VendorDashboard = () => {
   const [interestRate, setInterestRate] = useState('');
   const [monthlyIncomeRequirement, setMonthlyIncomeRequirement] = useState('');
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
   // Sync tab with route
   useEffect(() => {
@@ -556,6 +558,14 @@ const VendorDashboard = () => {
                   <input value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="https://maps.google.com/?q=..." />
                   <p className="text-xs text-gray-500 mt-1">Paste the Google Maps share link for the property location.</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Latitude (optional)</label>
+                  <input value={latitude} onChange={(e) => setLatitude(e.target.value)} type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="6.5244" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitude (optional)</label>
+                  <input value={longitude} onChange={(e) => setLongitude(e.target.value)} type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="3.3792" />
+                </div>
               </div>
 
               {/* Role selection */}
@@ -650,7 +660,13 @@ const VendorDashboard = () => {
                       price: Number(newPrice),
                       type: newType,
                       listingType: newListingType,
-                      location: { googleMapsUrl },
+                      location: {
+                        googleMapsUrl,
+                        coordinates: {
+                          latitude: latitude ? Number(latitude) : undefined,
+                          longitude: longitude ? Number(longitude) : undefined
+                        }
+                      },
                       ...extra
                     });
                     if (res.success) {
@@ -669,6 +685,8 @@ const VendorDashboard = () => {
                       setInterestRate('');
                       setMonthlyIncomeRequirement('');
                       setGoogleMapsUrl('');
+                      setLatitude('');
+                      setLongitude('');
                       navigate('/vendor/properties');
                     }
                   }}
