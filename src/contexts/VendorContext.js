@@ -182,6 +182,8 @@ export const VendorProvider = ({ children }) => {
     isPropertyOwner,
     agentDocuments,
     loading,
+    // Expose computed document status for easy consumption in UI
+    documentStatus: checkDocumentStatus(),
     updateVendorProfile,
     uploadAgentDocument,
     checkDocumentStatus,

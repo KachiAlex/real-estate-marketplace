@@ -337,7 +337,7 @@ function App() {
                       <div className="flex w-full">
                         <VendorSidebar />
                         <main className="flex-1 ml-64">
-                          <AddProperty />
+                          <VendorDashboard />
                         </main>
                       </div>
                     </ProtectedRoute>
