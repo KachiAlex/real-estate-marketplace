@@ -4,6 +4,7 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useVendor } from '../contexts/VendorContext';
 import PropertyImageUpload from '../components/PropertyImageUpload';
+import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
 import AgentPropertyListing from '../components/AgentPropertyListing';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 
@@ -61,6 +62,8 @@ const AddProperty = () => {
   const [imageFiles, setImageFiles] = useState([]);
   const [videoFiles, setVideoFiles] = useState([]);
   const [documentFiles, setDocumentFiles] = useState([]);
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [investmentPayload, setInvestmentPayload] = useState(null);
   const [isListingAsAgent, setIsListingAsAgent] = useState(false);
   const [attestationLetter, setAttestationLetter] = useState(null);
   const [documentStatus, setDocumentStatus] = useState(null);
@@ -298,6 +301,12 @@ const AddProperty = () => {
       return;
     }
 
+    // If it's an investment listing, open modal first to capture details
+    if (formData.status === 'for-investment' && !investmentPayload) {
+      setShowInvestmentModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       // Convert files to base64 for demo (in production, upload to cloud storage)
@@ -329,6 +338,11 @@ const AddProperty = () => {
         images: processFiles(imageFiles),
         videos: processFiles(videoFiles),
         documentation: processFiles(documentFiles),
+        // attach investment details if provided
+        ...(investmentPayload ? {
+          investment: investmentPayload.investment,
+          investmentDocuments: investmentPayload.investmentDocuments
+        } : {}),
         mortgageDetails: formData.status === 'for-mortgage' ? {
           mortgageProvider: mortgageDetails.mortgageProvider,
           minDownPaymentPercent: Number(mortgageDetails.minDownPaymentPercent),
@@ -1075,6 +1089,13 @@ const AddProperty = () => {
           </form>
         </div>
       </div>
+      {showInvestmentModal && (
+        <InvestmentDetailsModal
+          isOpen={showInvestmentModal}
+          onClose={() => { setShowInvestmentModal(false); setInvestmentPayload(null); }}
+          onSubmit={(payload) => { setInvestmentPayload(payload); setShowInvestmentModal(false); setTimeout(() => { const fakeEvent = { preventDefault: () => {} }; handleSubmit(fakeEvent); }, 0); }}
+        />
+      )}
     </div>
   );
 };

@@ -115,6 +115,25 @@ const propertySchema = new mongoose.Schema({
       default: false
     }
   },
+  investment: {
+    title: String,
+    roiPercent: Number,
+    durationUnit: { type: String, enum: ['monthly', 'annually'] },
+    durationValue: Number,
+    minAmount: Number,
+    payoutSchedule: { type: String, enum: ['monthly', 'quarterly', 'annually', 'end-of-term'] },
+    riskLevel: { type: String, enum: ['low', 'medium', 'high'] },
+    redemptionTerms: String,
+    startDate: Date,
+    maturityDate: Date,
+    summary: String
+  },
+  investmentDocuments: [{
+    url: String,
+    name: String,
+    type: String,
+    size: Number
+  }],
   financial: {
     monthlyRent: Number,
     annualTaxes: Number,

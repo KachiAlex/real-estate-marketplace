@@ -351,6 +351,8 @@ export const PropertyProvider = ({ children }) => {
         details: propertyData.details || {},
         location: propertyData.location || {},
         images: propertyData.images || [],
+        investment: propertyData.investment || null,
+        investmentDocuments: propertyData.investmentDocuments || [],
         isVerified: false,
         vendorId: user?.id || user?.uid || String(user),
         owner: { firstName: user.firstName || '', lastName: user.lastName || '' },
