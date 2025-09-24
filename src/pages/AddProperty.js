@@ -6,6 +6,7 @@ import { useVendor } from '../contexts/VendorContext';
 import PropertyImageUpload from '../components/PropertyImageUpload';
 import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
 import AgentPropertyListing from '../components/AgentPropertyListing';
+import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 
 const AddProperty = () => {
@@ -215,6 +216,21 @@ const AddProperty = () => {
         [name]: ''
       }));
     }
+  };
+
+  const handleAddressSelect = (placeData) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        address: placeData.address,
+        city: placeData.city,
+        state: placeData.state,
+        zipCode: placeData.zipCode,
+        coordinates: placeData.coordinates,
+        googleMapsUrl: placeData.googleMapsUrl
+      }
+    }));
   };
 
   const handleAmenityAdd = () => {
@@ -521,19 +537,21 @@ const AddProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Address</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="location.address"
-                      value={formData.location.address}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors['location.address'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
-                      placeholder="123 Main St"
-                    />
-                    <FaMapMarkerAlt className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-                  </div>
+                  <GoogleMapsAutocomplete
+                    value={formData.location.address}
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: {
+                          ...prev.location,
+                          address: value
+                        }
+                      }));
+                    }}
+                    onPlaceSelect={handleAddressSelect}
+                    placeholder="Start typing your address..."
+                    error={!!errors['location.address']}
+                  />
                   {errors['location.address'] && <p className="mt-2 text-sm text-red-600">{errors['location.address']}</p>}
                 </div>
 
@@ -616,19 +634,36 @@ const AddProperty = () => {
                 {/* Google Maps Link */}
                 <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <h5 className="text-sm font-semibold text-blue-800 mb-2">Google Maps Link</h5>
-                      <input
-                        type="text"
-                        name="location.googleMapsUrl"
-                        value={formData.location.googleMapsUrl}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                        placeholder="https://www.google.com/maps/..."
-                      />
+                      {formData.location.googleMapsUrl ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-green-600 font-medium">✓ Auto-populated from address selection</p>
+                          <input
+                            type="text"
+                            name="location.googleMapsUrl"
+                            value={formData.location.googleMapsUrl}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+                            placeholder="https://www.google.com/maps/..."
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">Select an address above to auto-populate this field</p>
+                          <input
+                            type="text"
+                            name="location.googleMapsUrl"
+                            value={formData.location.googleMapsUrl}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                            placeholder="https://www.google.com/maps/..."
+                          />
+                        </div>
+                      )}
                     </div>
-                    {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
                   </div>
+                  {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
                   {(formData.location.googleMapsUrl || (formData.location.coordinates.latitude && formData.location.coordinates.longitude)) && (
                     <div className="mt-4 rounded-lg overflow-hidden border border-blue-200 bg-white">
                       <iframe
