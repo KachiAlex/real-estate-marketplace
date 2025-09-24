@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
 import { EscrowProvider } from './contexts/EscrowContext';
 import { VendorProvider } from './contexts/VendorContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import VendorSidebar from './components/layout/VendorSidebar';
+import VendorLayout from './components/layout/VendorLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -36,16 +38,19 @@ import Investment from './pages/Investment';
 import Mortgage from './pages/Mortgage';
 import HelpSupport from './pages/HelpSupport';
 import BillingPayments from './pages/BillingPayments';
-import VendorDashboard from './pages/VendorDashboard';
-import VendorEarnings from './pages/VendorEarnings';
-import VendorTeam from './pages/VendorTeam';
-import VendorContracts from './pages/VendorContracts';
-import VendorProfile from './pages/VendorProfile';
-import VendorNotifications from './pages/VendorNotifications';
-import VendorHelp from './pages/VendorHelp';
 import EscrowPaymentFlow from './components/EscrowPaymentFlow';
 import VendorInspectionRequests from './pages/VendorInspectionRequests';
 import BuyerInspectionRequests from './pages/BuyerInspectionRequests';
+import LoadingSpinner from './components/LoadingSpinner';
+
+// Lazy load vendor pages for better performance
+const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
+const VendorEarnings = lazy(() => import('./pages/VendorEarnings'));
+const VendorTeam = lazy(() => import('./pages/VendorTeam'));
+const VendorContracts = lazy(() => import('./pages/VendorContracts'));
+const VendorProfile = lazy(() => import('./pages/VendorProfile'));
+const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
+const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 
 function App() {
   return (
@@ -54,6 +59,7 @@ function App() {
         <PropertyProvider>
           <InvestmentProvider>
             <EscrowProvider>
+              <SidebarProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
               <div className="flex flex-grow w-full">
@@ -314,107 +320,98 @@ function App() {
                   {/* Vendor Routes with Vendor Sidebar */}
                   <Route path="/vendor/dashboard" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorDashboard />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/properties" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorDashboard />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/add-property" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <AddProperty />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/earnings" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorEarnings />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/team" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorTeam />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/contracts" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorContracts />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/inspection-requests" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorInspectionRequests />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/profile" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorProfile />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/notifications" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorNotifications />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/vendor/help" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                      <VendorLayout>
+                        <Suspense fallback={<LoadingSpinner size="lg" className="h-64" />}>
                           <VendorHelp />
-                        </main>
-                      </div>
+                        </Suspense>
+                      </VendorLayout>
                     </ProtectedRoute>
                   } />
                 </Routes>
               </div>
             </div>
+              </SidebarProvider>
             </EscrowProvider>
           </InvestmentProvider>
         </PropertyProvider>
