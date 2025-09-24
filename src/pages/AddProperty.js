@@ -317,7 +317,8 @@ const AddProperty = () => {
         isAgentListing: isListingAsAgent,
         agentId: isListingAsAgent ? user.uid : null,
         createdAt: new Date(),
-        status: isListingAsAgent ? 'pending_verification' : 'pending', // Agent listings need extra verification
+        listingType: formData.status,
+        moderationStatus: isListingAsAgent ? 'pending_verification' : 'pending', // Agent listings need extra verification
         details: {
           ...formData.details,
           bedrooms: parseInt(formData.details.bedrooms),
