@@ -615,6 +615,21 @@ const AddProperty = () => {
                     </div>
                     {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
                   </div>
+                  {(formData.location.googleMapsUrl || (formData.location.coordinates.latitude && formData.location.coordinates.longitude)) && (
+                    <div className="mt-4 rounded-lg overflow-hidden border border-blue-200 bg-white">
+                      <iframe
+                        title="Property location preview"
+                        src={formData.location.googleMapsUrl
+                          ? `https://www.google.com/maps?q=${encodeURIComponent(formData.location.googleMapsUrl)}&output=embed`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(formData.location.coordinates.latitude + ',' + formData.location.coordinates.longitude)}&output=embed`}
+                        width="100%"
+                        height="300"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

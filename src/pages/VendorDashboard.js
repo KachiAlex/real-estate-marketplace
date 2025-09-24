@@ -558,6 +558,23 @@ const VendorDashboard = () => {
                   <input value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="https://maps.google.com/?q=..." />
                   <p className="text-xs text-gray-500 mt-1">Paste the Google Maps share link for the property location.</p>
                 </div>
+                {(googleMapsUrl || (latitude && longitude)) && (
+                  <div className="md:col-span-2">
+                    <div className="rounded-lg overflow-hidden border">
+                      <iframe
+                        title="Map preview"
+                        src={googleMapsUrl
+                          ? `https://www.google.com/maps?q=${encodeURIComponent(googleMapsUrl)}&output=embed`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(latitude + ',' + longitude)}&output=embed`}
+                        width="100%"
+                        height="280"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Latitude (optional)</label>
                   <input value={latitude} onChange={(e) => setLatitude(e.target.value)} type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="6.5244" />
