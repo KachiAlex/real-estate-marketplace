@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../config/firebase';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -18,6 +18,28 @@ export const useProperty = () => {
 // For now, use mock data directly since backend is not deployed to production
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+// Standardized enums
+export const LISTING_TYPES = [
+  'for-sale',
+  'for-rent',
+  'for-lease',
+  'for-mortgage',
+  'for-investment',
+  'for-shortlet'
+];
+
+export const PROPERTY_TYPES = [
+  'apartment',
+  'house',
+  'duplex',
+  'bungalow',
+  'studio',
+  'land',
+  'office',
+  'retail',
+  'warehouse'
+];
+
 // Mock properties data for production use - All prices in Nigerian Naira (₦)
 const mockProperties = [
   {
@@ -33,7 +55,8 @@ const mockProperties = [
     owner: { firstName: 'John', lastName: 'Doe' },
     views: 45,
     isVerified: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    listingType: 'for-sale'
   },
   {
     id: '2',
@@ -164,81 +187,113 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Use mock data and filter client-side
-      let filteredProperties = [...mockProperties];
+      // Prefer Firestore
+      const propertiesRef = collection(db, 'properties');
+      const constraints = [];
 
-      // Apply filters
+      if (newFilters.type) constraints.push(where('type', '==', newFilters.type));
+      if (newFilters.status) constraints.push(where('listingType', '==', newFilters.status));
+      if (newFilters.city) constraints.push(where('location.city', '==', newFilters.city));
+      constraints.push(orderBy('createdAt', 'desc'));
+      if (newFilters.limit) constraints.push(limit(Number(newFilters.limit)));
+
+      const q = query(propertiesRef, ...constraints);
+      const snap = await getDocs(q);
+      const firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Fallback to mock if Firestore empty
+      let data = firestoreProps.length ? firestoreProps : [...mockProperties];
+
+      // Additional client-side filters for fields not indexed
       if (newFilters.search) {
         const searchLower = newFilters.search.toLowerCase();
-        filteredProperties = filteredProperties.filter(p => 
-          p.title.toLowerCase().includes(searchLower) ||
-          p.description.toLowerCase().includes(searchLower) ||
-          p.location.address.toLowerCase().includes(searchLower) ||
-          p.location.city.toLowerCase().includes(searchLower)
+        data = data.filter(p => 
+          (p.title || '').toLowerCase().includes(searchLower) ||
+          (p.description || '').toLowerCase().includes(searchLower) ||
+          (p.location?.address || '').toLowerCase().includes(searchLower) ||
+          (p.location?.city || '').toLowerCase().includes(searchLower)
         );
       }
-      
-      if (newFilters.type) {
-        filteredProperties = filteredProperties.filter(p => p.type === newFilters.type);
-      }
-      
-      if (newFilters.status) {
-        filteredProperties = filteredProperties.filter(p => p.status === newFilters.status);
-      }
-      
-      if (newFilters.minPrice) {
-        filteredProperties = filteredProperties.filter(p => p.price >= parseInt(newFilters.minPrice));
-      }
-      
-      if (newFilters.maxPrice) {
-        filteredProperties = filteredProperties.filter(p => p.price <= parseInt(newFilters.maxPrice));
-      }
-      
-      if (newFilters.bedrooms) {
-        filteredProperties = filteredProperties.filter(p => p.details.bedrooms >= parseInt(newFilters.bedrooms));
-      }
-      
-      if (newFilters.bathrooms) {
-        filteredProperties = filteredProperties.filter(p => p.details.bathrooms >= parseInt(newFilters.bathrooms));
-      }
-      
-      if (newFilters.verified === 'true') {
-        filteredProperties = filteredProperties.filter(p => p.isVerified === true);
-      } else if (newFilters.verified === 'false') {
-        filteredProperties = filteredProperties.filter(p => p.isVerified === false);
-      }
+      if (newFilters.minPrice) data = data.filter(p => (p.price || 0) >= parseInt(newFilters.minPrice));
+      if (newFilters.maxPrice) data = data.filter(p => (p.price || 0) <= parseInt(newFilters.maxPrice));
+      if (newFilters.bedrooms) data = data.filter(p => (p.details?.bedrooms || 0) >= parseInt(newFilters.bedrooms));
+      if (newFilters.bathrooms) data = data.filter(p => (p.details?.bathrooms || 0) >= parseInt(newFilters.bathrooms));
+      if (newFilters.verified === 'true') data = data.filter(p => p.isVerified === true);
+      else if (newFilters.verified === 'false') data = data.filter(p => p.isVerified === false);
 
-      // Map to frontend expected structure
-      const propertiesData = filteredProperties.map(property => ({
+      const propertiesData = data.map(property => ({
         ...property,
-        bedrooms: property.details?.bedrooms || 0,
-        bathrooms: property.details?.bathrooms || 0,
-        area: property.details?.sqft || 0,
-        location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-        image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+        bedrooms: property.details?.bedrooms || 0
       }));
 
       setProperties(propertiesData);
-      
-      // Update pagination
-      setPagination(prev => ({
-        ...prev,
-        currentPage: page,
-        totalPages: Math.ceil(propertiesData.length / pagination.itemsPerPage),
-        totalItems: propertiesData.length
-      }));
+      setFilters(newFilters);
+      return propertiesData;
+    } catch (err) {
+      console.warn('Firestore fetch failed, using mock. Error:', err?.message);
+      try {
+        // Use mock data and filter client-side
+        let filteredProperties = [...mockProperties];
 
-        if (Object.keys(newFilters).length > 0) {
-          setFilters(newFilters);
+        // Apply filters
+        if (newFilters.search) {
+          const searchLower = newFilters.search.toLowerCase();
+          filteredProperties = filteredProperties.filter(p => 
+            p.title.toLowerCase().includes(searchLower) ||
+            p.description.toLowerCase().includes(searchLower) ||
+            p.location.address.toLowerCase().includes(searchLower) ||
+            p.location.city.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        if (newFilters.type) {
+          filteredProperties = filteredProperties.filter(p => p.type === newFilters.type);
+        }
+        
+        if (newFilters.status) {
+          filteredProperties = filteredProperties.filter(p => (p.listingType || p.status) === newFilters.status);
+        }
+        
+        if (newFilters.minPrice) {
+          filteredProperties = filteredProperties.filter(p => p.price >= parseInt(newFilters.minPrice));
+        }
+        
+        if (newFilters.maxPrice) {
+          filteredProperties = filteredProperties.filter(p => p.price <= parseInt(newFilters.maxPrice));
+        }
+        
+        if (newFilters.bedrooms) {
+          filteredProperties = filteredProperties.filter(p => p.details.bedrooms >= parseInt(newFilters.bedrooms));
+        }
+        
+        if (newFilters.bathrooms) {
+          filteredProperties = filteredProperties.filter(p => p.details.bathrooms >= parseInt(newFilters.bathrooms));
+        }
+        
+        if (newFilters.verified === 'true') {
+          filteredProperties = filteredProperties.filter(p => p.isVerified === true);
+        } else if (newFilters.verified === 'false') {
+          filteredProperties = filteredProperties.filter(p => p.isVerified === false);
+        }
+
+        const propertiesData = filteredProperties.map(property => ({
+          ...property,
+          bedrooms: property.details?.bedrooms || 0
+        }));
+
+        setProperties(propertiesData);
+        setFilters(newFilters);
+        return propertiesData;
+      } catch (error) {
+        setError('Failed to fetch properties');
+        console.error('Error fetching properties:', error);
+        toast.error('Failed to fetch properties');
+        return [];
       }
-    } catch (error) {
-      setError('Failed to fetch properties');
-      console.error('Error fetching properties:', error);
-      toast.error('Failed to load properties');
     } finally {
       setLoading(false);
     }
-  }, [pagination.itemsPerPage]);
+  }, []);
 
   // Fetch single property
   const fetchProperty = useCallback(async (propertyId) => {
@@ -278,25 +333,44 @@ export const PropertyProvider = ({ children }) => {
     try {
       if (!user) throw new Error('User must be logged in');
 
-      const response = await axios.post(`${API_URL}/properties`, propertyData);
-      
-      if (response.data.success) {
-        toast.success('Property added successfully!');
-        // Refresh properties list
-        fetchProperties();
-        return { success: true, id: response.data.data.id };
-      } else {
-        throw new Error(response.data.message || 'Failed to add property');
+      // Validate enums
+      const listingType = propertyData.listingType || propertyData.status;
+      if (!LISTING_TYPES.includes(listingType)) {
+        throw new Error('Invalid listing type');
       }
+      if (propertyData.type && !PROPERTY_TYPES.includes(propertyData.type)) {
+        throw new Error('Invalid property type');
+      }
+
+      const payload = {
+        title: propertyData.title,
+        description: propertyData.description || '',
+        price: Number(propertyData.price || 0),
+        type: propertyData.type || 'apartment',
+        listingType,
+        details: propertyData.details || {},
+        location: propertyData.location || {},
+        images: propertyData.images || [],
+        isVerified: false,
+        vendorId: user.uid,
+        owner: { firstName: user.firstName || '', lastName: user.lastName || '' },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      const ref = await addDoc(collection(db, 'properties'), payload);
+      toast.success('Property added successfully!');
+      await fetchProperties(filters);
+      return { success: true, id: ref.id };
     } catch (error) {
       setError('Failed to add property');
       console.error('Error adding property:', error);
-      toast.error('Failed to add property');
+      toast.error(error?.message || 'Failed to add property');
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
-  }, [user, fetchProperties]);
+  }, [user, fetchProperties, filters]);
 
   // Update property
   const updateProperty = useCallback(async (propertyId, updates) => {

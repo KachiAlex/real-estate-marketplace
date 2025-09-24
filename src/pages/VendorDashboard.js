@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
+  const { addProperty } = useProperty();
   const [activeTab, setActiveTab] = useState('overview');
   const [properties, setProperties] = useState([]);
   const [analytics, setAnalytics] = useState({});
   const [inquiries, setInquiries] = useState([]);
   const [showAddProperty, setShowAddProperty] = useState(false);
+
+  const [newTitle, setNewTitle] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [newType, setNewType] = useState('apartment');
+  const [newListingType, setNewListingType] = useState('for-sale');
 
   // Mock data for vendor dashboard
   useEffect(() => {
@@ -138,6 +145,74 @@ const VendorDashboard = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Add Property Modal */}
+      {showAddProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Property</h3>
+              <button onClick={() => setShowAddProperty(false)} className="text-gray-500 hover:text-gray-700">
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="e.g., Luxury Apartment in VI" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
+                <input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" min="0" className="w-full border rounded px-3 py-2" placeholder="e.g., 75000000" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                <select value={newType} onChange={(e) => setNewType(e.target.value)} className="w-full border rounded px-3 py-2">
+                  {PROPERTY_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
+                <select value={newListingType} onChange={(e) => setNewListingType(e.target.value)} className="w-full border rounded px-3 py-2">
+                  {LISTING_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 mt-6">
+              <button onClick={() => setShowAddProperty(false)} className="px-4 py-2 rounded border">Cancel</button>
+              <button
+                onClick={async () => {
+                  const res = await addProperty({
+                    title: newTitle,
+                    price: Number(newPrice),
+                    type: newType,
+                    listingType: newListingType
+                  });
+                  if (res.success) {
+                    setShowAddProperty(false);
+                    setNewTitle('');
+                    setNewPrice('');
+                    setNewType('apartment');
+                    setNewListingType('for-sale');
+                  }
+                }}
+                className="px-4 py-2 rounded bg-brand-blue text-white"
+              >
+                Save Property
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Section */}
       <div className="welcome-section mb-8">
         <div className="bg-gradient-to-r from-brand-blue to-blue-800 rounded-2xl p-8 text-white">
