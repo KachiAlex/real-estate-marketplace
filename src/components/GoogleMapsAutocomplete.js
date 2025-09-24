@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded, initializeGoogleMapsServices } from '../utils/googleMapsLoader';
 
 const GoogleMapsAutocomplete = ({ 
   value, 
@@ -17,57 +17,72 @@ const GoogleMapsAutocomplete = ({
   const suggestionsRef = useRef(null);
   const autocompleteService = useRef(null);
   const placesService = useRef(null);
+  const debounceTimer = useRef(null);
+  const requestId = useRef(0);
+  
+  // Cache for frequently used addresses
+  const addressCache = useRef(new Map());
+  const maxCacheSize = 50;
 
   useEffect(() => {
-    // Load Google Maps API and initialize services
-    const initializeGoogleMaps = async () => {
-      try {
-        // You can set your API key here or use environment variable
-        const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY';
-        
-        if (!isGoogleMapsLoaded()) {
-          await loadGoogleMapsAPI(apiKey);
-        }
-        
-        if (window.google && window.google.maps) {
-          autocompleteService.current = new window.google.maps.places.AutocompleteService();
-          placesService.current = new window.google.maps.places.PlacesService(
-            document.createElement('div')
-          );
-        }
-      } catch (error) {
-        console.error('Failed to load Google Maps API:', error);
+    // Initialize Google Maps services (API should already be preloaded)
+    const initializeServices = () => {
+      if (window.google && window.google.maps && initializeGoogleMapsServices()) {
+        autocompleteService.current = new window.google.maps.places.AutocompleteService();
+        placesService.current = new window.google.maps.places.PlacesService(
+          document.createElement('div')
+        );
       }
     };
 
-    initializeGoogleMaps();
+    // Try to initialize immediately if already loaded
+    if (isGoogleMapsLoaded()) {
+      initializeServices();
+    } else {
+      // Fallback: load API if not already loaded
+      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY';
+      loadGoogleMapsAPI(apiKey).then(initializeServices).catch(console.error);
+    }
   }, []);
 
-  const handleInputChange = (e) => {
-    const inputValue = e.target.value;
-    onChange(inputValue);
+  // Optimized search with caching and debouncing
+  const getPlacePredictionsOptimized = useCallback((input) => {
+    const currentRequestId = ++requestId.current;
     
-    if (inputValue.length > 2) {
-      setIsLoading(true);
-      getPlacePredictions(inputValue);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
+    // Check cache first
+    const cacheKey = input.toLowerCase().trim();
+    if (addressCache.current.has(cacheKey)) {
+      const cachedResults = addressCache.current.get(cacheKey);
+      setSuggestions(cachedResults);
+      setShowSuggestions(true);
+      setIsLoading(false);
+      return;
     }
-  };
 
-  const getPlacePredictions = (input) => {
-    if (!autocompleteService.current) return;
+    if (!autocompleteService.current) {
+      setIsLoading(false);
+      return;
+    }
 
     const request = {
       input: input,
       types: ['address'],
-      componentRestrictions: { country: 'ng' } // Restrict to Nigeria
+      componentRestrictions: { country: 'ng' }
     };
 
     autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
+      // Only process if this is still the latest request
+      if (currentRequestId !== requestId.current) return;
+      
       setIsLoading(false);
       if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+        // Cache the results
+        if (addressCache.current.size >= maxCacheSize) {
+          const firstKey = addressCache.current.keys().next().value;
+          addressCache.current.delete(firstKey);
+        }
+        addressCache.current.set(cacheKey, predictions);
+        
         setSuggestions(predictions);
         setShowSuggestions(true);
       } else {
@@ -75,10 +90,38 @@ const GoogleMapsAutocomplete = ({
         setShowSuggestions(false);
       }
     });
-  };
+  }, []);
 
-  const handleSuggestionClick = (suggestion) => {
+  const handleInputChange = useCallback((e) => {
+    const inputValue = e.target.value;
+    onChange(inputValue);
+    
+    // Clear previous debounce timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    if (inputValue.length > 2) {
+      setIsLoading(true);
+      // Debounce the API call by 300ms
+      debounceTimer.current = setTimeout(() => {
+        getPlacePredictionsOptimized(inputValue);
+      }, 300);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsLoading(false);
+    }
+  }, [onChange, getPlacePredictionsOptimized]);
+
+  // Optimized place selection with caching
+  const handleSuggestionClick = useCallback((suggestion) => {
     if (!placesService.current) return;
+
+    // Cancel any pending debounced requests
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
 
     const request = {
       placeId: suggestion.place_id,
@@ -118,29 +161,44 @@ const GoogleMapsAutocomplete = ({
         setSuggestions([]);
       }
     });
-  };
+  }, [onPlaceSelect, onChange]);
 
-  const handleClearInput = () => {
+
+  const handleClearInput = useCallback(() => {
+    // Clear debounce timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
     onChange('');
     setSuggestions([]);
     setShowSuggestions(false);
+    setIsLoading(false);
     inputRef.current?.focus();
-  };
+  }, [onChange]);
 
-  const handleBlur = (e) => {
+  const handleBlur = useCallback((e) => {
     // Delay hiding suggestions to allow clicking on them
     setTimeout(() => {
       if (!suggestionsRef.current?.contains(document.activeElement)) {
         setShowSuggestions(false);
       }
     }, 200);
-  };
+  }, []);
 
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     }
-  };
+  }, [suggestions.length]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="relative">
@@ -185,12 +243,12 @@ const GoogleMapsAutocomplete = ({
           ref={suggestionsRef}
           className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b-xl shadow-lg z-50 max-h-60 overflow-y-auto"
         >
-          {suggestions.map((suggestion, index) => (
+          {suggestions.slice(0, 8).map((suggestion) => (
             <button
               key={suggestion.place_id}
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors focus:outline-none focus:bg-gray-50"
             >
               <div className="flex items-start space-x-3">
                 <FaMapMarkerAlt className="text-blue-500 text-sm mt-1 flex-shrink-0" />

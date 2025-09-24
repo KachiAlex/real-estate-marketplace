@@ -1,7 +1,19 @@
-// Google Maps API Loader Utility
+// Google Maps API Loader Utility - Optimized for Performance
 let isLoaded = false;
 let isLoading = false;
 let loadPromise = null;
+let servicesInitialized = false;
+
+// Preload the API when the page loads
+const preloadGoogleMapsAPI = () => {
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+  if (apiKey && apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY' && !isLoaded && !isLoading) {
+    loadGoogleMapsAPI(apiKey);
+  }
+};
+
+// Start preloading immediately
+preloadGoogleMapsAPI();
 
 export const loadGoogleMapsAPI = (apiKey) => {
   if (isLoaded) {
@@ -22,11 +34,22 @@ export const loadGoogleMapsAPI = (apiKey) => {
       return;
     }
 
-    // Create script element
+    // Create script element with optimized parameters
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
     script.async = true;
     script.defer = true;
+    
+    // Add preconnect hints for faster loading
+    const preconnectLink = document.createElement('link');
+    preconnectLink.rel = 'preconnect';
+    preconnectLink.href = 'https://maps.googleapis.com';
+    document.head.appendChild(preconnectLink);
+    
+    const dnsPrefetchLink = document.createElement('link');
+    dnsPrefetchLink.rel = 'dns-prefetch';
+    dnsPrefetchLink.href = 'https://maps.googleapis.com';
+    document.head.appendChild(dnsPrefetchLink);
     
     script.onload = () => {
       isLoaded = true;
@@ -48,4 +71,12 @@ export const loadGoogleMapsAPI = (apiKey) => {
 
 export const isGoogleMapsLoaded = () => {
   return isLoaded && window.google && window.google.maps;
+};
+
+export const initializeGoogleMapsServices = () => {
+  if (!servicesInitialized && isGoogleMapsLoaded()) {
+    servicesInitialized = true;
+    return true;
+  }
+  return servicesInitialized;
 };
