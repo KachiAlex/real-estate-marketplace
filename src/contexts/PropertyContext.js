@@ -352,7 +352,7 @@ export const PropertyProvider = ({ children }) => {
         location: propertyData.location || {},
         images: propertyData.images || [],
         isVerified: false,
-        vendorId: user.uid,
+        vendorId: user?.id || user?.uid || String(user),
         owner: { firstName: user.firstName || '', lastName: user.lastName || '' },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
