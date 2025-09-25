@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded, initializeGoogleMapsServices } from '../utils/googleMapsLoader';
 
 const GoogleMapsAutocomplete = ({ 
@@ -13,6 +13,7 @@ const GoogleMapsAutocomplete = ({
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleMapsAvailable, setIsGoogleMapsAvailable] = useState(true);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
   const autocompleteService = useRef(null);
@@ -28,22 +29,39 @@ const GoogleMapsAutocomplete = ({
     // Initialize Google Maps services (API should already be preloaded)
     const initializeServices = () => {
       if (window.google && window.google.maps && initializeGoogleMapsServices()) {
-        // Use the new AutocompleteSuggestion API instead of deprecated AutocompleteService
-        if (window.google.maps.places.AutocompleteSuggestion) {
-          autocompleteService.current = new window.google.maps.places.AutocompleteSuggestion();
+        // Check if places API is available
+        if (window.google.maps.places) {
+          // Use the new AutocompleteSuggestion API if available, otherwise fallback
+          if (window.google.maps.places.AutocompleteSuggestion) {
+            try {
+              autocompleteService.current = new window.google.maps.places.AutocompleteSuggestion();
+            } catch (error) {
+              console.log('AutocompleteSuggestion not available, using AutocompleteService');
+              autocompleteService.current = new window.google.maps.places.AutocompleteService();
+            }
+          } else {
+            // Fallback to AutocompleteService for backward compatibility
+            autocompleteService.current = new window.google.maps.places.AutocompleteService();
+          }
+          
+          // Use the new Place API if available, otherwise fallback
+          if (window.google.maps.places.Place) {
+            try {
+              placesService.current = new window.google.maps.places.Place();
+            } catch (error) {
+              console.log('Place API not available, using PlacesService');
+              placesService.current = new window.google.maps.places.PlacesService(
+                document.createElement('div')
+              );
+            }
+          } else {
+            // Fallback to PlacesService for backward compatibility
+            placesService.current = new window.google.maps.places.PlacesService(
+              document.createElement('div')
+            );
+          }
         } else {
-          // Fallback to AutocompleteService for backward compatibility
-          autocompleteService.current = new window.google.maps.places.AutocompleteService();
-        }
-        
-        // Use the new Place API instead of deprecated PlacesService
-        if (window.google.maps.places.Place) {
-          placesService.current = new window.google.maps.places.Place();
-        } else {
-          // Fallback to PlacesService for backward compatibility
-          placesService.current = new window.google.maps.places.PlacesService(
-            document.createElement('div')
-          );
+          console.error('Google Maps Places API not available');
         }
       }
     };
@@ -54,7 +72,23 @@ const GoogleMapsAutocomplete = ({
     } else {
       // Fallback: load API if not already loaded
       const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY';
-      loadGoogleMapsAPI(apiKey).then(initializeServices).catch(console.error);
+      
+      // Only attempt to load if we have a real API key
+      if (apiKey && apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+        loadGoogleMapsAPI(apiKey).then(initializeServices).catch((error) => {
+          console.error('Failed to load Google Maps API:', error);
+          // Set a flag to disable autocomplete functionality
+          autocompleteService.current = null;
+          placesService.current = null;
+          setIsGoogleMapsAvailable(false);
+        });
+      } else {
+        console.warn('Google Maps API key not configured. Autocomplete will be disabled.');
+        // Set a flag to disable autocomplete functionality
+        autocompleteService.current = null;
+        placesService.current = null;
+        setIsGoogleMapsAvailable(false);
+      }
     }
   }, []);
 
@@ -72,8 +106,12 @@ const GoogleMapsAutocomplete = ({
       return;
     }
 
-    if (!autocompleteService.current) {
+    // Check if services are available
+    if (!autocompleteService.current || !window.google?.maps?.places) {
+      console.warn('Google Maps autocomplete services not available');
       setIsLoading(false);
+      setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
@@ -160,7 +198,10 @@ const GoogleMapsAutocomplete = ({
 
   // Optimized place selection with caching
   const handleSuggestionClick = useCallback((suggestion) => {
-    if (!placesService.current) return;
+    if (!placesService.current || !window.google?.maps?.places) {
+      console.warn('Google Maps places service not available');
+      return;
+    }
 
     // Cancel any pending debounced requests
     if (debounceTimer.current) {
@@ -298,7 +339,7 @@ const GoogleMapsAutocomplete = ({
           className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
             error ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
           }`}
-          placeholder={placeholder}
+          placeholder={isGoogleMapsAvailable ? placeholder : "Enter address manually (autocomplete disabled)"}
         />
         <FaMapMarkerAlt className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
         {value && (
@@ -320,10 +361,20 @@ const GoogleMapsAutocomplete = ({
             <p className="text-sm text-gray-600 mt-2">Searching addresses...</p>
           </div>
         </div>
-      )}
+        )}
 
-      {/* Suggestions dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
+        {/* Google Maps not available message */}
+        {!isGoogleMapsAvailable && (
+          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-700">
+              <FaExclamationTriangle className="inline mr-1" />
+              Google Maps autocomplete is disabled. Please enter the address manually.
+            </p>
+          </div>
+        )}
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
         <div 
           ref={suggestionsRef}
           className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b-xl shadow-lg z-50 max-h-60 overflow-y-auto"

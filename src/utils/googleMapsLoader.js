@@ -57,10 +57,10 @@ export const loadGoogleMapsAPI = (apiKey) => {
       resolve();
     };
     
-    script.onerror = () => {
-      isLoading = false;
-      reject(new Error('Failed to load Google Maps API'));
-    };
+      script.onerror = () => {
+        isLoading = false;
+        reject(new Error('Failed to load Google Maps API. Please check your API key and ensure the required APIs are enabled.'));
+      };
 
     // Add script to document
     document.head.appendChild(script);
