@@ -9,8 +9,9 @@ The application now includes Google Maps autocomplete functionality for address 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the following APIs:
-   - **Places API**
+   - **Places API (New)** - For the latest autocomplete features
    - **Maps JavaScript API**
+   - **Geocoding API** - For address validation
 4. Go to "Credentials" and create an API key
 5. Restrict the API key to your domain for security
 
@@ -31,6 +32,11 @@ REACT_APP_GOOGLE_MAPS_API_KEY=your_actual_api_key_here
   - Google Maps URL
 - **Visual Feedback**: Shows when address is auto-populated
 - **Error Handling**: Graceful fallback if API fails to load
+- **Performance Optimized**: 
+  - Uses latest Google Maps APIs (AutocompleteSuggestion, Place)
+  - Implements debouncing and caching
+  - Async loading with preconnect hints
+  - Backward compatibility with deprecated APIs
 
 ### 4. Usage
 1. Navigate to "Add Property" in vendor dashboard

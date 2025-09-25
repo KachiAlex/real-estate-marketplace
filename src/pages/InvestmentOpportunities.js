@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { useAuth } from '../contexts/AuthContext';
+import InvestmentModal from '../components/InvestmentModal';
+import toast from 'react-hot-toast';
 import { 
   FaSearch, 
   FaFilter, 
@@ -168,8 +170,24 @@ const InvestmentOpportunities = () => {
   };
 
   const handleInvestNow = (investment) => {
+    if (!user) {
+      toast.error('Please login to invest');
+      return;
+    }
     setSelectedInvestment(investment);
     setShowInvestmentModal(true);
+  };
+
+  const handleInvestmentSubmit = async (investmentData) => {
+    try {
+      await investInOpportunity(investmentData);
+      setShowInvestmentModal(false);
+      setSelectedInvestment(null);
+      toast.success('Investment submitted successfully!');
+    } catch (error) {
+      toast.error('Failed to submit investment');
+      console.error('Investment error:', error);
+    }
   };
 
   const getRiskColor = (riskLevel) => {
@@ -365,9 +383,10 @@ const InvestmentOpportunities = () => {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => handleInvestNow(investment)}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors mr-2"
+                    className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
                   >
-                    Invest Now
+                    <FaDollarSign className="text-sm" />
+                    <span>Invest Now</span>
                   </button>
                   <button
                     onClick={() => {
@@ -423,12 +442,14 @@ const InvestmentOpportunities = () => {
         {/* Investment Modal */}
         {showInvestmentModal && selectedInvestment && (
           <InvestmentModal
+            isOpen={showInvestmentModal}
             investment={selectedInvestment}
+            user={user}
             onClose={() => {
               setShowInvestmentModal(false);
               setSelectedInvestment(null);
             }}
-            onInvest={handleInvestNow}
+            onInvest={handleInvestmentSubmit}
           />
         )}
       </div>
@@ -436,250 +457,5 @@ const InvestmentOpportunities = () => {
   );
 };
 
-// Investment Details Modal
-const InvestmentModal = ({ investment, onClose, onInvest }) => {
-  const [showInvestForm, setShowInvestForm] = useState(false);
-  const [investmentAmount, setInvestmentAmount] = useState('');
-  const [investorDetails, setInvestorDetails] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    idType: '',
-    idNumber: ''
-  });
-
-  const handleInvestSubmit = async (e) => {
-    e.preventDefault();
-    // Handle investment submission
-    console.log('Investment submission:', {
-      investmentId: investment.id,
-      amount: parseFloat(investmentAmount),
-      investorDetails
-    });
-    // Close modal after successful investment
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Investment Details</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <FaEye />
-            </button>
-          </div>
-
-          {!showInvestForm ? (
-            <div className="space-y-6">
-              {/* Investment Overview */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Information</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Title:</span>
-                      <p className="text-gray-900">{investment.title}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Description:</span>
-                      <p className="text-gray-900">{investment.description}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Target Amount:</span>
-                      <p className="text-gray-900">₦{investment.targetAmount?.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Expected ROI:</span>
-                      <p className="text-gray-900">{investment.expectedROI}%</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Duration:</span>
-                      <p className="text-gray-900">{investment.investmentDuration} months</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Collateral</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Location:</span>
-                      <p className="text-gray-900">{investment.propertyLocation}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Property Value:</span>
-                      <p className="text-gray-900">₦{investment.propertyValue?.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Property Type:</span>
-                      <p className="text-gray-900 capitalize">{investment.propertyType}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Collateral Details:</span>
-                      <p className="text-gray-900">{investment.collateralDetails}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Terms and Conditions */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms & Conditions</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{investment.terms}</p>
-                </div>
-              </div>
-
-              {/* Investment Performance */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Performance</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Total Raised</p>
-                    <p className="text-2xl font-bold text-gray-900">₦{investment.totalRaised?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Investors</p>
-                    <p className="text-2xl font-bold text-gray-900">{investment.investors?.length || 0}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Progress</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {Math.round(((investment.totalRaised || 0) / investment.targetAmount) * 100)}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => setShowInvestForm(true)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Invest Now
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Make Investment</h3>
-              <form onSubmit={handleInvestSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Investment Amount (₦)</label>
-                  <input
-                    type="number"
-                    value={investmentAmount}
-                    onChange={(e) => setInvestmentAmount(e.target.value)}
-                    min={investment.minimumInvestment}
-                    max={investment.targetAmount}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Minimum: ₦{investment.minimumInvestment?.toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      value={investorDetails.fullName}
-                      onChange={(e) => setInvestorDetails({...investorDetails, fullName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={investorDetails.email}
-                      onChange={(e) => setInvestorDetails({...investorDetails, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input
-                      type="tel"
-                      value={investorDetails.phone}
-                      onChange={(e) => setInvestorDetails({...investorDetails, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Type</label>
-                    <select
-                      value={investorDetails.idType}
-                      onChange={(e) => setInvestorDetails({...investorDetails, idType: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select ID Type</option>
-                      <option value="national_id">National ID</option>
-                      <option value="passport">Passport</option>
-                      <option value="drivers_license">Driver's License</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
-                  <input
-                    type="text"
-                    value={investorDetails.idNumber}
-                    onChange={(e) => setInvestorDetails({...investorDetails, idNumber: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <textarea
-                    value={investorDetails.address}
-                    onChange={(e) => setInvestorDetails({...investorDetails, address: e.target.value})}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowInvestForm(false)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Proceed to Payment
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default InvestmentOpportunities;

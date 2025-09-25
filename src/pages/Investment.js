@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
-import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle } from 'react-icons/fa';
+import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle, FaDollarSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 import InvestmentChart from '../components/InvestmentChart';
@@ -806,9 +806,9 @@ const Investment = () => {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
-                  <button 
+                  <button
                     onClick={() => handleInvestNow(selectedProject || projects[0])}
-                    className="btn-primary flex items-center space-x-2"
+                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-4 rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     disabled={!projects.length}
                   >
                     <FaCheck />
@@ -1461,9 +1461,10 @@ const Investment = () => {
               
               <button
                 onClick={() => handleInvestNow(project)}
-                className="w-full btn-primary"
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
               >
-                Invest Now
+                <FaDollarSign className="text-sm" />
+                <span>Invest Now</span>
               </button>
               <button
                 onClick={() => openScheduleModal(project)}

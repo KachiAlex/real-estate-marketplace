@@ -34,11 +34,11 @@ export const loadGoogleMapsAPI = (apiKey) => {
       return;
     }
 
-    // Create script element with optimized parameters
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
-    script.async = true;
-    script.defer = true;
+      // Create script element with optimized parameters
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly&loading=async`;
+      script.async = true;
+      script.defer = true;
     
     // Add preconnect hints for faster loading
     const preconnectLink = document.createElement('link');

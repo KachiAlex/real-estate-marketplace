@@ -538,7 +538,7 @@ const AddProperty = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Address</label>
                   <GoogleMapsAutocomplete
-                    value={formData.location.address}
+                      value={formData.location.address}
                     onChange={(value) => {
                       setFormData(prev => ({
                         ...prev,
@@ -651,17 +651,17 @@ const AddProperty = () => {
                       ) : (
                         <div className="space-y-2">
                           <p className="text-xs text-gray-600">Select an address above to auto-populate this field</p>
-                          <input
-                            type="text"
-                            name="location.googleMapsUrl"
-                            value={formData.location.googleMapsUrl}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                            placeholder="https://www.google.com/maps/..."
-                          />
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        name="location.googleMapsUrl"
+                        value={formData.location.googleMapsUrl}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                        placeholder="https://www.google.com/maps/..."
+                      />
                     </div>
+                      )}
+                  </div>
                   </div>
                   {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
                   {(formData.location.googleMapsUrl || (formData.location.coordinates.latitude && formData.location.coordinates.longitude)) && (

@@ -28,10 +28,23 @@ const GoogleMapsAutocomplete = ({
     // Initialize Google Maps services (API should already be preloaded)
     const initializeServices = () => {
       if (window.google && window.google.maps && initializeGoogleMapsServices()) {
-        autocompleteService.current = new window.google.maps.places.AutocompleteService();
-        placesService.current = new window.google.maps.places.PlacesService(
-          document.createElement('div')
-        );
+        // Use the new AutocompleteSuggestion API instead of deprecated AutocompleteService
+        if (window.google.maps.places.AutocompleteSuggestion) {
+          autocompleteService.current = new window.google.maps.places.AutocompleteSuggestion();
+        } else {
+          // Fallback to AutocompleteService for backward compatibility
+          autocompleteService.current = new window.google.maps.places.AutocompleteService();
+        }
+        
+        // Use the new Place API instead of deprecated PlacesService
+        if (window.google.maps.places.Place) {
+          placesService.current = new window.google.maps.places.Place();
+        } else {
+          // Fallback to PlacesService for backward compatibility
+          placesService.current = new window.google.maps.places.PlacesService(
+            document.createElement('div')
+          );
+        }
       }
     };
 
@@ -70,26 +83,57 @@ const GoogleMapsAutocomplete = ({
       componentRestrictions: { country: 'ng' }
     };
 
-    autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
-      // Only process if this is still the latest request
-      if (currentRequestId !== requestId.current) return;
-      
-      setIsLoading(false);
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-        // Cache the results
-        if (addressCache.current.size >= maxCacheSize) {
-          const firstKey = addressCache.current.keys().next().value;
-          addressCache.current.delete(firstKey);
-        }
-        addressCache.current.set(cacheKey, predictions);
-        
-        setSuggestions(predictions);
-        setShowSuggestions(true);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
+      // Use the new API if available, otherwise fallback to the old one
+      if (autocompleteService.current.getPlacePredictions) {
+        // Old API method
+        autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
+          // Only process if this is still the latest request
+          if (currentRequestId !== requestId.current) return;
+          
+          setIsLoading(false);
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            // Cache the results
+            if (addressCache.current.size >= maxCacheSize) {
+              const firstKey = addressCache.current.keys().next().value;
+              addressCache.current.delete(firstKey);
+            }
+            addressCache.current.set(cacheKey, predictions);
+            
+            setSuggestions(predictions);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        });
+      } else if (autocompleteService.current.getSuggestions) {
+        // New API method
+        autocompleteService.current.getSuggestions(request).then((predictions) => {
+          // Only process if this is still the latest request
+          if (currentRequestId !== requestId.current) return;
+          
+          setIsLoading(false);
+          if (predictions && predictions.length > 0) {
+            // Cache the results
+            if (addressCache.current.size >= maxCacheSize) {
+              const firstKey = addressCache.current.keys().next().value;
+              addressCache.current.delete(firstKey);
+            }
+            addressCache.current.set(cacheKey, predictions);
+            
+            setSuggestions(predictions);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        }).catch((error) => {
+          console.error('Autocomplete error:', error);
+          setIsLoading(false);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        });
       }
-    });
   }, []);
 
   const handleInputChange = useCallback((e) => {
@@ -128,39 +172,80 @@ const GoogleMapsAutocomplete = ({
       fields: ['formatted_address', 'geometry', 'address_components', 'url']
     };
 
-    placesService.current.getDetails(request, (place, status) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-        // Extract address components
-        const addressComponents = place.address_components || [];
-        const city = addressComponents.find(component => 
-          component.types.includes('locality')
-        )?.long_name || '';
-        const state = addressComponents.find(component => 
-          component.types.includes('administrative_area_level_1')
-        )?.long_name || '';
-        const zipCode = addressComponents.find(component => 
-          component.types.includes('postal_code')
-        )?.long_name || '';
+    // Use the new API if available, otherwise fallback to the old one
+    if (placesService.current.getDetails) {
+      // Old API method
+      placesService.current.getDetails(request, (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          const city = addressComponents.find(component => 
+            component.types.includes('locality')
+          )?.long_name || '';
+          const state = addressComponents.find(component => 
+            component.types.includes('administrative_area_level_1')
+          )?.long_name || '';
+          const zipCode = addressComponents.find(component => 
+            component.types.includes('postal_code')
+          )?.long_name || '';
 
-        // Call the onPlaceSelect callback with all the data
-        onPlaceSelect({
-          address: place.formatted_address,
-          city: city,
-          state: state,
-          zipCode: zipCode,
-          coordinates: {
-            latitude: place.geometry?.location?.lat(),
-            longitude: place.geometry?.location?.lng()
-          },
-          googleMapsUrl: place.url || `https://www.google.com/maps/place/?q=place_id:${suggestion.place_id}`
-        });
+          // Call the onPlaceSelect callback with all the data
+          onPlaceSelect({
+            address: place.formatted_address,
+            city: city,
+            state: state,
+            zipCode: zipCode,
+            coordinates: {
+              latitude: place.geometry?.location?.lat(),
+              longitude: place.geometry?.location?.lng()
+            },
+            googleMapsUrl: place.url || `https://www.google.com/maps/place/?q=place_id:${suggestion.place_id}`
+          });
 
-        // Update the input value
-        onChange(place.formatted_address);
-        setShowSuggestions(false);
-        setSuggestions([]);
-      }
-    });
+          // Update the input value
+          onChange(place.formatted_address);
+          setShowSuggestions(false);
+          setSuggestions([]);
+        }
+      });
+    } else if (placesService.current.fetchFields) {
+      // New API method
+      placesService.current.fetchFields(request).then((place) => {
+        if (place) {
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          const city = addressComponents.find(component => 
+            component.types.includes('locality')
+          )?.long_name || '';
+          const state = addressComponents.find(component => 
+            component.types.includes('administrative_area_level_1')
+          )?.long_name || '';
+          const zipCode = addressComponents.find(component => 
+            component.types.includes('postal_code')
+          )?.long_name || '';
+
+          // Call the onPlaceSelect callback with all the data
+          onPlaceSelect({
+            address: place.formatted_address,
+            city: city,
+            state: state,
+            zipCode: zipCode,
+            coordinates: {
+              latitude: place.geometry?.location?.lat(),
+              longitude: place.geometry?.location?.lng()
+            },
+            googleMapsUrl: place.url || `https://www.google.com/maps/place/?q=place_id:${suggestion.place_id}`
+          });
+
+          // Update the input value
+          onChange(place.formatted_address);
+          setShowSuggestions(false);
+          setSuggestions([]);
+        }
+      }).catch((error) => {
+        console.error('Place details error:', error);
+      });
+    }
   }, [onPlaceSelect, onChange]);
 
 
