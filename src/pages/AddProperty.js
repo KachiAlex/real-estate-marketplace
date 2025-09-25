@@ -9,6 +9,7 @@ import AgentPropertyListing from '../components/AgentPropertyListing';
 import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
 import AddressMemory from '../components/AddressMemory';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
+import MemoryInput from '../components/MemoryInput';
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -429,14 +430,10 @@ const AddProperty = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Property Title</label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      name="title"
+                    <MemoryInput
+                      fieldKey="title"
                       value={formData.title}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors.title ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
+                      onChange={(val) => setFormData((p) => ({ ...p, title: val }))}
                       placeholder="e.g., Beautiful 3-bedroom house"
                     />
                     <FaHome className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
@@ -494,14 +491,11 @@ const AddProperty = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Price ($)</label>
                   <div className="relative">
-                    <input
+                    <MemoryInput
                       type="number"
-                      name="price"
+                      fieldKey="price"
                       value={formData.price}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors.price ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
+                      onChange={(val) => setFormData((p) => ({ ...p, price: val }))}
                       placeholder="500000"
                     />
                     <FaDollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
@@ -512,14 +506,12 @@ const AddProperty = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Description</label>
-                <textarea
-                  name="description"
+                <MemoryInput
+                  fieldKey="description"
                   value={formData.description}
-                  onChange={handleChange}
-                  rows="4"
-                  className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                    errors.description ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                  }`}
+                  onChange={(val) => setFormData((p) => ({ ...p, description: val }))}
+                  multiline
+                  rows={4}
                   placeholder="Describe your property in detail..."
                 />
                 {errors.description && <p className="mt-2 text-sm text-red-600">{errors.description}</p>}
@@ -617,25 +609,21 @@ const AddProperty = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Latitude (optional)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      step="any"
-                      name="coordinates.latitude"
+                      fieldKey="coordinates.latitude"
                       value={formData.location.coordinates.latitude}
-                      onChange={handleChange}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, coordinates: { ...p.location.coordinates, latitude: val } } }))}
                       placeholder="40.7128"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Longitude (optional)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      step="any"
-                      name="coordinates.longitude"
+                      fieldKey="coordinates.longitude"
                       value={formData.location.coordinates.longitude}
-                      onChange={handleChange}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, coordinates: { ...p.location.coordinates, longitude: val } } }))}
                       placeholder="-74.0060"
                     />
                   </div>
@@ -649,24 +637,20 @@ const AddProperty = () => {
                       {formData.location.googleMapsUrl ? (
                         <div className="space-y-2">
                           <p className="text-xs text-green-600 font-medium">✓ Auto-populated from address selection</p>
-                          <input
-                            type="text"
-                            name="location.googleMapsUrl"
+                          <MemoryInput
+                            fieldKey="location.googleMapsUrl"
                             value={formData.location.googleMapsUrl}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300"
+                            onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, googleMapsUrl: val } }))}
                             placeholder="https://www.google.com/maps/..."
                           />
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <p className="text-xs text-gray-600">Select an address above to auto-populate this field</p>
-                      <input
-                        type="text"
-                        name="location.googleMapsUrl"
+                      <MemoryInput
+                        fieldKey="location.googleMapsUrl"
                         value={formData.location.googleMapsUrl}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                        onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, googleMapsUrl: val } }))}
                         placeholder="https://www.google.com/maps/..."
                       />
                     </div>
@@ -718,12 +702,13 @@ const AddProperty = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Distance</label>
-                    <input
-                      type="text"
-                      name="busStop.distance"
+                    <MemoryInput
+                      fieldKey="busStop.distance"
                       value={formData.location.nearestBusStop.distance}
-                      onChange={handleChange}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: { ...p.location, nearestBusStop: { ...p.location.nearestBusStop, distance: val } }
+                      }))}
                       placeholder="0.2 miles"
                     />
                   </div>
@@ -743,116 +728,89 @@ const AddProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Bedrooms</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      name="details.bedrooms"
-                      value={formData.details.bedrooms}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors['details.bedrooms'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
-                      placeholder="3"
-                    />
-                    <FaBed className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-                  </div>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="bedrooms"
+                    value={formData.details.bedrooms}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, bedrooms: val } }))}
+                    placeholder="3"
+                  />
                   {errors['details.bedrooms'] && <p className="mt-2 text-sm text-red-600">{errors['details.bedrooms']}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Bathrooms</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      name="details.bathrooms"
-                      value={formData.details.bathrooms}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors['details.bathrooms'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
-                      placeholder="2"
-                    />
-                    <FaBath className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-                  </div>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="bathrooms"
+                    value={formData.details.bathrooms}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, bathrooms: val } }))}
+                    placeholder="2"
+                  />
                   {errors['details.bathrooms'] && <p className="mt-2 text-sm text-red-600">{errors['details.bathrooms']}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Square Feet</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      name="details.sqft"
-                      value={formData.details.sqft}
-                      onChange={handleChange}
-                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                        errors['details.sqft'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                      }`}
-                      placeholder="2000"
-                    />
-                    <FaRulerCombined className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-                  </div>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="sqft"
+                    value={formData.details.sqft}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, sqft: val } }))}
+                    placeholder="2000"
+                  />
                   {errors['details.sqft'] && <p className="mt-2 text-sm text-red-600">{errors['details.sqft']}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Year Built</label>
-                  <input
+                  <MemoryInput
                     type="number"
-                    name="details.yearBuilt"
+                    fieldKey="yearBuilt"
                     value={formData.details.yearBuilt}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, yearBuilt: val } }))}
                     placeholder="2015"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Lot Size</label>
-                  <input
-                    type="text"
-                    name="details.lotSize"
-                    value={formData.details.lotSize}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="0.25 acres"
-                  />
+                    <MemoryInput
+                      fieldKey="details.lotSize"
+                      value={formData.details.lotSize}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, lotSize: val } }))}
+                      placeholder="0.25 acres"
+                    />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Parking</label>
-                  <input
-                    type="text"
-                    name="details.parking"
-                    value={formData.details.parking}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="2-car garage"
-                  />
+                    <MemoryInput
+                      fieldKey="details.parking"
+                      value={formData.details.parking}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, parking: val } }))}
+                      placeholder="2-car garage"
+                    />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Heating</label>
-                  <input
-                    type="text"
-                    name="details.heating"
-                    value={formData.details.heating}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="Central"
-                  />
+                    <MemoryInput
+                      fieldKey="details.heating"
+                      value={formData.details.heating}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, heating: val } }))}
+                      placeholder="Central"
+                    />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Cooling</label>
-                  <input
-                    type="text"
-                    name="details.cooling"
-                    value={formData.details.cooling}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="Central AC"
-                  />
+                    <MemoryInput
+                      fieldKey="details.cooling"
+                      value={formData.details.cooling}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, cooling: val } }))}
+                      placeholder="Central AC"
+                    />
                 </div>
               </div>
             </div>
@@ -888,14 +846,14 @@ const AddProperty = () => {
                     Property Videos
                   </h4>
                   <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                    <input
-                      type="file"
-                      multiple
-                      accept="video/*"
-                      onChange={(e) => handleFileUpload(e, 'videos')}
-                      className="hidden"
-                      id="video-upload"
-                    />
+                      <input
+                        type="file"
+                        multiple
+                        accept="video/*"
+                        onChange={(e) => handleFileUpload(e, 'videos')}
+                        className="hidden"
+                        id="video-upload"
+                      />
                     <label htmlFor="video-upload" className="cursor-pointer">
                       <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">Click to upload videos</p>
@@ -1051,60 +1009,54 @@ const AddProperty = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Mortgage Provider</label>
-                    <input
-                      type="text"
-                      name="mortgageDetails.mortgageProvider"
+                    <MemoryInput
+                      fieldKey="mortgageDetails.mortgageProvider"
                       value={mortgageDetails.mortgageProvider}
-                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, mortgageProvider: e.target.value }))}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, mortgageProvider: val }))}
                       placeholder="Bank of America"
                     />
                     {errors.mortgageProvider && <p className="mt-2 text-sm text-red-600">{errors.mortgageProvider}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Minimum Down Payment (%)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      name="mortgageDetails.minDownPaymentPercent"
+                      fieldKey="mortgageDetails.minDownPaymentPercent"
                       value={mortgageDetails.minDownPaymentPercent}
-                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, minDownPaymentPercent: e.target.value }))}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, minDownPaymentPercent: val }))}
                       placeholder="20"
                     />
                     {errors.minDownPaymentPercent && <p className="mt-2 text-sm text-red-600">{errors.minDownPaymentPercent}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Tenor (Months)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      name="mortgageDetails.tenorMonths"
+                      fieldKey="mortgageDetails.tenorMonths"
                       value={mortgageDetails.tenorMonths}
-                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, tenorMonths: e.target.value }))}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, tenorMonths: val }))}
                       placeholder="300"
                     />
                     {errors.tenorMonths && <p className="mt-2 text-sm text-red-600">{errors.tenorMonths}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Interest Rate (%)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      name="mortgageDetails.interestRate"
+                      fieldKey="mortgageDetails.interestRate"
                       value={mortgageDetails.interestRate}
-                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, interestRate: e.target.value }))}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, interestRate: val }))}
                       placeholder="3.5"
                     />
                     {errors.interestRate && <p className="mt-2 text-sm text-red-600">{errors.interestRate}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Monthly Income Requirement ($)</label>
-                    <input
+                    <MemoryInput
                       type="number"
-                      name="mortgageDetails.monthlyIncomeRequirement"
+                      fieldKey="mortgageDetails.monthlyIncomeRequirement"
                       value={mortgageDetails.monthlyIncomeRequirement}
-                      onChange={(e) => setMortgageDetails(prev => ({ ...prev, monthlyIncomeRequirement: e.target.value }))}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, monthlyIncomeRequirement: val }))}
                       placeholder="3000"
                     />
                     {errors.monthlyIncomeRequirement && <p className="mt-2 text-sm text-red-600">{errors.monthlyIncomeRequirement}</p>}
