@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
@@ -650,21 +651,23 @@ const Mortgage = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
-              <input
+              <MemoryInput
                 type="number"
+                fieldKey="mortgage.calculator.homePrice"
                 value={homePrice}
-                onChange={(e) => setHomePrice(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                onChange={(val) => setHomePrice(parseInt(val || 0))}
+                className="w-full"
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-              <input
+              <MemoryInput
                 type="number"
+                fieldKey="mortgage.calculator.downPayment"
                 value={downPayment}
-                onChange={(e) => setDownPayment(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                onChange={(val) => setDownPayment(parseInt(val || 0))}
+                className="w-full"
               />
             </div>
             
@@ -860,41 +863,39 @@ const Mortgage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Employer Name</label>
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="mortgage.app.employerName"
                       value={employerName}
-                      onChange={(e) => setEmployerName(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setEmployerName(val)}
                       placeholder="Company Name"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="mortgage.app.jobTitle"
                       value={jobTitle}
-                      onChange={(e) => setJobTitle(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setJobTitle(val)}
                       placeholder="Your Position"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income (₦)</label>
-                    <input
+                    <MemoryInput
                       type="number"
+                      fieldKey="mortgage.app.monthlyIncome"
                       value={monthlyIncome}
-                      onChange={(e) => setMonthlyIncome(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setMonthlyIncome(val)}
                       placeholder="500000"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Years of Employment</label>
-                    <input
+                    <MemoryInput
                       type="number"
+                      fieldKey="mortgage.app.yearsOfEmployment"
                       value={yearsOfEmployment}
-                      onChange={(e) => setYearsOfEmployment(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setYearsOfEmployment(val)}
                       placeholder="5"
                     />
                   </div>
@@ -906,31 +907,29 @@ const Mortgage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="mortgage.app.businessName"
                       value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setBusinessName(val)}
                       placeholder="Business Name"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="mortgage.app.businessType"
                       value={businessType}
-                      onChange={(e) => setBusinessType(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setBusinessType(val)}
                       placeholder="e.g., Consulting, Trading"
                     />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Business Income (₦)</label>
-                    <input
+                    <MemoryInput
                       type="number"
+                      fieldKey="mortgage.app.businessMonthlyIncome"
                       value={businessMonthlyIncome}
-                      onChange={(e) => setBusinessMonthlyIncome(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(val) => setBusinessMonthlyIncome(val)}
                       placeholder="750000"
                     />
                   </div>

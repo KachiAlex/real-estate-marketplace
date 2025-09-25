@@ -15,6 +15,7 @@ import {
   FaUpload
 } from 'react-icons/fa';
 import AvatarUpload from '../components/AvatarUpload';
+import MemoryInput from '../components/MemoryInput';
 import { useAuth } from '../contexts/AuthContext';
 
 const VendorProfile = () => {
@@ -197,11 +198,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.personal.firstName"
                       value={formData.personal.firstName}
-                      onChange={(e) => handleInputChange('personal', 'firstName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('personal', 'firstName', val)}
+                      placeholder="First name"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.personal.firstName}</p>
@@ -210,11 +211,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.personal.lastName"
                       value={formData.personal.lastName}
-                      onChange={(e) => handleInputChange('personal', 'lastName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('personal', 'lastName', val)}
+                      placeholder="Last name"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.personal.lastName}</p>
@@ -226,11 +227,12 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   {isEditing ? (
-                    <input
+                    <MemoryInput
                       type="email"
+                      fieldKey="vendor.personal.email"
                       value={formData.personal.email}
-                      onChange={(e) => handleInputChange('personal', 'email', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('personal', 'email', val)}
+                      placeholder="name@example.com"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.personal.email}</p>
@@ -239,11 +241,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
                   {isEditing ? (
-                    <input
-                      type="tel"
+                    <MemoryInput
+                      fieldKey="vendor.personal.phone"
                       value={formData.personal.phone}
-                      onChange={(e) => handleInputChange('personal', 'phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('personal', 'phone', val)}
+                      placeholder="+234..."
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.personal.phone}</p>
@@ -254,11 +256,11 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <MemoryInput
+                    fieldKey="vendor.personal.address"
                     value={formData.personal.address}
-                    onChange={(e) => handleInputChange('personal', 'address', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('personal', 'address', val)}
+                    placeholder="Address"
                   />
                 ) : (
                   <p className="text-gray-900">{profileData.personal.address}</p>
@@ -268,11 +270,13 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                 {isEditing ? (
-                  <textarea
-                    rows={4}
+                  <MemoryInput
+                    fieldKey="vendor.personal.bio"
                     value={formData.personal.bio}
-                    onChange={(e) => handleInputChange('personal', 'bio', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('personal', 'bio', val)}
+                    multiline
+                    rows={4}
+                    placeholder="Tell us about yourself"
                   />
                 ) : (
                   <p className="text-gray-900">{profileData.personal.bio}</p>
@@ -288,11 +292,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.business.companyName"
                       value={formData.business.companyName}
-                      onChange={(e) => handleInputChange('business', 'companyName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('business', 'companyName', val)}
+                      placeholder="Company name"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.business.companyName}</p>
@@ -301,11 +305,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.business.licenseNumber"
                       value={formData.business.licenseNumber}
-                      onChange={(e) => handleInputChange('business', 'licenseNumber', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('business', 'licenseNumber', val)}
+                      placeholder="License number"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.business.licenseNumber}</p>
@@ -317,11 +321,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.business.specialization"
                       value={formData.business.specialization}
-                      onChange={(e) => handleInputChange('business', 'specialization', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('business', 'specialization', val)}
+                      placeholder="Specialization"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.business.specialization}</p>
@@ -330,11 +334,11 @@ const VendorProfile = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <MemoryInput
+                      fieldKey="vendor.business.experience"
                       value={formData.business.experience}
-                      onChange={(e) => handleInputChange('business', 'experience', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onChange={(val) => handleInputChange('business', 'experience', val)}
+                      placeholder="Experience"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.business.experience}</p>
@@ -345,11 +349,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <MemoryInput
+                    fieldKey="vendor.business.languages"
                     value={formData.business.languages.join(', ')}
-                    onChange={(e) => handleInputChange('business', 'languages', e.target.value.split(', '))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('business', 'languages', val.split(', '))}
                     placeholder="English, Yoruba, French"
                   />
                 ) : (
@@ -360,11 +363,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <MemoryInput
+                    fieldKey="vendor.business.certifications"
                     value={formData.business.certifications.join(', ')}
-                    onChange={(e) => handleInputChange('business', 'certifications', e.target.value.split(', '))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('business', 'certifications', val.split(', '))}
                     placeholder="Real Estate License, Property Management"
                   />
                 ) : (
@@ -387,11 +389,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
                 {isEditing ? (
-                  <input
-                    type="url"
+                  <MemoryInput
+                    fieldKey="vendor.social.website"
                     value={formData.social.website}
-                    onChange={(e) => handleInputChange('social', 'website', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('social', 'website', val)}
                     placeholder="https://yourwebsite.com"
                   />
                 ) : (
@@ -402,11 +403,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
                 {isEditing ? (
-                  <input
-                    type="url"
+                  <MemoryInput
+                    fieldKey="vendor.social.linkedin"
                     value={formData.social.linkedin}
-                    onChange={(e) => handleInputChange('social', 'linkedin', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('social', 'linkedin', val)}
                     placeholder="https://linkedin.com/in/yourprofile"
                   />
                 ) : (
@@ -417,11 +417,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
                 {isEditing ? (
-                  <input
-                    type="url"
+                  <MemoryInput
+                    fieldKey="vendor.social.twitter"
                     value={formData.social.twitter}
-                    onChange={(e) => handleInputChange('social', 'twitter', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('social', 'twitter', val)}
                     placeholder="https://twitter.com/yourhandle"
                   />
                 ) : (
@@ -432,11 +431,10 @@ const VendorProfile = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
                 {isEditing ? (
-                  <input
-                    type="url"
+                  <MemoryInput
+                    fieldKey="vendor.social.instagram"
                     value={formData.social.instagram}
-                    onChange={(e) => handleInputChange('social', 'instagram', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    onChange={(val) => handleInputChange('social', 'instagram', val)}
                     placeholder="https://instagram.com/yourhandle"
                   />
                 ) : (
