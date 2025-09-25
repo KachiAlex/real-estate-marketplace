@@ -74,14 +74,20 @@ const InvestmentDetailsModal = ({ isOpen, onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-          <FaTimes />
-        </button>
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Investment Details</h2>
-        <p className="text-sm text-gray-600 mb-6">Provide investment information for this collateralized property.</p>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col relative">
+        {/* Fixed Header */}
+        <div className="p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <FaTimes />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">Investment Details</h2>
+          <p className="text-sm text-gray-600">Provide investment information for this collateralized property.</p>
+        </div>
+        
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Investment Title</label>
             <input name="title" value={form.title} onChange={handleChange} className={`w-full px-4 py-3 border-2 rounded-xl ${errors.title ? 'border-red-300' : 'border-gray-200'}`} placeholder="e.g., Greenwood Estate Fixed Income" />
@@ -99,9 +105,9 @@ const InvestmentDetailsModal = ({ isOpen, onClose, onSubmit }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
-            <div className="grid grid-cols-3 gap-2">
-              <input type="number" name="durationValue" value={form.durationValue} onChange={handleChange} className={`col-span-2 w-full px-4 py-3 border-2 rounded-xl ${errors.durationValue ? 'border-red-300' : 'border-gray-200'}`} placeholder="12" />
-              <select name="durationUnit" value={form.durationUnit} onChange={handleChange} className="w-full px-3 py-3 border-2 border-gray-200 rounded-xl">
+            <div className="flex gap-2">
+              <input type="number" name="durationValue" value={form.durationValue} onChange={handleChange} className={`flex-1 px-4 py-3 border-2 rounded-xl ${errors.durationValue ? 'border-red-300' : 'border-gray-200'}`} placeholder="12" />
+              <select name="durationUnit" value={form.durationUnit} onChange={handleChange} className="px-4 py-3 border-2 border-gray-200 rounded-xl min-w-[120px]">
                 <option value="monthly">Monthly</option>
                 <option value="annually">Annually</option>
               </select>
@@ -182,10 +188,12 @@ const InvestmentDetailsModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           )}
         </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700">Save & Publish</button>
+        </div>
+        
+        {/* Fixed Footer */}
+        <div className="p-6 pt-4 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0">
+          <button onClick={onClose} className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+          <button onClick={submit} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all">Save & Publish</button>
         </div>
       </div>
     </div>
