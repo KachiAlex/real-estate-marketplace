@@ -14,6 +14,7 @@ const GoogleMapsAutocomplete = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleMapsAvailable, setIsGoogleMapsAvailable] = useState(true);
+  const [memorySuggestions, setMemorySuggestions] = useState([]);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
   const autocompleteService = useRef(null);
@@ -24,6 +25,44 @@ const GoogleMapsAutocomplete = ({
   // Cache for frequently used addresses
   const addressCache = useRef(new Map());
   const maxCacheSize = 50;
+
+  // Address memory management
+  const getAddressMemory = () => {
+    try {
+      const stored = localStorage.getItem('addressMemory');
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Error loading address memory:', error);
+      return [];
+    }
+  };
+
+  const saveAddressToMemory = (address) => {
+    try {
+      const memory = getAddressMemory();
+      const newMemory = [
+        { address, timestamp: Date.now() },
+        ...memory.filter(item => item.address !== address)
+      ].slice(0, 10); // Keep only last 10 addresses
+      
+      localStorage.setItem('addressMemory', JSON.stringify(newMemory));
+      return newMemory;
+    } catch (error) {
+      console.error('Error saving address to memory:', error);
+      return [];
+    }
+  };
+
+  const getMemorySuggestions = (input) => {
+    if (!input || input.length < 2) return [];
+    
+    const memory = getAddressMemory();
+    return memory
+      .filter(item => 
+        item.address.toLowerCase().includes(input.toLowerCase())
+      )
+      .slice(0, 5); // Show max 5 memory suggestions
+  };
 
   useEffect(() => {
     // Initialize Google Maps services (API should already be preloaded)
@@ -96,6 +135,10 @@ const GoogleMapsAutocomplete = ({
   const getPlacePredictionsOptimized = useCallback((input) => {
     const currentRequestId = ++requestId.current;
     
+    // Get memory suggestions first
+    const memorySuggestions = getMemorySuggestions(input);
+    setMemorySuggestions(memorySuggestions);
+    
     // Check cache first
     const cacheKey = input.toLowerCase().trim();
     if (addressCache.current.has(cacheKey)) {
@@ -111,7 +154,7 @@ const GoogleMapsAutocomplete = ({
       console.warn('Google Maps autocomplete services not available');
       setIsLoading(false);
       setSuggestions([]);
-      setShowSuggestions(false);
+      setShowSuggestions(memorySuggestions.length > 0);
       return;
     }
 
@@ -196,6 +239,17 @@ const GoogleMapsAutocomplete = ({
     }
   }, [onChange, getPlacePredictionsOptimized]);
 
+  // Save address to memory when user finishes typing (on blur)
+  const handleInputBlur = useCallback((e) => {
+    const inputValue = e.target.value.trim();
+    if (inputValue.length > 5) { // Only save meaningful addresses
+      saveAddressToMemory(inputValue);
+    }
+    
+    // Call the original blur handler
+    handleBlur(e);
+  }, [handleBlur]);
+
   // Optimized place selection with caching
   const handleSuggestionClick = useCallback((suggestion) => {
     if (!placesService.current || !window.google?.maps?.places) {
@@ -243,6 +297,9 @@ const GoogleMapsAutocomplete = ({
             googleMapsUrl: place.url || `https://www.google.com/maps/place/?q=place_id:${suggestion.place_id}`
           });
 
+          // Save to address memory
+          saveAddressToMemory(place.formatted_address);
+
           // Update the input value
           onChange(place.formatted_address);
           setShowSuggestions(false);
@@ -278,6 +335,9 @@ const GoogleMapsAutocomplete = ({
             googleMapsUrl: place.url || `https://www.google.com/maps/place/?q=place_id:${suggestion.place_id}`
           });
 
+          // Save to address memory
+          saveAddressToMemory(place.formatted_address);
+
           // Update the input value
           onChange(place.formatted_address);
           setShowSuggestions(false);
@@ -289,6 +349,33 @@ const GoogleMapsAutocomplete = ({
     }
   }, [onPlaceSelect, onChange]);
 
+
+  const handleMemorySuggestionClick = useCallback((memorySuggestion) => {
+    // Clear debounce timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // Update the input value
+    onChange(memorySuggestion.address);
+    
+    // Call the onPlaceSelect callback with the memory data
+    onPlaceSelect({
+      address: memorySuggestion.address,
+      city: '',
+      state: '',
+      zipCode: '',
+      coordinates: {
+        latitude: null,
+        longitude: null
+      },
+      googleMapsUrl: ''
+    });
+
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setMemorySuggestions([]);
+  }, [onChange, onPlaceSelect]);
 
   const handleClearInput = useCallback(() => {
     // Clear debounce timer
@@ -329,13 +416,13 @@ const GoogleMapsAutocomplete = ({
   return (
     <div className="relative">
       <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          onFocus={handleFocus}
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onFocus={handleFocus}
           className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
             error ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
           }`}
@@ -374,11 +461,46 @@ const GoogleMapsAutocomplete = ({
         )}
 
         {/* Suggestions dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
+        {(showSuggestions && (suggestions.length > 0 || memorySuggestions.length > 0)) && (
         <div 
           ref={suggestionsRef}
           className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b-xl shadow-lg z-50 max-h-60 overflow-y-auto"
         >
+          {/* Memory Suggestions */}
+          {memorySuggestions.length > 0 && (
+            <>
+              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Recent Addresses</p>
+              </div>
+              {memorySuggestions.map((memorySuggestion, index) => (
+                <button
+                  key={`memory-${index}`}
+                  type="button"
+                  onClick={() => handleMemorySuggestionClick(memorySuggestion)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors focus:outline-none focus:bg-gray-50"
+                >
+                  <div className="flex items-start space-x-3">
+                    <FaMapMarkerAlt className="text-green-500 text-sm mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {memorySuggestion.address}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Previously used
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+              {suggestions.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Google Maps Suggestions</p>
+                </div>
+              )}
+            </>
+          )}
+          
+          {/* Google Maps Suggestions */}
           {suggestions.slice(0, 8).map((suggestion) => (
             <button
               key={suggestion.place_id}
@@ -402,7 +524,7 @@ const GoogleMapsAutocomplete = ({
             </button>
           ))}
         </div>
-      )}
+        )}
     </div>
   );
 };

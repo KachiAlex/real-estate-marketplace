@@ -7,6 +7,7 @@ import PropertyImageUpload from '../components/PropertyImageUpload';
 import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
 import AgentPropertyListing from '../components/AgentPropertyListing';
 import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
+import AddressMemory from '../components/AddressMemory';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 
 const AddProperty = () => {
@@ -557,44 +558,53 @@ const AddProperty = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">City</label>
-                  <input
-                    type="text"
-                    name="location.city"
+                  <AddressMemory
                     value={formData.location.city}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                      errors['location.city'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                    }`}
-                    placeholder="New York"
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, city: value }
+                      }));
+                    }}
+                    placeholder="Enter city..."
+                    fieldType="city"
+                    error={!!errors['location.city']}
                   />
                   {errors['location.city'] && <p className="mt-2 text-sm text-red-600">{errors['location.city']}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">State</label>
-                  <input
-                    type="text"
-                    name="location.state"
+                  <AddressMemory
                     value={formData.location.state}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
-                      errors['location.state'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
-                    }`}
-                    placeholder="NY"
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, state: value }
+                      }));
+                    }}
+                    placeholder="Enter state..."
+                    fieldType="state"
+                    error={!!errors['location.state']}
                   />
                   {errors['location.state'] && <p className="mt-2 text-sm text-red-600">{errors['location.state']}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">ZIP Code</label>
-                  <input
-                    type="text"
-                    name="location.zipCode"
+                  <AddressMemory
                     value={formData.location.zipCode}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="10001"
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, zipCode: value }
+                      }));
+                    }}
+                    placeholder="Enter ZIP code..."
+                    fieldType="zipCode"
+                    error={!!errors['location.zipCode']}
                   />
+                  {errors['location.zipCode'] && <p className="mt-2 text-sm text-red-600">{errors['location.zipCode']}</p>}
                 </div>
               </div>
 
@@ -691,13 +701,19 @@ const AddProperty = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Name</label>
-                    <input
-                      type="text"
-                      name="busStop.name"
+                    <AddressMemory
                       value={formData.location.nearestBusStop.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                      placeholder="Main St & 5th Ave"
+                      onChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          location: { 
+                            ...prev.location, 
+                            nearestBusStop: { ...prev.location.nearestBusStop, name: value }
+                          }
+                        }));
+                      }}
+                      placeholder="Enter bus stop name..."
+                      fieldType="busStop"
                     />
                   </div>
                   <div>
