@@ -127,6 +127,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       const { password: _, ...userWithoutPassword } = foundUser;
+      console.log('AuthContext: Login successful for user:', userWithoutPassword);
+      console.log('AuthContext: User role:', userWithoutPassword.role);
       setUser(userWithoutPassword);
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       

@@ -120,7 +120,14 @@ const Login = () => {
       setShowRoleSelection(false);
       
       // Navigate directly using React Router
-      const dashboardPath = selectedRole === 'vendor' ? '/vendor/dashboard' : '/dashboard';
+      let dashboardPath;
+      if (selectedRole === 'admin') {
+        dashboardPath = '/admin';
+      } else if (selectedRole === 'vendor') {
+        dashboardPath = '/vendor/dashboard';
+      } else {
+        dashboardPath = '/dashboard';
+      }
       console.log('Login: Navigating to:', dashboardPath);
       
       // Use setTimeout to ensure state updates are processed
@@ -342,6 +349,23 @@ const Login = () => {
               </div>
               
               <div className="space-y-4">
+                {loggedInUser.roles.includes('admin') && (
+                  <button
+                    onClick={() => handleRoleSelection('admin')}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                        <FaBuilding className="text-red-600 text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-gray-900">Admin Dashboard</h4>
+                        <p className="text-sm text-gray-600">Manage properties and users</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
                 {loggedInUser.roles.includes('buyer') && (
                   <button
                     onClick={() => handleRoleSelection('buyer')}

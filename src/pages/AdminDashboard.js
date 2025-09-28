@@ -32,7 +32,13 @@ const AdminDashboard = () => {
   }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    console.log('AdminDashboard: User state:', user);
+    console.log('AdminDashboard: User role:', user?.role);
+    console.log('AdminDashboard: User activeRole:', user?.activeRole);
+    console.log('AdminDashboard: Is admin?', user?.role === 'admin' || user?.activeRole === 'admin');
+    
+    if (!user || (user.role !== 'admin' && user.activeRole !== 'admin')) {
+      console.log('AdminDashboard: Redirecting to login - user:', user, 'role:', user?.role, 'activeRole:', user?.activeRole);
       navigate('/login');
       return;
     }
@@ -68,7 +74,7 @@ const AdminDashboard = () => {
     setVerificationNotes('');
   };
 
-  if (!user || user.role !== 'admin') {
+  if (!user || (user.role !== 'admin' && user.activeRole !== 'admin')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
