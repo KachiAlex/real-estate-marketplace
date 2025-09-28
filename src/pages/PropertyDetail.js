@@ -4,6 +4,7 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { createInspectionRequest } from '../services/inspectionService';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,9 @@ const PropertyDetail = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState('');
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [preferredDate, setPreferredDate] = useState('');
+  const [preferredTime, setPreferredTime] = useState('');
 
   useEffect(() => {
     if (properties && id) {
@@ -87,8 +91,16 @@ const PropertyDetail = () => {
       navigate('/login');
       return;
     }
-    
-    // Create viewing request data
+    // Open scheduling modal to pick date/time
+    setShowScheduleModal(true);
+  };
+
+  const handleConfirmSchedule = async () => {
+    if (!preferredDate || !preferredTime) {
+      toast.error('Please select a preferred date and time');
+      return;
+    }
+
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
       propertyId: property.id,
@@ -97,29 +109,35 @@ const PropertyDetail = () => {
       userId: user.id,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
-      status: 'pending',
+      status: 'pending_vendor',
       requestedAt: new Date().toISOString(),
-      preferredDate: null,
-      preferredTime: null,
+      preferredDate,
+      preferredTime,
       message: '',
       agentContact: property.agent || {
         name: 'Property Agent',
         phone: '+234-XXX-XXXX',
         email: 'agent@example.com'
-      }
+      },
+      // Map to inspection request fields expected by vendor screen
+      projectId: property.id,
+      projectName: property.title,
+      projectLocation: property.location?.address || property.location || '',
+      buyerName: `${user.firstName} ${user.lastName}`,
+      buyerEmail: user.email,
+      vendorId: property.vendorId || property.owner?.id || undefined,
+      vendorEmail: property.vendorEmail || property.owner?.email || undefined
     };
-    
-    // Store in localStorage for demo
-    const existingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
-    existingRequests.push(viewingRequest);
-    localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
-    
-    toast.success('Viewing request sent! The agent will contact you within 24 hours to confirm the appointment.');
-    
-    // Show additional info
-    setTimeout(() => {
-      toast.info(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
-    }, 2000);
+    try {
+      await createInspectionRequest(viewingRequest);
+      setShowScheduleModal(false);
+      setPreferredDate('');
+      setPreferredTime('');
+      toast.success('Viewing scheduled! The vendor has been notified.');
+      toast(`Agent: ${viewingRequest.agentContact.name} | Phone: ${viewingRequest.agentContact.phone}`);
+    } catch (e) {
+      toast.error('Failed to create request');
+    }
   };
 
   const handleStartEscrow = () => {
@@ -486,6 +504,61 @@ const PropertyDetail = () => {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Send Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Viewing Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Schedule Viewing</h3>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
+                <input
+                  type="date"
+                  value={preferredDate}
+                  onChange={(e) => setPreferredDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
+                <input
+                  type="time"
+                  value={preferredTime}
+                  onChange={(e) => setPreferredTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowScheduleModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmSchedule}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Confirm
                 </button>
               </div>
             </div>

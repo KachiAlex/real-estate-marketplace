@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useVendor } from '../contexts/VendorContext';
 import PropertyImageUpload from '../components/PropertyImageUpload';
+import PropertyVideoUpload from '../components/PropertyVideoUpload';
+import PropertyDocumentUpload from '../components/PropertyDocumentUpload';
 import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
 import AgentPropertyListing from '../components/AgentPropertyListing';
 import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
 import AddressMemory from '../components/AddressMemory';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 import MemoryInput from '../components/MemoryInput';
+import storageService from '../services/storageService';
+import toast from 'react-hot-toast';
 
 const AddProperty = () => {
   const navigate = useNavigate();
-  const { createProperty } = useProperty();
+  const location = useLocation();
+  const { createProperty, updateProperty } = useProperty();
   const { user } = useAuth();
   const { isAgent, isPropertyOwner, checkDocumentStatus, uploadAgentDocument } = useVendor();
   
@@ -61,10 +66,9 @@ const AddProperty = () => {
   
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
   const [amenityInput, setAmenityInput] = useState('');
-  const [imageFiles, setImageFiles] = useState([]);
-  const [videoFiles, setVideoFiles] = useState([]);
-  const [documentFiles, setDocumentFiles] = useState([]);
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [investmentPayload, setInvestmentPayload] = useState(null);
   const [isListingAsAgent, setIsListingAsAgent] = useState(false);
@@ -252,27 +256,6 @@ const AddProperty = () => {
     }));
   };
 
-  const handleFileUpload = (e, type) => {
-    const files = Array.from(e.target.files);
-    
-    if (type === 'images') {
-      setImageFiles(prev => [...prev, ...files]);
-    } else if (type === 'videos') {
-      setVideoFiles(prev => [...prev, ...files]);
-    } else if (type === 'documents') {
-      setDocumentFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeFile = (index, type) => {
-    if (type === 'images') {
-      setImageFiles(prev => prev.filter((_, i) => i !== index));
-    } else if (type === 'videos') {
-      setVideoFiles(prev => prev.filter((_, i) => i !== index));
-    } else if (type === 'documents') {
-      setDocumentFiles(prev => prev.filter((_, i) => i !== index));
-    }
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -287,7 +270,10 @@ const AddProperty = () => {
     if (!formData.details.bedrooms) newErrors['details.bedrooms'] = 'Number of bedrooms is required';
     if (!formData.details.bathrooms) newErrors['details.bathrooms'] = 'Number of bathrooms is required';
     if (!formData.details.sqft) newErrors['details.sqft'] = 'Square footage is required';
-    if (!formData.location.googleMapsUrl) newErrors['location.googleMapsUrl'] = 'Google Maps link is required';
+    const hasCoords = Boolean(formData.location.coordinates.latitude) && Boolean(formData.location.coordinates.longitude);
+    if (!formData.location.googleMapsUrl && !hasCoords) {
+      newErrors['location.googleMapsUrl'] = 'Provide Google Maps link or both latitude and longitude';
+    }
     
     // Additional validation for agents
     if (isListingAsAgent && isAgent) {
@@ -326,23 +312,16 @@ const AddProperty = () => {
     }
 
     setLoading(true);
+    setProgressPercent(10);
+    setProgressMessage('Validating and creating property...');
     try {
-      // Convert files to base64 for demo (in production, upload to cloud storage)
-      const processFiles = (files) => {
-        return files.map((file, index) => ({
-          url: URL.createObjectURL(file), // For demo, use object URL
-          isPrimary: index === 0,
-          caption: file.name
-        }));
-      };
-
       const propertyData = {
         ...formData,
         price: parseFloat(formData.price),
-        vendorId: user.uid,
-        vendorName: user.displayName || user.email,
+        vendorId: user?.id || user?.uid,
+        vendorName: user?.displayName || user?.firstName + ' ' + user?.lastName || user?.email,
         isAgentListing: isListingAsAgent,
-        agentId: isListingAsAgent ? user.uid : null,
+        agentId: isListingAsAgent ? (user?.id || user?.uid) : null,
         createdAt: new Date(),
         listingType: formData.status,
         moderationStatus: isListingAsAgent ? 'pending_verification' : 'pending', // Agent listings need extra verification
@@ -353,9 +332,9 @@ const AddProperty = () => {
           sqft: parseInt(formData.details.sqft),
           yearBuilt: formData.details.yearBuilt ? parseInt(formData.details.yearBuilt) : null
         },
-        images: processFiles(imageFiles),
-        videos: processFiles(videoFiles),
-        documentation: processFiles(documentFiles),
+        images: (formData.images && formData.images.length > 0) ? formData.images : [],
+        videos: [],
+        documentation: [],
         // attach investment details if provided
         ...(investmentPayload ? {
           investment: investmentPayload.investment,
@@ -372,7 +351,76 @@ const AddProperty = () => {
       
       const result = await createProperty(propertyData);
       if (result.success) {
-        navigate('/dashboard');
+        const newId = result.id;
+        toast.success('Property created successfully!');
+        setProgressPercent(35);
+        setProgressMessage('Finalizing images...');
+
+        // Move temp images to final path if needed
+        let finalImages = [...(formData.images || [])];
+        try {
+          const imagesNeedingMove = finalImages.filter(img => img.path && img.path.includes('/temp'));
+          if (imagesNeedingMove.length > 0) {
+            const moved = await Promise.all(imagesNeedingMove.map(async (img) => {
+              const fileName = img.path.split('/').pop();
+              const newPath = `properties/${newId}/images/${fileName}`;
+              const res = await storageService.moveFile(img.path, newPath);
+              if (res.success) {
+                return { ...img, url: res.url, path: res.path };
+              }
+              return img;
+            }));
+            finalImages = finalImages.map(img => {
+              const updated = moved.find(m => (m.name && m.name === img.name) || (m.path && m.path === img.path));
+              return updated ? updated : img;
+            });
+          }
+        } catch (e) {
+          toast.error('Some images could not be finalized.');
+        }
+
+        // Upload videos/documents to final paths
+        try {
+          setProgressPercent(55);
+          setProgressMessage('Uploading videos and documents...');
+          const [videoUploadResult2, documentUploadResult2] = await Promise.all([
+            false
+              ? storageService.uploadMultipleFiles(
+                  [],
+                  `properties/${newId}/videos`,
+                  { customMetadata: { uploadedBy: user?.id || user?.uid, type: 'property_video', propertyId: newId } }
+                )
+              : Promise.resolve({ success: true, successful: [] }),
+            false
+              ? storageService.uploadMultipleFiles(
+                  [],
+                  `properties/${newId}/documents`,
+                  { customMetadata: { uploadedBy: user?.id || user?.uid, type: 'property_document', propertyId: newId } }
+                )
+              : Promise.resolve({ success: true, successful: [] })
+          ]);
+
+          const uploadedVideos2 = (videoUploadResult2.successful || []).map((r, index) => ({ url: r.url, isPrimary: index === 0, caption: r.name }));
+          const uploadedDocuments2 = (documentUploadResult2.successful || []).map((r, index) => ({ url: r.url, isPrimary: index === 0, caption: r.name }));
+
+          await updateProperty(newId, {
+            images: finalImages,
+            videos: uploadedVideos2,
+            documentation: uploadedDocuments2
+          });
+          toast.success('Media uploaded successfully');
+          setProgressPercent(100);
+          setProgressMessage('Done');
+        } catch (e) {
+          toast.error('Property saved, but media upload failed.');
+        }
+
+        // Navigate back to appropriate dashboard
+        if (location.pathname.includes('/vendor/')) {
+          navigate('/vendor/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setErrors({ general: result.message });
       }
@@ -380,6 +428,7 @@ const AddProperty = () => {
       setErrors({ general: error.message });
     } finally {
       setLoading(false);
+      setTimeout(() => { setProgressPercent(0); setProgressMessage(''); }, 500);
     }
   };
 
@@ -435,8 +484,9 @@ const AddProperty = () => {
                       value={formData.title}
                       onChange={(val) => setFormData((p) => ({ ...p, title: val }))}
                       placeholder="e.g., Beautiful 3-bedroom house"
+                      className="pl-12"
                     />
-                    <FaHome className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                    <FaHome className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
                   </div>
                   {errors.title && <p className="mt-2 text-sm text-red-600">{errors.title}</p>}
                 </div>
@@ -457,7 +507,7 @@ const AddProperty = () => {
                         <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
                       ))}
                     </select>
-                    <FaBuilding className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                    <FaBuilding className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
                   </div>
                   {errors.type && <p className="mt-2 text-sm text-red-600">{errors.type}</p>}
                 </div>
@@ -483,22 +533,23 @@ const AddProperty = () => {
                         </option>
                       ))}
                     </select>
-                    <FaCheck className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                    <FaCheck className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
                   </div>
                   {errors.status && <p className="mt-2 text-sm text-red-600">{errors.status}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Price ($)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Price (₦)</label>
                   <div className="relative">
                     <MemoryInput
                       type="number"
                       fieldKey="price"
                       value={formData.price}
                       onChange={(val) => setFormData((p) => ({ ...p, price: val }))}
-                      placeholder="500000"
+                      placeholder="50000000"
+                      className="pl-12"
                     />
-                    <FaDollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg font-bold">₦</span>
                   </div>
                   {errors.price && <p className="mt-2 text-sm text-red-600">{errors.price}</p>}
                 </div>
@@ -713,6 +764,52 @@ const AddProperty = () => {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Latitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="busStopCoordinates.latitude"
+                      value={formData.location.nearestBusStop.coordinates.latitude}
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: {
+                          ...p.location,
+                          nearestBusStop: {
+                            ...p.location.nearestBusStop,
+                            coordinates: {
+                              ...p.location.nearestBusStop.coordinates,
+                              latitude: val
+                            }
+                          }
+                        }
+                      }))}
+                      placeholder="40.7132"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Longitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="busStopCoordinates.longitude"
+                      value={formData.location.nearestBusStop.coordinates.longitude}
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: {
+                          ...p.location,
+                          nearestBusStop: {
+                            ...p.location.nearestBusStop,
+                            coordinates: {
+                              ...p.location.nearestBusStop.coordinates,
+                              longitude: val
+                            }
+                          }
+                        }
+                      }))}
+                      placeholder="-74.0059"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -845,36 +942,12 @@ const AddProperty = () => {
                     <FaVideo className="mr-2 text-red-600" />
                     Property Videos
                   </h4>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <input
-                        type="file"
-                        multiple
-                        accept="video/*"
-                        onChange={(e) => handleFileUpload(e, 'videos')}
-                        className="hidden"
-                        id="video-upload"
-                      />
-                    <label htmlFor="video-upload" className="cursor-pointer">
-                      <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload videos</p>
-                    </label>
-                  </div>
-                  {videoFiles.length > 0 && (
-                    <div className="space-y-2">
-                      {videoFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index, 'videos')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <FaTimes />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <PropertyVideoUpload
+                    propertyId={formData.id || 'temp'}
+                    onVideosChange={(videos) => setFormData(prev => ({ ...prev, videos }))}
+                    initialVideos={formData.videos || []}
+                    maxVideos={5}
+                  />
                 </div>
 
                 {/* Document Upload */}
@@ -883,36 +956,12 @@ const AddProperty = () => {
                     <FaFileAlt className="mr-2 text-green-600" />
                     Documents
                   </h4>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx"
-                      onChange={(e) => handleFileUpload(e, 'documents')}
-                      className="hidden"
-                      id="document-upload"
-                    />
-                    <label htmlFor="document-upload" className="cursor-pointer">
-                      <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload documents</p>
-                    </label>
-                  </div>
-                  {documentFiles.length > 0 && (
-                    <div className="space-y-2">
-                      {documentFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index, 'documents')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <FaTimes />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <PropertyDocumentUpload
+                    propertyId={formData.id || 'temp'}
+                    onDocumentsChange={(documents) => setFormData(prev => ({ ...prev, documentation: documents }))}
+                    initialDocuments={formData.documentation || []}
+                    maxDocuments={10}
+                  />
                 </div>
               </div>
             </div>
@@ -1051,13 +1100,13 @@ const AddProperty = () => {
                     {errors.interestRate && <p className="mt-2 text-sm text-red-600">{errors.interestRate}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Monthly Income Requirement ($)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Monthly Income Requirement (₦)</label>
                     <MemoryInput
                       type="number"
                       fieldKey="mortgageDetails.monthlyIncomeRequirement"
                       value={mortgageDetails.monthlyIncomeRequirement}
                       onChange={(val) => setMortgageDetails((p) => ({ ...p, monthlyIncomeRequirement: val }))}
-                      placeholder="3000"
+                      placeholder="300000"
                     />
                     {errors.monthlyIncomeRequirement && <p className="mt-2 text-sm text-red-600">{errors.monthlyIncomeRequirement}</p>}
                   </div>
@@ -1067,6 +1116,14 @@ const AddProperty = () => {
 
             {/* Submit Buttons */}
             <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6">
+              {loading && (
+                <div className="flex-1">
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                    <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
+                  </div>
+                  <p className="text-xs text-gray-500">{progressMessage}</p>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}

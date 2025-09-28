@@ -3,25 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  FaSearch, 
   FaMapMarkerAlt, 
-  FaBed, 
-  FaBath, 
   FaRulerCombined, 
   FaHeart, 
   FaShare, 
   FaArrowRight, 
   FaTimes,
-  FaFilter,
-  FaSort,
-  FaEye,
   FaCheck,
   FaBuilding,
   FaChartLine,
-  FaPlay
+  FaPlay,
+  FaSort,
+  FaBed,
+  FaBath
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import AIAssistant from '../components/AIAssistant';
 
 const Home = () => {
   const { properties, toggleFavorite } = useProperty();
@@ -1083,8 +1079,6 @@ const Home = () => {
         </div>
       </footer>
       
-      {/* AI Assistant */}
-      <AIAssistant />
     </div>
   );
 };

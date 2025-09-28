@@ -29,12 +29,15 @@ const MemoryInput = ({
   }, [storageKey]);
 
   const filteredSuggestions = useMemo(() => {
-    if (!value || value.toString().length < 1) return [];
     const memory = getMemory();
+    if (!value || value.toString().length < 1) {
+      // Show all suggestions when field is empty
+      return memory.slice(0, 8);
+    }
     const lower = value.toString().toLowerCase();
     return memory
       .filter((m) => m?.v?.toString().toLowerCase().includes(lower))
-      .slice(0, 6);
+      .slice(0, 8);
   }, [value, getMemory]);
 
   const saveToMemory = useCallback(
@@ -61,8 +64,9 @@ const MemoryInput = ({
   }, [saveToMemory, value]);
 
   const handleFocus = useCallback(() => {
-    if (filteredSuggestions.length > 0) setShowSuggestions(true);
-  }, [filteredSuggestions.length]);
+    const memory = getMemory();
+    if (memory.length > 0) setShowSuggestions(true);
+  }, [getMemory]);
 
   const handleSelect = useCallback(
     (suggestion) => {
@@ -78,7 +82,7 @@ const MemoryInput = ({
   }, [storageKey]);
 
   const commonProps = {
-    value,
+    value: value || '', // Ensure value is never null/undefined
     onChange: (e) => onChange(e.target.value),
     onBlur: handleBlur,
     onFocus: handleFocus,
@@ -112,17 +116,20 @@ const MemoryInput = ({
 
       {showSuggestions && filteredSuggestions.length > 0 && (
         <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center text-xs text-gray-600 uppercase tracking-wide">
-            <FaHistory className="mr-2" /> Recent entries
+          <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center text-xs text-blue-700 uppercase tracking-wide font-semibold">
+            <FaHistory className="mr-2" /> Recent entries ({filteredSuggestions.length})
           </div>
           {filteredSuggestions.map((s, idx) => (
             <button
               key={`${storageKey}-${idx}`}
               type="button"
               onClick={() => handleSelect(s)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+              className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors text-sm"
             >
-              {s.v}
+              <span className="font-medium">{s.v}</span>
+              <span className="text-xs text-gray-500 ml-2">
+                {new Date(s.t).toLocaleDateString()}
+              </span>
             </button>
           ))}
         </div>

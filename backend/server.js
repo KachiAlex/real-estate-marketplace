@@ -40,7 +40,8 @@ const mockUsers = [
     email: 'john@example.com',
     password: 'password123', // Add password for testing
     role: 'user',
-    avatar: 'https://picsum.photos/150/150'
+    avatar: 'https://picsum.photos/150/150',
+    isVerified: true
   },
   {
     id: '2',
@@ -49,7 +50,8 @@ const mockUsers = [
     email: 'admin@example.com',
     password: 'admin123', // Add password for testing
     role: 'admin',
-    avatar: 'https://picsum.photos/150/150'
+    avatar: 'https://picsum.photos/150/150',
+    isVerified: true
   },
   {
     id: '3',
@@ -58,7 +60,8 @@ const mockUsers = [
     email: 'onyedika.akoma@gmail.com',
     password: 'dikaoliver2660',
     role: 'user',
-    avatar: 'https://picsum.photos/150/150'
+    avatar: 'https://picsum.photos/150/150',
+    isVerified: true
   }
 ];
 
@@ -980,6 +983,38 @@ app.put('/api/admin/properties/:id/verify', (req, res) => {
   });
 });
 
+// Admin dashboard statistics
+app.get('/api/admin/stats', (req, res) => {
+  const totalUsers = mockUsers.length;
+  const totalAgents = mockUsers.filter(u => u.role === 'agent').length;
+  const verifiedUsers = mockUsers.filter(u => u.isVerified).length;
+  const totalProperties = mockProperties.length;
+  const pendingProperties = mockProperties.filter(p => p.verificationStatus === 'pending').length;
+  const approvedProperties = mockProperties.filter(p => p.verificationStatus === 'approved').length;
+  const rejectedProperties = mockProperties.filter(p => p.verificationStatus === 'rejected').length;
+
+  res.json({
+    success: true,
+    data: {
+      properties: {
+        total: totalProperties,
+        pending: pendingProperties,
+        approved: approvedProperties,
+        rejected: rejectedProperties
+      },
+      users: {
+        total: totalUsers,
+        agents: totalAgents,
+        verified: verifiedUsers
+      },
+      recentActivity: {
+        properties: mockProperties.slice(-5).reverse(),
+        users: mockUsers.slice(-5).reverse()
+      }
+    }
+  });
+});
+
 // Enhanced property creation with more fields
 app.post('/api/properties', (req, res) => {
   const { 
@@ -1049,6 +1084,34 @@ app.post('/api/properties', (req, res) => {
     success: true,
     message: 'Property created successfully',
     data: newProperty
+  });
+});
+
+// Update property endpoint
+app.put('/api/properties/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  const propertyIndex = mockProperties.findIndex(p => p.id === id);
+  
+  if (propertyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Property not found'
+    });
+  }
+  
+  // Update the property with new data
+  mockProperties[propertyIndex] = {
+    ...mockProperties[propertyIndex],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  
+  res.json({
+    success: true,
+    message: 'Property updated successfully',
+    data: mockProperties[propertyIndex]
   });
 });
 

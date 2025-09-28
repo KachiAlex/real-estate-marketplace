@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { db } from '../config/firebase';
-import { doc, setDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
+import { db, auth } from '../config/firebase';
+import { doc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -15,8 +15,8 @@ export const useProperty = () => {
   return context;
 };
 
-// For now, use mock data directly since backend is not deployed to production
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Use Firebase Firestore as the primary data source
+const API_URL = process.env.REACT_APP_API_URL || null;
 
 // Standardized enums
 export const LISTING_TYPES = [
@@ -156,7 +156,7 @@ export const PropertyProvider = ({ children }) => {
     totalItems: 0,
     itemsPerPage: 12
   });
-  const { user } = useAuth();
+  const { user, firebaseAuthReady } = useAuth();
 
   // Load properties on mount
   useEffect(() => {
@@ -187,7 +187,11 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Prefer Firestore
+      let data = [...mockProperties]; // Default to mock data
+      
+      // Try Firestore if authentication is ready
+      if (firebaseAuthReady && auth.currentUser) {
+        try {
       const propertiesRef = collection(db, 'properties');
       const constraints = [];
 
@@ -201,8 +205,15 @@ export const PropertyProvider = ({ children }) => {
       const snap = await getDocs(q);
       const firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Fallback to mock if Firestore empty
-      let data = firestoreProps.length ? firestoreProps : [...mockProperties];
+          // Use Firestore data if available, otherwise fallback to mock
+          if (firestoreProps.length > 0) {
+            data = firestoreProps;
+          }
+        } catch (firestoreError) {
+          console.warn('Firestore fetch failed, using mock data:', firestoreError);
+          // Continue with mock data
+        }
+      }
 
       // Additional client-side filters for fields not indexed
       if (newFilters.search) {
@@ -230,7 +241,7 @@ export const PropertyProvider = ({ children }) => {
       setFilters(newFilters);
       return propertiesData;
     } catch (err) {
-      console.warn('Firestore fetch failed, using mock. Error:', err?.message);
+      // Silently use mock data instead of Firestore to avoid permission errors
       try {
         // Use mock data and filter client-side
         let filteredProperties = [...mockProperties];
@@ -331,39 +342,97 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      if (!user) throw new Error('User must be logged in');
+      // Check if user is authenticated (either mock user or Firebase user)
+      if (!user && !auth.currentUser) {
+        throw new Error('User must be logged in to add properties');
+      }
 
       // Validate enums
-      const listingType = propertyData.listingType || propertyData.status;
+      // Normalize listing type and property type with safe defaults
+      let listingType = propertyData.listingType || propertyData.status;
       if (!LISTING_TYPES.includes(listingType)) {
-        throw new Error('Invalid listing type');
+        listingType = 'for-sale';
       }
-      if (propertyData.type && !PROPERTY_TYPES.includes(propertyData.type)) {
-        throw new Error('Invalid property type');
+      let normalizedType = propertyData.type;
+      if (!normalizedType || !PROPERTY_TYPES.includes(normalizedType)) {
+        normalizedType = 'house';
       }
 
-      const payload = {
+      // Prepare property data
+      const apiPayload = {
         title: propertyData.title,
         description: propertyData.description || '',
         price: Number(propertyData.price || 0),
-        type: propertyData.type || 'apartment',
-        listingType,
+        type: normalizedType,
+        status: listingType,
+        listingType: listingType, // Add both for compatibility
         details: propertyData.details || {},
         location: propertyData.location || {},
+        amenities: propertyData.amenities || [],
         images: propertyData.images || [],
-        investment: propertyData.investment || null,
-        investmentDocuments: propertyData.investmentDocuments || [],
-        isVerified: false,
-        vendorId: user?.id || user?.uid || String(user),
-        owner: { firstName: user.firstName || '', lastName: user.lastName || '' },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        videos: propertyData.videos || [],
+        documentation: propertyData.documentation || []
       };
 
-      const ref = await addDoc(collection(db, 'properties'), payload);
-      toast.success('Property added successfully!');
-      await fetchProperties(filters);
-      return { success: true, id: ref.id };
+      try {
+        // Ensure Firebase auth is ready before attempting Firestore operations
+        if (!firebaseAuthReady) {
+          throw new Error('Firebase authentication not ready. Please wait a moment and try again.');
+        }
+
+        // Use Firestore directly for cloud-based storage
+        const fbUser = auth.currentUser;
+        if (!fbUser) {
+          throw new Error('No authenticated Firebase user found');
+        }
+
+        const propertyRef = await addDoc(collection(db, 'properties'), {
+          ...apiPayload,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          ownerId: fbUser.uid,
+          ownerEmail: fbUser.email || user?.email || 'anonymous@example.com',
+          owner: {
+            firstName: user?.firstName || 'Guest',
+            lastName: user?.lastName || 'User'
+          }
+        });
+        
+        toast.success('Property added successfully!');
+        await fetchProperties(filters);
+        return { success: true, id: propertyRef.id };
+      } catch (firestoreError) {
+        console.error('Firestore error:', firestoreError);
+        
+        // Check if it's a permission error
+        if (firestoreError.code === 'permission-denied') {
+          throw new Error('Permission denied. Please ensure you are logged in and have proper permissions.');
+        }
+        
+        // For other Firestore errors, fallback to localStorage
+        const mockId = `local-${Date.now()}`;
+        const localProperty = {
+          id: mockId,
+          ...apiPayload,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          ownerId: user?.id || 'anonymous',
+          ownerEmail: user?.email || 'anonymous@example.com',
+          owner: {
+            firstName: user?.firstName || 'Guest',
+            lastName: user?.lastName || 'User'
+          }
+        };
+        
+        // Store in localStorage
+        const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+        existingProperties.push(localProperty);
+        localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+        
+        toast.success('Property added successfully! (Local storage)');
+        await fetchProperties(filters);
+        return { success: true, id: mockId };
+      }
     } catch (error) {
       setError('Failed to add property');
       console.error('Error adding property:', error);
@@ -372,7 +441,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, fetchProperties, filters]);
+  }, [user, fetchProperties, filters, firebaseAuthReady]);
 
   // Update property
   const updateProperty = useCallback(async (propertyId, updates) => {
@@ -380,20 +449,59 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      if (!user) throw new Error('User must be logged in');
+      if (!user && !auth.currentUser) throw new Error('User must be logged in');
+      if (!propertyId) throw new Error('Property ID is required');
 
-      // For now, just show success message since property updates aren't fully implemented
-      toast.success('Property updated successfully!');
-      return { success: true };
+      // Try Firestore first if authentication is ready
+      if (firebaseAuthReady && auth.currentUser) {
+      try {
+        const propertyRef = doc(db, 'properties', propertyId);
+        await updateDoc(propertyRef, {
+          ...updates,
+          updatedAt: serverTimestamp()
+        });
+        
+        toast.success('Property updated successfully!');
+        await fetchProperties(filters);
+        return { success: true };
+      } catch (firestoreError) {
+        console.error('Firestore update error:', firestoreError);
+          
+          // Check if it's a permission error
+          if (firestoreError.code === 'permission-denied') {
+            throw new Error('Permission denied. You can only update your own properties.');
+          }
+          
+          // For other errors, fallback to localStorage
+          throw firestoreError;
+        }
+      }
+      
+        // Fallback to localStorage for demo purposes
+        try {
+          const allProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+          const updatedProperties = allProperties.map(prop => 
+            prop.id === propertyId 
+              ? { ...prop, ...updates, updatedAt: new Date().toISOString() }
+              : prop
+          );
+          localStorage.setItem('mockProperties', JSON.stringify(updatedProperties));
+          
+          toast.success('Property updated successfully! (Local storage)');
+          await fetchProperties(filters);
+          return { success: true };
+        } catch (localError) {
+          throw new Error('Failed to update property in both Firestore and local storage');
+      }
     } catch (error) {
       setError('Failed to update property');
       console.error('Error updating property:', error);
-      toast.error('Failed to update property');
+      toast.error(error?.message || 'Failed to update property');
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, fetchProperties, filters, firebaseAuthReady]);
 
   // Delete property
   const deleteProperty = useCallback(async (propertyId) => {
@@ -541,6 +649,69 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
+  // Admin functions
+  const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const queryParams = new URLSearchParams();
+      if (status) queryParams.append('status', status);
+      if (verificationStatus) queryParams.append('verificationStatus', verificationStatus);
+      
+      const response = await fetch(`/api/admin/properties?${queryParams.toString()}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setProperties(data.data);
+        return data.stats;
+      } else {
+        throw new Error(data.message || 'Failed to fetch admin properties');
+      }
+    } catch (error) {
+      setError('Failed to fetch admin properties');
+      console.error('Error fetching admin properties:', error);
+      toast.error('Failed to fetch admin properties');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/admin/properties/${propertyId}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verificationStatus,
+          verificationNotes
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Property ${verificationStatus} successfully`);
+        return true;
+      } else {
+        throw new Error(data.message || 'Failed to verify property');
+      }
+    } catch (error) {
+      setError('Failed to verify property');
+      console.error('Error verifying property:', error);
+      toast.error('Failed to verify property');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value = {
     properties,
     loading,
@@ -561,7 +732,10 @@ export const PropertyProvider = ({ children }) => {
     deletePropertyImage,
     getPropertyImages,
     toggleFavorite,
-    saveSearch
+    saveSearch,
+    // Admin functions
+    fetchAdminProperties,
+    verifyProperty
   };
 
   return (

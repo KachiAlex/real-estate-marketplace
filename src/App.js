@@ -42,6 +42,7 @@ import EscrowPaymentFlow from './components/EscrowPaymentFlow';
 import VendorInspectionRequests from './pages/VendorInspectionRequests';
 import BuyerInspectionRequests from './pages/BuyerInspectionRequests';
 import LoadingSpinner from './components/LoadingSpinner';
+import KIKI from './components/KIKI';
 
 // Lazy load vendor pages for better performance
 const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
@@ -410,6 +411,9 @@ function App() {
                   } />
                 </Routes>
               </div>
+              
+              {/* Global KIKI Assistant */}
+              <KIKI />
             </div>
               </SidebarProvider>
             </EscrowProvider>

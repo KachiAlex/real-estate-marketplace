@@ -530,7 +530,22 @@ const Dashboard = () => {
                     ₦{property.price?.toLocaleString()}
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{property.location}</p>
+                  <p className="text-gray-600 text-sm mb-3">
+                    {(() => {
+                      if (typeof property.location === 'string') {
+                        return property.location;
+                      }
+                      if (property.location && typeof property.location === 'object') {
+                        if (property.location.address) {
+                          return property.location.address;
+                        }
+                        const city = property.location.city || '';
+                        const state = property.location.state || '';
+                        return `${city}${city && state ? ', ' : ''}${state}`.trim();
+                      }
+                      return 'Location not specified';
+                    })()}
+                  </p>
                   
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                     <div className="flex items-center space-x-1">

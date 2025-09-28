@@ -14,9 +14,14 @@ import {
   FaQuestionCircle,
   FaLightbulb,
   FaChevronDown,
-  FaChevronUp
+  FaChevronUp,
+  FaBrain,
+  FaMagic,
+  FaRocket,
+  FaChartLine
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import KikiAI from '../services/kikiAI';
 
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +30,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "👋 Hello! I'm your AI Property Assistant. I'm here to help you navigate our platform, search for properties, create alerts, and answer any questions you might have. How can I assist you today?",
+      message: "👋 Hello! I'm KIKI, your AI Property Assistant. I'm here to help you navigate our platform, search for properties, create alerts, and answer any questions you might have. How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -37,14 +42,41 @@ const AIAssistant = () => {
   const { user } = useAuth();
   const { properties, searchProperties } = useProperty();
 
-  const quickSuggestions = [
-    { icon: FaSearch, text: "Search for properties in Lagos", action: "search_lagos" },
-    { icon: FaBell, text: "Create a property alert", action: "create_alert" },
-    { icon: FaHome, text: "Show me luxury properties", action: "show_luxury" },
-    { icon: FaUser, text: "Help with registration", action: "help_register" },
-    { icon: FaQuestionCircle, text: "How does escrow work?", action: "explain_escrow" },
-    { icon: FaLightbulb, text: "Investment opportunities", action: "show_investments" }
-  ];
+  const getQuickSuggestions = () => {
+    const baseSuggestions = [
+      { icon: FaSearch, text: "Find properties in Lagos", action: "search_lagos" },
+      { icon: FaBell, text: "Create property alert", action: "create_alert" },
+      { icon: FaHome, text: "Luxury properties", action: "show_luxury" },
+      { icon: FaUser, text: "Help me register", action: "help_register" },
+      { icon: FaQuestionCircle, text: "How does escrow work?", action: "explain_escrow" },
+      { icon: FaLightbulb, text: "Investment options", action: "show_investments" },
+      { icon: FaBrain, text: "What can you help me with?", action: "help_general" },
+      { icon: FaMagic, text: "Market insights", action: "market_info" }
+    ];
+    
+    // Add contextual suggestions based on current page
+    const currentPath = window.location.pathname;
+    const contextualSuggestions = [];
+    
+    if (currentPath.includes('/vendor')) {
+      contextualSuggestions.push(
+        { icon: FaRocket, text: "Help with property listing", action: "vendor_help" },
+        { icon: FaBell, text: "Manage my listings", action: "manage_listings" }
+      );
+    } else if (currentPath.includes('/properties')) {
+      contextualSuggestions.push(
+        { icon: FaSearch, text: "Advanced property search", action: "advanced_search" },
+        { icon: FaBell, text: "Save this search", action: "save_search" }
+      );
+    } else if (currentPath.includes('/investment')) {
+      contextualSuggestions.push(
+        { icon: FaLightbulb, text: "Investment calculator", action: "investment_calc" },
+        { icon: FaChartLine, text: "Market analysis", action: "market_analysis" }
+      );
+    }
+    
+    return [...baseSuggestions, ...contextualSuggestions].slice(0, 6);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -67,87 +99,74 @@ const AIAssistant = () => {
   const simulateAIResponse = (userMessage, action = null) => {
     setIsTyping(true);
     
+    // Set context for KIKI AI
+    KikiAI.setContext({
+      user: user,
+      currentPage: window.location.pathname,
+      lastAction: action
+    });
+    
     setTimeout(() => {
-      let response = "";
+      let aiResponse;
       
       if (action) {
+        // Handle quick suggestion actions
         switch (action) {
           case "search_lagos":
-            response = "🏠 I found several properties in Lagos! Let me show you some options. You can filter by price range, property type, and amenities. Would you like me to navigate you to the properties page with Lagos pre-selected?";
-            setTimeout(() => {
-              navigate('/properties?location=Lagos');
-              toast.success('Navigated to Lagos properties!');
-            }, 2000);
+            aiResponse = KikiAI.generateResponse("I want to search for properties in Lagos");
             break;
-            
           case "create_alert":
-            response = "🔔 I can help you create a property alert! This will notify you when new properties matching your criteria become available. What type of property are you looking for? (e.g., '3-bedroom apartment in Victoria Island under ₦50M')";
+            aiResponse = KikiAI.generateResponse("I want to create a property alert");
             break;
-            
           case "show_luxury":
-            response = "✨ Here are some luxury properties I recommend! Our luxury collection includes penthouses, waterfront villas, and high-end apartments with premium amenities. Would you like me to show you the luxury filter options?";
+            aiResponse = KikiAI.generateResponse("Show me luxury properties");
             break;
-            
           case "help_register":
-            response = "📝 I'd be happy to help you register! Registration gives you access to save properties, create alerts, contact agents, and use our escrow services. The process is simple - just provide your email, create a password, and verify your account. Would you like me to take you to the registration page?";
+            aiResponse = KikiAI.generateResponse("Help me register");
             break;
-            
           case "explain_escrow":
-            response = "🔒 Our escrow service provides secure property transactions! Here's how it works:\n\n1️⃣ Buyer initiates purchase\n2️⃣ Funds are held securely in escrow\n3️⃣ Property verification and documentation\n4️⃣ Buyer approves and releases funds to vendor\n\nThis protects both buyer and seller. Would you like to see a demo of the escrow process?";
+            aiResponse = KikiAI.generateResponse("Explain how escrow works");
             break;
-            
           case "show_investments":
-            response = "💰 Great choice! We offer various investment opportunities including REITs, land banking, and property crowdfunding. Our investment platform provides detailed analytics and projected returns. Would you like me to show you current investment opportunities?";
+            aiResponse = KikiAI.generateResponse("Show me investment opportunities");
             break;
-            
           default:
-            response = getContextualResponse(userMessage.toLowerCase());
+            aiResponse = KikiAI.generateResponse(userMessage);
         }
       } else {
-        response = getContextualResponse(userMessage.toLowerCase());
+        // Use advanced KIKI AI for natural language processing
+        aiResponse = KikiAI.generateResponse(userMessage);
       }
       
       setIsTyping(false);
-      addMessage(response, 'ai');
-    }, 1500 + Math.random() * 1000); // Simulate thinking time
+      addMessage(aiResponse.response, 'ai');
+      
+      // Handle actions from KIKI AI
+      if (aiResponse.action) {
+        setTimeout(() => {
+          if (aiResponse.action.type === 'navigate') {
+            const params = new URLSearchParams();
+            if (aiResponse.action.params) {
+              Object.entries(aiResponse.action.params).forEach(([key, value]) => {
+                if (value) {
+                  if (Array.isArray(value)) {
+                    params.append(key, value.join(','));
+                  } else {
+                    params.append(key, value.toString());
+                  }
+                }
+              });
+            }
+            const queryString = params.toString();
+            const path = queryString ? `${aiResponse.action.path}?${queryString}` : aiResponse.action.path;
+            navigate(path);
+            toast.success(`Navigated to ${aiResponse.action.path}!`);
+          }
+        }, 2000);
+      }
+    }, 800 + Math.random() * 400); // Faster response time
   };
 
-  const getContextualResponse = (message) => {
-    if (message.includes('price') || message.includes('cost') || message.includes('naira') || message.includes('₦')) {
-      return "💰 Our properties range from ₦20M to ₦250M+. You can use our advanced filters to set your budget range. We also offer mortgage calculator to help estimate monthly payments. Would you like me to show you properties in a specific price range?";
-    }
-    
-    if (message.includes('location') || message.includes('area') || message.includes('where')) {
-      return "📍 We have properties across Nigeria's prime locations including Lagos (Victoria Island, Lekki, Ikoyi), Abuja (Maitama, Asokoro), and other major cities. Which area interests you most?";
-    }
-    
-    if (message.includes('mortgage') || message.includes('loan') || message.includes('finance')) {
-      return "🏦 We provide mortgage assistance and have partnerships with leading banks. Our mortgage calculator can help estimate your monthly payments. Would you like me to show you the mortgage calculator or connect you with our finance partners?";
-    }
-    
-    if (message.includes('document') || message.includes('paper') || message.includes('title')) {
-      return "📋 All our properties come with verified documentation. We ensure proper title verification, survey plans, and legal compliance. Our legal team handles all paperwork through the escrow process for your security.";
-    }
-    
-    if (message.includes('agent') || message.includes('contact') || message.includes('call')) {
-      return "👤 I can help you connect with verified property agents! Each property listing has contact details for the responsible agent. You can also schedule property viewings directly through our platform. Need help contacting a specific agent?";
-    }
-    
-    if (message.includes('search') || message.includes('find') || message.includes('look')) {
-      return "🔍 I can help you search for properties! Use our advanced search with filters for location, price, bedrooms, amenities, and more. What type of property are you looking for? I can guide you through the search process.";
-    }
-    
-    if (message.includes('save') || message.includes('favorite') || message.includes('bookmark')) {
-      return "❤️ You can save properties to your favorites by clicking the heart icon on any property card. Saved properties are accessible from your dashboard. Would you like me to show you how to manage your saved properties?";
-    }
-    
-    if (message.includes('help') || message.includes('how') || message.includes('guide')) {
-      return "🤝 I'm here to help! I can assist with:\n• Property search and filtering\n• Creating property alerts\n• Understanding the buying process\n• Escrow and payment information\n• Registration and account setup\n• Investment opportunities\n\nWhat specific help do you need?";
-    }
-    
-    // Default response
-    return `🤖 I understand you're asking about "${message}". I'm here to help with property search, alerts, registration, escrow services, and more. Could you be more specific about what you'd like to know? You can also try one of the quick suggestions below!`;
-  };
 
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
@@ -183,7 +202,7 @@ const AIAssistant = () => {
           <button
             onClick={() => setIsOpen(true)}
             className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group animate-pulse"
-            title="Open AI Assistant"
+            title="Open KIKI Assistant"
           >
             <FaRobot className="text-white text-2xl group-hover:scale-110 transition-transform" />
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -205,7 +224,7 @@ const AIAssistant = () => {
                 <FaRobot className="text-sm" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">AI Property Assistant</h3>
+                <h3 className="font-semibold text-sm">KIKI - AI Assistant</h3>
                 <p className="text-xs opacity-80">Online • Ready to help</p>
               </div>
             </div>
@@ -264,7 +283,7 @@ const AIAssistant = () => {
                   <div className="space-y-2">
                     <p className="text-xs text-gray-500 text-center">Quick suggestions:</p>
                     <div className="grid grid-cols-1 gap-2">
-                      {quickSuggestions.map((suggestion, index) => (
+                      {getQuickSuggestions().map((suggestion, index) => (
                         <button
                           key={index}
                           onClick={() => handleSuggestionClick(suggestion)}

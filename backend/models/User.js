@@ -48,6 +48,17 @@ const userSchema = new mongoose.Schema({
   verificationExpires: Date,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  verificationNotes: {
+    type: String,
+    maxlength: [500, 'Verification notes cannot exceed 500 characters']
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  verifiedAt: {
+    type: Date
+  },
   lastLogin: {
     type: Date,
     default: Date.now

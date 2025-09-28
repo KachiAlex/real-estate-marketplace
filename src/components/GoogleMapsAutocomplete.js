@@ -122,7 +122,7 @@ const GoogleMapsAutocomplete = ({
           setIsGoogleMapsAvailable(false);
         });
       } else {
-        console.warn('Google Maps API key not configured. Autocomplete will be disabled.');
+        // Silently disable autocomplete without console warning
         // Set a flag to disable autocomplete functionality
         autocompleteService.current = null;
         placesService.current = null;
@@ -151,7 +151,7 @@ const GoogleMapsAutocomplete = ({
 
     // Check if services are available
     if (!autocompleteService.current || !window.google?.maps?.places) {
-      console.warn('Google Maps autocomplete services not available');
+        // Silently handle unavailable Google Maps services
       setIsLoading(false);
       setSuggestions([]);
       setShowSuggestions(memorySuggestions.length > 0);
@@ -245,10 +245,13 @@ const GoogleMapsAutocomplete = ({
     if (inputValue.length > 5) { // Only save meaningful addresses
       saveAddressToMemory(inputValue);
     }
-    
-    // Call the original blur handler
-    handleBlur(e);
-  }, [handleBlur]);
+    // Defer hiding suggestions using local logic to avoid referencing before init
+    setTimeout(() => {
+      if (!suggestionsRef.current?.contains(document.activeElement)) {
+        setShowSuggestions(false);
+      }
+    }, 200);
+  }, []);
 
   // Optimized place selection with caching
   const handleSuggestionClick = useCallback((suggestion) => {

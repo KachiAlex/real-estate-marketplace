@@ -148,6 +148,22 @@ const propertySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  verificationNotes: {
+    type: String,
+    maxlength: [500, 'Verification notes cannot exceed 500 characters']
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  verifiedAt: {
+    type: Date
+  },
   inquiries: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,

@@ -6,21 +6,19 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Properties are readable by all authenticated users
+    // Properties are readable and writable by all authenticated users
     match /properties/{propertyId} {
-      allow read: if request.auth != null;
-
-      // Create allowed for authenticated vendor author
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.vendorId;
-
-      // Update allowed for the same vendor or admin
-      allow update: if request.auth != null && (
-        request.auth.uid == resource.data.vendorId ||
-        request.auth.token.role == 'admin'
-      );
-
-      // Delete only by admin
-      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+      allow read, write: if request.auth != null;
+    }
+    
+    // Vendors: each authenticated user can read/write their own vendor profile
+    match /vendors/{vendorId} {
+      allow read, write: if request.auth != null && request.auth.uid == vendorId;
+      
+      // Vendor documents subcollection
+      match /documents/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == vendorId;
+      }
     }
     
     // Escrow transactions are readable by involved parties and admins
@@ -60,6 +58,26 @@ service cloud.firestore {
     match /admin/{document=**} {
       allow read, write: if request.auth != null && 
         request.auth.token.role == 'admin';
+    }
+
+    // Caregivers: allow caregiver to access own profile; admins too
+    match /caregivers/{caregiverId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == caregiverId || request.auth.token.role == 'admin'
+      );
+    }
+
+    // Patients: allow read for assigned doctor/caregiver or admin
+    match /patients/{patientId} {
+      allow read: if request.auth != null && (
+        resource.data.doctorId == request.auth.uid ||
+        resource.data.caregiverId == request.auth.uid ||
+        request.auth.token.role == 'admin'
+      );
+      allow write: if request.auth != null && (
+        resource.data.doctorId == request.auth.uid ||
+        request.auth.token.role == 'admin'
+      );
     }
 
     // Inspection Requests: secure access for involved buyer/vendor

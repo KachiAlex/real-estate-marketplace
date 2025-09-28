@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../config/firebase';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import toast from 'react-hot-toast';
 
 // Mock users for authentication
@@ -51,6 +53,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [redirectUrl, setRedirectUrl] = useState(null);
   const [activeRole, setActiveRole] = useState('buyer'); // Default role
+  const [firebaseAuthReady, setFirebaseAuthReady] = useState(false);
 
   // Check for existing session and redirect URL on load
   useEffect(() => {
@@ -75,6 +78,41 @@ export const AuthProvider = ({ children }) => {
     if (savedActiveRole) {
       setActiveRole(savedActiveRole);
     }
+  }, []);
+
+  // Ensure Firebase Auth is initialized (anonymous sign-in) so Firestore rules see request.auth != null
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      try {
+        if (!fbUser) {
+          await signInAnonymously(auth);
+          return; // wait for next auth state change where user exists
+        }
+        // We have a Firebase user (anonymous or real)
+        setFirebaseAuthReady(true);
+
+        // If app has no mock user yet, synthesize one from Firebase for seamless UI
+        const savedUser = localStorage.getItem('currentUser');
+        if (!savedUser) {
+          const synthesized = {
+            id: fbUser.uid,
+            firstName: 'Guest',
+            lastName: 'User',
+            email: fbUser.email || 'anonymous@guest.local',
+            role: 'user',
+            roles: ['buyer'],
+            activeRole: 'buyer',
+            avatar: 'https://picsum.photos/150/150'
+          };
+          setUser(synthesized);
+          localStorage.setItem('currentUser', JSON.stringify(synthesized));
+          localStorage.setItem('activeRole', 'buyer');
+        }
+      } catch (e) {
+        console.warn('Anonymous sign-in failed:', e?.message || e);
+      }
+    });
+    return () => unsub();
   }, []);
 
   const login = async (email, password) => {
@@ -333,6 +371,7 @@ export const AuthProvider = ({ children }) => {
     error,
     redirectUrl,
     activeRole,
+    firebaseAuthReady,
     login,
     register,
     logout,

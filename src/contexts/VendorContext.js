@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { db, auth } from '../config/firebase';
+import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 
 const VendorContext = createContext();
 
@@ -72,26 +74,52 @@ export const VendorProvider = ({ children }) => {
   const fetchVendorProfile = async () => {
     try {
       setLoading(true);
-      console.log('Loading mock vendor profile for user:', user?.email);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Use mock data
-      const vendorData = {
-        ...mockVendorProfile,
-        // Add user-specific data if available
-        ...(user?.vendorData || {})
-      };
-      
-      setVendorProfile(vendorData);
-      setIsAgent(vendorData.isAgent || false);
-      setIsPropertyOwner(vendorData.isPropertyOwner || false);
-      
-      // Set mock agent documents
-      setAgentDocuments(mockAgentDocuments);
-      
-      console.log('Mock vendor profile loaded:', vendorData);
+      const fbUser = auth.currentUser;
+      if (!fbUser) {
+        setVendorProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      // Read vendor profile from Firestore
+      const vendorRef = doc(db, 'vendors', fbUser.uid);
+      const snap = await getDoc(vendorRef);
+
+      if (!snap.exists()) {
+        // Create a minimal vendor profile if none exists yet
+        const seed = {
+          id: fbUser.uid,
+          businessName: user?.vendorData?.businessName || 'My Real Estate Business',
+          businessType: user?.vendorData?.businessType || 'Real Estate Agent',
+          isAgent: true,
+          isPropertyOwner: true,
+          contactInfo: {
+            email: fbUser.email || user?.email || '',
+          },
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        await setDoc(vendorRef, seed, { merge: true });
+        setVendorProfile(seed);
+        setIsAgent(true);
+        setIsPropertyOwner(true);
+      } else {
+        const data = snap.data();
+        setVendorProfile({ id: fbUser.uid, ...data });
+        setIsAgent(Boolean(data.isAgent));
+        setIsPropertyOwner(Boolean(data.isPropertyOwner));
+      }
+
+      // Load agent documents from subcollection vendors/{uid}/documents
+      try {
+        const docsRef = collection(db, 'vendors', fbUser.uid, 'documents');
+        const qDocs = await getDocs(docsRef);
+        const docs = qDocs.docs.map(d => ({ id: d.id, ...d.data() }));
+        setAgentDocuments(docs);
+      } catch {
+        setAgentDocuments([]);
+      }
     } catch (error) {
       console.error('Error fetching vendor profile:', error);
     } finally {
@@ -101,13 +129,12 @@ export const VendorProvider = ({ children }) => {
 
   const fetchAgentDocuments = async () => {
     try {
-      console.log('Loading mock agent documents');
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Return mock documents
-      setAgentDocuments(mockAgentDocuments);
-      console.log('Mock agent documents loaded:', mockAgentDocuments);
+      const fbUser = auth.currentUser;
+      if (!fbUser) return;
+      const docsRef = collection(db, 'vendors', fbUser.uid, 'documents');
+      const qDocs = await getDocs(docsRef);
+      const docs = qDocs.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAgentDocuments(docs);
     } catch (error) {
       console.error('Error fetching agent documents:', error);
     }
@@ -115,21 +142,12 @@ export const VendorProvider = ({ children }) => {
 
   const updateVendorProfile = async (profileData) => {
     try {
-      console.log('Updating vendor profile:', profileData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Update mock data
-      const updatedProfile = {
-        ...vendorProfile,
-        ...profileData,
-        updatedAt: new Date().toISOString()
-      };
-      
-      setVendorProfile(updatedProfile);
+      const fbUser = auth.currentUser;
+      if (!fbUser) throw new Error('Not authenticated');
+      const vendorRef = doc(db, 'vendors', fbUser.uid);
+      await setDoc(vendorRef, { ...profileData, updatedAt: serverTimestamp() }, { merge: true });
+      setVendorProfile(prev => ({ ...(prev || {}), ...profileData }));
       toast.success('Vendor profile updated successfully!');
-      
       return { success: true };
     } catch (error) {
       console.error('Error updating vendor profile:', error);
@@ -140,23 +158,17 @@ export const VendorProvider = ({ children }) => {
 
   const uploadAgentDocument = async (documentData) => {
     try {
-      console.log('Uploading agent document:', documentData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Create mock document
-      const newDocument = {
-        id: `doc-${Date.now()}`,
+      const fbUser = auth.currentUser;
+      if (!fbUser) throw new Error('Not authenticated');
+      const docsRef = collection(db, 'vendors', fbUser.uid, 'documents');
+      const payload = {
         ...documentData,
-        agentId: user?.id || 'mock-agent-id',
-        uploadedAt: new Date().toISOString(),
+        agentId: fbUser.uid,
+        uploadedAt: serverTimestamp(),
         status: 'pending'
       };
-      
-      // Add to mock documents
-      setAgentDocuments(prev => [...prev, newDocument]);
-      
+      const ref = await addDoc(docsRef, payload);
+      setAgentDocuments(prev => [...prev, { id: ref.id, ...payload }]);
       toast.success('Document uploaded successfully!');
       return { success: true };
     } catch (error) {

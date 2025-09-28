@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
+import PropertyCreationTest from '../components/PropertyCreationTest';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -13,6 +14,11 @@ const VendorDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [analytics, setAnalytics] = useState({});
   const [inquiries, setInquiries] = useState([]);
+  const [viewingRequests, setViewingRequests] = useState([]);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [proposalDate, setProposalDate] = useState('');
+  const [proposalTime, setProposalTime] = useState('');
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [showAddProperty, setShowAddProperty] = useState(false);
 
   const [newTitle, setNewTitle] = useState('');
@@ -138,6 +144,15 @@ const VendorDashboard = () => {
         priority: "medium"
       }
     ]);
+
+    // Load viewing requests created by buyers from localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      // Optional: filter to requests for this vendor's properties if you have mapping
+      setViewingRequests(stored);
+    } catch (e) {
+      setViewingRequests([]);
+    }
   }, []);
 
   const getStatusColor = (status) => {
@@ -414,7 +429,20 @@ const VendorDashboard = () => {
                       <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
                       <p className="text-gray-600 text-sm mb-3 flex items-center">
                         <FaMapMarkerAlt className="h-3 w-3 mr-1" />
-                        {property.location}
+                        {(() => {
+                          if (typeof property.location === 'string') {
+                            return property.location;
+                          }
+                          if (property.location && typeof property.location === 'object') {
+                            if (property.location.address) {
+                              return property.location.address;
+                            }
+                            const city = property.location.city || '';
+                            const state = property.location.state || '';
+                            return `${city}${city && state ? ', ' : ''}${state}`.trim();
+                          }
+                          return 'Location not specified';
+                        })()}
                       </p>
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
@@ -464,7 +492,7 @@ const VendorDashboard = () => {
           {activeTab === 'inquiries' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Property Inquiries</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Property Inquiries & Viewings</h3>
                 <div className="flex space-x-2">
                   <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option>All Inquiries</option>
@@ -520,6 +548,60 @@ const VendorDashboard = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Viewing Requests */}
+              <div className="pt-4">
+                <h4 className="text-md font-semibold text-gray-900 mb-3">Viewing Requests</h4>
+                {viewingRequests.length === 0 ? (
+                  <p className="text-sm text-gray-500">No viewing requests yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {viewingRequests.map((req) => (
+                      <div key={req.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-semibold text-gray-900">{req.userName || 'Buyer'}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs ${req.status==='confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{req.status || 'pending'}</span>
+                            </div>
+                            <p className="text-sm text-gray-700">Property: {req.propertyTitle}</p>
+                            <p className="text-xs text-gray-500">Requested: {new Date(req.requestedAt).toLocaleString()}</p>
+                            <div className="mt-2 text-sm text-gray-700">
+                              <p>Preferred: {req.preferredDate || '—'} {req.preferredTime || ''}</p>
+                              {req.vendorProposalDate && (
+                                <p className="text-blue-700">Your proposal: {req.vendorProposalDate} {req.vendorProposalTime || ''}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => {
+                                setSelectedRequestId(req.id);
+                                setProposalDate('');
+                                setProposalTime('');
+                                setShowProposalModal(true);
+                              }}
+                              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                            >
+                              Propose Alternative
+                            </button>
+                            <button
+                              onClick={() => {
+                                const updated = viewingRequests.map(r => r.id === req.id ? { ...r, status: 'confirmed' } : r);
+                                setViewingRequests(updated);
+                                localStorage.setItem('viewingRequests', JSON.stringify(updated));
+                              }}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -528,6 +610,10 @@ const VendorDashboard = () => {
           {activeTab === 'add' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900">Add New Property</h3>
+              {/* Property Creation Test - Temporary for debugging */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <PropertyCreationTest />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -775,6 +861,44 @@ const VendorDashboard = () => {
           )}
         </div>
       </div>
+      {/* Proposal Modal */}
+      {showProposalModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Propose Alternative Date</h3>
+              <button onClick={() => setShowProposalModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input type="date" value={proposalDate} onChange={(e) => setProposalDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <input type="time" value={proposalTime} onChange={(e) => setProposalTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowProposalModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">Cancel</button>
+                <button
+                  onClick={() => {
+                    if (!proposalDate || !proposalTime || !selectedRequestId) return;
+                    const updated = viewingRequests.map(r => r.id === selectedRequestId ? { ...r, vendorProposalDate: proposalDate, vendorProposalTime: proposalTime, status: 'proposed' } : r);
+                    setViewingRequests(updated);
+                    localStorage.setItem('viewingRequests', JSON.stringify(updated));
+                    setShowProposalModal(false);
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Send Proposal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

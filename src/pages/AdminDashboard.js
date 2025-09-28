@@ -114,7 +114,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Properties</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.pending || 0}</p>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.approved}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.approved || 0}</p>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.rejected}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.rejected || 0}</p>
               </div>
             </div>
           </div>
@@ -246,7 +246,17 @@ const AdminDashboard = () => {
                             {property.title}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {property.location.address}, {property.location.city}
+                            {(() => {
+                              if (typeof property.location === 'string') {
+                                return property.location;
+                              }
+                              if (property.location && typeof property.location === 'object') {
+                                const address = property.location.address || '';
+                                const city = property.location.city || '';
+                                return `${address}${address && city ? ', ' : ''}${city}`.trim();
+                              }
+                              return 'Location not specified';
+                            })()}
                           </div>
                           <div className="text-sm text-gray-500">
                             ${property.price.toLocaleString()}
