@@ -52,7 +52,7 @@ const VendorDashboard = () => {
   // Mock data for vendor dashboard
   useEffect(() => {
     // Mock properties data
-    setProperties([
+    const base = [
       {
         id: 1,
         title: "Luxury Apartment in Victoria Island",
@@ -101,7 +101,16 @@ const VendorDashboard = () => {
         dateListed: "2023-12-01",
         lastUpdated: "2024-01-05"
       }
-    ]);
+    ];
+
+    // Merge any locally added properties for this vendor
+    try {
+      const key = user ? `vendor_properties_${user.id}` : null;
+      const stored = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
+      setProperties([...(base || []), ...(stored || [])]);
+    } catch (e) {
+      setProperties(base);
+    }
 
     // Mock analytics data
     setAnalytics({
@@ -281,10 +290,8 @@ const VendorDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => {
+                  // Stay within the same component; avoid route changes that could reset auth
                   setActiveTab(tab.id);
-                  if (tab.id === 'add') navigate('/vendor/add-property');
-                  else if (tab.id === 'properties') navigate('/vendor/properties');
-                  else if (tab.id === 'overview') navigate('/vendor/dashboard');
                 }}
                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
@@ -389,7 +396,6 @@ const VendorDashboard = () => {
                 <button 
                   onClick={() => {
                     setActiveTab('add');
-                    navigate('/vendor/add-property');
                   }}
                   className="btn-primary flex items-center space-x-2"
                 >
@@ -734,13 +740,13 @@ const VendorDashboard = () => {
               )}
 
               <div className="flex items-center justify-end gap-2">
-                <button onClick={() => navigate('/vendor/properties')} className="px-4 py-2 rounded border">Cancel</button>
+                <button onClick={() => setActiveTab('properties')} className="px-4 py-2 rounded border">Cancel</button>
                 <button
                   onClick={async () => {
                     // simple validations
-                    if (!newTitle || !newPrice) return;
-                    if (!propertyDocsUrl) return;
-                    if (sellerRole === 'agent' && !attestationLetterUrl) return;
+                    if (!newTitle || !newPrice) { alert('Please provide title and price.'); return; }
+                    if (!propertyDocsUrl) { alert('Please provide property documents URL.'); return; }
+                    if (sellerRole === 'agent' && !attestationLetterUrl) { alert('Attestation letter is required for agents.'); return; }
 
                     const extra = {
                       sellerRole,
@@ -773,6 +779,31 @@ const VendorDashboard = () => {
                       ...extra
                     });
                     if (res.success) {
+                      // Optimistically add to vendor properties list and persist locally
+                      const created = {
+                        id: res.id || Date.now(),
+                        title: newTitle,
+                        price: Number(newPrice),
+                        location: googleMapsUrl || 'Location not specified',
+                        bedrooms: extra?.details?.bedrooms || 0,
+                        bathrooms: extra?.details?.bathrooms || 0,
+                        area: extra?.details?.sqft || 0,
+                        image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+                        status: 'pending',
+                        views: 0,
+                        inquiries: 0,
+                        favorites: 0,
+                        dateListed: new Date().toISOString(),
+                        lastUpdated: new Date().toISOString()
+                      };
+                      setProperties(prev => [created, ...prev]);
+                      try {
+                        if (user) {
+                          const key = `vendor_properties_${user.id}`;
+                          const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                          localStorage.setItem(key, JSON.stringify([created, ...stored]));
+                        }
+                      } catch {}
                       // reset form
                       setNewTitle('');
                       setNewPrice('');
@@ -790,7 +821,7 @@ const VendorDashboard = () => {
                       setGoogleMapsUrl('');
                       setLatitude('');
                       setLongitude('');
-                      navigate('/vendor/properties');
+                      setActiveTab('properties');
                     }
                   }}
                   className="px-4 py-2 rounded bg-brand-blue text-white"

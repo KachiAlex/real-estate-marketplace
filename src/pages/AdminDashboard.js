@@ -51,23 +51,22 @@ const AdminDashboard = () => {
     loadAdminData();
   }, [user, navigate, loadAdminData]);
 
-  // Sync activeTab with URL (?tab=)
+  // Initialize activeTab from URL once on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','escrow','disputes','users','settings'].includes(t) && t !== activeTab) {
+    if (t && ['properties','escrow','disputes','users','settings'].includes(t)) {
       setActiveTab(t);
     }
-  }, [location.search]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('tab') !== activeTab) {
-      params.set('tab', activeTab);
-      navigate({ pathname: '/admin', search: params.toString() }, { replace: true });
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, []);
+
+  const handleSwitchTab = (tabId) => {
+    setActiveTab(tabId);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', tabId);
+    navigate({ pathname: '/admin', search: params.toString() }, { replace: true });
+  };
 
   // Load other admin data
   useEffect(() => {
@@ -201,7 +200,7 @@ const AdminDashboard = () => {
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleSwitchTab(tab.id)}
                 className={`${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
                 {tab.label}

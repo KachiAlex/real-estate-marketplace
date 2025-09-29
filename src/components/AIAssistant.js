@@ -36,6 +36,11 @@ const AIAssistant = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const recognitionRef = useRef(null);
+  const speakingRef = useRef(false);
+  const [summary, setSummary] = useState(''); // rolling conversation summary for capacity
   const [showSuggestions, setShowSuggestions] = useState(true);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
@@ -96,6 +101,31 @@ const AIAssistant = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
+  const speakText = (text) => {
+    try {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      utter.rate = 1;
+      utter.pitch = 1;
+      speakingRef.current = true;
+      utter.onend = () => { speakingRef.current = false; };
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    } catch (_) {}
+  };
+
+  // Lightweight capacity boost: keep rolling summary and trim history
+  const maintainCapacity = (newUserMessage, newAIMessage) => {
+    const MAX_MESSAGES = 30; // keep UI messages manageable
+    setMessages(prev => prev.slice(-MAX_MESSAGES));
+    // naive summarization: append last exchange to summary when messages get long
+    if (messages.length > MAX_MESSAGES - 2) {
+      const condensed = `${summary}\nUser: ${newUserMessage}\nAI: ${newAIMessage}`.slice(-2000);
+      setSummary(condensed);
+    }
+  };
+
   const simulateAIResponse = (userMessage, action = null) => {
     setIsTyping(true);
     
@@ -140,6 +170,8 @@ const AIAssistant = () => {
       
       setIsTyping(false);
       addMessage(aiResponse.response, 'ai');
+      speakText(aiResponse.response);
+      maintainCapacity(userMessage, aiResponse.response);
       
       // Handle actions from KIKI AI
       if (aiResponse.action) {
@@ -187,6 +219,51 @@ const AIAssistant = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  // Speech-to-Text (Web Speech API)
+  const initRecognition = () => {
+    if (recognitionRef.current) return recognitionRef.current;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+    const rec = new SpeechRecognition();
+    rec.lang = 'en-US';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (event) => {
+      try {
+        const transcript = event.results[0][0].transcript;
+        setInputMessage(transcript);
+        // auto-send
+        addMessage(transcript);
+        simulateAIResponse(transcript);
+        setShowSuggestions(false);
+      } catch (_) {}
+    };
+    rec.onend = () => setIsListening(false);
+    recognitionRef.current = rec;
+    return rec;
+  };
+
+  const toggleListening = () => {
+    const rec = initRecognition();
+    if (!rec) {
+      toast.error('Voice input not supported in this browser');
+      return;
+    }
+    if (!isListening) {
+      try {
+        setIsListening(true);
+        rec.start();
+      } catch (_) {
+        setIsListening(false);
+      }
+    } else {
+      try {
+        rec.stop();
+      } catch (_) {}
+      setIsListening(false);
     }
   };
 
@@ -326,11 +403,16 @@ const AIAssistant = () => {
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center space-x-2">
                     <button
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Voice input (coming soon)"
+                      onClick={toggleListening}
+                      className={`transition-colors ${isListening ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
+                      title={isListening ? 'Stop listening' : 'Start voice input'}
                     >
                       <FaMicrophone className="text-sm" />
                     </button>
+                    <label className="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
+                      <input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} />
+                      Audio replies
+                    </label>
                     <span className="text-xs text-gray-400">Powered by AI</span>
                   </div>
                   <button
