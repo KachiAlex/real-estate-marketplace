@@ -1093,6 +1093,29 @@ app.get('/api/admin/users', (req, res) => {
   res.json({ success: true, data: users });
 });
 
+// Admin list vendors (mock: users with roles containing 'vendor' or vendorData present)
+app.get('/api/admin/vendors', (req, res) => {
+  const vendors = mockUsers.filter(u => u.roles?.includes?.('vendor') || u.vendorData);
+  res.json({ success: true, data: vendors });
+});
+
+// Admin list buyers (mock: users with role 'user' and not admin)
+app.get('/api/admin/buyers', (req, res) => {
+  const buyers = mockUsers.filter(u => u.role === 'user');
+  res.json({ success: true, data: buyers });
+});
+
+// Admin disputes endpoint (disputed or expired escrow)
+app.get('/api/admin/disputes', (req, res) => {
+  const now = Date.now();
+  const disputes = mockEscrowTransactions.filter(t => {
+    const isDisputed = (t.status || '').toLowerCase() === 'disputed';
+    const isExpired = t.expectedCompletion && new Date(t.expectedCompletion).getTime() < now && (t.status !== 'completed');
+    return isDisputed || isExpired;
+  });
+  res.json({ success: true, data: disputes });
+});
+
 
 // Admin dashboard statistics
 app.get('/api/admin/stats', (req, res) => {

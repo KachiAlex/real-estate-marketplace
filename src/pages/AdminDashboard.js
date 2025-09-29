@@ -28,6 +28,8 @@ const AdminDashboard = () => {
   const [escrows, setEscrows] = useState([]);
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [buyers, setBuyers] = useState([]);
   const [settings, setSettings] = useState({ verificationFee: 50000 });
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -72,10 +74,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [escrowRes, usersRes, settingsRes] = await Promise.all([
+        const [escrowRes, usersRes, vendorsRes, buyersRes, settingsRes, disputesRes] = await Promise.all([
           fetch('/api/admin/escrow').then(r => r.json()).catch(() => ({ success: false })),
           fetch('/api/admin/users').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/settings').then(r => r.json()).catch(() => ({ success: false }))
+          fetch('/api/admin/vendors').then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/admin/buyers').then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/admin/settings').then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/admin/disputes').then(r => r.json()).catch(() => ({ success: false }))
         ]);
 
         if (escrowRes?.success) {
@@ -83,7 +88,10 @@ const AdminDashboard = () => {
           setDisputes((escrowRes.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
         }
         if (usersRes?.success) setUsers(usersRes.data || []);
+        if (vendorsRes?.success) setVendors(vendorsRes.data || []);
+        if (buyersRes?.success) setBuyers(buyersRes.data || []);
         if (settingsRes?.success) setSettings(settingsRes.data || settings);
+        if (disputesRes?.success) setDisputes(disputesRes.data || disputes);
       } catch (_) {}
     };
     if (user && user.role === 'admin') {
@@ -509,25 +517,72 @@ const AdminDashboard = () => {
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900">Users</h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map(u => (
-                    <tr key={u.id}>
-                      <td className="px-6 py-4 text-sm">{u.firstName} {u.lastName}</td>
-                      <td className="px-6 py-4 text-sm">{u.email}</td>
-                      <td className="px-6 py-4 text-sm">{u.role}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="px-4 py-2 border-b bg-gray-50 font-medium">All Users</div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map(u => (
+                        <tr key={u.id}>
+                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
+                          <td className="px-4 py-2 text-sm">{u.email}</td>
+                          <td className="px-4 py-2 text-sm">{u.role}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="px-4 py-2 border-b bg-gray-50 font-medium">Vendors</div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {vendors.map(u => (
+                        <tr key={u.id}>
+                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
+                          <td className="px-4 py-2 text-sm">{u.email}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="px-4 py-2 border-b bg-gray-50 font-medium">Buyers</div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {buyers.map(u => (
+                        <tr key={u.id}>
+                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
+                          <td className="px-4 py-2 text-sm">{u.email}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}

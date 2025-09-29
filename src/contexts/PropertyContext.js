@@ -409,29 +409,41 @@ export const PropertyProvider = ({ children }) => {
           throw new Error('Permission denied. Please ensure you are logged in and have proper permissions.');
         }
         
-        // For other Firestore errors, fallback to localStorage
-        const mockId = `local-${Date.now()}`;
-        const localProperty = {
-          id: mockId,
-          ...apiPayload,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          ownerId: user?.id || 'anonymous',
-          ownerEmail: user?.email || 'anonymous@example.com',
-          owner: {
-            firstName: user?.firstName || 'Guest',
-            lastName: user?.lastName || 'User'
+        // For other Firestore errors, attempt to post to backend mock API, then fallback to localStorage
+        try {
+          const resp = await fetch('/api/properties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(apiPayload)
+          });
+          const data = await resp.json();
+          if (data?.success) {
+            toast.success('Property added successfully!');
+            await fetchProperties(filters);
+            return { success: true, id: data.data?.id };
           }
-        };
-        
-        // Store in localStorage
-        const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
-        existingProperties.push(localProperty);
-        localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
-        
-        toast.success('Property added successfully! (Local storage)');
-        await fetchProperties(filters);
-        return { success: true, id: mockId };
+          throw new Error('Backend create failed');
+        } catch (_) {
+          const mockId = `local-${Date.now()}`;
+          const localProperty = {
+            id: mockId,
+            ...apiPayload,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            ownerId: user?.id || 'anonymous',
+            ownerEmail: user?.email || 'anonymous@example.com',
+            owner: {
+              firstName: user?.firstName || 'Guest',
+              lastName: user?.lastName || 'User'
+            }
+          };
+          const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+          existingProperties.push(localProperty);
+          localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+          toast.success('Property added (local cache)');
+          await fetchProperties(filters);
+          return { success: true, id: mockId };
+        }
       }
     } catch (error) {
       setError('Failed to add property');
