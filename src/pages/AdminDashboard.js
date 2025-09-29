@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -13,6 +13,7 @@ const AdminDashboard = () => {
     verifyProperty 
   } = useProperty();
   const navigate = useNavigate();
+  const location = useLocation();
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -23,6 +24,12 @@ const AdminDashboard = () => {
   const [selectedVerificationStatus, setSelectedVerificationStatus] = useState('');
   const [verificationNotes, setVerificationNotes] = useState('');
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [activeTab, setActiveTab] = useState('properties');
+  const [escrows, setEscrows] = useState([]);
+  const [disputes, setDisputes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [settings, setSettings] = useState({ verificationFee: 50000 });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const loadAdminData = useCallback(async () => {
     const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
@@ -43,6 +50,80 @@ const AdminDashboard = () => {
     }
     loadAdminData();
   }, [user, navigate, loadAdminData]);
+
+  // Sync activeTab with URL (?tab=)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const t = params.get('tab');
+    if (t && ['properties','escrow','disputes','users','settings'].includes(t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') !== activeTab) {
+      params.set('tab', activeTab);
+      navigate({ pathname: '/admin', search: params.toString() }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // Load other admin data
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [escrowRes, usersRes, settingsRes] = await Promise.all([
+          fetch('/api/admin/escrow').then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/admin/users').then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/admin/settings').then(r => r.json()).catch(() => ({ success: false }))
+        ]);
+
+        if (escrowRes?.success) {
+          setEscrows(escrowRes.data || []);
+          setDisputes((escrowRes.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
+        }
+        if (usersRes?.success) setUsers(usersRes.data || []);
+        if (settingsRes?.success) setSettings(settingsRes.data || settings);
+      } catch (_) {}
+    };
+    if (user && user.role === 'admin') {
+      load();
+    }
+  }, [user, settings]);
+
+  const handleResolveEscrow = async (escrowId, decision) => {
+    try {
+      const res = await fetch(`/api/admin/escrow/${escrowId}/resolve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const esc = await fetch('/api/admin/escrow').then(r => r.json());
+        if (esc.success) {
+          setEscrows(esc.data || []);
+          setDisputes((esc.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
+        }
+      }
+    } catch (_) {}
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setSavingSettings(true);
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verificationFee: Number(settings.verificationFee || 0) })
+      });
+      const data = await res.json();
+      if (data.success) setSettings(data.data);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleStatusFilter = (status) => {
     setSelectedStatus(status);
@@ -108,7 +189,29 @@ const AdminDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            {[
+              { id: 'properties', label: 'Properties' },
+              { id: 'escrow', label: 'Escrow' },
+              { id: 'disputes', label: 'Disputes' },
+              { id: 'users', label: 'Users' },
+              { id: 'settings', label: 'Settings' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Stats Cards (properties tab only) */}
+        {activeTab === 'properties' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
@@ -166,8 +269,10 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Filters */}
+        {/* Filters (properties tab only) */}
+        {activeTab === 'properties' && (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,8 +305,10 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* Properties Table */}
+        {activeTab === 'properties' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">Properties</h2>
@@ -221,13 +328,16 @@ const AdminDashboard = () => {
                     Property
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vendor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Listed
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Verification
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Owner
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -269,6 +379,12 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {property.owner?.firstName} {property.owner?.lastName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         property.status === 'for-sale' ? 'bg-green-100 text-green-800' :
@@ -294,9 +410,6 @@ const AdminDashboard = () => {
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {property.owner.firstName} {property.owner.lastName}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {property.verificationStatus === 'pending' && (
                         <button
@@ -319,6 +432,135 @@ const AdminDashboard = () => {
             </table>
           </div>
         </div>
+        )}
+
+        {/* Escrow Tab */}
+        {activeTab === 'escrow' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {escrows.map(tx => (
+                    <tr key={tx.id}>
+                      <td className="px-6 py-4 text-sm">{tx.id}</td>
+                      <td className="px-6 py-4 text-sm">{tx.propertyTitle}</td>
+                      <td className="px-6 py-4 text-sm">{tx.buyerName}</td>
+                      <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
+                      <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
+                      <td className="px-6 py-4 text-sm space-x-2">
+                        <button onClick={() => handleResolveEscrow(tx.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
+                        <button onClick={() => handleResolveEscrow(tx.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Disputes Tab */}
+        {activeTab === 'disputes' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Disputes</h2>
+              <p className="text-sm text-gray-500">Transactions requiring admin mediation</p>
+            </div>
+            <div className="p-6">
+              {disputes.length === 0 ? (
+                <p className="text-gray-600">No disputes at the moment.</p>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {disputes.map(d => (
+                    <li key={d.id} className="py-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{d.propertyTitle}</p>
+                        <p className="text-sm text-gray-500">Buyer: {d.buyerName} · Seller: {d.sellerName}</p>
+                      </div>
+                      <div className="space-x-3">
+                        <button onClick={() => handleResolveEscrow(d.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
+                        <button onClick={() => handleResolveEscrow(d.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Users</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map(u => (
+                    <tr key={u.id}>
+                      <td className="px-6 py-4 text-sm">{u.firstName} {u.lastName}</td>
+                      <td className="px-6 py-4 text-sm">{u.email}</td>
+                      <td className="px-6 py-4 text-sm">{u.role}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Settings</h2>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Verification Fee (NGN)</label>
+                <input
+                  type="number"
+                  className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={settings.verificationFee}
+                  onChange={(e) => setSettings(s => ({ ...s, verificationFee: e.target.value }))}
+                  min={0}
+                />
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={savingSettings}
+                  className={`ml-3 px-4 py-2 rounded-md text-white ${savingSettings ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {savingSettings ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <div className="text-sm text-gray-500">Vendors will be charged this amount when requesting property verification.</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Verification Modal */}

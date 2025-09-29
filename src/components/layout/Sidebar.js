@@ -27,7 +27,15 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-         const menuItems = [
+         const isAdmin = user?.role === 'admin';
+
+         const menuItems = isAdmin ? [
+           { path: '/admin?tab=properties', label: 'Admin · Properties', icon: FaBuilding },
+           { path: '/admin?tab=escrow', label: 'Admin · Escrow', icon: FaFileContract },
+           { path: '/admin?tab=disputes', label: 'Admin · Disputes', icon: FaFileAlt },
+           { path: '/admin?tab=users', label: 'Admin · Users', icon: FaUser },
+           { path: '/admin?tab=settings', label: 'Admin · Settings', icon: FaCog },
+         ] : [
            { path: '/dashboard', label: 'Dashboard', icon: FaHome },
            { path: '/properties', label: 'Properties', icon: FaBuilding },
            { path: '/investment', label: 'Investment', icon: FaChartLine },
@@ -54,7 +62,7 @@ const Sidebar = () => {
             <FaUser className="text-gray-500" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">BUYER ACCOUNT</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{(user?.role || 'buyer').toUpperCase()} ACCOUNT</p>
             <p className="text-sm font-semibold text-gray-900">
               {user?.firstName?.toUpperCase() || 'OLUWASEUN'} {user?.lastName?.toUpperCase() || 'ADEYEMI'}
             </p>
