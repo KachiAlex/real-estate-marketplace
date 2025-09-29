@@ -103,11 +103,20 @@ const VendorDashboard = () => {
       }
     ];
 
-    // Merge any locally added properties for this vendor
+    // Merge any locally added properties for this vendor (support id or uid keys)
     try {
-      const key = user ? `vendor_properties_${user.id}` : null;
-      const stored = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
-      setProperties([...(base || []), ...(stored || [])]);
+      const idKey = user ? `vendor_properties_${user.id}` : null;
+      const uidKey = user?.uid ? `vendor_properties_${user.uid}` : null;
+      const storedById = idKey ? JSON.parse(localStorage.getItem(idKey) || '[]') : [];
+      const storedByUid = uidKey ? JSON.parse(localStorage.getItem(uidKey) || '[]') : [];
+      const seen = new Set();
+      const mergedStored = [...storedById, ...storedByUid].filter(item => {
+        const key = String(item?.id ?? '') + '|' + String(item?.title ?? '');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setProperties([...(base || []), ...(mergedStored || [])]);
     } catch (e) {
       setProperties(base);
     }

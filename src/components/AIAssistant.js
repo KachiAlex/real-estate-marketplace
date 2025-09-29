@@ -103,7 +103,36 @@ const AIAssistant = () => {
 
   const speakText = (text) => {
     try {
-      if (!voiceEnabled || !window.speechSynthesis) return;
+      if (!voiceEnabled) return;
+      // Prefer cloud TTS if configured
+      const useCloud = process.env.REACT_APP_USE_CLOUD_TTS === 'true';
+      if (useCloud) {
+        fetch('/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        }).then(r => r.json()).then(data => {
+          if (data?.success && data.audioBase64) {
+            const audio = new Audio(`data:audio/mp3;base64,${data.audioBase64}`);
+            audio.play().catch(() => {});
+          } else {
+            // fallback to browser
+            if (window.speechSynthesis) {
+              const utter = new SpeechSynthesisUtterance(text);
+              utter.lang = 'en-US';
+              window.speechSynthesis.speak(utter);
+            }
+          }
+        }).catch(() => {
+          if (window.speechSynthesis) {
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'en-US';
+            window.speechSynthesis.speak(utter);
+          }
+        });
+        return;
+      }
+      if (!window.speechSynthesis) return;
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'en-US';
       utter.rate = 1;

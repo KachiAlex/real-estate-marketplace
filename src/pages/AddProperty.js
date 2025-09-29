@@ -415,14 +415,40 @@ const AddProperty = () => {
           toast.error('Property saved, but media upload failed.');
         }
 
-        // Navigate back to appropriate dashboard
+        // Persist lightweight record for Vendor Dashboard "My Properties" list
+        try {
+          const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
+          if (vendorKey) {
+            const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
+            const created = {
+              id: newId,
+              title: propertyData.title,
+              price: Number(propertyData.price) || 0,
+              location: propertyData.location?.address || propertyData.location?.city || propertyData.location?.googleMapsUrl || 'Location not specified',
+              bedrooms: Number(propertyData.details?.bedrooms) || 0,
+              bathrooms: Number(propertyData.details?.bathrooms) || 0,
+              area: Number(propertyData.details?.sqft) || 0,
+              image: (propertyData.images && propertyData.images[0]?.url) || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+              status: 'pending',
+              views: 0,
+              inquiries: 0,
+              favorites: 0,
+              dateListed: new Date().toISOString(),
+              lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem(vendorKey, JSON.stringify([created, ...stored]));
+          }
+        } catch (_) {}
+
+        // Navigate to Vendor "My Properties" so the new listing is visible immediately
         if (location.pathname.includes('/vendor/')) {
-          navigate('/vendor/dashboard');
+          navigate('/vendor/properties');
         } else {
           navigate('/dashboard');
         }
       } else {
         setErrors({ general: result.message });
+        toast.error(result.message || 'Failed to create property');
       }
     } catch (error) {
       setErrors({ general: error.message });

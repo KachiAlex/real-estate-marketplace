@@ -707,6 +707,19 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Proxy for cloud TTS (Functions) to avoid CORS issues on local
+app.post('/tts', async (req, res) => {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const url = process.env.FIREBASE_TTS_URL || `${process.env.FIREBASE_FUNCTIONS_URL || 'https://us-central1-real-estate-marketplace-37544.cloudfunctions.net'}/tts`;
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req.body || {}) });
+    const data = await r.json();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'tts proxy failed' });
+  }
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.json({
