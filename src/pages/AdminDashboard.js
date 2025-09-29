@@ -34,11 +34,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     console.log('AdminDashboard: User state:', user);
     console.log('AdminDashboard: User role:', user?.role);
-    console.log('AdminDashboard: User activeRole:', user?.activeRole);
-    console.log('AdminDashboard: Is admin?', user?.role === 'admin' || user?.activeRole === 'admin');
+    console.log('AdminDashboard: Is admin?', user?.role === 'admin');
     
-    if (!user || (user.role !== 'admin' && user.activeRole !== 'admin')) {
-      console.log('AdminDashboard: Redirecting to login - user:', user, 'role:', user?.role, 'activeRole:', user?.activeRole);
+    if (!user || user.role !== 'admin') {
+      console.log('AdminDashboard: Redirecting to login - user:', user, 'role:', user?.role);
       navigate('/login');
       return;
     }
@@ -74,7 +73,7 @@ const AdminDashboard = () => {
     setVerificationNotes('');
   };
 
-  if (!user || (user.role !== 'admin' && user.activeRole !== 'admin')) {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -280,13 +279,20 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        property.verificationStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                        property.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {property.verificationStatus.charAt(0).toUpperCase() + property.verificationStatus.slice(1)}
-                      </span>
+                      {(() => {
+                        const vStatus = (property.verificationStatus || 'pending').toLowerCase();
+                        const badgeClass = vStatus === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : vStatus === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800';
+                        const label = vStatus.charAt(0).toUpperCase() + vStatus.slice(1);
+                        return (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass}`}>
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {property.owner.firstName} {property.owner.lastName}

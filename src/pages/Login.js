@@ -69,8 +69,14 @@ const Login = () => {
       if (result.success) {
         console.log('Login: Login successful, checking user roles...');
         
-        // Check if user has multiple roles
-        if (result.user && result.user.roles && result.user.roles.length > 1) {
+        // Check if user is admin - redirect directly to admin dashboard
+        if (result.user && result.user.role === 'admin') {
+          console.log('Login: Admin user detected, redirecting to admin dashboard');
+          const next = result.redirectUrl || '/admin';
+          navigate(next, { replace: true });
+        }
+        // Check if user has multiple roles (but not admin)
+        else if (result.user && result.user.roles && result.user.roles.length > 1) {
           console.log('Login: User has multiple roles, showing role selection');
           setLoggedInUser(result.user);
           setShowRoleSelection(true);
@@ -78,10 +84,10 @@ const Login = () => {
           // Single role or no roles, proceed normally
           if (result.redirectUrl) {
             console.log('Login: Redirecting to:', result.redirectUrl);
-            navigate(result.redirectUrl);
+            navigate(result.redirectUrl, { replace: true });
           } else {
             console.log('Login: No redirect URL, going to dashboard');
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
           }
         }
       } else {
@@ -349,23 +355,6 @@ const Login = () => {
               </div>
               
               <div className="space-y-4">
-                {loggedInUser.roles.includes('admin') && (
-                  <button
-                    onClick={() => handleRoleSelection('admin')}
-                    className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 group"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                        <FaBuilding className="text-red-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900">Admin Dashboard</h4>
-                        <p className="text-sm text-gray-600">Manage properties and users</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-
                 {loggedInUser.roles.includes('buyer') && (
                   <button
                     onClick={() => handleRoleSelection('buyer')}

@@ -49,7 +49,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [redirectUrl, setRedirectUrl] = useState(null);
   const [activeRole, setActiveRole] = useState('buyer'); // Default role
@@ -78,6 +78,8 @@ export const AuthProvider = ({ children }) => {
     if (savedActiveRole) {
       setActiveRole(savedActiveRole);
     }
+    // Mark hydration complete; onAuthStateChanged will also flip loading to false
+    setLoading(false);
   }, []);
 
   // Ensure Firebase Auth is initialized (anonymous sign-in) so Firestore rules see request.auth != null
@@ -108,8 +110,11 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('currentUser', JSON.stringify(synthesized));
           localStorage.setItem('activeRole', 'buyer');
         }
+        // Auth is ready at this point
+        setLoading(false);
       } catch (e) {
         console.warn('Anonymous sign-in failed:', e?.message || e);
+        setLoading(false);
       }
     });
     return () => unsub();

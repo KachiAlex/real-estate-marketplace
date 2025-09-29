@@ -65,6 +65,16 @@ const mockUsers = [
   }
 ];
 
+// Admin runtime settings (mock)
+let adminSettings = {
+  verificationFee: 50000 // NGN 50,000 default
+};
+
+// Vendor verification requests (mock)
+const mockVerificationRequests = [
+  // { id, vendorId, propertyId, amount, status: 'initiated'|'paid'|'cancelled', createdAt }
+];
+
 const mockProperties = [
   {
     id: '1',
@@ -982,6 +992,94 @@ app.put('/api/admin/properties/:id/verify', (req, res) => {
     data: property
   });
 });
+
+// Admin settings: get current settings
+app.get('/api/admin/settings', (req, res) => {
+  res.json({ success: true, data: adminSettings });
+});
+
+// Admin settings: update verification fee
+app.put('/api/admin/settings', (req, res) => {
+  const { verificationFee } = req.body;
+  if (verificationFee !== undefined) {
+    const feeNum = parseInt(verificationFee);
+    if (Number.isNaN(feeNum) || feeNum < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid verification fee' });
+    }
+    adminSettings.verificationFee = feeNum;
+  }
+  res.json({ success: true, data: adminSettings });
+});
+
+// Vendor initiates property verification (mock payment)
+app.post('/api/vendor/verification/initiate', (req, res) => {
+  const { vendorId, propertyId } = req.body;
+  if (!vendorId || !propertyId) {
+    return res.status(400).json({ success: false, message: 'vendorId and propertyId are required' });
+  }
+  const vendor = mockUsers.find(u => u.id === vendorId);
+  const property = mockProperties.find(p => p.id === propertyId);
+  if (!vendor) {
+    return res.status(404).json({ success: false, message: 'Vendor not found' });
+  }
+  if (!property) {
+    return res.status(404).json({ success: false, message: 'Property not found' });
+  }
+  const request = {
+    id: Date.now().toString(),
+    vendorId,
+    propertyId,
+    amount: adminSettings.verificationFee,
+    status: 'initiated',
+    createdAt: new Date().toISOString()
+  };
+  mockVerificationRequests.push(request);
+  // Mock a payment link
+  const paymentUrl = `https://checkout.flutterwave.com/v3/hosted/pay/VERIFY_${request.id}`;
+  res.json({ success: true, message: 'Verification payment initiated', data: { request, payment_url: paymentUrl } });
+});
+
+// Admin can mark verification request as paid (mock webhook)
+app.post('/api/admin/verification/:id/mark-paid', (req, res) => {
+  const { id } = req.params;
+  const reqIndex = mockVerificationRequests.findIndex(r => r.id === id);
+  if (reqIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Verification request not found' });
+  }
+  mockVerificationRequests[reqIndex].status = 'paid';
+  res.json({ success: true, data: mockVerificationRequests[reqIndex] });
+});
+
+// Admin list escrow transactions
+app.get('/api/admin/escrow', (req, res) => {
+  const { status } = req.query;
+  let tx = [...mockEscrowTransactions];
+  if (status) tx = tx.filter(t => (t.status || '').toLowerCase() === status.toLowerCase());
+  res.json({ success: true, data: tx });
+});
+
+// Admin mediation on escrow
+app.put('/api/admin/escrow/:id/resolve', (req, res) => {
+  const { id } = req.params;
+  const { decision, reason } = req.body; // decision: 'approve' | 'reject'
+  const tx = mockEscrowTransactions.find(e => e.id === id);
+  if (!tx) return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
+  if (!['approve', 'reject'].includes(decision)) {
+    return res.status(400).json({ success: false, message: 'Invalid decision' });
+  }
+  tx.status = decision === 'approve' ? 'completed' : 'cancelled';
+  tx.mediation = { decidedBy: 'admin', decision, reason: reason || '', decidedAt: new Date().toISOString() };
+  res.json({ success: true, message: 'Escrow mediation decision recorded', data: tx });
+});
+
+// Admin list users (buyers/vendors/admins)
+app.get('/api/admin/users', (req, res) => {
+  const { role } = req.query;
+  let users = [...mockUsers];
+  if (role) users = users.filter(u => u.role === role);
+  res.json({ success: true, data: users });
+});
+
 
 // Admin dashboard statistics
 app.get('/api/admin/stats', (req, res) => {

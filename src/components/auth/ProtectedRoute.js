@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, setAuthRedirect } = useAuth();
+  const location = useLocation();
 
   console.log('ProtectedRoute: Loading:', loading, 'User:', user);
 
@@ -20,7 +21,11 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    console.log('ProtectedRoute: No user found, redirecting to login');
+    console.log('ProtectedRoute: No user found, saving intended path and redirecting to login');
+    try {
+      // Remember where the user wanted to go
+      setAuthRedirect(location.pathname + location.search);
+    } catch {}
     return <Navigate to="/login" replace />;
   }
 
