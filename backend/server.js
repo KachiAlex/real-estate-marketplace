@@ -98,51 +98,9 @@ app.use(limiter);
 const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY || 'FLWSECK_TEST-1234567890abcdef';
 const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-1234567890abcdef';
 
-// Mock data for testing
-const mockUsers = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+234-801-234-5678',
-    password: 'password123', // Add password for testing
-    role: 'user',
-    avatar: 'https://picsum.photos/150/150',
-    isVerified: true,
-    isActive: true,
-    createdAt: new Date('2024-01-15').toISOString(),
-    lastLogin: new Date('2024-01-20').toISOString()
-  },
-  {
-    id: '2',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@example.com',
-    phone: '+234-802-345-6789',
-    password: 'admin123', // Add password for testing
-    role: 'admin',
-    avatar: 'https://picsum.photos/150/150',
-    isVerified: true,
-    isActive: true,
-    createdAt: new Date('2024-01-10').toISOString(),
-    lastLogin: new Date('2024-01-20').toISOString()
-  },
-  {
-    id: '3',
-    firstName: 'Onyedikachi',
-    lastName: 'Akoma',
-    email: 'onyedika.akoma@gmail.com',
-    phone: '+234-803-456-7890',
-    password: 'dikaoliver2660',
-    role: 'user',
-    avatar: 'https://picsum.photos/150/150',
-    isVerified: true,
-    isActive: true,
-    createdAt: new Date('2024-01-18').toISOString(),
-    lastLogin: new Date('2024-01-20').toISOString()
-  }
-];
+// Import mock data
+const mockUsers = require('./data/mockUsers');
+const mockProperties = require('./data/mockProperties');
 
 // Initialize admin settings if they don't exist
 async function initializeAdminSettings() {
