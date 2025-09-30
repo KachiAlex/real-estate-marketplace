@@ -11,12 +11,10 @@ import {
   FaEnvelope, 
   FaUser, 
   FaSignOutAlt,
-  FaCog,
   FaFileInvoiceDollar,
   FaQuestionCircle as FaHelp,
   FaFileContract,
-  FaCalendar,
-  FaFileAlt
+  FaCalendar
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -27,15 +25,7 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-         const isAdmin = user?.role === 'admin';
-
-         const menuItems = isAdmin ? [
-           { path: '/admin?tab=properties', label: 'Admin · Properties', icon: FaBuilding },
-           { path: '/admin?tab=escrow', label: 'Admin · Escrow', icon: FaFileContract },
-           { path: '/admin?tab=disputes', label: 'Admin · Disputes', icon: FaFileAlt },
-           { path: '/admin?tab=users', label: 'Admin · Users', icon: FaUser },
-           { path: '/admin?tab=settings', label: 'Admin · Settings', icon: FaCog },
-         ] : [
+         const menuItems = [
            { path: '/dashboard', label: 'Dashboard', icon: FaHome },
            { path: '/properties', label: 'Properties', icon: FaBuilding },
            { path: '/investment', label: 'Investment', icon: FaChartLine },
@@ -45,13 +35,10 @@ const Sidebar = () => {
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
            { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
+           { path: '/profile', label: 'Profile Settings', icon: FaUser },
+           { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
+           { path: '/help', label: 'Help & Support', icon: FaHelp },
          ];
-
-  const accountItems = [
-    { path: '/profile', label: 'Profile Settings', icon: FaUser },
-    { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
-    { path: '/help', label: 'Help & Support', icon: FaHelp },
-  ];
 
   return (
     <div className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40">
@@ -94,29 +81,6 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Account Section */}
-      <div className="p-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">ACCOUNT</p>
-        <nav className="space-y-1">
-          {accountItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-brand-blue text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="text-lg" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
 
       {/* Logout */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">

@@ -101,17 +101,36 @@ class StorageService {
   // Upload property images
   async uploadPropertyImages(files, propertyId, userId) {
     try {
-      const basePath = `properties/${propertyId}/images`;
-      const metadata = {
-        customMetadata: {
-          propertyId,
-          uploadedBy: userId,
-          uploadedAt: new Date().toISOString(),
-          type: 'property_image'
-        }
-      };
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+      formData.append('uploadType', 'property_images');
+      formData.append('metadata', JSON.stringify({
+        propertyId,
+        userId
+      }));
 
-      return await this.uploadMultipleFiles(files, basePath, metadata);
+      const response = await fetch('/api/upload/multiple', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return {
+          success: true,
+          successful: result.data.successful,
+          failed: result.data.failed,
+          total: result.data.total
+        };
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading property images:', error);
       return {
@@ -124,19 +143,35 @@ class StorageService {
   // Upload user avatar
   async uploadUserAvatar(file, userId) {
     try {
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `avatar_${userId}.${fileExtension}`;
-      const path = `users/${userId}/${fileName}`;
-      
-      const metadata = {
-        customMetadata: {
-          userId,
-          uploadedAt: new Date().toISOString(),
-          type: 'user_avatar'
-        }
-      };
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('uploadType', 'user_avatar');
+      formData.append('metadata', JSON.stringify({
+        userId
+      }));
 
-      return await this.uploadFile(file, path, metadata);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return {
+          success: true,
+          url: result.data.url,
+          path: result.data.publicId,
+          name: result.data.originalName,
+          size: result.data.size,
+          type: result.data.format
+        };
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading user avatar:', error);
       return {
@@ -149,21 +184,37 @@ class StorageService {
   // Upload escrow documents
   async uploadEscrowDocument(file, escrowId, documentType, userId) {
     try {
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${documentType}_${Date.now()}.${fileExtension}`;
-      const path = `escrow/${escrowId}/documents/${fileName}`;
-      
-      const metadata = {
-        customMetadata: {
-          escrowId,
-          documentType,
-          uploadedBy: userId,
-          uploadedAt: new Date().toISOString(),
-          type: 'escrow_document'
-        }
-      };
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('uploadType', 'escrow_document');
+      formData.append('metadata', JSON.stringify({
+        escrowId,
+        documentType,
+        userId
+      }));
 
-      return await this.uploadFile(file, path, metadata);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return {
+          success: true,
+          url: result.data.url,
+          path: result.data.publicId,
+          name: result.data.originalName,
+          size: result.data.size,
+          type: result.data.format
+        };
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading escrow document:', error);
       return {

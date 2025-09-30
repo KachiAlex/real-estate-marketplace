@@ -6,6 +6,7 @@ import { InvestmentProvider } from './contexts/InvestmentContext';
 import { EscrowProvider } from './contexts/EscrowContext';
 import { VendorProvider } from './contexts/VendorContext';
 import { SidebarProvider } from './contexts/SidebarContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -56,11 +57,12 @@ const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 function App() {
   return (
     <AuthProvider>
-      <VendorProvider>
-        <PropertyProvider>
-          <InvestmentProvider>
-            <EscrowProvider>
-              <SidebarProvider>
+      <NotificationProvider>
+        <VendorProvider>
+          <PropertyProvider>
+            <InvestmentProvider>
+              <EscrowProvider>
+                <SidebarProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
               <div className="flex flex-grow w-full">
@@ -415,11 +417,12 @@ function App() {
               {/* Global KIKI Assistant */}
               <KIKI />
             </div>
-              </SidebarProvider>
-            </EscrowProvider>
-          </InvestmentProvider>
-        </PropertyProvider>
-      </VendorProvider>
+                </SidebarProvider>
+              </EscrowProvider>
+            </InvestmentProvider>
+          </PropertyProvider>
+        </VendorProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

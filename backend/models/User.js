@@ -44,6 +44,24 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  suspendedAt: {
+    type: Date
+  },
+  suspendedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  activatedAt: {
+    type: Date
+  },
+  activatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   verificationToken: String,
   verificationExpires: Date,
   resetPasswordToken: String,

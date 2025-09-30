@@ -3,10 +3,61 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
+const http = require('http');
+const socketIo = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 5000;
+
+// Database connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/realestate', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(async () => {
+  console.log('✅ Connected to MongoDB');
+  // Initialize admin settings
+  await initializeAdminSettings();
+  // Initialize notification templates
+  const initializeNotificationTemplates = require('./scripts/initializeNotificationTemplates');
+  await initializeNotificationTemplates();
+  // Initialize notification service with Socket.IO
+  notificationService.initializeSocketIO(io);
+  // Verify email service connection
+  const emailStatus = await emailService.verifyConnection();
+  console.log('📧 Email service status:', emailStatus.success ? 'Ready' : 'Failed');
+})
+.catch((error) => {
+  console.error('❌ MongoDB connection error:', error);
+  process.exit(1);
+});
+
+// Import models
+const User = require('./models/User');
+const Property = require('./models/Property');
+const AdminSettings = require('./models/AdminSettings');
+const EscrowTransaction = require('./models/EscrowTransaction');
+const AuditLog = require('./models/AuditLog');
+const Notification = require('./models/Notification');
+const NotificationTemplate = require('./models/NotificationTemplate');
+
+// Import middleware
+const { protect, authorize } = require('./middleware/auth');
+const { validate, sanitizeInput, adminValidation } = require('./middleware/validation');
+const { logAdminAction } = require('./middleware/audit');
+
+// Import services
+const notificationService = require('./services/notificationService');
+const emailService = require('./services/emailService');
 
 // Middleware
 app.use(helmet());
@@ -19,6 +70,22 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Join user-specific room for notifications
+  socket.on('join_user_room', (userId) => {
+    socket.join(`user_${userId}`);
+    console.log(`User ${userId} joined their notification room`);
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -38,37 +105,73 @@ const mockUsers = [
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
+    phone: '+234-801-234-5678',
     password: 'password123', // Add password for testing
     role: 'user',
     avatar: 'https://picsum.photos/150/150',
-    isVerified: true
+    isVerified: true,
+    isActive: true,
+    createdAt: new Date('2024-01-15').toISOString(),
+    lastLogin: new Date('2024-01-20').toISOString()
   },
   {
     id: '2',
     firstName: 'Admin',
     lastName: 'User',
     email: 'admin@example.com',
+    phone: '+234-802-345-6789',
     password: 'admin123', // Add password for testing
     role: 'admin',
     avatar: 'https://picsum.photos/150/150',
-    isVerified: true
+    isVerified: true,
+    isActive: true,
+    createdAt: new Date('2024-01-10').toISOString(),
+    lastLogin: new Date('2024-01-20').toISOString()
   },
   {
     id: '3',
     firstName: 'Onyedikachi',
     lastName: 'Akoma',
     email: 'onyedika.akoma@gmail.com',
+    phone: '+234-803-456-7890',
     password: 'dikaoliver2660',
     role: 'user',
     avatar: 'https://picsum.photos/150/150',
-    isVerified: true
+    isVerified: true,
+    isActive: true,
+    createdAt: new Date('2024-01-18').toISOString(),
+    lastLogin: new Date('2024-01-20').toISOString()
   }
 ];
 
-// Admin runtime settings (mock)
-let adminSettings = {
-  verificationFee: 50000 // NGN 50,000 default
-};
+// Initialize admin settings if they don't exist
+async function initializeAdminSettings() {
+  try {
+    const existingSettings = await AdminSettings.findOne();
+    if (!existingSettings) {
+      const defaultSettings = new AdminSettings({
+        verificationFee: 50000,
+        escrowTimeoutDays: 7,
+        platformFee: 0.025,
+        maxFileSize: 10485760,
+        allowedFileTypes: [
+          'image/jpeg', 'image/png', 'image/webp', 
+          'application/pdf', 'application/msword', 
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ],
+        maintenanceMode: false,
+        emailNotifications: true,
+        smsNotifications: false,
+        autoApproveProperties: false,
+        autoApproveUsers: false
+      });
+      await defaultSettings.save();
+      console.log('✅ Admin settings initialized');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize admin settings:', error);
+  }
+}
 
 // Vendor verification requests (mock)
 const mockVerificationRequests = [
@@ -780,9 +883,13 @@ app.post('/api/auth/register', (req, res) => {
     firstName,
     lastName,
     email,
+    phone: req.body.phone || '', // Add phone number
     password, // Store password
     role: 'user',
-    avatar: 'https://picsum.photos/150/150'
+    avatar: 'https://picsum.photos/150/150',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString()
   };
 
   mockUsers.push(newUser);
@@ -956,72 +1063,203 @@ app.get('/api/properties/:id', (req, res) => {
 });
 
 // Admin routes for property verification
-app.get('/api/admin/properties', (req, res) => {
-  const { status, verificationStatus } = req.query;
-  
-  let filteredProperties = [...mockProperties];
-  
-  if (status) {
-    filteredProperties = filteredProperties.filter(p => p.status === status);
-  }
-  
-  if (verificationStatus) {
-    filteredProperties = filteredProperties.filter(p => p.verificationStatus === verificationStatus);
-  }
-  
-  res.json({
-    success: true,
-    data: filteredProperties,
-    stats: {
-      total: mockProperties.length,
-      pending: mockProperties.filter(p => p.verificationStatus === 'pending').length,
-      approved: mockProperties.filter(p => p.verificationStatus === 'approved').length,
-      rejected: mockProperties.filter(p => p.verificationStatus === 'rejected').length
+app.get('/api/admin/properties', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { 
+      status, 
+      verificationStatus, 
+      page = 1, 
+      limit = 20, 
+      search, 
+      sort = 'createdAt', 
+      order = 'desc' 
+    } = req.query;
+    
+    // Build filter
+    const filter = {};
+    if (status) filter.status = status;
+    if (verificationStatus) filter.verificationStatus = verificationStatus;
+    
+    // Text search
+    if (search) {
+      filter.$text = { $search: search };
     }
-  });
+    
+    // Build sort
+    const sortObj = {};
+    sortObj[sort] = order === 'desc' ? -1 : 1;
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const properties = await Property.find(filter)
+      .populate('owner', 'firstName lastName email avatar')
+      .populate('agent', 'firstName lastName email avatar')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await Property.countDocuments(filter);
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    // Get statistics
+    const stats = {
+      total: await Property.countDocuments(),
+      pending: await Property.countDocuments({ verificationStatus: 'pending' }),
+      approved: await Property.countDocuments({ verificationStatus: 'approved' }),
+      rejected: await Property.countDocuments({ verificationStatus: 'rejected' })
+    };
+    
+    res.json({
+      success: true,
+      data: properties,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      },
+      stats
+    });
+  } catch (error) {
+    console.error('Error fetching admin properties:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
-app.put('/api/admin/properties/:id/verify', (req, res) => {
-  const { id } = req.params;
-  const { verificationStatus, verificationNotes } = req.body;
-  
-  const property = mockProperties.find(p => p.id === id);
-  
-  if (!property) {
-    return res.status(404).json({
-      success: false,
-      message: 'Property not found'
-    });
+app.put('/api/admin/properties/:id/verify', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  validate([
+    body('verificationStatus').isIn(['approved', 'rejected']).withMessage('Verification status must be approved or rejected'),
+    body('verificationNotes').optional().trim().isLength({ max: 500 }).withMessage('Verification notes cannot exceed 500 characters')
+  ]),
+  logAdminAction('property_verified', 'property', { description: 'Property verification status updated by admin' }),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { verificationStatus, verificationNotes } = req.body;
+      
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid property ID' });
+      }
+      
+      const property = await Property.findById(id);
+      if (!property) {
+        return res.status(404).json({ success: false, message: 'Property not found' });
+      }
+      
+      // Update property verification
+      property.verificationStatus = verificationStatus;
+      property.verificationNotes = verificationNotes || '';
+      property.verifiedBy = req.user._id;
+      property.verifiedAt = new Date();
+      
+      await property.save();
+      
+      const populatedProperty = await Property.findById(property._id)
+        .populate('owner', 'firstName lastName email avatar');
+      
+      // Send notification to property owner
+      await notificationService.createPropertyVerificationNotification(
+        populatedProperty,
+        populatedProperty.owner,
+        verificationStatus === 'approved',
+        req.user,
+        verificationNotes
+      );
+      
+      res.json({
+        success: true,
+        message: `Property ${verificationStatus} successfully`,
+        data: populatedProperty
+      });
+    } catch (error) {
+      console.error('Error verifying property:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   }
-  
-  property.verificationStatus = verificationStatus;
-  property.verificationNotes = verificationNotes || '';
-  property.isVerified = verificationStatus === 'approved';
-  property.updatedAt = new Date().toISOString();
-  
-  res.json({
-    success: true,
-    message: `Property ${verificationStatus} successfully`,
-    data: property
-  });
-});
+);
 
 // Admin settings: get current settings
-app.get('/api/admin/settings', (req, res) => {
-  res.json({ success: true, data: adminSettings });
+app.get('/api/admin/settings', protect, authorize('admin'), async (req, res) => {
+  try {
+    const settings = await AdminSettings.findOne();
+    if (!settings) {
+      // Initialize settings if they don't exist
+      await initializeAdminSettings();
+      const newSettings = await AdminSettings.findOne();
+      return res.json({ success: true, data: newSettings });
+    }
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    console.error('Error fetching admin settings:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
-// Admin settings: update verification fee
-app.put('/api/admin/settings', (req, res) => {
-  const { verificationFee } = req.body;
-  if (verificationFee !== undefined) {
-    const feeNum = parseInt(verificationFee);
-    if (Number.isNaN(feeNum) || feeNum < 0) {
-      return res.status(400).json({ success: false, message: 'Invalid verification fee' });
+// Admin settings: update settings
+app.put('/api/admin/settings', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  validate(adminValidation.settings),
+  logAdminAction('settings_updated', 'settings', { description: 'Admin settings updated' }),
+  async (req, res) => {
+  try {
+    const allowedFields = [
+      'verificationFee', 'escrowTimeoutDays', 'platformFee', 'maxFileSize',
+      'allowedFileTypes', 'maintenanceMode', 'maintenanceMessage',
+      'emailNotifications', 'smsNotifications', 'autoApproveProperties', 'autoApproveUsers'
+    ];
+    
+    const updateData = {};
+    Object.keys(req.body).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updateData[key] = req.body[key];
+      }
+    });
+    
+    // Validation
+    if (updateData.verificationFee !== undefined) {
+      const feeNum = parseInt(updateData.verificationFee);
+      if (Number.isNaN(feeNum) || feeNum < 0) {
+        return res.status(400).json({ success: false, message: 'Invalid verification fee' });
+      }
+      updateData.verificationFee = feeNum;
     }
-    adminSettings.verificationFee = feeNum;
+    
+    if (updateData.escrowTimeoutDays !== undefined) {
+      const timeoutNum = parseInt(updateData.escrowTimeoutDays);
+      if (Number.isNaN(timeoutNum) || timeoutNum < 1) {
+        return res.status(400).json({ success: false, message: 'Invalid escrow timeout days' });
+      }
+      updateData.escrowTimeoutDays = timeoutNum;
+    }
+    
+    if (updateData.platformFee !== undefined) {
+      const fee = parseFloat(updateData.platformFee);
+      if (Number.isNaN(fee) || fee < 0 || fee > 1) {
+        return res.status(400).json({ success: false, message: 'Platform fee must be between 0 and 1' });
+      }
+      updateData.platformFee = fee;
+    }
+    
+    updateData.updatedAt = new Date();
+    
+    const settings = await AdminSettings.findOneAndUpdate(
+      {},
+      updateData,
+      { new: true, upsert: true }
+    );
+    
+    res.json({ success: true, data: settings, message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating admin settings:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
-  res.json({ success: true, data: adminSettings });
 });
 
 // Vendor initiates property verification (mock payment)
@@ -1064,33 +1302,174 @@ app.post('/api/admin/verification/:id/mark-paid', (req, res) => {
 });
 
 // Admin list escrow transactions
-app.get('/api/admin/escrow', (req, res) => {
-  const { status } = req.query;
-  let tx = [...mockEscrowTransactions];
-  if (status) tx = tx.filter(t => (t.status || '').toLowerCase() === status.toLowerCase());
-  res.json({ success: true, data: tx });
+app.get('/api/admin/escrow', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20, sort = 'createdAt', order = 'desc' } = req.query;
+    
+    // Build filter
+    const filter = {};
+    if (status) filter.status = status;
+    
+    // Build sort
+    const sortObj = {};
+    sortObj[sort] = order === 'desc' ? -1 : 1;
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const escrowTransactions = await EscrowTransaction.find(filter)
+      .populate('propertyId', 'title price location')
+      .populate('buyerId', 'firstName lastName email')
+      .populate('sellerId', 'firstName lastName email')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await EscrowTransaction.countDocuments(filter);
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    res.json({
+      success: true,
+      data: escrowTransactions,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching escrow transactions:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 // Admin mediation on escrow
-app.put('/api/admin/escrow/:id/resolve', (req, res) => {
-  const { id } = req.params;
-  const { decision, reason } = req.body; // decision: 'approve' | 'reject'
-  const tx = mockEscrowTransactions.find(e => e.id === id);
-  if (!tx) return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
-  if (!['approve', 'reject'].includes(decision)) {
-    return res.status(400).json({ success: false, message: 'Invalid decision' });
+app.put('/api/admin/escrow/:id/resolve', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  validate([
+    body('decision').isIn(['approve', 'reject']).withMessage('Decision must be approve or reject'),
+    body('reason').optional().trim().isLength({ max: 500 }).withMessage('Reason cannot exceed 500 characters')
+  ]),
+  logAdminAction('escrow_resolved', 'escrow', { description: 'Escrow dispute resolved by admin' }),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { decision, reason } = req.body;
+      
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid escrow transaction ID' });
+      }
+      
+      const escrowTransaction = await EscrowTransaction.findById(id)
+        .populate('propertyId', 'title price location')
+        .populate('buyerId', 'firstName lastName email')
+        .populate('sellerId', 'firstName lastName email');
+      
+      if (!escrowTransaction) {
+        return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
+      }
+      
+      // Update escrow status and mediation info
+      escrowTransaction.status = decision === 'approve' ? 'completed' : 'cancelled';
+      escrowTransaction.mediation = {
+        required: true,
+        initiatedBy: escrowTransaction.buyerId._id,
+        initiatedAt: new Date(),
+        resolvedBy: req.user._id,
+        resolvedAt: new Date(),
+        decision: decision === 'approve' ? 'buyer_favor' : 'seller_favor',
+        reason: reason || 'Admin mediation decision'
+      };
+      
+      if (decision === 'approve') {
+        escrowTransaction.actualCompletion = new Date();
+      }
+      
+      // Add timeline entry
+      escrowTransaction.timeline.push({
+        action: 'admin_mediation',
+        description: `Admin ${decision}d the escrow transaction`,
+        performedBy: req.user._id,
+        metadata: { decision, reason }
+      });
+      
+      await escrowTransaction.save();
+      
+      // Send notifications to buyer and seller
+      await notificationService.createEscrowNotification(
+        escrowTransaction,
+        escrowTransaction.buyerId,
+        'escrow_resolved',
+        req.user
+      );
+
+      await notificationService.createEscrowNotification(
+        escrowTransaction,
+        escrowTransaction.sellerId,
+        'escrow_resolved',
+        req.user
+      );
+      
+      res.json({ 
+        success: true, 
+        message: `Escrow transaction ${decision}d successfully`, 
+        data: escrowTransaction 
+      });
+    } catch (error) {
+      console.error('Error resolving escrow transaction:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   }
-  tx.status = decision === 'approve' ? 'completed' : 'cancelled';
-  tx.mediation = { decidedBy: 'admin', decision, reason: reason || '', decidedAt: new Date().toISOString() };
-  res.json({ success: true, message: 'Escrow mediation decision recorded', data: tx });
-});
+);
 
 // Admin list users (buyers/vendors/admins)
-app.get('/api/admin/users', (req, res) => {
-  const { role } = req.query;
-  let users = [...mockUsers];
-  if (role) users = users.filter(u => u.role === role);
-  res.json({ success: true, data: users });
+app.get('/api/admin/users', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { role, page = 1, limit = 20, search, sort = 'createdAt', order = 'desc' } = req.query;
+    
+    // Build filter
+    const filter = {};
+    if (role) filter.role = role;
+    
+    // Text search
+    if (search) {
+      filter.$text = { $search: search };
+    }
+    
+    // Build sort
+    const sortObj = {};
+    sortObj[sort] = order === 'desc' ? -1 : 1;
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const users = await User.find(filter)
+      .select('-password -verificationToken -resetPasswordToken')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await User.countDocuments(filter);
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 // Admin list vendors (mock: users with roles containing 'vendor' or vendorData present)
@@ -1106,47 +1485,346 @@ app.get('/api/admin/buyers', (req, res) => {
 });
 
 // Admin disputes endpoint (disputed or expired escrow)
-app.get('/api/admin/disputes', (req, res) => {
-  const now = Date.now();
-  const disputes = mockEscrowTransactions.filter(t => {
-    const isDisputed = (t.status || '').toLowerCase() === 'disputed';
-    const isExpired = t.expectedCompletion && new Date(t.expectedCompletion).getTime() < now && (t.status !== 'completed');
-    return isDisputed || isExpired;
-  });
-  res.json({ success: true, data: disputes });
+app.get('/api/admin/disputes', protect, authorize('admin'), async (req, res) => {
+  try {
+    const now = new Date();
+    
+    // Find disputed transactions or expired transactions
+    const disputes = await EscrowTransaction.find({
+      $or: [
+        { status: 'disputed' },
+        {
+          status: { $nin: ['completed', 'cancelled'] },
+          expectedCompletion: { $lt: now }
+        }
+      ]
+    })
+    .populate('propertyId', 'title price location')
+    .populate('buyerId', 'firstName lastName email')
+    .populate('sellerId', 'firstName lastName email')
+    .sort({ createdAt: -1 });
+    
+    res.json({ success: true, data: disputes });
+  } catch (error) {
+    console.error('Error fetching disputes:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
+
+// Admin user management endpoints
+app.get('/api/admin/users/:id', (req, res) => {
+  const { id } = req.params;
+  const user = mockUsers.find(u => u.id === id);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+  res.json({ success: true, data: user });
+});
+
+app.put('/api/admin/users/:id/suspend', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  logAdminAction('user_suspended', 'user', { description: 'User account suspended' }),
+  async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Don't allow suspending other admins
+    if (user.role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Cannot suspend admin users' });
+    }
+    
+    user.isActive = false;
+    user.suspendedAt = new Date();
+    user.suspendedBy = req.user?._id || null; // From auth middleware
+    
+    await user.save();
+    
+    res.json({ success: true, message: 'User suspended successfully', data: user });
+  } catch (error) {
+    console.error('Error suspending user:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.put('/api/admin/users/:id/activate', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  logAdminAction('user_activated', 'user', { description: 'User account activated' }),
+  async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    user.isActive = true;
+    user.activatedAt = new Date();
+    user.activatedBy = req.user?._id || null; // From auth middleware
+    user.suspendedAt = undefined;
+    user.suspendedBy = undefined;
+    
+    await user.save();
+    
+    res.json({ success: true, message: 'User activated successfully', data: user });
+  } catch (error) {
+    console.error('Error activating user:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/users/:id', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  logAdminAction('user_deleted', 'user', { description: 'User account deleted', severity: 'high' }),
+  async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Don't allow deleting admin users
+    if (user.role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Cannot delete admin users' });
+    }
+    
+    // Don't allow users to delete themselves
+    if (req.user && req.user._id.toString() === id) {
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
+    }
+    
+    // Delete user's properties first
+    await Property.deleteMany({ owner: id });
+    
+    // Delete user
+    await User.findByIdAndDelete(id);
+    
+    res.json({ success: true, message: 'User and associated data deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Escrow timeout and dispute resolution
+app.post('/api/admin/escrow/:id/timeout', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  logAdminAction('escrow_timeout', 'escrow', { description: 'Escrow transaction marked as disputed due to timeout' }),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid escrow transaction ID' });
+      }
+      
+      const escrowTransaction = await EscrowTransaction.findById(id);
+      if (!escrowTransaction) {
+        return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
+      }
+      
+      // Mark as disputed due to timeout
+      escrowTransaction.status = 'disputed';
+      escrowTransaction.dispute = {
+        reason: 'payment_timeout',
+        description: 'Payment timeout - buyer did not confirm within time limit',
+        filedBy: req.user._id,
+        filedAt: new Date()
+      };
+      
+      // Add timeline entry
+      escrowTransaction.timeline.push({
+        action: 'timeout_dispute',
+        description: 'Escrow transaction disputed due to timeout',
+        performedBy: req.user._id,
+        metadata: { reason: 'timeout' }
+      });
+      
+      await escrowTransaction.save();
+      
+      res.json({ 
+        success: true, 
+        message: 'Escrow transaction marked as disputed due to timeout', 
+        data: escrowTransaction 
+      });
+    } catch (error) {
+      console.error('Error marking escrow as disputed:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+);
+
+app.post('/api/admin/escrow/:id/resolve-payment', 
+  protect, 
+  authorize('admin'), 
+  sanitizeInput,
+  validate([
+    body('decision').isIn(['approve', 'reject']).withMessage('Decision must be approve or reject'),
+    body('recipient').isIn(['buyer', 'vendor']).withMessage('Recipient must be buyer or vendor'),
+    body('reason').optional().trim().isLength({ max: 500 }).withMessage('Reason cannot exceed 500 characters')
+  ]),
+  logAdminAction('escrow_payment_resolved', 'escrow', { description: 'Escrow payment resolution processed by admin' }),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { decision, recipient, reason } = req.body;
+      
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid escrow transaction ID' });
+      }
+      
+      const escrowTransaction = await EscrowTransaction.findById(id);
+      if (!escrowTransaction) {
+        return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
+      }
+      
+      if (decision === 'approve') {
+        escrowTransaction.status = 'completed';
+        escrowTransaction.actualCompletion = new Date();
+        escrowTransaction.mediation = {
+          required: true,
+          resolvedBy: req.user._id,
+          resolvedAt: new Date(),
+          decision: recipient === 'buyer' ? 'buyer_favor' : 'seller_favor',
+          reason: reason || 'Payment approved by admin'
+        };
+      } else {
+        escrowTransaction.status = 'cancelled';
+        escrowTransaction.mediation = {
+          required: true,
+          resolvedBy: req.user._id,
+          resolvedAt: new Date(),
+          decision: 'buyer_favor', // Refund to buyer
+          reason: reason || 'Payment rejected by admin'
+        };
+      }
+      
+      // Add timeline entry
+      escrowTransaction.timeline.push({
+        action: 'payment_resolution',
+        description: `Admin ${decision}d payment - ${recipient} receives funds`,
+        performedBy: req.user._id,
+        metadata: { decision, recipient, reason }
+      });
+      
+      await escrowTransaction.save();
+      
+      res.json({ 
+        success: true, 
+        message: 'Payment resolution processed successfully', 
+        data: escrowTransaction 
+      });
+    } catch (error) {
+      console.error('Error resolving payment:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+);
 
 
 // Admin dashboard statistics
-app.get('/api/admin/stats', (req, res) => {
-  const totalUsers = mockUsers.length;
-  const totalAgents = mockUsers.filter(u => u.role === 'agent').length;
-  const verifiedUsers = mockUsers.filter(u => u.isVerified).length;
-  const totalProperties = mockProperties.length;
-  const pendingProperties = mockProperties.filter(p => p.verificationStatus === 'pending').length;
-  const approvedProperties = mockProperties.filter(p => p.verificationStatus === 'approved').length;
-  const rejectedProperties = mockProperties.filter(p => p.verificationStatus === 'rejected').length;
+app.get('/api/admin/stats', protect, authorize('admin'), async (req, res) => {
+  try {
+    // Get property statistics
+    const totalProperties = await Property.countDocuments();
+    const pendingProperties = await Property.countDocuments({ verificationStatus: 'pending' });
+    const approvedProperties = await Property.countDocuments({ verificationStatus: 'approved' });
+    const rejectedProperties = await Property.countDocuments({ verificationStatus: 'rejected' });
+    
+    // Get user statistics
+    const totalUsers = await User.countDocuments();
+    const totalAgents = await User.countDocuments({ role: 'agent' });
+    const verifiedUsers = await User.countDocuments({ isVerified: true });
+    const activeUsers = await User.countDocuments({ isActive: true });
+    
+    // Get escrow statistics
+    const totalEscrows = await EscrowTransaction.countDocuments();
+    const activeEscrows = await EscrowTransaction.countDocuments({ status: 'active' });
+    const disputedEscrows = await EscrowTransaction.countDocuments({ status: 'disputed' });
+    const completedEscrows = await EscrowTransaction.countDocuments({ status: 'completed' });
+    
+    // Get recent activity
+    const recentProperties = await Property.find()
+      .populate('owner', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .limit(5);
+    
+    const recentUsers = await User.find()
+      .select('firstName lastName email role createdAt')
+      .sort({ createdAt: -1 })
+      .limit(5);
+    
+    const recentEscrows = await EscrowTransaction.find()
+      .populate('buyerId', 'firstName lastName')
+      .populate('sellerId', 'firstName lastName')
+      .populate('propertyId', 'title')
+      .sort({ createdAt: -1 })
+      .limit(5);
 
-  res.json({
-    success: true,
-    data: {
-      properties: {
-        total: totalProperties,
-        pending: pendingProperties,
-        approved: approvedProperties,
-        rejected: rejectedProperties
-      },
-      users: {
-        total: totalUsers,
-        agents: totalAgents,
-        verified: verifiedUsers
-      },
-      recentActivity: {
-        properties: mockProperties.slice(-5).reverse(),
-        users: mockUsers.slice(-5).reverse()
+    res.json({
+      success: true,
+      data: {
+        properties: {
+          total: totalProperties,
+          pending: pendingProperties,
+          approved: approvedProperties,
+          rejected: rejectedProperties
+        },
+        users: {
+          total: totalUsers,
+          agents: totalAgents,
+          verified: verifiedUsers,
+          active: activeUsers
+        },
+        escrows: {
+          total: totalEscrows,
+          active: activeEscrows,
+          disputed: disputedEscrows,
+          completed: completedEscrows
+        },
+        recentActivity: {
+          properties: recentProperties,
+          users: recentUsers,
+          escrows: recentEscrows
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Error fetching admin statistics:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 // Enhanced property creation with more fields
@@ -1250,79 +1928,111 @@ app.put('/api/properties/:id', (req, res) => {
 });
 
 // Flutterwave Escrow Routes
-app.post('/api/escrow', (req, res) => {
-  const { 
-    propertyId, 
-    buyerId, 
-    buyerName, 
-    buyerEmail,
-    sellerId, 
-    sellerName, 
-    sellerEmail,
-    amount, 
-    type = 'sale',
-    paymentMethod = 'card'
-  } = req.body;
+app.post('/api/escrow', 
+  protect,
+  sanitizeInput,
+  validate([
+    body('propertyId').isMongoId().withMessage('Valid property ID is required'),
+    body('amount').isNumeric().withMessage('Amount must be a valid number'),
+    body('paymentMethod').optional().isIn(['flutterwave', 'paystack', 'bank_transfer']).withMessage('Invalid payment method')
+  ]),
+  async (req, res) => {
+    try {
+      const { 
+        propertyId, 
+        amount, 
+        paymentMethod = 'flutterwave',
+        currency = 'NGN'
+      } = req.body;
 
-  if (!propertyId || !buyerId || !buyerName || !buyerEmail || !sellerId || !sellerName || !sellerEmail || !amount) {
-    return res.status(400).json({
-      success: false,
-      message: 'All required fields must be provided'
-    });
+      const buyerId = req.user._id;
+
+      // Verify property exists and is available
+      const property = await Property.findById(propertyId);
+      if (!property) {
+        return res.status(404).json({
+          success: false,
+          message: 'Property not found'
+        });
+      }
+
+      // Check if property is available for purchase
+      if (property.status !== 'for-sale' && property.status !== 'for-rent') {
+        return res.status(400).json({
+          success: false,
+          message: 'Property is not available for purchase'
+        });
+      }
+
+      // Don't allow users to buy their own property
+      if (property.owner.toString() === buyerId.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot create escrow for your own property'
+        });
+      }
+
+      // Calculate fees
+      const settings = await AdminSettings.findOne();
+      const platformFee = amount * (settings?.platformFee || 0.025);
+      const processingFee = amount * 0.015; // 1.5% processing fee
+      const totalFees = platformFee + processingFee;
+      const totalAmount = amount + totalFees;
+
+      // Calculate expected completion date
+      const expectedCompletion = new Date();
+      expectedCompletion.setDate(expectedCompletion.getDate() + (settings?.escrowTimeoutDays || 7));
+
+      const newEscrowTransaction = new EscrowTransaction({
+        propertyId,
+        buyerId,
+        sellerId: property.owner,
+        amount,
+        currency,
+        status: 'initiated',
+        paymentMethod,
+        expectedCompletion,
+        fees: {
+          platformFee,
+          processingFee,
+          totalFees
+        },
+        timeline: [
+          {
+            action: 'created',
+            description: 'Escrow transaction created',
+            performedBy: buyerId
+          }
+        ]
+      });
+
+      await newEscrowTransaction.save();
+
+              // Populate the response
+              const populatedTransaction = await EscrowTransaction.findById(newEscrowTransaction._id)
+                .populate('propertyId', 'title price location')
+                .populate('buyerId', 'firstName lastName email')
+                .populate('sellerId', 'firstName lastName email');
+
+              // Send notifications to buyer and seller
+              await notificationService.createEscrowNotification(
+                populatedTransaction,
+                populatedTransaction.sellerId,
+                'escrow_created',
+                populatedTransaction.buyerId
+              );
+
+              res.status(201).json({
+                success: true,
+                message: 'Escrow transaction created successfully',
+                data: populatedTransaction
+              });
+    } catch (error) {
+      console.error('Error creating escrow transaction:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   }
-
-  const property = mockProperties.find(p => p.id === propertyId);
-  if (!property) {
-    return res.status(404).json({
-      success: false,
-      message: 'Property not found'
-    });
-  }
-
-  const escrowFee = Math.round(amount * 0.005); // 0.5% escrow fee
-  const totalAmount = amount + escrowFee;
-
-  const newEscrowTransaction = {
-    id: Date.now().toString(),
-    propertyId,
-    propertyTitle: property.title,
-    buyerId,
-    buyerName,
-    buyerEmail,
-    sellerId,
-    sellerName,
-    sellerEmail,
-    amount: parseInt(amount),
-    currency: 'NGN',
-    status: 'pending',
-    type,
-    paymentMethod,
-    flutterwaveTransactionId: null,
-    flutterwaveReference: null,
-    createdAt: new Date().toISOString(),
-    expectedCompletion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-    documents: [
-      { name: 'Purchase Agreement', status: 'pending' },
-      { name: 'Property Inspection Report', status: 'pending' },
-      { name: 'Title Search', status: 'pending' }
-    ],
-    milestones: [
-      { name: 'Initial Payment', status: 'pending', date: null, amount: Math.round(amount * 0.1) },
-      { name: 'Property Inspection', status: 'pending', date: null, amount: 0 },
-      { name: 'Final Payment', status: 'pending', date: null, amount: Math.round(amount * 0.9) }
-    ],
-    escrowFee,
-    totalAmount
-  };
-
-  mockEscrowTransactions.push(newEscrowTransaction);
-
-  res.status(201).json({
-    success: true,
-    message: 'Escrow transaction created successfully',
-    data: newEscrowTransaction
-  });
-});
+);
 
 // Flutterwave payment initialization
 app.post('/api/escrow/payment', (req, res) => {
@@ -1759,13 +2469,19 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+// Routes
+app.use('/api/upload', require('./routes/upload'));
+app.use('/api/notifications', require('./routes/notifications'));
+
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
   console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
   console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
   console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
+  console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
+  console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
 });
 
 module.exports = app; 

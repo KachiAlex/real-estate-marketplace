@@ -256,7 +256,21 @@ const PropertyDetail = () => {
             {/* Property Details */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
-              <p className="text-lg text-gray-600 mb-6">{property.location}</p>
+              <p className="text-lg text-gray-600 mb-6">
+                {(() => {
+                  if (typeof property.location === 'string') {
+                    return property.location;
+                  }
+                  if (property.location && typeof property.location === 'object') {
+                    const address = property.location.address || '';
+                    const city = property.location.city || '';
+                    const state = property.location.state || '';
+                    const result = [address, city, state].filter(Boolean).join(', ');
+                    return result || 'Location not specified';
+                  }
+                  return 'Location not specified';
+                })()}
+              </p>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center">
@@ -361,7 +375,21 @@ const PropertyDetail = () => {
                 <div className="pt-3 border-t">
                   <div className="flex items-center text-gray-600 mb-2">
                     <FaMapMarkerAlt className="mr-2" />
-                    <span>{property.location}</span>
+                    <span>
+                      {(() => {
+                        if (typeof property.location === 'string') {
+                          return property.location;
+                        }
+                        if (property.location && typeof property.location === 'object') {
+                          const address = property.location.address || '';
+                          const city = property.location.city || '';
+                          const state = property.location.state || '';
+                          const result = [address, city, state].filter(Boolean).join(', ');
+                          return result || 'Location not specified';
+                        }
+                        return 'Location not specified';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <span className="text-sm">Views: {property.views || 0}</span>

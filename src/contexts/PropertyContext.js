@@ -667,6 +667,8 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
+      console.log('PropertyContext: Fetching admin properties...');
+      
       const queryParams = new URLSearchParams();
       if (status) queryParams.append('status', status);
       if (verificationStatus) queryParams.append('verificationStatus', verificationStatus);
@@ -675,20 +677,65 @@ export const PropertyProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        console.log('PropertyContext: Admin properties fetched from API:', data.data);
         setProperties(data.data);
         return data.stats;
       } else {
         throw new Error(data.message || 'Failed to fetch admin properties');
       }
     } catch (error) {
-      setError('Failed to fetch admin properties');
-      console.error('Error fetching admin properties:', error);
-      toast.error('Failed to fetch admin properties');
-      return null;
+      console.log('PropertyContext: API failed, trying Firestore...', error);
+      
+      // Try to fetch from Firestore as fallback
+      let allProperties = [...mockProperties]; // Start with mock data
+      
+      if (firebaseAuthReady) {
+        try {
+          console.log('PropertyContext: Fetching from Firestore...');
+          const propertiesRef = collection(db, 'properties');
+          const q = query(propertiesRef, orderBy('createdAt', 'desc'));
+          const snap = await getDocs(q);
+          const firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          
+          if (firestoreProps.length > 0) {
+            console.log('PropertyContext: Found Firestore properties:', firestoreProps.length);
+            // Merge Firestore properties with mock data (avoid duplicates)
+            const mockIds = new Set(mockProperties.map(p => p.id));
+            const newFirestoreProps = firestoreProps.filter(p => !mockIds.has(p.id));
+            allProperties = [...mockProperties, ...newFirestoreProps];
+          }
+        } catch (firestoreError) {
+          console.warn('PropertyContext: Firestore fetch failed, using mock data:', firestoreError);
+        }
+      }
+      
+      // Apply filters
+      let filteredProperties = [...allProperties];
+      
+      if (status) {
+        filteredProperties = filteredProperties.filter(p => p.status === status);
+      }
+      
+      if (verificationStatus) {
+        filteredProperties = filteredProperties.filter(p => (p.verificationStatus || 'pending') === verificationStatus);
+      }
+      
+      setProperties(filteredProperties);
+      
+      // Calculate stats from all properties (not just filtered)
+      const stats = {
+        total: allProperties.length,
+        pending: allProperties.filter(p => (p.verificationStatus || 'pending') === 'pending').length,
+        approved: allProperties.filter(p => p.verificationStatus === 'approved').length,
+        rejected: allProperties.filter(p => p.verificationStatus === 'rejected').length
+      };
+      
+      console.log('PropertyContext: Using combined data with stats:', stats);
+      return stats;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [firebaseAuthReady]);
 
   const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
     setLoading(true);

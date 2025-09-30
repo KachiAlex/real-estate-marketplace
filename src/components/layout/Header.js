@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
+import NotificationDropdown from '../NotificationDropdown';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
@@ -73,15 +74,12 @@ const Header = () => {
               <>
                 {/* Notification Icons */}
                 <div className="flex items-center space-x-3">
-                         <div className="relative">
-                           <FaBell className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
-                           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                         </div>
-                         <div className="relative">
-                           <FaEnvelope className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
-                           <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
-                         </div>
-                         <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
+                  <NotificationDropdown />
+                  <div className="relative">
+                    <FaEnvelope className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
+                    <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
+                  </div>
+                  <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
                 </div>
                 
               <div className="relative">

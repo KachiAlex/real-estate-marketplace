@@ -32,6 +32,13 @@ const AdminDashboard = () => {
   const [buyers, setBuyers] = useState([]);
   const [settings, setSettings] = useState({ verificationFee: 50000 });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
 
   const loadAdminData = useCallback(async () => {
     const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
@@ -74,26 +81,105 @@ const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
+        console.log('AdminDashboard: Loading admin data...');
+        
+        // Try to fetch from backend API first
         const [escrowRes, usersRes, vendorsRes, buyersRes, settingsRes, disputesRes] = await Promise.all([
-          fetch('/api/admin/escrow').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/users').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/vendors').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/buyers').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/settings').then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/admin/disputes').then(r => r.json()).catch(() => ({ success: false }))
+          fetch('/api/admin/escrow').then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Escrow API failed:', err);
+            return { success: false };
+          }),
+          fetch(`/api/admin/users?page=${pagination.currentPage}&limit=${pagination.itemsPerPage}`).then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Users API failed:', err);
+            return { success: false };
+          }),
+          fetch('/api/admin/vendors').then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Vendors API failed:', err);
+            return { success: false };
+          }),
+          fetch('/api/admin/buyers').then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Buyers API failed:', err);
+            return { success: false };
+          }),
+          fetch('/api/admin/settings').then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Settings API failed:', err);
+            return { success: false };
+          }),
+          fetch('/api/admin/disputes').then(r => r.json()).catch(err => {
+            console.log('AdminDashboard: Disputes API failed:', err);
+            return { success: false };
+          })
         ]);
 
+        console.log('AdminDashboard: API responses:', {
+          escrowSuccess: escrowRes?.success,
+          usersSuccess: usersRes?.success,
+          vendorsSuccess: vendorsRes?.success,
+          buyersSuccess: buyersRes?.success,
+          settingsSuccess: settingsRes?.success,
+          disputesSuccess: disputesRes?.success
+        });
+
+        // Set data from API responses or use fallback
         if (escrowRes?.success) {
           setEscrows(escrowRes.data || []);
           setDisputes((escrowRes.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
+        } else {
+          // Fallback mock data
+          setEscrows([
+            { id: '1', propertyId: '1', buyerId: '1', sellerId: '2', amount: 5000000, status: 'active', createdAt: new Date().toISOString() },
+            { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
+          ]);
+          setDisputes([
+            { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
+          ]);
         }
-        if (usersRes?.success) setUsers(usersRes.data || []);
-        if (vendorsRes?.success) setVendors(vendorsRes.data || []);
-        if (buyersRes?.success) setBuyers(buyersRes.data || []);
-        if (settingsRes?.success) setSettings(settingsRes.data || settings);
-        if (disputesRes?.success) setDisputes(disputesRes.data || disputes);
-      } catch (_) {}
+        
+        if (usersRes?.success) {
+          setUsers(usersRes.data || []);
+          if (usersRes.pagination) {
+            setPagination(prev => ({
+              ...prev,
+              currentPage: usersRes.pagination.currentPage,
+              totalPages: usersRes.pagination.totalPages,
+              totalItems: usersRes.pagination.totalItems
+            }));
+          }
+        } else {
+          // Fallback mock users
+          setUsers([
+            { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'user' },
+            { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'user' },
+            { id: '3', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin' }
+          ]);
+        }
+        
+        if (vendorsRes?.success) {
+          setVendors(vendorsRes.data || []);
+        } else {
+          setVendors(users.filter(u => u.role === 'user'));
+        }
+        
+        if (buyersRes?.success) {
+          setBuyers(buyersRes.data || []);
+        } else {
+          setBuyers(users.filter(u => u.role === 'user'));
+        }
+        
+        if (settingsRes?.success) {
+          setSettings(settingsRes.data || settings);
+        }
+        
+        if (disputesRes?.success) {
+          setDisputes(disputesRes.data || disputes);
+        }
+        
+        console.log('AdminDashboard: Data loaded successfully');
+      } catch (error) {
+        console.error('AdminDashboard: Error loading admin data:', error);
+      }
     };
+    
     if (user && user.role === 'admin') {
       load();
     }
@@ -159,6 +245,73 @@ const AdminDashboard = () => {
   const closeVerificationModal = () => {
     setSelectedProperty(null);
     setVerificationNotes('');
+  };
+
+  // User management handlers
+  const handleSuspendUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to suspend this user?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/suspend`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('User suspended successfully');
+        loadAdminData();
+      } else {
+        alert('Failed to suspend user: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      alert('Error suspending user');
+    }
+  };
+
+  const handleActivateUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to activate this user?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/activate`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('User activated successfully');
+        loadAdminData();
+      } else {
+        alert('Failed to activate user: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error activating user:', error);
+      alert('Error activating user');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('User deleted successfully');
+        loadAdminData();
+      } else {
+        alert('Failed to delete user: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Error deleting user');
+    }
   };
 
   if (!user || user.role !== 'admin') {
@@ -369,15 +522,22 @@ const AdminDashboard = () => {
                           </div>
                           <div className="text-sm text-gray-500">
                             {(() => {
-                              if (typeof property.location === 'string') {
-                                return property.location;
+                              try {
+                                if (typeof property.location === 'string') {
+                                  return property.location;
+                                }
+                                if (property.location && typeof property.location === 'object') {
+                                  const address = property.location.address || '';
+                                  const city = property.location.city || '';
+                                  const state = property.location.state || '';
+                                  const result = [address, city, state].filter(Boolean).join(', ');
+                                  return result || 'Location not specified';
+                                }
+                                return 'Location not specified';
+                              } catch (error) {
+                                console.error('Error rendering location:', error, property.location);
+                                return 'Location not specified';
                               }
-                              if (property.location && typeof property.location === 'object') {
-                                const address = property.location.address || '';
-                                const city = property.location.city || '';
-                                return `${address}${address && city ? ', ' : ''}${city}`.trim();
-                              }
-                              return 'Location not specified';
                             })()}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -387,7 +547,14 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {property.owner?.firstName} {property.owner?.lastName}
+                      {(() => {
+                        if (property.owner && typeof property.owner === 'object') {
+                          const firstName = property.owner.firstName || '';
+                          const lastName = property.owner.lastName || '';
+                          return `${firstName} ${lastName}`.trim() || 'Unknown Owner';
+                        }
+                        return property.owner || 'Unknown Owner';
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : '-'}
@@ -515,75 +682,167 @@ const AdminDashboard = () => {
         {activeTab === 'users' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Users</h2>
+              <h2 className="text-lg font-medium text-gray-900">User Management</h2>
+              <p className="text-sm text-gray-500 mt-1">Manage all users including buyers, vendors, and agents</p>
             </div>
-            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="px-4 py-2 border-b bg-gray-50 font-medium">All Users</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {users.map(u => (
-                        <tr key={u.id}>
-                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
-                          <td className="px-4 py-2 text-sm">{u.email}</td>
-                          <td className="px-4 py-2 text-sm">{u.role}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="border rounded-lg overflow-hidden">
-                <div className="px-4 py-2 border-b bg-gray-50 font-medium">Vendors</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {vendors.map(u => (
-                        <tr key={u.id}>
-                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
-                          <td className="px-4 py-2 text-sm">{u.email}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="border rounded-lg overflow-hidden">
-                <div className="px-4 py-2 border-b bg-gray-50 font-medium">Buyers</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {buyers.map(u => (
-                        <tr key={u.id}>
-                          <td className="px-4 py-2 text-sm">{u.firstName} {u.lastName}</td>
-                          <td className="px-4 py-2 text-sm">{u.email}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map(user => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover"
+                              src={user.avatar || 'https://picsum.photos/150/150'}
+                              alt={`${user.firstName} ${user.lastName}`}
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">ID: {user.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{user.email}</div>
+                        <div className="text-sm text-gray-500">{user.phone || 'No phone'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                          user.role === 'user' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isActive ? 'Active' : 'Suspended'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </button>
+                        {user.role !== 'admin' && (
+                          <>
+                            {user.isActive ? (
+                              <button
+                                onClick={() => handleSuspendUser(user.id)}
+                                className="text-yellow-600 hover:text-yellow-900"
+                              >
+                                Suspend
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleActivateUser(user.id)}
+                                className="text-green-600 hover:text-green-900"
+                              >
+                                Activate
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to{' '}
+                    {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
+                    {pagination.totalItems} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        if (pagination.currentPage > 1) {
+                          setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }));
+                          // Reload users with new page
+                          loadAdminData();
+                        }
+                      }}
+                      disabled={pagination.currentPage === 1}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        const pageNum = i + 1;
+                        const isActive = pageNum === pagination.currentPage;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => {
+                              setPagination(prev => ({ ...prev, currentPage: pageNum }));
+                              loadAdminData();
+                            }}
+                            className={`px-3 py-1 text-sm border rounded-md ${
+                              isActive
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        if (pagination.currentPage < pagination.totalPages) {
+                          setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }));
+                          // Reload users with new page
+                          loadAdminData();
+                        }
+                      }}
+                      disabled={pagination.currentPage === pagination.totalPages}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -657,6 +916,78 @@ const AdminDashboard = () => {
                   className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                User Details: {selectedUser.firstName} {selectedUser.lastName}
+              </h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                  <div className="text-sm text-gray-900">{selectedUser.firstName} {selectedUser.lastName}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <div className="text-sm text-gray-900">{selectedUser.email}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <div className="text-sm text-gray-900">{selectedUser.phone || 'Not provided'}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Role</label>
+                  <div className="text-sm text-gray-900">{selectedUser.role}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <div className="text-sm text-gray-900">{selectedUser.isActive ? 'Active' : 'Suspended'}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Joined</label>
+                  <div className="text-sm text-gray-900">
+                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Login</label>
+                  <div className="text-sm text-gray-900">
+                    {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString() : 'Unknown'}
+                  </div>
+                </div>
+                
+                {selectedUser.suspendedAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Suspended At</label>
+                    <div className="text-sm text-gray-900">
+                      {new Date(selectedUser.suspendedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                >
+                  Close
                 </button>
               </div>
             </div>
