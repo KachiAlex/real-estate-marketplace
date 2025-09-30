@@ -149,12 +149,7 @@ function App() {
                   } />
                   <Route path="/admin" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <AdminDashboard />
-                        </main>
-                      </div>
+                      <AdminDashboard />
                     </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
