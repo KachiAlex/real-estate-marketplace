@@ -22,6 +22,8 @@ import AddProperty from './pages/AddProperty';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
 import About from './pages/About';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Escrow from './pages/Escrow';
 import Investments from './pages/Investments';
 import InvestmentDetail from './pages/InvestmentDetail';
@@ -117,6 +119,8 @@ function App() {
                     </div>
                   } />
                   <Route path="/about" element={<About />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogDetail />} />
                   <Route path="/search" element={
                     <div className="flex w-full">
                       <Sidebar />

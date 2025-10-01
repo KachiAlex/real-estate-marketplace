@@ -14,14 +14,57 @@ const Register = () => {
     businessName: '',
     businessType: 'Real Estate Agent',
     phone: '',
-    experience: '1-2 years'
+    experience: '1-2 years',
+    vendorCategory: 'agent', // 'agent' or 'property_owner'
+    agentLocation: 'Lagos', // For agents only
+    agreeToTerms: false,
+    agreeToPrivacy: false,
+    captcha: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Generate captcha question
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const operations = ['+', '-', '*'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    
+    let question = '';
+    let answer = 0;
+    
+    switch (operation) {
+      case '+':
+        question = `${num1} + ${num2}`;
+        answer = num1 + num2;
+        break;
+      case '-':
+        question = `${num1} - ${num2}`;
+        answer = num1 - num2;
+        break;
+      case '*':
+        question = `${num1} × ${num2}`;
+        answer = num1 * num2;
+        break;
+    }
+    
+    setCaptchaQuestion(question);
+    setCaptchaAnswer(answer);
+  };
+
+  // Generate captcha on component mount
+  React.useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +110,22 @@ const Register = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    // Terms and Privacy validation
+    if (!formData.agreeToTerms) {
+      newErrors.agreeToTerms = 'You must agree to the Terms of Use';
+    }
+    
+    if (!formData.agreeToPrivacy) {
+      newErrors.agreeToPrivacy = 'You must agree to the Privacy Policy';
+    }
+
+    // Captcha validation
+    if (!formData.captcha) {
+      newErrors.captcha = 'Please solve the captcha';
+    } else if (parseInt(formData.captcha) !== captchaAnswer) {
+      newErrors.captcha = 'Incorrect answer. Please try again.';
+    }
+
     // Vendor-specific validation
     if (formData.userType === 'vendor') {
       if (!formData.businessName) {
@@ -104,6 +163,8 @@ const Register = () => {
             businessType: formData.businessType,
             phone: formData.phone,
             experience: formData.experience,
+            vendorCategory: formData.vendorCategory,
+            agentLocation: formData.agentLocation,
             registeredAt: new Date().toISOString(),
             status: 'active'
           }
@@ -112,6 +173,26 @@ const Register = () => {
       
       const result = await register(userData);
       if (result.success) {
+        // Reset form and regenerate captcha
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          userType: 'buyer',
+          businessName: '',
+          businessType: 'Real Estate Agent',
+          phone: '',
+          experience: '1-2 years',
+          vendorCategory: 'agent',
+          agentLocation: 'Lagos',
+          agreeToTerms: false,
+          agreeToPrivacy: false,
+          captcha: ''
+        });
+        generateCaptcha();
+        
         // Check if there's a redirect URL
         if (result.redirectUrl) {
           navigate(result.redirectUrl);
@@ -122,9 +203,13 @@ const Register = () => {
         }
       } else {
         setErrors({ general: result.message || 'Registration failed. Please try again.' });
+        // Regenerate captcha on failure
+        generateCaptcha();
       }
     } catch (error) {
       setErrors({ general: error.message || 'Registration failed. Please try again.' });
+      // Regenerate captcha on error
+      generateCaptcha();
     } finally {
       setLoading(false);
     }
@@ -368,6 +453,94 @@ const Register = () => {
               )}
             </div>
 
+            {/* Captcha Field */}
+            <div>
+              <label htmlFor="captcha" className="block text-sm font-semibold text-gray-700 mb-2">
+                Security Verification
+              </label>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1 bg-gray-100 px-4 py-3 rounded-xl border-2 border-gray-200 text-center">
+                  <span className="text-lg font-mono text-gray-700">
+                    {captchaQuestion} = ?
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={generateCaptcha}
+                  className="px-3 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl transition-colors"
+                  title="Generate new question"
+                >
+                  🔄
+                </button>
+              </div>
+              <input
+                id="captcha"
+                name="captcha"
+                type="number"
+                required
+                value={formData.captcha}
+                onChange={handleChange}
+                className={`w-full mt-3 px-4 py-3 border-2 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
+                  errors.captcha ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                }`}
+                placeholder="Enter your answer"
+              />
+              {errors.captcha && (
+                <p className="mt-2 text-sm text-red-600">{errors.captcha}</p>
+              )}
+            </div>
+
+            {/* Terms and Privacy Checkboxes */}
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <input
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  type="checkbox"
+                  checked={formData.agreeToTerms}
+                  onChange={(e) => setFormData(prev => ({ ...prev, agreeToTerms: e.target.checked }))}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="agreeToTerms" className="text-sm text-gray-700">
+                  I agree to the{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-blue-600 hover:text-blue-800 underline font-medium"
+                  >
+                    Terms of Use
+                  </button>
+                </label>
+              </div>
+              {errors.agreeToTerms && (
+                <p className="text-sm text-red-600">{errors.agreeToTerms}</p>
+              )}
+
+              <div className="flex items-start space-x-3">
+                <input
+                  id="agreeToPrivacy"
+                  name="agreeToPrivacy"
+                  type="checkbox"
+                  checked={formData.agreeToPrivacy}
+                  onChange={(e) => setFormData(prev => ({ ...prev, agreeToPrivacy: e.target.checked }))}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="agreeToPrivacy" className="text-sm text-gray-700">
+                  I agree to the{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="text-blue-600 hover:text-blue-800 underline font-medium"
+                  >
+                    Privacy Policy
+                  </button>
+                </label>
+              </div>
+              {errors.agreeToPrivacy && (
+                <p className="text-sm text-red-600">{errors.agreeToPrivacy}</p>
+              )}
+            </div>
+
             {/* Vendor-Specific Fields */}
             {formData.userType === 'vendor' && (
               <div className="space-y-6 border-t border-gray-200 pt-6">
@@ -423,6 +596,85 @@ const Register = () => {
                     <option value="Individual Property Owner">Individual Property Owner</option>
                   </select>
                 </div>
+
+                {/* Vendor Category */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Are you a:
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="relative">
+                      <input
+                        type="radio"
+                        name="vendorCategory"
+                        value="agent"
+                        checked={formData.vendorCategory === 'agent'}
+                        onChange={handleChange}
+                        className="sr-only"
+                      />
+                      <div className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                        formData.vendorCategory === 'agent' 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <FaBuilding className={`text-lg ${formData.vendorCategory === 'agent' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <div>
+                            <h4 className="font-medium text-gray-900">Real Estate Agent</h4>
+                            <p className="text-sm text-gray-500">Help clients buy/sell/rent properties</p>
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                    <label className="relative">
+                      <input
+                        type="radio"
+                        name="vendorCategory"
+                        value="property_owner"
+                        checked={formData.vendorCategory === 'property_owner'}
+                        onChange={handleChange}
+                        className="sr-only"
+                      />
+                      <div className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                        formData.vendorCategory === 'property_owner' 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <FaHome className={`text-lg ${formData.vendorCategory === 'property_owner' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <div>
+                            <h4 className="font-medium text-gray-900">Property Owner</h4>
+                            <p className="text-sm text-gray-500">List and manage your own properties</p>
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Agent Location (only for agents) */}
+                {formData.vendorCategory === 'agent' && (
+                  <div>
+                    <label htmlFor="agentLocation" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Primary Location
+                    </label>
+                    <select
+                      id="agentLocation"
+                      name="agentLocation"
+                      value={formData.agentLocation}
+                      onChange={handleChange}
+                      className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    >
+                      <option value="Lagos">Lagos</option>
+                      <option value="Abuja">Abuja</option>
+                      <option value="Rivers">Rivers</option>
+                      <option value="Kano">Kano</option>
+                      <option value="Ogun">Ogun</option>
+                      <option value="Kaduna">Kaduna</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* Phone Number */}
                 <div>
@@ -485,31 +737,6 @@ const Register = () => {
               </div>
             )}
 
-            {/* Terms and Conditions */}
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input
-                  id="terms"
-                  name="terms"
-                  type="checkbox"
-                  required
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-              </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="terms" className="text-gray-700">
-                  I agree to the{' '}
-                  <Link to="/terms" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    Privacy Policy
-                  </Link>
-                </label>
-              </div>
-            </div>
-
             {/* Submit Button */}
             <div>
               <button
@@ -564,6 +791,150 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* Terms of Use Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Terms of Use</h3>
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="max-h-96 overflow-y-auto text-sm text-gray-700 space-y-4">
+                <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
+                
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h4>
+                  <p>By accessing and using Naija Luxury Homes, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">2. Use License</h4>
+                  <p>Permission is granted to temporarily use Naija Luxury Homes for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">3. User Accounts</h4>
+                  <p>You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">4. Property Listings</h4>
+                  <p>All property information is provided by vendors and users. We do not guarantee the accuracy, completeness, or reliability of any property information.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">5. Payment Terms</h4>
+                  <p>All transactions are processed through secure payment gateways. We reserve the right to change our fees at any time.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">6. Limitation of Liability</h4>
+                  <p>In no event shall Naija Luxury Homes, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">7. Governing Law</h4>
+                  <p>These terms shall be interpreted and governed by the laws of Nigeria.</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Privacy Policy</h3>
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="max-h-96 overflow-y-auto text-sm text-gray-700 space-y-4">
+                <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
+                
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">1. Information We Collect</h4>
+                  <p>We collect information you provide directly to us, such as when you create an account, list a property, or contact us for support.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">2. How We Use Your Information</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>To provide, maintain, and improve our services</li>
+                    <li>To process transactions and send related information</li>
+                    <li>To send technical notices and support messages</li>
+                    <li>To respond to your comments and questions</li>
+                    <li>To develop new services and features</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">3. Information Sharing</h4>
+                  <p>We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">4. Data Security</h4>
+                  <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">5. Cookies and Tracking</h4>
+                  <p>We use cookies and similar tracking technologies to enhance your experience on our platform and analyze usage patterns.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">6. Your Rights</h4>
+                  <p>You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">7. Contact Us</h4>
+                  <p>If you have any questions about this Privacy Policy, please contact us at privacy@naijaluxuryhomes.com</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -127,12 +127,23 @@ This document contains all the mock user accounts with their complete details fo
 - **Phone**: `+234-810-123-4567`
 - **Role**: User
 - **Occupation**: Architect at Tunde & Associates
-- **Properties**: 3 properties (Luxury Penthouse, Cozy Studio)
+- **Properties**: 2 properties (Luxury Penthouse, Cozy Studio)
 - **Bank Details**: Zenith Bank - 8899001122
 - **KYC Status**: Verified
 - **Properties Owned**:
   - Luxury Penthouse in Victoria Island (₦650,000,000)
   - Cozy Studio in Surulere (₦550,000/month)
+
+### 11. Onyedikachi Akoma (user_011)
+- **Email**: `onyedika.akoma@gmail.com`
+- **Password**: `dikaoliver2660`
+- **Phone**: `+234-811-234-5678`
+- **Role**: User
+- **Occupation**: Software Developer at Tech Solutions Ltd
+- **Properties**: No properties currently owned
+- **Bank Details**: Guaranty Trust Bank - 1234567890
+- **KYC Status**: Verified
+- **Location**: Abuja, FCT
 
 ## 👨‍💼 Admin Account
 

@@ -11,6 +11,10 @@ const VendorDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Determine vendor type
+  const isAgent = user?.vendorData?.vendorCategory === 'agent';
+  const isPropertyOwner = user?.vendorData?.vendorCategory === 'property_owner';
   const [properties, setProperties] = useState([]);
   const [analytics, setAnalytics] = useState({});
   const [inquiries, setInquiries] = useState([]);
@@ -212,11 +216,23 @@ const VendorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName || 'Vendor'}!</h1>
-              <p className="text-blue-100 text-lg">Manage your properties and grow your real estate business</p>
+              <p className="text-blue-100 text-lg">
+                {isAgent 
+                  ? `Help clients find their dream properties in ${user?.vendorData?.agentLocation || 'your area'}`
+                  : 'Manage your properties and grow your real estate portfolio'
+                }
+              </p>
+              {isAgent && (
+                <div className="mt-2 text-blue-200 text-sm">
+                  📍 Primary Location: {user?.vendorData?.agentLocation || 'Not specified'}
+                </div>
+              )}
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold">₦{analytics.totalRevenue?.toLocaleString()}</div>
-              <div className="text-blue-100">Total Revenue</div>
+              <div className="text-blue-100">
+                {isAgent ? 'Commission Earned' : 'Total Revenue'}
+              </div>
             </div>
           </div>
         </div>
@@ -227,7 +243,9 @@ const VendorDashboard = () => {
         <div className="stats-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Listings</p>
+              <p className="text-sm font-medium text-gray-600">
+                {isAgent ? 'Managed Properties' : 'Active Listings'}
+              </p>
               <p className="text-2xl font-bold text-gray-900">{analytics.activeListings}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -235,7 +253,9 @@ const VendorDashboard = () => {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-green-600 text-sm font-medium">+2 this month</span>
+            <span className="text-green-600 text-sm font-medium">
+              {isAgent ? '+3 this month' : '+2 this month'}
+            </span>
           </div>
         </div>
 
@@ -354,6 +374,37 @@ const VendorDashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Agent Information (for agents only) */}
+              {isAgent && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Profile</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Business Information</h4>
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-medium">Company:</span> {user?.vendorData?.businessName}</p>
+                          <p><span className="font-medium">Location:</span> {user?.vendorData?.agentLocation}</p>
+                          <p><span className="font-medium">Experience:</span> {user?.vendorData?.experience}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Contact Information</h4>
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-medium">Phone:</span> {user?.phone}</p>
+                          <p><span className="font-medium">Email:</span> {user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <p className="text-sm text-blue-700">
+                        💡 <strong>Tip:</strong> Keep your profile updated to attract more clients in {user?.vendorData?.agentLocation}.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Quick Actions */}
               <div>

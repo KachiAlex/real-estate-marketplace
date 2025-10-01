@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import AdminSidebar from '../components/layout/AdminSidebar';
+import BlogManagement from '../components/BlogManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -327,8 +329,9 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <div className="flex-1 ml-64 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
@@ -339,36 +342,31 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="mt-2 text-gray-600">Property verification and management</p>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Admin Sidebar */}
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      {/* Main Content */}
+      <div className="flex-1 ml-64">
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="px-6 py-6">
+            <h1 className="text-3xl font-bold text-gray-900 capitalize">
+              {activeTab} Management
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {activeTab === 'properties' && 'Property verification and management'}
+              {activeTab === 'escrow' && 'Escrow transaction monitoring'}
+              {activeTab === 'disputes' && 'Dispute resolution management'}
+              {activeTab === 'users' && 'User account management'}
+              {activeTab === 'blog' && 'Blog content management'}
+              {activeTab === 'settings' && 'System configuration and settings'}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            {[
-              { id: 'properties', label: 'Properties' },
-              { id: 'escrow', label: 'Escrow' },
-              { id: 'disputes', label: 'Disputes' },
-              { id: 'users', label: 'Users' },
-              { id: 'settings', label: 'Settings' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleSwitchTab(tab.id)}
-                className={`${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+        {/* Content Area */}
+        <div className="px-6 py-8">
 
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
@@ -846,6 +844,11 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Blog Tab */}
+        {activeTab === 'blog' && (
+          <BlogManagement />
+        )}
+
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -994,6 +997,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -312,38 +312,234 @@ const mockUsers = [
     lastLogin: new Date('2024-01-17').toISOString(),
     properties: ['prop_019', 'prop_020']
   },
-  // Admin User
   {
-    id: 'admin_001',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@naijaluxuryhomes.com',
-    phone: '+234-800-000-0000',
-    password: 'admin123',
-    role: 'admin',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    id: 'user_011',
+    firstName: 'Onyedikachi',
+    lastName: 'Akoma',
+    email: 'onyedika.akoma@gmail.com',
+    phone: '+234-811-234-5678',
+    password: 'dikaoliver2660',
+    role: 'user',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     isVerified: true,
     isActive: true,
-    dateOfBirth: '1980-01-01',
+    dateOfBirth: '1985-05-15',
     gender: 'male',
-    occupation: 'System Administrator',
-    company: 'Naija Luxury Homes',
+    occupation: 'Software Developer',
+    company: 'Tech Solutions Ltd',
     address: {
-      street: '1 Admin Street',
-      city: 'Lagos',
-      state: 'Lagos',
-      zipCode: '100001'
+      street: '789 Abuja Central',
+      city: 'Abuja',
+      state: 'FCT',
+      zipCode: '900001'
     },
     bankDetails: {
-      accountNumber: '0000000000',
-      bankName: 'First Bank of Nigeria',
-      accountName: 'Admin User'
+      accountNumber: '1234567890',
+      bankName: 'Guaranty Trust Bank',
+      accountName: 'Onyedikachi Akoma'
     },
     kycStatus: 'verified',
-    createdAt: new Date('2024-01-01').toISOString(),
+    createdAt: new Date('2024-01-18').toISOString(),
     lastLogin: new Date('2024-01-21').toISOString(),
-    properties: [] // Admin doesn't own properties
-  }
+    properties: [] // No properties currently owned
+  },
+    // Real Estate Agents by Location
+    {
+      id: 'agent_001',
+      firstName: 'Emeka',
+      lastName: 'Okafor',
+      email: 'emeka.okafor@lagosagents.com',
+      phone: '+234-803-111-2222',
+      password: 'agent123',
+      role: 'vendor',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+      isActive: true,
+      dateOfBirth: '1982-05-10',
+      gender: 'male',
+      occupation: 'Real Estate Agent',
+      company: 'Lagos Prime Properties',
+      address: {
+        street: '456 Victoria Island',
+        city: 'Lagos',
+        state: 'Lagos',
+        zipCode: '101241'
+      },
+      bankDetails: {
+        accountNumber: '1111111111',
+        bankName: 'Guaranty Trust Bank',
+        accountName: 'Emeka Okafor'
+      },
+      kycStatus: 'verified',
+      createdAt: new Date('2024-01-10').toISOString(),
+      lastLogin: new Date('2024-01-21').toISOString(),
+      vendorData: {
+        businessName: 'Lagos Prime Properties',
+        businessType: 'Real Estate Agent',
+        vendorCategory: 'agent',
+        agentLocation: 'Lagos',
+        phone: '+234-803-111-2222',
+        experience: '5+ years',
+        registeredAt: new Date('2024-01-10').toISOString(),
+        status: 'active'
+      },
+      properties: []
+    },
+    {
+      id: 'agent_002',
+      firstName: 'Fatima',
+      lastName: 'Ibrahim',
+      email: 'fatima.ibrahim@abujaagents.com',
+      phone: '+234-804-333-4444',
+      password: 'agent123',
+      role: 'vendor',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+      isActive: true,
+      dateOfBirth: '1985-08-15',
+      gender: 'female',
+      occupation: 'Real Estate Agent',
+      company: 'Abuja Elite Realty',
+      address: {
+        street: '789 Asokoro District',
+        city: 'Abuja',
+        state: 'FCT',
+        zipCode: '900001'
+      },
+      bankDetails: {
+        accountNumber: '2222222222',
+        bankName: 'Access Bank',
+        accountName: 'Fatima Ibrahim'
+      },
+      kycStatus: 'verified',
+      createdAt: new Date('2024-01-12').toISOString(),
+      lastLogin: new Date('2024-01-21').toISOString(),
+      vendorData: {
+        businessName: 'Abuja Elite Realty',
+        businessType: 'Real Estate Agent',
+        vendorCategory: 'agent',
+        agentLocation: 'Abuja',
+        phone: '+234-804-333-4444',
+        experience: '7+ years',
+        registeredAt: new Date('2024-01-12').toISOString(),
+        status: 'active'
+      },
+      properties: []
+    },
+    {
+      id: 'agent_003',
+      firstName: 'Chidi',
+      lastName: 'Nwankwo',
+      email: 'chidi.nwankwo@riversagents.com',
+      phone: '+234-805-555-6666',
+      password: 'agent123',
+      role: 'vendor',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+      isActive: true,
+      dateOfBirth: '1980-12-03',
+      gender: 'male',
+      occupation: 'Real Estate Agent',
+      company: 'Port Harcourt Properties',
+      address: {
+        street: '321 GRA Phase 2',
+        city: 'Port Harcourt',
+        state: 'Rivers',
+        zipCode: '500001'
+      },
+      bankDetails: {
+        accountNumber: '3333333333',
+        bankName: 'Zenith Bank',
+        accountName: 'Chidi Nwankwo'
+      },
+      kycStatus: 'verified',
+      createdAt: new Date('2024-01-08').toISOString(),
+      lastLogin: new Date('2024-01-21').toISOString(),
+      vendorData: {
+        businessName: 'Port Harcourt Properties',
+        businessType: 'Real Estate Agent',
+        vendorCategory: 'agent',
+        agentLocation: 'Rivers',
+        phone: '+234-805-555-6666',
+        experience: '10+ years',
+        registeredAt: new Date('2024-01-08').toISOString(),
+        status: 'active'
+      },
+      properties: []
+    },
+    // Property Owner Vendor
+    {
+      id: 'owner_001',
+      firstName: 'Aisha',
+      lastName: 'Mohammed',
+      email: 'aisha.mohammed@propertyowner.com',
+      phone: '+234-806-777-8888',
+      password: 'owner123',
+      role: 'vendor',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+      isActive: true,
+      dateOfBirth: '1975-04-20',
+      gender: 'female',
+      occupation: 'Property Developer',
+      company: 'Mohammed Properties Ltd',
+      address: {
+        street: '654 Ikoyi Close',
+        city: 'Lagos',
+        state: 'Lagos',
+        zipCode: '101233'
+      },
+      bankDetails: {
+        accountNumber: '4444444444',
+        bankName: 'United Bank for Africa',
+        accountName: 'Aisha Mohammed'
+      },
+      kycStatus: 'verified',
+      createdAt: new Date('2024-01-05').toISOString(),
+      lastLogin: new Date('2024-01-21').toISOString(),
+      vendorData: {
+        businessName: 'Mohammed Properties Ltd',
+        businessType: 'Property Developer',
+        vendorCategory: 'property_owner',
+        phone: '+234-806-777-8888',
+        experience: '15+ years',
+        registeredAt: new Date('2024-01-05').toISOString(),
+        status: 'active'
+      },
+      properties: ['prop_015', 'prop_016'] // Properties owned by this vendor
+    },
+    // Admin User
+    {
+      id: 'admin_001',
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@naijaluxuryhomes.com',
+      phone: '+234-800-000-0000',
+      password: 'admin123',
+      role: 'admin',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+      isActive: true,
+      dateOfBirth: '1980-01-01',
+      gender: 'male',
+      occupation: 'System Administrator',
+      company: 'Naija Luxury Homes',
+      address: {
+        street: '1 Admin Street',
+        city: 'Lagos',
+        state: 'Lagos',
+        zipCode: '100001'
+      },
+      bankDetails: {
+        accountNumber: '0000000000',
+        bankName: 'First Bank of Nigeria',
+        accountName: 'Admin User'
+      },
+      kycStatus: 'verified',
+      createdAt: new Date('2024-01-01').toISOString(),
+      lastLogin: new Date('2024-01-21').toISOString(),
+      properties: [] // Admin doesn't own properties
+    }
 ];
 
 module.exports = mockUsers;

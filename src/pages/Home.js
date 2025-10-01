@@ -18,6 +18,8 @@ import {
   FaBath
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import HomeSections from '../components/HomeSections';
+import BlogSection from '../components/BlogSection';
 
 const Home = () => {
   const { properties, toggleFavorite } = useProperty();
@@ -979,6 +981,12 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Home Sections - Agents and Property Categories */}
+      <HomeSections />
+
+      {/* Blog Section */}
+      <BlogSection />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
