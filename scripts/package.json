@@ -1,0 +1,13 @@
+{
+  "name": "real-estate-seed-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Scripts to seed Firestore database",
+  "main": "seed-data.js",
+  "scripts": {
+    "seed": "node seed-data.js"
+  },
+  "dependencies": {
+    "firebase": "^12.2.1"
+  }
+}

@@ -32,7 +32,8 @@ const BlogManagement = () => {
         ...filters
       });
 
-      const response = await fetch(`/api/admin/blogs?${params}`, {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/admin/blogs?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -68,7 +69,8 @@ const BlogManagement = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/blogs/${blogId}`, {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -88,7 +90,8 @@ const BlogManagement = () => {
 
   const handleStatusChange = async (blogId, newStatus) => {
     try {
-      const response = await fetch(`/api/admin/blogs/${blogId}`, {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

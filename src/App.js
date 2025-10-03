@@ -7,6 +7,7 @@ import { EscrowProvider } from './contexts/EscrowContext';
 import { VendorProvider } from './contexts/VendorContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { MortgageProvider } from './contexts/MortgageContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -64,7 +65,8 @@ function App() {
           <PropertyProvider>
             <InvestmentProvider>
               <EscrowProvider>
-                <SidebarProvider>
+                <MortgageProvider>
+                  <SidebarProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
               <div className="flex flex-grow w-full">
@@ -106,6 +108,16 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-64">
                           <Mortgage />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgages" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Mortgages />
                         </main>
                       </div>
                     </ProtectedRoute>
@@ -416,7 +428,8 @@ function App() {
               {/* Global KIKI Assistant */}
               <KIKI />
             </div>
-                </SidebarProvider>
+                  </SidebarProvider>
+                </MortgageProvider>
               </EscrowProvider>
             </InvestmentProvider>
           </PropertyProvider>

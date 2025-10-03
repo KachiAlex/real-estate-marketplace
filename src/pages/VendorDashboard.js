@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import PropertyCreationTest from '../components/PropertyCreationTest';
+import PropertyVerification from '../components/PropertyVerification';
+import VendorInspectionRequests from '../components/VendorInspectionRequests';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -24,6 +26,8 @@ const VendorDashboard = () => {
   const [proposalTime, setProposalTime] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [showAddProperty, setShowAddProperty] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   const [newTitle, setNewTitle] = useState('');
   const [newPrice, setNewPrice] = useState('');
@@ -206,6 +210,63 @@ const VendorDashboard = () => {
     }
   };
 
+  const loadProperties = () => {
+    // Mock properties data - in a real app, this would fetch from API
+    setProperties([
+      {
+        id: 1,
+        title: "Luxury Apartment in Victoria Island",
+        price: 85000000,
+        type: "apartment",
+        status: "active",
+        bedrooms: 3,
+        bathrooms: 2,
+        area: 120,
+        location: "Victoria Island, Lagos",
+        image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
+        views: 245,
+        inquiries: 12,
+        favorites: 8,
+        dateListed: "2024-01-15",
+        lastUpdated: "2024-01-20",
+        verificationStatus: 'pending',
+        isVerified: false
+      },
+      {
+        id: 2,
+        title: "Modern Family House in Lekki",
+        price: 125000000,
+        type: "house",
+        status: "active",
+        bedrooms: 4,
+        bathrooms: 3,
+        area: 200,
+        location: "Lekki Phase 1, Lagos",
+        image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
+        views: 189,
+        inquiries: 7,
+        favorites: 15,
+        dateListed: "2024-01-10",
+        lastUpdated: "2024-01-18",
+        verificationStatus: 'verified',
+        isVerified: true
+      }
+    ]);
+  };
+
+  const handleVerificationSuccess = (message) => {
+    alert(message);
+    setShowVerificationModal(false);
+    setSelectedProperty(null);
+    // Refresh properties list
+    loadProperties();
+  };
+
+  const handleRequestVerification = (property) => {
+    setSelectedProperty(property);
+    setShowVerificationModal(true);
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* No modal; adding happens in dedicated tab now */}
@@ -314,6 +375,7 @@ const VendorDashboard = () => {
               { id: 'properties', label: 'My Properties', icon: FaHome },
               { id: 'add', label: 'Add Property', icon: FaPlus },
               { id: 'inquiries', label: 'Inquiries', icon: FaEnvelope },
+              { id: 'viewings', label: 'Viewing Requests', icon: FaCalendar },
               { id: 'analytics', label: 'Analytics', icon: FaChartLine }
             ].map((tab) => (
               <button
@@ -542,9 +604,42 @@ const VendorDashboard = () => {
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                           <span>Listed: {new Date(property.dateListed).toLocaleDateString()}</span>
                           <span>Updated: {new Date(property.lastUpdated).toLocaleDateString()}</span>
+                        </div>
+                        
+                        {/* Verification Status and Button */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              property.isVerified 
+                                ? 'bg-green-100 text-green-800' 
+                                : property.verificationStatus === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : property.verificationStatus === 'rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {property.isVerified 
+                                ? '✓ Verified' 
+                                : property.verificationStatus === 'pending'
+                                ? '⏳ Pending Review'
+                                : property.verificationStatus === 'rejected'
+                                ? '✗ Rejected'
+                                : '⚠️ Not Verified'
+                              }
+                            </span>
+                          </div>
+                          
+                          {!property.isVerified && (
+                            <button
+                              onClick={() => handleRequestVerification(property)}
+                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              {property.verificationStatus === 'pending' ? 'View Status' : 'Get Verified'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -671,7 +766,11 @@ const VendorDashboard = () => {
             </div>
           )}
 
-          {/* Analytics Tab */}
+          {/* Viewing Requests Tab */}
+          {activeTab === 'viewings' && (
+            <VendorInspectionRequests />
+          )}
+
           {/* Add Property Tab */}
           {activeTab === 'add' && (
             <div className="space-y-6">
@@ -989,6 +1088,18 @@ const VendorDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Property Verification Modal */}
+      {showVerificationModal && selectedProperty && (
+        <PropertyVerification
+          property={selectedProperty}
+          onClose={() => {
+            setShowVerificationModal(false);
+            setSelectedProperty(null);
+          }}
+          onSuccess={handleVerificationSuccess}
+        />
       )}
     </div>
   );

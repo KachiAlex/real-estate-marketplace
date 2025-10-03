@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
+import { useMortgage } from '../contexts/MortgageContext';
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
@@ -11,6 +12,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { properties, loading, toggleFavorite } = useProperty();
+  const { userInvestments, getUserInvestmentSummary } = useInvestment();
+  const { getUserMortgages, getPaymentSummary } = useMortgage();
 
   // Get recent properties (first 3)
   const recentProperties = properties.slice(0, 3);
@@ -403,6 +406,200 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Investment Portfolio Section */}
+        {user && (
+          <div className="mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Your Investment Portfolio</h3>
+                <button
+                  onClick={() => navigate('/investment')}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  View All →
+                </button>
+              </div>
+              
+              {(() => {
+                const investmentSummary = getUserInvestmentSummary();
+                const recentInvestments = userInvestments.slice(0, 3);
+                
+                return (
+                  <div className="space-y-6">
+                    {/* Investment Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-green-600 text-sm font-medium">Total Invested</p>
+                            <p className="text-green-900 text-xl font-bold">
+                              ₦{investmentSummary.totalInvested.toLocaleString()}
+                            </p>
+                          </div>
+                          <FaChartLine className="text-green-600 text-xl" />
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-blue-600 text-sm font-medium">Dividends Earned</p>
+                            <p className="text-blue-900 text-xl font-bold">
+                              ₦{investmentSummary.totalDividends.toLocaleString()}
+                            </p>
+                          </div>
+                          <FaMoneyBillWave className="text-blue-600 text-xl" />
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-purple-600 text-sm font-medium">Active Investments</p>
+                            <p className="text-purple-900 text-xl font-bold">
+                              {investmentSummary.activeInvestments}
+                            </p>
+                          </div>
+                          <FaTag className="text-purple-600 text-xl" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Investments */}
+                    {recentInvestments.length > 0 ? (
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">Recent Investments</h4>
+                        <div className="space-y-3">
+                          {recentInvestments.map((investment) => (
+                            <div key={investment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900">{investment.investmentTitle}</h5>
+                                <p className="text-sm text-gray-600">
+                                  Invested: ₦{investment.amount.toLocaleString()} • 
+                                  Status: <span className={`capitalize ${
+                                    investment.status === 'active' ? 'text-green-600' :
+                                    investment.status === 'pending_approval' ? 'text-yellow-600' :
+                                    investment.status === 'completed' ? 'text-blue-600' :
+                                    'text-gray-600'
+                                  }`}>
+                                    {investment.status.replace('_', ' ')}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-gray-900">
+                                  ₦{investment.totalDividendsEarned.toLocaleString()}
+                                </p>
+                                <p className="text-sm text-gray-600">Earned</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FaChartLine className="text-gray-300 text-4xl mx-auto mb-3" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">No Investments Yet</h4>
+                        <p className="text-gray-600 mb-4">Start building your investment portfolio today</p>
+                        <button
+                          onClick={() => navigate('/investment')}
+                          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Explore Opportunities
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Mortgage Portfolio Section */}
+        {user && (() => {
+          const mortgages = getUserMortgages();
+          const mortgageSummary = getPaymentSummary();
+          
+          if (mortgages.length > 0) {
+            return (
+              <div className="mb-8">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Your Mortgage Portfolio</h3>
+                    <button
+                      onClick={() => navigate('/mortgages')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      View All →
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Mortgage Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-blue-600 text-sm font-medium">Active Mortgages</p>
+                            <p className="text-blue-900 text-xl font-bold">{mortgageSummary.activeMortgages}</p>
+                          </div>
+                          <FaHome className="text-blue-600 text-xl" />
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-green-600 text-sm font-medium">Monthly Payments</p>
+                            <p className="text-green-900 text-xl font-bold">₦{mortgageSummary.totalMonthlyPayments.toLocaleString()}</p>
+                          </div>
+                          <FaMoneyBillWave className="text-green-600 text-xl" />
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-purple-600 text-sm font-medium">Total Paid</p>
+                            <p className="text-purple-900 text-xl font-bold">₦{mortgageSummary.totalPaid.toLocaleString()}</p>
+                          </div>
+                          <FaCheck className="text-purple-600 text-xl" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Mortgages */}
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-900 mb-3">Recent Mortgages</h4>
+                      <div className="space-y-3">
+                        {mortgages.slice(0, 2).map((mortgage) => (
+                          <div key={mortgage.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-900">{mortgage.propertyTitle}</h5>
+                              <p className="text-sm text-gray-600">
+                                Monthly: ₦{mortgage.monthlyPayment.toLocaleString()} • 
+                                Next Due: {new Date(mortgage.nextPaymentDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-gray-900">
+                                {mortgage.paymentsMade}/{mortgage.totalPayments}
+                              </p>
+                              <p className="text-sm text-gray-600">Payments</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* Continue Browsing Section */}
         <div className="mb-8">

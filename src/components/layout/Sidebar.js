@@ -37,10 +37,10 @@ const Sidebar = () => {
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
            { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
-           { path: '/profile', label: 'Profile Settings', icon: FaUser },
-           { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
-           { path: '/help', label: 'Help & Support', icon: FaHelp },
-         ];
+    { path: '/profile', label: 'Profile Settings', icon: FaUser },
+    { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
+    { path: '/help', label: 'Help & Support', icon: FaHelp },
+  ];
 
   return (
     <div className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40">

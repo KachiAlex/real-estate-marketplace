@@ -285,15 +285,15 @@ router.delete('/:publicId',
 
       await cloudinary.uploader.destroy(publicId);
 
-      res.json({
-        success: true,
+    res.json({
+      success: true,
         message: 'File deleted successfully'
-      });
+    });
 
-    } catch (error) {
+  } catch (error) {
       console.error('Delete file error:', error);
-      res.status(500).json({
-        success: false,
+    res.status(500).json({
+      success: false,
         message: 'Failed to delete file',
         error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useInvestment } from '../contexts/InvestmentContext';
 import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -12,8 +13,10 @@ const EscrowPaymentFlow = () => {
   const { user, clearAuthRedirect } = useAuth();
   const { fetchProperty } = useProperty();
   const { createEscrowTransaction } = useEscrow();
+  const { investments, getInvestmentById } = useInvestment();
   
   const [property, setProperty] = useState(null);
+  const [investment, setInvestment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
   const [paymentData, setPaymentData] = useState({
@@ -25,19 +28,22 @@ const EscrowPaymentFlow = () => {
   });
 
   const propertyId = searchParams.get('propertyId');
+  const investmentId = searchParams.get('investmentId');
   const transactionType = searchParams.get('type') || 'purchase';
 
   useEffect(() => {
-    const loadProperty = async () => {
-      if (!propertyId) {
-        toast.error('No property specified');
+    const loadItem = async () => {
+      if (!propertyId && !investmentId) {
+        toast.error('No property or investment specified');
         navigate('/properties');
         return;
       }
 
       if (!user) {
         // Set redirect URL to return here after login
-        const currentUrl = `/escrow/create?propertyId=${propertyId}&type=${transactionType}`;
+        const currentUrl = propertyId 
+          ? `/escrow/create?propertyId=${propertyId}&type=${transactionType}`
+          : `/escrow/create?investmentId=${investmentId}&type=${transactionType}`;
         localStorage.setItem('authRedirectUrl', currentUrl);
         toast.error('Please login to continue');
         navigate('/login');
@@ -48,29 +54,42 @@ const EscrowPaymentFlow = () => {
       clearAuthRedirect();
 
       try {
-        const propertyData = await fetchProperty(propertyId);
-        if (propertyData) {
-          setProperty(propertyData);
-        } else {
-          toast.error('Property not found');
-          navigate('/properties');
+        if (propertyId) {
+          const propertyData = await fetchProperty(propertyId);
+          if (propertyData) {
+            setProperty(propertyData);
+          } else {
+            toast.error('Property not found');
+            navigate('/properties');
+          }
+        } else if (investmentId) {
+          const investmentData = getInvestmentById(investmentId);
+          if (investmentData) {
+            setInvestment(investmentData);
+          } else {
+            toast.error('Investment not found');
+            navigate('/investment');
+          }
         }
       } catch (error) {
-        console.error('Error loading property:', error);
-        toast.error('Failed to load property details');
+        console.error('Error loading item:', error);
+        toast.error('Failed to load item details');
         navigate('/properties');
       } finally {
         setLoading(false);
       }
     };
 
-    loadProperty();
-  }, [propertyId, user, fetchProperty, navigate]);
+    loadItem();
+  }, [propertyId, investmentId, user, fetchProperty, getInvestmentById, navigate, transactionType, clearAuthRedirect]);
 
   const calculateTotal = () => {
-    if (!property) return 0;
-    const escrowFee = Math.round(property.price * 0.005); // 0.5% escrow fee
-    return property.price + escrowFee;
+    const item = property || investment;
+    if (!item) return 0;
+    
+    const price = property ? property.price : investment.minInvestment;
+    const escrowFee = Math.round(price * 0.005); // 0.5% escrow fee
+    return price + escrowFee;
   };
 
   const handlePaymentDataChange = (field, value) => {

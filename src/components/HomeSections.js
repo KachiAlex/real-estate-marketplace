@@ -12,7 +12,8 @@ const HomeSections = () => {
     const fetchAgents = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/agents?location=${selectedLocation}`);
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+        const response = await fetch(`${API_BASE_URL}/api/agents?location=${selectedLocation}`);
         const data = await response.json();
         if (data.success) {
           setAgents(data.data);

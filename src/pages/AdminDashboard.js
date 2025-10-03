@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminSidebar from '../components/layout/AdminSidebar';
 import BlogManagement from '../components/BlogManagement';
+import AdminPropertyVerification from '../components/AdminPropertyVerification';
+import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
+import AdminDataSeeder from '../components/AdminDataSeeder';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -35,6 +38,8 @@ const AdminDashboard = () => {
   const [settings, setSettings] = useState({ verificationFee: 50000 });
   const [savingSettings, setSavingSettings] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [selectedPropertyForModal, setSelectedPropertyForModal] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -66,7 +71,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','escrow','disputes','users','settings'].includes(t)) {
+    if (t && ['properties','escrow','disputes','users','blog','seeder','settings'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,28 +91,29 @@ const AdminDashboard = () => {
         console.log('AdminDashboard: Loading admin data...');
         
         // Try to fetch from backend API first
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
         const [escrowRes, usersRes, vendorsRes, buyersRes, settingsRes, disputesRes] = await Promise.all([
-          fetch('/api/admin/escrow').then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/escrow`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Escrow API failed:', err);
             return { success: false };
           }),
-          fetch(`/api/admin/users?page=${pagination.currentPage}&limit=${pagination.itemsPerPage}`).then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/users?page=${pagination.currentPage}&limit=${pagination.itemsPerPage}`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Users API failed:', err);
             return { success: false };
           }),
-          fetch('/api/admin/vendors').then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/vendors`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Vendors API failed:', err);
             return { success: false };
           }),
-          fetch('/api/admin/buyers').then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/buyers`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Buyers API failed:', err);
             return { success: false };
           }),
-          fetch('/api/admin/settings').then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/settings`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Settings API failed:', err);
             return { success: false };
           }),
-          fetch('/api/admin/disputes').then(r => r.json()).catch(err => {
+          fetch(`${API_BASE_URL}/api/admin/disputes`).then(r => r.json()).catch(err => {
             console.log('AdminDashboard: Disputes API failed:', err);
             return { success: false };
           })
@@ -189,14 +195,15 @@ const AdminDashboard = () => {
 
   const handleResolveEscrow = async (escrowId, decision) => {
     try {
-      const res = await fetch(`/api/admin/escrow/${escrowId}/resolve`, {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const res = await fetch(`${API_BASE_URL}/api/admin/escrow/${escrowId}/resolve`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ decision })
       });
       const data = await res.json();
       if (data.success) {
-        const esc = await fetch('/api/admin/escrow').then(r => r.json());
+        const esc = await fetch(`${API_BASE_URL}/api/admin/escrow`).then(r => r.json());
         if (esc.success) {
           setEscrows(esc.data || []);
           setDisputes((esc.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
@@ -208,7 +215,8 @@ const AdminDashboard = () => {
   const handleSaveSettings = async () => {
     try {
       setSavingSettings(true);
-      const res = await fetch('/api/admin/settings', {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const res = await fetch(`${API_BASE_URL}/api/admin/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verificationFee: Number(settings.verificationFee || 0) })
@@ -247,6 +255,114 @@ const AdminDashboard = () => {
   const closeVerificationModal = () => {
     setSelectedProperty(null);
     setVerificationNotes('');
+  };
+
+  // Property modal handlers
+  const openPropertyModal = (property) => {
+    setSelectedPropertyForModal(property);
+    setShowPropertyModal(true);
+  };
+
+  const closePropertyModal = () => {
+    setSelectedPropertyForModal(null);
+    setShowPropertyModal(false);
+  };
+
+  // Property approval/rejection handlers
+  const handlePropertyApprove = async (propertyId, adminNotes) => {
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      console.log('Approving property:', propertyId, 'with notes:', adminNotes);
+      
+      const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminNotes })
+      });
+      
+      console.log('Approval response status:', response.status);
+      const data = await response.json();
+      console.log('Approval response data:', data);
+      
+      if (response.ok) {
+        alert('Property approved successfully!');
+        // Refresh properties list
+        loadAdminData();
+        // Send notification to vendor (simulated)
+        await sendNotificationToVendor(propertyId, 'approved', adminNotes);
+      } else {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to approve property`);
+      }
+    } catch (error) {
+      console.error('Error approving property:', error);
+      throw error;
+    }
+  };
+
+  const handlePropertyReject = async (propertyId, rejectionReason, adminNotes) => {
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      console.log('Rejecting property:', propertyId, 'with reason:', rejectionReason);
+      
+      const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rejectionReason, adminNotes })
+      });
+      
+      console.log('Rejection response status:', response.status);
+      const data = await response.json();
+      console.log('Rejection response data:', data);
+      
+      if (response.ok) {
+        alert('Property rejected successfully!');
+        // Refresh properties list
+        loadAdminData();
+        // Send notification to vendor
+        await sendNotificationToVendor(propertyId, 'rejected', rejectionReason);
+      } else {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to reject property`);
+      }
+    } catch (error) {
+      console.error('Error rejecting property:', error);
+      throw error;
+    }
+  };
+
+  // Send notification to vendor (simulated)
+  const sendNotificationToVendor = async (propertyId, action, message) => {
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      
+      // Find the property to get vendor info
+      const property = properties.find(p => p.id === propertyId);
+      if (!property) return;
+
+      const notificationData = {
+        userId: property.vendorId || property.ownerId,
+        type: 'property_approval',
+        title: `Property ${action === 'approved' ? 'Approved for Listing' : 'Rejected'}`,
+        message: action === 'approved' 
+          ? `Your property "${property.title}" has been approved and is now visible on the home page for buyers to see.`
+          : `Your property "${property.title}" listing was rejected: ${message}`,
+        data: {
+          propertyId,
+          action,
+          propertyTitle: property.title,
+          adminNotes: message
+        }
+      };
+
+      await fetch(`${API_BASE_URL}/api/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationData)
+      });
+
+      console.log(`Notification sent to vendor for property ${action}:`, notificationData);
+    } catch (error) {
+      console.error('Error sending notification to vendor:', error);
+    }
   };
 
   // User management handlers
@@ -348,22 +464,24 @@ const AdminDashboard = () => {
       
       {/* Main Content */}
       <div className="flex-1 ml-64">
-        {/* Header */}
-        <div className="bg-white shadow">
+      {/* Header */}
+      <div className="bg-white shadow">
           <div className="px-6 py-6">
             <h1 className="text-3xl font-bold text-gray-900 capitalize">
               {activeTab} Management
             </h1>
             <p className="mt-2 text-gray-600">
               {activeTab === 'properties' && 'Property verification and management'}
+              {activeTab === 'verification' && 'Property verification requests and approvals'}
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
               {activeTab === 'blog' && 'Blog content management'}
+              {activeTab === 'seeder' && 'Add sample data to Firestore database'}
               {activeTab === 'settings' && 'System configuration and settings'}
             </p>
-          </div>
         </div>
+      </div>
 
         {/* Content Area */}
         <div className="px-6 py-8">
@@ -393,7 +511,7 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                <p className="text-sm font-medium text-gray-600">Pending Approval</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.pending || 0}</p>
               </div>
             </div>
@@ -407,7 +525,7 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Approved</p>
+                <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.approved || 0}</p>
               </div>
             </div>
@@ -449,15 +567,15 @@ const AdminDashboard = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Verification Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Approval Status</label>
               <select
                 value={selectedVerificationStatus}
                 onChange={(e) => handleVerificationFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Verification Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
+                <option value="">All Approval Status</option>
+                <option value="pending">Pending Approval</option>
+                <option value="approved">Approved for Listing</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
@@ -495,7 +613,7 @@ const AdminDashboard = () => {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Verification
+                    Approval Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -568,13 +686,13 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {(() => {
-                        const vStatus = (property.verificationStatus || 'pending').toLowerCase();
-                        const badgeClass = vStatus === 'approved'
+                        const approvalStatus = property.approvalStatus || property.verificationStatus || 'pending';
+                        const badgeClass = approvalStatus === 'approved'
                           ? 'bg-green-100 text-green-800'
-                          : vStatus === 'rejected'
+                          : approvalStatus === 'rejected'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800';
-                        const label = vStatus.charAt(0).toUpperCase() + vStatus.slice(1);
+                        const label = approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1);
                         return (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass}`}>
                             {label}
@@ -583,20 +701,20 @@ const AdminDashboard = () => {
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {property.verificationStatus === 'pending' && (
+                      <button
+                        onClick={() => openPropertyModal(property)}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        View Details
+                      </button>
+                      {(property.approvalStatus || property.verificationStatus) === 'pending' && (
                         <button
                           onClick={() => openVerificationModal(property)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          className="text-yellow-600 hover:text-yellow-900"
                         >
-                          Review
+                          Quick Review
                         </button>
                       )}
-                      <button
-                        onClick={() => navigate(`/property/${property.id}`)}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        View
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -849,6 +967,16 @@ const AdminDashboard = () => {
           <BlogManagement />
         )}
 
+        {/* Property Verification Tab */}
+        {activeTab === 'verification' && (
+          <AdminPropertyVerification />
+        )}
+
+        {/* Data Seeder Tab */}
+        {activeTab === 'seeder' && (
+          <AdminDataSeeder />
+        )}
+
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -997,6 +1125,15 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Property Details Modal */}
+      <AdminPropertyDetailsModal
+        property={selectedPropertyForModal}
+        isOpen={showPropertyModal}
+        onClose={closePropertyModal}
+        onApprove={handlePropertyApprove}
+        onReject={handlePropertyReject}
+      />
       </div>
     </div>
   );

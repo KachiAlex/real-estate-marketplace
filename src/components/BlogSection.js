@@ -16,7 +16,8 @@ const BlogSection = () => {
       setLoading(true);
       
       // Load featured blogs
-      const featuredResponse = await fetch('/api/blog/featured?limit=3');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const featuredResponse = await fetch(`${API_BASE_URL}/api/blog?featured=true&limit=3`);
       const featuredData = await featuredResponse.json();
       
       if (featuredData.success) {
@@ -24,7 +25,7 @@ const BlogSection = () => {
       }
 
       // Load recent blogs
-      const recentResponse = await fetch('/api/blog?limit=4&sort=newest');
+      const recentResponse = await fetch(`${API_BASE_URL}/api/blog?limit=4&sort=newest`);
       const recentData = await recentResponse.json();
       
       if (recentData.success) {

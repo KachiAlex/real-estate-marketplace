@@ -52,6 +52,12 @@ const Investment = () => {
     setPaymentMethod('flutterwave');
     setPaymentReference('');
     setCreatedEscrow(null);
+    setInvestmentAmount(500000);
+  };
+
+  const handleCloseInvestmentModal = () => {
+    setShowInvestmentModal(false);
+    resetInvestmentModal();
   };
 
   // Calculate real investment data from context
@@ -210,12 +216,9 @@ const Investment = () => {
       return;
     }
 
-    console.log('Setting selected project:', projectToUse);
-    setSelectedProject(projectToUse);
-    resetInvestmentModal();
-    setShowInvestmentModal(true);
-    console.log('Investment modal should now be visible');
-    toast.success('Opening investment payment modal...');
+    // Redirect to escrow payment flow for investment
+    const redirectUrl = `/escrow/create?investmentId=${projectToUse.id}&type=investment`;
+    navigate(redirectUrl);
   };
 
   const handleConfirmInvestment = async () => {
@@ -279,10 +282,13 @@ const Investment = () => {
       setCreatedEscrow(investmentEscrow);
       setPaymentSuccess(true);
       toast.success('Payment successful! Funds held in escrow pending vendor document submission.');
-      setSelectedProject(null);
-      setInvestmentAmount(500000);
-      setAcceptInvestmentTerms(false);
-      setPaymentMethod('flutterwave');
+      
+      // Close modal after a delay to show success message
+      setTimeout(() => {
+        setShowInvestmentModal(false);
+        resetInvestmentModal();
+        setSelectedProject(null);
+      }, 3000);
     } catch (error) {
       console.error('Investment error:', error);
       toast.error('Failed to process investment');
@@ -294,6 +300,54 @@ const Investment = () => {
   const handleViewDocuments = (investment) => {
     setSelectedInvestment(investment);
     setShowDocumentModal(true);
+  };
+
+  const handleAddToWishlist = (project) => {
+    if (!user) {
+      setAuthRedirect('/investment');
+      toast.error('Please login to add to wishlist');
+      navigate('/login');
+      return;
+    }
+
+    if (!project) {
+      toast.error('No project selected');
+      return;
+    }
+
+    try {
+      // Store investment-specific data in localStorage for display purposes
+      const wishlistKey = `investment_wishlist_${user.id}`;
+      const existingWishlist = JSON.parse(localStorage.getItem(wishlistKey) || '[]');
+      
+      // Check if already in wishlist
+      const isAlreadyWishlisted = existingWishlist.some(item => item.id === project.id);
+      
+      if (isAlreadyWishlisted) {
+        // Remove from wishlist
+        const updatedWishlist = existingWishlist.filter(item => item.id !== project.id);
+        localStorage.setItem(wishlistKey, JSON.stringify(updatedWishlist));
+        toast.success(`Removed "${project.name}" from your wishlist`);
+      } else {
+        // Add to wishlist
+        const wishlistItem = {
+          id: project.id,
+          name: project.name,
+          location: project.location,
+          expectedROI: project.expectedROI,
+          minInvestment: project.minInvestment,
+          lockPeriod: project.lockPeriod,
+          addedAt: new Date().toISOString()
+        };
+        
+        existingWishlist.push(wishlistItem);
+        localStorage.setItem(wishlistKey, JSON.stringify(existingWishlist));
+        toast.success(`Added "${project.name}" to your wishlist!`);
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      toast.error('Failed to update wishlist');
+    }
   };
 
   const openScheduleModal = (project) => {
@@ -824,24 +878,10 @@ const Investment = () => {
                     <span>Schedule Viewing</span>
                   </button>
                   <button 
-                    onClick={() => {
-                      console.log('Add to Wishlist clicked, user:', user);
-                      if (!user) {
-                        toast.error('Please login to add to wishlist');
-                        navigate('/login');
-                        return;
-                      }
-                      const projectToUse = selectedProject || projects[0];
-                      if (projectToUse) {
-                        toast.success(`Added "${projectToUse.name}" to your wishlist!`);
-                        // In a real app, this would save to user's wishlist
-                        console.log('Added to wishlist:', projectToUse.name);
-                      } else {
-                        toast.success('Added to wishlist!');
-                      }
-                    }}
+                    onClick={() => handleAddToWishlist(selectedProject || projects[0])}
                     className="btn-outline flex items-center space-x-2"
                     title="Add this investment to your wishlist"
+                    disabled={!projects.length}
                   >
                     <FaBookmark />
                     <span>Add to Wishlist</span>
@@ -1537,14 +1577,14 @@ const Investment = () => {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           role="dialog" aria-modal="true" aria-label={`Invest in ${selectedProject.name}`}
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowInvestmentModal(false); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') handleCloseInvestmentModal(); }}
         >
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-2xl font-bold text-gray-900">Invest in {selectedProject.name}</h3>
               <button
-                onClick={() => setShowInvestmentModal(false)}
+                onClick={handleCloseInvestmentModal}
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
@@ -1640,7 +1680,7 @@ const Investment = () => {
                 </label>
 
                 <div className="flex justify-between mt-6">
-                  <button onClick={() => setShowInvestmentModal(false)} className="px-5 py-2 border rounded-lg">Cancel</button>
+                  <button onClick={handleCloseInvestmentModal} className="px-5 py-2 border rounded-lg">Cancel</button>
                   <button
                     onClick={handleConfirmInvestment}
                     disabled={isProcessingPayment || !investmentAmount || investmentAmount < selectedProject.minInvestment || !acceptInvestmentTerms}

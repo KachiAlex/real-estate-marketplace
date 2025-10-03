@@ -6,9 +6,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Properties are readable and writable by all authenticated users
+    // Properties are readable by all authenticated users, writable by owners
     match /properties/{propertyId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.data.vendorId || 
+         request.auth.uid == resource.data.ownerId);
     }
     
     // Vendors: each authenticated user can read/write their own vendor profile
@@ -21,24 +24,18 @@ service cloud.firestore {
       }
     }
     
-    // Escrow transactions are readable by involved parties and admins
+    // Escrow transactions are readable by involved parties
     match /escrow/{escrowId} {
-      allow read: if request.auth != null && 
+      allow read, write: if request.auth != null && 
         (request.auth.uid == resource.data.buyerId || 
-         request.auth.uid == resource.data.sellerId || 
-         request.auth.token.role == 'admin');
-      allow write: if request.auth != null && 
-        (request.auth.uid == resource.data.buyerId || 
-         request.auth.uid == resource.data.sellerId || 
-         request.auth.token.role == 'admin');
+         request.auth.uid == resource.data.sellerId);
     }
     
     // Investments are readable by all authenticated users
     match /investments/{investmentId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && 
-        (request.auth.uid == resource.data.sponsorId || 
-         request.auth.token.role == 'admin');
+        request.auth.uid == resource.data.sponsorId;
     }
     
     // Messages are readable by participants
@@ -54,10 +51,29 @@ service cloud.firestore {
         request.auth.uid == resource.data.userId;
     }
     
-    // Admin-only collections
-    match /admin/{document=**} {
+    // Chats are readable by participants
+    match /chats/{chatId} {
       allow read, write: if request.auth != null && 
-        request.auth.token.role == 'admin';
+        (request.auth.uid == resource.data.buyerId || 
+         request.auth.uid == resource.data.vendorId);
+    }
+    
+    // Ratings are readable by all authenticated users
+    match /ratings/{ratingId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.raterId;
+    }
+    
+    // Blogs are readable by all authenticated users
+    match /blogs/{blogId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Admin-only collections - temporarily allow all authenticated users
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null;
     }
 
     // Caregivers: allow caregiver to access own profile; admins too

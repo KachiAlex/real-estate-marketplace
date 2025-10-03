@@ -75,11 +75,11 @@ const Header = () => {
                 {/* Notification Icons */}
                 <div className="flex items-center space-x-3">
                   <NotificationDropdown />
-                  <div className="relative">
-                    <FaEnvelope className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
-                    <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
-                  </div>
-                  <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
+                         <div className="relative">
+                           <FaEnvelope className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
+                           <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
+                         </div>
+                         <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
                 </div>
                 
               <div className="relative">

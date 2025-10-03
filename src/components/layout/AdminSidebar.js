@@ -8,7 +8,9 @@ import {
   FaCog,
   FaChartBar,
   FaHome,
-  FaBlog
+  FaBlog,
+  FaDatabase,
+  FaCheckCircle
 } from 'react-icons/fa';
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -20,6 +22,12 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       label: 'Properties', 
       icon: FaBuilding,
       description: 'Manage property listings and verifications'
+    },
+    { 
+      id: 'verification', 
+      label: 'Verification', 
+      icon: FaCheckCircle,
+      description: 'Review property verification requests'
     },
     { 
       id: 'escrow', 
@@ -44,6 +52,12 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       label: 'Blog', 
       icon: FaBlog,
       description: 'Manage blog posts and content'
+    },
+    { 
+      id: 'seeder', 
+      label: 'Data Seeder', 
+      icon: FaDatabase,
+      description: 'Add sample data to Firestore'
     },
     { 
       id: 'settings', 

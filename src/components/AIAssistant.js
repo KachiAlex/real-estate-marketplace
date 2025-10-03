@@ -30,7 +30,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "👋 Hello! I'm KIKI, your AI Property Assistant. I'm here to help you navigate our platform, search for properties, create alerts, and answer any questions you might have. How can I assist you today?",
+      message: "👋 Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -38,6 +38,7 @@ const AIAssistant = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const recognitionRef = useRef(null);
   const speakingRef = useRef(false);
   const [summary, setSummary] = useState(''); // rolling conversation summary for capacity
@@ -48,39 +49,80 @@ const AIAssistant = () => {
   const { properties, searchProperties } = useProperty();
 
   const getQuickSuggestions = () => {
-    const baseSuggestions = [
-      { icon: FaSearch, text: "Find properties in Lagos", action: "search_lagos" },
-      { icon: FaBell, text: "Create property alert", action: "create_alert" },
-      { icon: FaHome, text: "Luxury properties", action: "show_luxury" },
-      { icon: FaUser, text: "Help me register", action: "help_register" },
-      { icon: FaQuestionCircle, text: "How does escrow work?", action: "explain_escrow" },
-      { icon: FaLightbulb, text: "Investment options", action: "show_investments" },
-      { icon: FaBrain, text: "What can you help me with?", action: "help_general" },
-      { icon: FaMagic, text: "Market insights", action: "market_info" }
-    ];
-    
-    // Add contextual suggestions based on current page
     const currentPath = window.location.pathname;
-    const contextualSuggestions = [];
     
-    if (currentPath.includes('/vendor')) {
-      contextualSuggestions.push(
-        { icon: FaRocket, text: "Help with property listing", action: "vendor_help" },
-        { icon: FaBell, text: "Manage my listings", action: "manage_listings" }
-      );
+    // Context-aware suggestions based on current page
+    if (currentPath === '/' || currentPath.includes('/home')) {
+      // Home page suggestions
+      return [
+        { icon: FaSearch, text: "Find properties in Lagos", action: "search_lagos" },
+        { icon: FaBell, text: "Create property alert", action: "create_alert" },
+        { icon: FaHome, text: "Show me luxury properties", action: "show_luxury" },
+        { icon: FaUser, text: "Help me register as a buyer", action: "help_register" },
+        { icon: FaQuestionCircle, text: "How does the platform work?", action: "explain_platform" },
+        { icon: FaLightbulb, text: "Investment opportunities", action: "show_investments" }
+      ];
+    } else if (currentPath.includes('/vendor')) {
+      // Vendor dashboard suggestions
+      return [
+        { icon: FaRocket, text: "Help me create a property listing", action: "create_property_help" },
+        { icon: FaBell, text: "Manage my property listings", action: "manage_listings" },
+        { icon: FaUser, text: "Update my vendor profile", action: "update_profile" },
+        { icon: FaChartLine, text: "View my performance analytics", action: "view_analytics" },
+        { icon: FaQuestionCircle, text: "How to price my property?", action: "pricing_help" },
+        { icon: FaBrain, text: "Tips for better property photos", action: "photo_tips" }
+      ];
     } else if (currentPath.includes('/properties')) {
-      contextualSuggestions.push(
+      // Properties page suggestions
+      return [
         { icon: FaSearch, text: "Advanced property search", action: "advanced_search" },
-        { icon: FaBell, text: "Save this search", action: "save_search" }
-      );
+        { icon: FaBell, text: "Save this search as alert", action: "save_search" },
+        { icon: FaHome, text: "Show similar properties", action: "similar_properties" },
+        { icon: FaUser, text: "Contact property agent", action: "contact_agent" },
+        { icon: FaQuestionCircle, text: "Schedule property viewing", action: "schedule_viewing" },
+        { icon: FaLightbulb, text: "Get property valuation", action: "property_valuation" }
+      ];
     } else if (currentPath.includes('/investment')) {
-      contextualSuggestions.push(
+      // Investment page suggestions
+      return [
         { icon: FaLightbulb, text: "Investment calculator", action: "investment_calc" },
-        { icon: FaChartLine, text: "Market analysis", action: "market_analysis" }
-      );
+        { icon: FaChartLine, text: "Market analysis & trends", action: "market_analysis" },
+        { icon: FaUser, text: "Create investment portfolio", action: "create_portfolio" },
+        { icon: FaBell, text: "Investment alerts", action: "investment_alerts" },
+        { icon: FaQuestionCircle, text: "Risk assessment", action: "risk_assessment" },
+        { icon: FaBrain, text: "Investment strategies", action: "investment_strategies" }
+      ];
+    } else if (currentPath.includes('/blog')) {
+      // Blog page suggestions
+      return [
+        { icon: FaSearch, text: "Search blog articles", action: "search_blog" },
+        { icon: FaBell, text: "Subscribe to blog updates", action: "subscribe_blog" },
+        { icon: FaHome, text: "Latest property news", action: "latest_news" },
+        { icon: FaUser, text: "Share article", action: "share_article" },
+        { icon: FaQuestionCircle, text: "Market insights", action: "market_insights" },
+        { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" }
+      ];
+    } else if (currentPath.includes('/dashboard')) {
+      // User dashboard suggestions
+      return [
+        { icon: FaBell, text: "Check my alerts", action: "check_alerts" },
+        { icon: FaHome, text: "View saved properties", action: "saved_properties" },
+        { icon: FaUser, text: "Update my profile", action: "update_profile" },
+        { icon: FaSearch, text: "Recent searches", action: "recent_searches" },
+        { icon: FaQuestionCircle, text: "Account settings", action: "account_settings" },
+        { icon: FaLightbulb, text: "Personalized recommendations", action: "recommendations" }
+      ];
+    } else {
+      // Default suggestions for other pages
+      return [
+        { icon: FaSearch, text: "Find properties", action: "search_properties" },
+        { icon: FaBell, text: "Create property alert", action: "create_alert" },
+        { icon: FaHome, text: "Browse properties", action: "browse_properties" },
+        { icon: FaUser, text: "Help me get started", action: "help_started" },
+        { icon: FaQuestionCircle, text: "How can you help me?", action: "help_general" },
+        { icon: FaBrain, text: "Platform features", action: "platform_features" }
+      ];
     }
-    
-    return [...baseSuggestions, ...contextualSuggestions].slice(0, 6);
   };
 
   const scrollToBottom = () => {
@@ -104,44 +146,81 @@ const AIAssistant = () => {
   const speakText = (text) => {
     try {
       if (!voiceEnabled) return;
+      
       // Prefer cloud TTS if configured
       const useCloud = process.env.REACT_APP_USE_CLOUD_TTS === 'true';
       if (useCloud) {
         fetch('/tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text, voice: 'female' })
         }).then(r => r.json()).then(data => {
           if (data?.success && data.audioBase64) {
             const audio = new Audio(`data:audio/mp3;base64,${data.audioBase64}`);
             audio.play().catch(() => {});
           } else {
-            // fallback to browser
-            if (window.speechSynthesis) {
-              const utter = new SpeechSynthesisUtterance(text);
-              utter.lang = 'en-US';
-              window.speechSynthesis.speak(utter);
-            }
+            // fallback to browser with female voice
+            speakWithFemaleVoice(text);
           }
         }).catch(() => {
-          if (window.speechSynthesis) {
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'en-US';
-            window.speechSynthesis.speak(utter);
-          }
+          speakWithFemaleVoice(text);
         });
         return;
       }
-      if (!window.speechSynthesis) return;
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'en-US';
-      utter.rate = 1;
-      utter.pitch = 1;
-      speakingRef.current = true;
-      utter.onend = () => { speakingRef.current = false; };
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
+      
+      speakWithFemaleVoice(text);
     } catch (_) {}
+  };
+
+  const speakWithFemaleVoice = (text) => {
+    if (!window.speechSynthesis) return;
+    
+    // Get available voices
+    const voices = window.speechSynthesis.getVoices();
+    let selectedVoice = null;
+    
+    // Try to find a female voice (common female voice names)
+    const femaleVoiceNames = [
+      'Google UK English Female', 'Google US English Female', 'Microsoft Zira Desktop',
+      'Samantha', 'Karen', 'Victoria', 'Fiona', 'Moira', 'Tessa', 'Veena',
+      'Microsoft Hazel Desktop', 'Microsoft Susan Desktop', 'Microsoft Eva Desktop'
+    ];
+    
+    // Look for female voices
+    selectedVoice = voices.find(voice => 
+      femaleVoiceNames.some(name => voice.name.includes(name)) ||
+      voice.name.toLowerCase().includes('female') ||
+      (voice.name.includes('Google') && voice.name.includes('Female'))
+    );
+    
+    // If no female voice found, use default
+    if (!selectedVoice && voices.length > 0) {
+      selectedVoice = voices[0];
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9; // Slightly slower for better clarity
+    utterance.pitch = 1.1; // Slightly higher pitch for female voice
+    utterance.volume = 1.0;
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    
+    speakingRef.current = true;
+    setIsSpeaking(true);
+    utterance.onend = () => { 
+      speakingRef.current = false; 
+      setIsSpeaking(false);
+    };
+    utterance.onerror = () => { 
+      speakingRef.current = false; 
+      setIsSpeaking(false);
+    };
+    
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
 
   // Lightweight capacity boost: keep rolling summary and trim history
@@ -169,8 +248,9 @@ const AIAssistant = () => {
       let aiResponse;
       
       if (action) {
-        // Handle quick suggestion actions
+        // Handle contextual suggestion actions
         switch (action) {
+          // Home page actions
           case "search_lagos":
             aiResponse = KikiAI.generateResponse("I want to search for properties in Lagos");
             break;
@@ -181,14 +261,129 @@ const AIAssistant = () => {
             aiResponse = KikiAI.generateResponse("Show me luxury properties");
             break;
           case "help_register":
-            aiResponse = KikiAI.generateResponse("Help me register");
+            aiResponse = KikiAI.generateResponse("Help me register as a buyer");
             break;
-          case "explain_escrow":
-            aiResponse = KikiAI.generateResponse("Explain how escrow works");
+          case "explain_platform":
+            aiResponse = KikiAI.generateResponse("How does this platform work?");
             break;
           case "show_investments":
             aiResponse = KikiAI.generateResponse("Show me investment opportunities");
             break;
+          
+          // Vendor dashboard actions
+          case "create_property_help":
+            aiResponse = KikiAI.generateResponse("Help me create a property listing");
+            break;
+          case "manage_listings":
+            aiResponse = KikiAI.generateResponse("How do I manage my property listings?");
+            break;
+          case "update_profile":
+            aiResponse = KikiAI.generateResponse("Help me update my profile");
+            break;
+          case "view_analytics":
+            aiResponse = KikiAI.generateResponse("Show me my performance analytics");
+            break;
+          case "pricing_help":
+            aiResponse = KikiAI.generateResponse("How should I price my property?");
+            break;
+          case "photo_tips":
+            aiResponse = KikiAI.generateResponse("Give me tips for better property photos");
+            break;
+          
+          // Properties page actions
+          case "advanced_search":
+            aiResponse = KikiAI.generateResponse("Help me with advanced property search");
+            break;
+          case "save_search":
+            aiResponse = KikiAI.generateResponse("How do I save this search as an alert?");
+            break;
+          case "similar_properties":
+            aiResponse = KikiAI.generateResponse("Show me similar properties");
+            break;
+          case "contact_agent":
+            aiResponse = KikiAI.generateResponse("How do I contact the property agent?");
+            break;
+          case "schedule_viewing":
+            aiResponse = KikiAI.generateResponse("Help me schedule a property viewing");
+            break;
+          case "property_valuation":
+            aiResponse = KikiAI.generateResponse("Can you help me get a property valuation?");
+            break;
+          
+          // Investment page actions
+          case "investment_calc":
+            aiResponse = KikiAI.generateResponse("Help me with investment calculations");
+            break;
+          case "market_analysis":
+            aiResponse = KikiAI.generateResponse("Show me market analysis and trends");
+            break;
+          case "create_portfolio":
+            aiResponse = KikiAI.generateResponse("Help me create an investment portfolio");
+            break;
+          case "investment_alerts":
+            aiResponse = KikiAI.generateResponse("Set up investment alerts");
+            break;
+          case "risk_assessment":
+            aiResponse = KikiAI.generateResponse("Help me assess investment risks");
+            break;
+          case "investment_strategies":
+            aiResponse = KikiAI.generateResponse("What are good investment strategies?");
+            break;
+          
+          // Blog page actions
+          case "search_blog":
+            aiResponse = KikiAI.generateResponse("Help me search blog articles");
+            break;
+          case "subscribe_blog":
+            aiResponse = KikiAI.generateResponse("How do I subscribe to blog updates?");
+            break;
+          case "latest_news":
+            aiResponse = KikiAI.generateResponse("Show me the latest property news");
+            break;
+          case "share_article":
+            aiResponse = KikiAI.generateResponse("How do I share this article?");
+            break;
+          case "market_insights":
+            aiResponse = KikiAI.generateResponse("Give me market insights");
+            break;
+          case "investment_tips":
+            aiResponse = KikiAI.generateResponse("Share property investment tips");
+            break;
+          
+          // Dashboard actions
+          case "check_alerts":
+            aiResponse = KikiAI.generateResponse("Show me my property alerts");
+            break;
+          case "saved_properties":
+            aiResponse = KikiAI.generateResponse("Show me my saved properties");
+            break;
+          case "recent_searches":
+            aiResponse = KikiAI.generateResponse("Show me my recent searches");
+            break;
+          case "account_settings":
+            aiResponse = KikiAI.generateResponse("Help me with account settings");
+            break;
+          case "recommendations":
+            aiResponse = KikiAI.generateResponse("Give me personalized recommendations");
+            break;
+          
+          // General actions
+          case "search_properties":
+            aiResponse = KikiAI.generateResponse("Help me find properties");
+            break;
+          case "browse_properties":
+            aiResponse = KikiAI.generateResponse("Help me browse properties");
+            break;
+          case "help_started":
+            aiResponse = KikiAI.generateResponse("Help me get started on this platform");
+            break;
+          case "help_general":
+            aiResponse = KikiAI.generateResponse("What can you help me with?");
+            break;
+          case "platform_features":
+            aiResponse = KikiAI.generateResponse("Tell me about platform features");
+            break;
+          
           default:
             aiResponse = KikiAI.generateResponse(userMessage);
         }
@@ -331,7 +526,9 @@ const AIAssistant = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-sm">KIKI - AI Assistant</h3>
-                <p className="text-xs opacity-80">Online • Ready to help</p>
+                <p className="text-xs opacity-80">
+                  {isSpeaking ? "🔊 Speaking..." : isListening ? "🎤 Listening..." : "Online • Ready to help"}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -440,7 +637,7 @@ const AIAssistant = () => {
                     </button>
                     <label className="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
                       <input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} />
-                      Audio replies
+                      🔊 Female voice
                     </label>
                     <span className="text-xs text-gray-400">Powered by AI</span>
                   </div>

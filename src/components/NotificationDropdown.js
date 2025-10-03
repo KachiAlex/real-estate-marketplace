@@ -9,9 +9,13 @@ import {
   FaInfoCircle,
   FaCheckCircle,
   FaTimesCircle,
-  FaSpinner
+  FaSpinner,
+  FaComments,
+  FaStar
 } from 'react-icons/fa';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const NotificationDropdown = () => {
@@ -26,9 +30,16 @@ const NotificationDropdown = () => {
     refreshNotifications
   } = useNotifications();
 
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [isOpen, setIsOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const dropdownRef = useRef(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState(null);
+  const [ratingStars, setRatingStars] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,6 +121,99 @@ const NotificationDropdown = () => {
     }
   };
 
+  const handleSendMessage = async (notification) => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+    try {
+      const { data } = notification;
+      const buyerId = data?.buyerId || user.id;
+      const vendorId = data?.vendorId;
+      const propertyId = data?.propertyId;
+      
+      if (!vendorId || !propertyId) {
+        toast.error('Unable to start chat: missing vendor or property');
+        return;
+      }
+      
+      const payload = {
+        buyerId,
+        vendorId,
+        propertyId,
+        starterId: user.id,
+        initialMessage: `Hi, I'm interested in this property.`
+      };
+      
+      const res = await fetch(`${API_BASE_URL}/api/chats/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const json = await res.json();
+      if (res.ok) {
+        setIsOpen(false);
+        navigate('/messages', { state: { chatId: json.chatId } });
+        toast.success('Chat started!');
+      } else {
+        toast.error(json.error || 'Failed to start chat');
+      }
+    } catch (err) {
+      console.error('Error starting chat:', err);
+      toast.error('Error starting chat');
+    }
+  };
+
+  const handleRate = (notification) => {
+    const { data } = notification;
+    const rateeId = data?.vendorId || data?.buyerId;
+    const roleOfRatee = data?.vendorId ? 'vendor' : 'buyer';
+    setRatingTarget({ 
+      rateeId, 
+      roleOfRatee, 
+      transactionId: data?.transactionId, 
+      propertyId: data?.propertyId 
+    });
+    setShowRatingModal(true);
+    setIsOpen(false);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!ratingTarget || ratingStars === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+    
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/ratings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raterId: user.id,
+          rateeId: ratingTarget.rateeId,
+          transactionId: ratingTarget.transactionId,
+          propertyId: ratingTarget.propertyId,
+          roleOfRatee: ratingTarget.roleOfRatee,
+          stars: ratingStars,
+          comment: ratingComment
+        })
+      });
+      
+      const json = await res.json();
+      if (res.ok) {
+        toast.success('Rating submitted successfully!');
+        setShowRatingModal(false);
+        setRatingStars(0);
+        setRatingComment('');
+        setRatingTarget(null);
+      } else {
+        toast.error(json.error || 'Failed to submit rating');
+      }
+    } catch (err) {
+      console.error('Error submitting rating:', err);
+      toast.error('Error submitting rating');
+    }
+  };
+
   const getNotificationIcon = (type, priority) => {
     const iconClass = `text-lg ${
       priority === 'urgent' ? 'text-red-500' :
@@ -120,11 +224,15 @@ const NotificationDropdown = () => {
 
     switch (type) {
       case 'property_verified':
+      case 'property_approval':
         return <FaCheckCircle className={iconClass} />;
       case 'property_rejected':
         return <FaTimesCircle className={iconClass} />;
+      case 'property_inquiry':
+        return <FaInfoCircle className={iconClass} />;
       case 'escrow_created':
       case 'escrow_payment_received':
+      case 'payment_received':
       case 'escrow_completed':
         return <FaCheckCircle className={iconClass} />;
       case 'escrow_disputed':
@@ -169,7 +277,7 @@ const NotificationDropdown = () => {
       {/* Notification Bell */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        className="relative p-2 text-white hover:text-brand-orange transition-colors"
       >
         <FaBell className="text-xl" />
         {unreadCount > 0 && (
@@ -267,17 +375,39 @@ const NotificationDropdown = () => {
                         </div>
                         
                         {/* Actions */}
-                        <div className="flex items-center space-x-2 mt-3">
+                        <div className="flex items-center flex-wrap gap-2 mt-3">
+                          {/* Send Message for inquiry/payment */}
+                          {(notification.type === 'property_inquiry' || notification.type === 'payment_received') && (
+                            <button
+                              onClick={() => handleSendMessage(notification)}
+                              className="text-xs text-green-600 hover:text-green-800 flex items-center"
+                            >
+                              <FaComments className="mr-1" />
+                              Send Message
+                            </button>
+                          )}
+                          
+                          {/* Rate after payment */}
+                          {notification.type === 'payment_received' && (
+                            <button
+                              onClick={() => handleRate(notification)}
+                              className="text-xs text-yellow-600 hover:text-yellow-800 flex items-center"
+                            >
+                              <FaStar className="mr-1" />
+                              Rate {notification.data?.vendorId ? 'Vendor' : 'Buyer'}
+                            </button>
+                          )}
+                          
                           {notification.status === 'unread' && (
                             <button
                               onClick={() => handleMarkAsRead(notification._id)}
                               disabled={actionLoading === notification._id}
-                              className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                              className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50 flex items-center"
                             >
                               {actionLoading === notification._id ? (
-                                <FaSpinner className="animate-spin inline mr-1" />
+                                <FaSpinner className="animate-spin mr-1" />
                               ) : (
-                                <FaCheck className="inline mr-1" />
+                                <FaCheck className="mr-1" />
                               )}
                               Mark read
                             </button>
@@ -286,12 +416,12 @@ const NotificationDropdown = () => {
                           <button
                             onClick={() => handleArchive(notification._id)}
                             disabled={actionLoading === notification._id}
-                            className="text-xs text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                            className="text-xs text-gray-600 hover:text-gray-800 disabled:opacity-50 flex items-center"
                           >
                             {actionLoading === notification._id ? (
-                              <FaSpinner className="animate-spin inline mr-1" />
+                              <FaSpinner className="animate-spin mr-1" />
                             ) : (
-                              <FaArchive className="inline mr-1" />
+                              <FaArchive className="mr-1" />
                             )}
                             Archive
                           </button>
@@ -299,12 +429,12 @@ const NotificationDropdown = () => {
                           <button
                             onClick={() => handleDelete(notification._id)}
                             disabled={actionLoading === notification._id}
-                            className="text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
+                            className="text-xs text-red-600 hover:text-red-800 disabled:opacity-50 flex items-center"
                           >
                             {actionLoading === notification._id ? (
-                              <FaSpinner className="animate-spin inline mr-1" />
+                              <FaSpinner className="animate-spin mr-1" />
                             ) : (
-                              <FaTrash className="inline mr-1" />
+                              <FaTrash className="mr-1" />
                             )}
                             Delete
                           </button>
@@ -328,6 +458,63 @@ const NotificationDropdown = () => {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Rate {ratingTarget?.roleOfRatee === 'vendor' ? 'Vendor' : 'Buyer'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRatingStars(star)}
+                      className={`text-3xl transition-colors ${star <= ratingStars ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      <FaStar />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                <textarea
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Share your experience..."
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowRatingModal(false);
+                    setRatingStars(0);
+                    setRatingComment('');
+                    setRatingTarget(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRatingSubmit}
+                  disabled={ratingStars === 0}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Rating
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

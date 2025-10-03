@@ -1,79 +1,201 @@
-const functions = require('firebase-functions/v1');
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const cors = require('cors')({ origin: true });
-let SpeechClient, TTSClient;
-try {
-  SpeechClient = require('@google-cloud/speech').v1.SpeechClient;
-  TTSClient = require('@google-cloud/text-to-speech').TextToSpeechClient;
-} catch (_) {}
+const express = require('express');
+const cors = require('cors');
 
 // Initialize Firebase Admin
 admin.initializeApp();
+const db = admin.firestore();
 
-// Inspection request trigger (simplified without FCM for now)
-exports.onInspectionRequestWrite = functions.firestore
-  .document('inspectionRequests/{requestId}')
-  .onWrite(async (change, context) => {
-    try {
-      const before = change.before.exists ? change.before.data() : null;
-      const after = change.after.exists ? change.after.data() : null;
-      if (!after) return; // deleted
+const app = express();
 
-      console.log('Inspection request updated:', {
-        requestId: context.params.requestId,
-        before: before?.status,
-        after: after?.status,
-        buyerId: after.buyerId,
-        vendorId: after.vendorId
-      });
+// Middleware
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-      // TODO: Add FCM notifications here once functions are stable
-    } catch (e) {
-      console.error('onInspectionRequestWrite error:', e);
-    }
-  });
-
-// Health check function
-exports.health = functions.https.onRequest((req, res) => {
-  res.status(200).send('ok');
-});
-
-// Speech-to-Text endpoint
-exports.stt = functions.https.onRequest(async (req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
-      if (!SpeechClient) return res.status(500).json({ success: false, message: 'Speech client not available' });
-      const { audioBase64, languageCode = 'en-US' } = req.body || {};
-      if (!audioBase64) return res.status(400).json({ success: false, message: 'audioBase64 is required' });
-      const client = new SpeechClient();
-      const [response] = await client.recognize({
-        audio: { content: audioBase64 },
-        config: { encoding: 'WEBM_OPUS', sampleRateHertz: 48000, languageCode }
-      });
-      const transcript = response.results?.map(r => r.alternatives?.[0]?.transcript).join(' ') || '';
-      res.json({ success: true, transcript });
-    } catch (e) {
-      console.error('stt error:', e);
-      res.status(500).json({ success: false, message: 'stt failed' });
-    }
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Real Estate API is running',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Text-to-Speech endpoint
-exports.tts = functions.https.onRequest(async (req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
-      if (!TTSClient) return res.status(500).json({ success: false, message: 'TTS client not available' });
-      const { text, voice = { languageCode: 'en-US', name: 'en-US-Neural2-C' }, audioConfig = { audioEncoding: 'MP3' } } = req.body || {};
-      if (!text) return res.status(400).json({ success: false, message: 'text is required' });
-      const client = new TTSClient();
-      const [response] = await client.synthesizeSpeech({ input: { text }, voice, audioConfig });
-      res.json({ success: true, audioBase64: response.audioContent.toString('base64') });
-    } catch (e) {
-      console.error('tts error:', e);
-      res.status(500).json({ success: false, message: 'tts failed' });
-    }
-  });
+// Properties endpoints
+app.get('/api/properties', async (req, res) => {
+  try {
+    const snapshot = await db.collection('properties').get();
+    const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(properties);
+  } catch (error) {
+    console.error('Error fetching properties:', error);
+    res.status(500).json({ error: 'Failed to fetch properties' });
+  }
 });
+
+// Property approval
+app.put('/api/properties/:id/approve', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const propertyDoc = await db.collection('properties').doc(propertyId).get();
+    if (!propertyDoc.exists) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    await db.collection('properties').doc(propertyId).update({
+      approvalStatus: 'approved',
+      isApproved: true,
+      approvedAt: new Date().toISOString()
+    });
+    res.json({ message: 'Property approved' });
+  } catch (error) {
+    console.error('Error approving property:', error);
+    res.status(500).json({ error: 'Failed to approve property' });
+  }
+});
+
+// Property rejection
+app.put('/api/properties/:id/reject', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const { rejectionReason } = req.body;
+    const propertyDoc = await db.collection('properties').doc(propertyId).get();
+    if (!propertyDoc.exists) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    await db.collection('properties').doc(propertyId).update({
+      approvalStatus: 'rejected',
+      isApproved: false,
+      rejectionReason: rejectionReason || '',
+      rejectedAt: new Date().toISOString()
+    });
+    res.json({ message: 'Property rejected' });
+  } catch (error) {
+    console.error('Error rejecting property:', error);
+    res.status(500).json({ error: 'Failed to reject property' });
+  }
+});
+
+// Notifications
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const notification = {
+      ...req.body,
+      createdAt: new Date().toISOString(),
+      isRead: false
+    };
+    const docRef = await db.collection('notifications').add(notification);
+    res.json({ id: docRef.id, ...notification });
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    let ref = db.collection('notifications');
+    if (userId) ref = ref.where('userId', '==', userId);
+    const snapshot = await ref.orderBy('createdAt', 'desc').limit(50).get();
+    const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    res.json(items);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Chat
+app.post('/api/chats/start', async (req, res) => {
+  try {
+    const { buyerId, vendorId, propertyId, starterId, initialMessage } = req.body;
+    const chatData = {
+      buyerId,
+      vendorId,
+      propertyId,
+      starterId,
+      createdAt: new Date().toISOString(),
+      messages: [{
+        senderId: starterId,
+        message: initialMessage,
+        timestamp: new Date().toISOString()
+      }]
+    };
+    const docRef = await db.collection('chats').add(chatData);
+    res.json({ chatId: docRef.id, ...chatData });
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    res.status(500).json({ error: 'Failed to create chat' });
+  }
+});
+
+// Rating
+app.post('/api/ratings', async (req, res) => {
+  try {
+    const rating = {
+      ...req.body,
+      createdAt: new Date().toISOString()
+    };
+    const docRef = await db.collection('ratings').add(rating);
+    res.json({ id: docRef.id, ...rating });
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+    res.status(500).json({ error: 'Failed to submit rating' });
+  }
+});
+
+// Inspection Request endpoints
+app.post('/api/inspection-requests', async (req, res) => {
+  try {
+    const inspectionRequest = {
+      ...req.body,
+      createdAt: new Date().toISOString(),
+      status: 'pending_vendor'
+    };
+    const docRef = await db.collection('inspectionRequests').add(inspectionRequest);
+    res.json({ id: docRef.id, ...inspectionRequest });
+  } catch (error) {
+    console.error('Error creating inspection request:', error);
+    res.status(500).json({ error: 'Failed to create inspection request' });
+  }
+});
+
+app.get('/api/inspection-requests', async (req, res) => {
+  try {
+    const { vendorId, buyerId } = req.query;
+    let query = db.collection('inspectionRequests');
+    
+    if (vendorId) {
+      query = query.where('vendorId', '==', vendorId);
+    } else if (buyerId) {
+      query = query.where('buyerId', '==', buyerId);
+    }
+    
+    const snapshot = await query.orderBy('createdAt', 'desc').get();
+    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(requests);
+  } catch (error) {
+    console.error('Error fetching inspection requests:', error);
+    res.status(500).json({ error: 'Failed to fetch inspection requests' });
+  }
+});
+
+app.put('/api/inspection-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = {
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await db.collection('inspectionRequests').doc(id).update(updates);
+    res.json({ message: 'Inspection request updated successfully' });
+  } catch (error) {
+    console.error('Error updating inspection request:', error);
+    res.status(500).json({ error: 'Failed to update inspection request' });
+  }
+});
+
+// Export the Express app as a Firebase Function
+exports.api = functions.https.onRequest(app);

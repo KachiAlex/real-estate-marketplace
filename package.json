@@ -1,6 +1,6 @@
 {
   "name": "real-estate-marketplace",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive real estate marketplace platform with property sales, rentals, and investment features",
   "private": true,
   "main": "backend/server.js",

@@ -371,7 +371,8 @@ export const PropertyProvider = ({ children }) => {
         
         // For other Firestore errors, attempt to post to backend mock API, then fallback to localStorage
         try {
-          const resp = await fetch('/api/properties', {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+          const resp = await fetch(`${API_BASE_URL}/api/properties`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(apiPayload)
@@ -659,10 +660,8 @@ export const PropertyProvider = ({ children }) => {
           
           if (firestoreProps.length > 0) {
             console.log('PropertyContext: Found Firestore properties:', firestoreProps.length);
-            // Merge Firestore properties with mock data (avoid duplicates)
-            const mockIds = new Set(mockProperties.map(p => p.id));
-            const newFirestoreProps = firestoreProps.filter(p => !mockIds.has(p.id));
-            allProperties = [...mockProperties, ...newFirestoreProps];
+            // Use Firestore properties as primary source for admin dashboard
+            allProperties = firestoreProps;
           }
         } catch (firestoreError) {
           console.warn('PropertyContext: Firestore fetch failed, using mock data:', firestoreError);
@@ -677,7 +676,10 @@ export const PropertyProvider = ({ children }) => {
       }
       
       if (verificationStatus) {
-        filteredProperties = filteredProperties.filter(p => (p.verificationStatus || 'pending') === verificationStatus);
+        filteredProperties = filteredProperties.filter(p => {
+          const approvalStatus = p.approvalStatus || p.verificationStatus || 'pending';
+          return approvalStatus === verificationStatus;
+        });
       }
       
       setProperties(filteredProperties);
@@ -685,9 +687,18 @@ export const PropertyProvider = ({ children }) => {
       // Calculate stats from all properties (not just filtered)
       const stats = {
         total: allProperties.length,
-        pending: allProperties.filter(p => (p.verificationStatus || 'pending') === 'pending').length,
-        approved: allProperties.filter(p => p.verificationStatus === 'approved').length,
-        rejected: allProperties.filter(p => p.verificationStatus === 'rejected').length
+        pending: allProperties.filter(p => {
+          const approvalStatus = p.approvalStatus || p.verificationStatus || 'pending';
+          return approvalStatus === 'pending';
+        }).length,
+        approved: allProperties.filter(p => {
+          const approvalStatus = p.approvalStatus || p.verificationStatus;
+          return approvalStatus === 'approved';
+        }).length,
+        rejected: allProperties.filter(p => {
+          const approvalStatus = p.approvalStatus || p.verificationStatus;
+          return approvalStatus === 'rejected';
+        }).length
       };
       
       console.log('PropertyContext: Using combined data with stats:', stats);

@@ -107,7 +107,7 @@ class StorageService {
       });
       formData.append('uploadType', 'property_images');
       formData.append('metadata', JSON.stringify({
-        propertyId,
+          propertyId,
         userId
       }));
 
@@ -188,8 +188,8 @@ class StorageService {
       formData.append('file', file);
       formData.append('uploadType', 'escrow_document');
       formData.append('metadata', JSON.stringify({
-        escrowId,
-        documentType,
+          escrowId,
+          documentType,
         userId
       }));
 

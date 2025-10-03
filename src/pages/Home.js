@@ -30,6 +30,8 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Lagos');
   const [selectedType, setSelectedType] = useState('Apartment');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [priceRange, setPriceRange] = useState([0, 100000000]);
   const [bedrooms, setBedrooms] = useState('2');
   const [bathrooms, setBathrooms] = useState('3');
@@ -37,7 +39,6 @@ const Home = () => {
     'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 'WiFi', 'Furnished', 'Balcony'
   ]);
   const [propertyAge, setPropertyAge] = useState('New 0-5 yrs');
-  const [quickFilter, setQuickFilter] = useState('All Properties');
   const [sortBy, setSortBy] = useState('Most Relevant');
   const [showMoreAmenities, setShowMoreAmenities] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -173,12 +174,29 @@ const Home = () => {
     }
   ];
 
-  const quickFilters = [
-    'All Properties', 'For Sale', 'For Rent', 'Shortlet', 'New Developments', 'Waterfront', 'Luxury'
-  ];
+  // Enhanced Quick Filters with sublinks
+  const quickFilters = {
+    'All Properties': [],
+    'For Sale': ['House', 'Apartment', 'Condo', 'Penthouse', 'Land', 'Villa', 'Townhouse'],
+    'For Rent': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Kaduna', 'Enugu', 'Aba'],
+    'Shortlet': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Calabar', 'Jos', 'Ibadan', 'Kaduna'],
+    'New Developments': [],
+    'Waterfront': [],
+    'Luxury': [],
+    'Blog': [],
+    'Diasporan Services': ['Legal Services', 'Account & Book Keeping', 'Business Office for consultation']
+  };
 
-  const locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
-  const propertyTypes = ['Apartment', 'House', 'Villa', 'Condo', 'Townhouse'];
+  // All Nigerian States
+  const locations = [
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 
+    'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 
+    'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 
+    'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 
+    'Zamfara', 'Abuja (FCT)'
+  ];
+  const propertyTypes = ['Apartment', 'House', 'Villa', 'Condo', 'Townhouse', 'Penthouse', 'Land'];
+  const propertyStatuses = ['For Sale', 'For Rent', 'For Lease', 'Shortlet'];
   const amenities = [
     'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 
     'WiFi', 'Furnished', 'Balcony', 'Garden', 'Terrace', 'Home Theater', 'Sauna'
@@ -197,6 +215,9 @@ const Home = () => {
       case 'location':
         setSelectedLocation('');
         break;
+      case 'status':
+        setSelectedStatus('');
+        break;
       case 'type':
         setSelectedType('');
         break;
@@ -208,17 +229,33 @@ const Home = () => {
 
   const handleResetAllFilters = () => {
     setSelectedLocation('');
+    setSelectedStatus('');
     setSelectedType('');
     setBedrooms('');
     setBathrooms('');
     setPriceRange([0, 100000000]);
     setSearchQuery('');
+    setActiveDropdown(null);
   };
 
   // Initialize filtered properties on component mount
   useEffect(() => {
     setFilteredProperties(mockProperties);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeDropdown && !event.target.closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeDropdown]);
   
   // Calculate pagination
   const displayProperties = filteredProperties.length > 0 ? filteredProperties : mockProperties;
@@ -227,6 +264,7 @@ const Home = () => {
   const currentProperties = displayProperties.slice(indexOfFirstProperty, indexOfLastProperty);
   const totalPages = Math.ceil(displayProperties.length / propertiesPerPage);
 
+
   const handleApplyFilters = () => {
     let filtered = [...mockProperties];
     
@@ -234,6 +272,13 @@ const Home = () => {
     if (selectedLocation) {
       filtered = filtered.filter(property => 
         property.location.toLowerCase().includes(selectedLocation.toLowerCase())
+      );
+    }
+    
+    // Apply property status filter
+    if (selectedStatus) {
+      filtered = filtered.filter(property => 
+        property.status === selectedStatus || property.label === selectedStatus
       );
     }
     
@@ -322,29 +367,6 @@ const Home = () => {
     }
   };
   
-  const handleQuickFilterChange = (filter) => {
-    setQuickFilter(filter);
-    let filtered = [...mockProperties];
-    
-    if (filter !== 'All Properties') {
-      if (filter === 'Luxury') {
-        filtered = filtered.filter(property => 
-          property.price > 80000000 || 
-          property.title.toLowerCase().includes('luxury') ||
-          property.title.toLowerCase().includes('penthouse') ||
-          property.title.toLowerCase().includes('villa')
-        );
-      } else {
-        filtered = filtered.filter(property => 
-          property.label === filter || property.status === filter
-        );
-      }
-    }
-    
-    setFilteredProperties(filtered);
-    setCurrentPage(1);
-    toast.success(`Showing ${filter.toLowerCase()} properties`);
-  };
   
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
@@ -460,28 +482,176 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Quick Filters */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700">Quick Filters:</span>
-            <div className="flex space-x-2">
-              {quickFilters.map((filter) => (
+      {/* Navigation Menu Bar */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center justify-center space-x-8 py-4">
+            {/* For Sale */}
+            <div className="relative dropdown-container">
                 <button
-                  key={filter}
-                  onClick={() => handleQuickFilterChange(filter)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    quickFilter === filter
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  title={`Filter properties by ${filter.toLowerCase()}`}
+                onClick={() => setActiveDropdown(activeDropdown === 'For Sale' ? null : 'For Sale')}
+                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
+                  activeDropdown === 'For Sale' ? 'text-orange-600' : 'text-gray-700'
+                }`}
+              >
+                <span>For Sale</span>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${
+                    activeDropdown === 'For Sale' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
                 >
-                  {filter}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
                 </button>
+              
+              {activeDropdown === 'For Sale' && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                  <div className="py-2">
+                    {quickFilters['For Sale'].map((item) => (
+                      <Link
+                        key={item}
+                        to={`/properties?type=${encodeURIComponent(item)}&status=For Sale`}
+                        onClick={() => setActiveDropdown(null)}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                      >
+                        {item}
+                      </Link>
               ))}
             </div>
           </div>
+              )}
+            </div>
+
+            {/* For Rent */}
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => setActiveDropdown(activeDropdown === 'For Rent' ? null : 'For Rent')}
+                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
+                  activeDropdown === 'For Rent' ? 'text-orange-600' : 'text-gray-700'
+                }`}
+              >
+                <span>For Rent</span>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${
+                    activeDropdown === 'For Rent' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {activeDropdown === 'For Rent' && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                  <div className="py-2">
+                    {quickFilters['For Rent'].map((location) => (
+                      <Link
+                        key={location}
+                        to={`/properties?location=${encodeURIComponent(location)}&status=For Rent`}
+                        onClick={() => setActiveDropdown(null)}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                      >
+                        {location}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Shortlet */}
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
+                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
+                  activeDropdown === 'Shortlet' ? 'text-orange-600' : 'text-gray-700'
+                }`}
+              >
+                <span>Shortlet</span>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${
+                    activeDropdown === 'Shortlet' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {activeDropdown === 'Shortlet' && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                  <div className="py-2">
+                    {quickFilters['Shortlet'].map((location) => (
+                      <Link
+                        key={location}
+                        to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
+                        onClick={() => setActiveDropdown(null)}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                      >
+                        {location}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Blog */}
+            <Link
+              to="/blog"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
+            >
+              Blog
+            </Link>
+
+            {/* Diasporan Services */}
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
+                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
+                  activeDropdown === 'Diasporan Services' ? 'text-orange-600' : 'text-gray-700'
+                }`}
+              >
+                <span>Diasporan Services</span>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${
+                    activeDropdown === 'Diasporan Services' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {activeDropdown === 'Diasporan Services' && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                  <div className="py-2">
+                    {quickFilters['Diasporan Services'].map((service) => (
+                      <button
+                        key={service}
+                        onClick={() => {
+                          toast.info(`${service} - Coming soon!`);
+                          setActiveDropdown(null);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                      >
+                        {service}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </nav>
         </div>
       </div>
 
@@ -506,6 +676,11 @@ const Home = () => {
                 {selectedLocation && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
                     {selectedLocation} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('location')} />
+                  </span>
+                )}
+                {selectedStatus && (
+                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedStatus} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('status')} />
                   </span>
                 )}
                 {selectedType && (
@@ -535,6 +710,21 @@ const Home = () => {
               </select>
             </div>
 
+            {/* Property Status */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Property Status</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">All Status</option>
+                {propertyStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Property Type */}
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2">Property Type</label>
@@ -543,6 +733,7 @@ const Home = () => {
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
+                <option value="">All Types</option>
                 {propertyTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
