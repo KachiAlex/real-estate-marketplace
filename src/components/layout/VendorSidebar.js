@@ -30,7 +30,6 @@ const VendorSidebar = () => {
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
     { path: '/vendor/properties', label: 'My Properties', icon: FaBuilding },
-    { path: '/vendor/add-property', label: 'Add Property', icon: FaPlus },
     { path: '/vendor/inspection-requests', label: 'Inspection Requests', icon: FaBell },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },
     { path: '/vendor/team', label: 'Team', icon: FaUsers },
@@ -83,7 +82,7 @@ const VendorSidebar = () => {
             </div>
             {!isCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Naija Luxury</h1>
+                <h1 className="text-lg font-bold text-gray-900">KIKI ESTATES</h1>
                 <p className="text-xs text-gray-500">Vendor Portal</p>
               </div>
             )}

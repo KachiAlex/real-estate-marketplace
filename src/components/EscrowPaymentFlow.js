@@ -427,7 +427,7 @@ const EscrowPaymentFlow = () => {
                     <div className="text-sm text-blue-800">
                       <p><strong>Bank:</strong> GTBank</p>
                       <p><strong>Account Number:</strong> 0123456789</p>
-                      <p><strong>Account Name:</strong> Naija Luxury Homes Escrow</p>
+                      <p><strong>Account Name:</strong> KIKI ESTATES Escrow</p>
                       <p><strong>Amount:</strong> ₦{calculateTotal().toLocaleString()}</p>
                     </div>
                   </div>

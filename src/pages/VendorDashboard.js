@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
-import PropertyCreationTest from '../components/PropertyCreationTest';
 import PropertyVerification from '../components/PropertyVerification';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
 
@@ -12,7 +11,22 @@ const VendorDashboard = () => {
   const { addProperty } = useProperty();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Set initial tab based on current route
+    if (location.pathname === '/vendor/properties') {
+      return 'properties';
+    }
+    return 'overview';
+  });
+
+  // Update active tab when route changes
+  useEffect(() => {
+    if (location.pathname === '/vendor/properties') {
+      setActiveTab('properties');
+    } else if (location.pathname === '/vendor/dashboard') {
+      setActiveTab('overview');
+    }
+  }, [location.pathname]);
   
   // Determine vendor type
   const isAgent = user?.vendorData?.vendorCategory === 'agent';
@@ -25,26 +39,9 @@ const VendorDashboard = () => {
   const [proposalDate, setProposalDate] = useState('');
   const [proposalTime, setProposalTime] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState(null);
-  const [showAddProperty, setShowAddProperty] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
-  const [newTitle, setNewTitle] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newType, setNewType] = useState('apartment');
-  const [newListingType, setNewListingType] = useState('for-sale');
-  const [sellerRole, setSellerRole] = useState('owner');
-  const [attestationLetterUrl, setAttestationLetterUrl] = useState('');
-  const [propertyDocsUrl, setPropertyDocsUrl] = useState('');
-  const [authorizedAgentsCount, setAuthorizedAgentsCount] = useState('');
-  const [mortgageProvider, setMortgageProvider] = useState('');
-  const [minDownPaymentPercent, setMinDownPaymentPercent] = useState('');
-  const [tenorMonths, setTenorMonths] = useState('');
-  const [interestRate, setInterestRate] = useState('');
-  const [monthlyIncomeRequirement, setMonthlyIncomeRequirement] = useState('');
-  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
 
   // Sync tab with route
   useEffect(() => {
@@ -516,15 +513,14 @@ const VendorDashboard = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">My Properties</h3>
                 <button 
-                  onClick={() => {
-                    setActiveTab('add');
-                  }}
+                  onClick={() => navigate('/vendor/add-property')}
                   className="btn-primary flex items-center space-x-2"
                 >
                   <FaPlus className="h-4 w-4" />
                   <span>Add Property</span>
                 </button>
               </div>
+
 
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {properties.map((property) => (
@@ -576,15 +572,15 @@ const VendorDashboard = () => {
                       <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
                         <div className="flex items-center space-x-1">
                           <FaBed className="h-3 w-3" />
-                          <span>{property.bedrooms}</span>
+                          <span>{property.bedrooms || property.details?.bedrooms || 0}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <FaBath className="h-3 w-3" />
-                          <span>{property.bathrooms}</span>
+                          <span>{property.bathrooms || property.details?.bathrooms || 0}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <FaRulerCombined className="h-3 w-3" />
-                          <span>{property.area}m²</span>
+                          <span>{property.area || property.details?.sqft || 0}m²</span>
                         </div>
                       </div>
 
@@ -771,225 +767,6 @@ const VendorDashboard = () => {
             <VendorInspectionRequests />
           )}
 
-          {/* Add Property Tab */}
-          {activeTab === 'add' && (
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Property</h3>
-              {/* Property Creation Test - Temporary for debugging */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <PropertyCreationTest />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="e.g., Luxury Apartment in VI" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
-                  <input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" min="0" className="w-full border rounded px-3 py-2" placeholder="e.g., 75000000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                  <select value={newType} onChange={(e) => setNewType(e.target.value)} className="w-full border rounded px-3 py-2">
-                    {PROPERTY_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
-                  <select value={newListingType} onChange={(e) => setNewListingType(e.target.value)} className="w-full border rounded px-3 py-2">
-                    {LISTING_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Link</label>
-                  <input value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="https://maps.google.com/?q=..." />
-                  <p className="text-xs text-gray-500 mt-1">Paste the Google Maps share link for the property location.</p>
-                </div>
-                {(googleMapsUrl || (latitude && longitude)) && (
-                  <div className="md:col-span-2">
-                    <div className="rounded-lg overflow-hidden border">
-                      <iframe
-                        title="Map preview"
-                        src={googleMapsUrl
-                          ? `https://www.google.com/maps?q=${encodeURIComponent(googleMapsUrl)}&output=embed`
-                          : `https://www.google.com/maps?q=${encodeURIComponent(latitude + ',' + longitude)}&output=embed`}
-                        width="100%"
-                        height="280"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                      />
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Latitude (optional)</label>
-                  <input value={latitude} onChange={(e) => setLatitude(e.target.value)} type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="6.5244" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitude (optional)</label>
-                  <input value={longitude} onChange={(e) => setLongitude(e.target.value)} type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="3.3792" />
-                </div>
-              </div>
-
-              {/* Role selection */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-900 mb-3">Are you the owner or an agent entrusted with this property?</p>
-                <div className="flex flex-wrap gap-6">
-                  <label className="inline-flex items-center gap-2 text-sm">
-                    <input type="radio" name="role" value="owner" checked={sellerRole==='owner'} onChange={() => setSellerRole('owner')} />
-                    <span>Owner</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm">
-                    <input type="radio" name="role" value="agent" checked={sellerRole==='agent'} onChange={() => setSellerRole('agent')} />
-                    <span>Agent (entrusted)</span>
-                  </label>
-                </div>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Documents (URL)</label>
-                    <input value={propertyDocsUrl} onChange={(e) => setPropertyDocsUrl(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="Link to uploaded docs" />
-                  </div>
-                  {sellerRole === 'agent' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Owner Attestation Letter (URL)</label>
-                        <input value={attestationLetterUrl} onChange={(e) => setAttestationLetterUrl(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="Link to letter" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Authorized Agents</label>
-                        <input value={authorizedAgentsCount} onChange={(e) => setAuthorizedAgentsCount(e.target.value)} type="number" min="1" className="w-full border rounded px-3 py-2" placeholder="e.g., 3" />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Mortgage extra fields */}
-              {newListingType === 'for-mortgage' && (
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Mortgage Details</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mortgage Provider</label>
-                      <input value={mortgageProvider} onChange={(e) => setMortgageProvider(e.target.value)} className="w-full border rounded px-3 py-2" placeholder="Bank or provider name" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Min Down Payment (%)</label>
-                      <input value={minDownPaymentPercent} onChange={(e) => setMinDownPaymentPercent(e.target.value)} type="number" min="0" max="100" className="w-full border rounded px-3 py-2" placeholder="e.g., 20" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tenor (months)</label>
-                      <input value={tenorMonths} onChange={(e) => setTenorMonths(e.target.value)} type="number" min="1" className="w-full border rounded px-3 py-2" placeholder="e.g., 120" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (% p.a.)</label>
-                      <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} type="number" min="0" step="0.01" className="w-full border rounded px-3 py-2" placeholder="e.g., 18" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Income Requirement (₦)</label>
-                      <input value={monthlyIncomeRequirement} onChange={(e) => setMonthlyIncomeRequirement(e.target.value)} type="number" min="0" className="w-full border rounded px-3 py-2" placeholder="e.g., 500000" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2">
-                <button onClick={() => setActiveTab('properties')} className="px-4 py-2 rounded border">Cancel</button>
-                <button
-                  onClick={async () => {
-                    // simple validations
-                    if (!newTitle || !newPrice) { alert('Please provide title and price.'); return; }
-                    if (!propertyDocsUrl) { alert('Please provide property documents URL.'); return; }
-                    if (sellerRole === 'agent' && !attestationLetterUrl) { alert('Attestation letter is required for agents.'); return; }
-
-                    const extra = {
-                      sellerRole,
-                      documents: {
-                        propertyDocsUrl,
-                        attestationLetterUrl: sellerRole === 'agent' ? attestationLetterUrl : ''
-                      },
-                      authorizedAgentsCount: sellerRole === 'agent' ? Number(authorizedAgentsCount || 0) : undefined,
-                      mortgageDetails: newListingType === 'for-mortgage' ? {
-                        mortgageProvider,
-                        minDownPaymentPercent: Number(minDownPaymentPercent || 0),
-                        tenorMonths: Number(tenorMonths || 0),
-                        interestRate: Number(interestRate || 0),
-                        monthlyIncomeRequirement: Number(monthlyIncomeRequirement || 0)
-                      } : undefined
-                    };
-
-                    const res = await addProperty({
-                      title: newTitle,
-                      price: Number(newPrice),
-                      type: newType,
-                      listingType: newListingType,
-                      location: {
-                        googleMapsUrl,
-                        coordinates: {
-                          latitude: latitude ? Number(latitude) : undefined,
-                          longitude: longitude ? Number(longitude) : undefined
-                        }
-                      },
-                      ...extra
-                    });
-                    if (res.success) {
-                      // Optimistically add to vendor properties list and persist locally
-                      const created = {
-                        id: res.id || Date.now(),
-                        title: newTitle,
-                        price: Number(newPrice),
-                        location: googleMapsUrl || 'Location not specified',
-                        bedrooms: extra?.details?.bedrooms || 0,
-                        bathrooms: extra?.details?.bathrooms || 0,
-                        area: extra?.details?.sqft || 0,
-                        image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
-                        status: 'pending',
-                        views: 0,
-                        inquiries: 0,
-                        favorites: 0,
-                        dateListed: new Date().toISOString(),
-                        lastUpdated: new Date().toISOString()
-                      };
-                      setProperties(prev => [created, ...prev]);
-                      try {
-                        if (user) {
-                          const key = `vendor_properties_${user.id}`;
-                          const stored = JSON.parse(localStorage.getItem(key) || '[]');
-                          localStorage.setItem(key, JSON.stringify([created, ...stored]));
-                        }
-                      } catch {}
-                      // reset form
-                      setNewTitle('');
-                      setNewPrice('');
-                      setNewType('apartment');
-                      setNewListingType('for-sale');
-                      setSellerRole('owner');
-                      setPropertyDocsUrl('');
-                      setAttestationLetterUrl('');
-                      setAuthorizedAgentsCount('');
-                      setMortgageProvider('');
-                      setMinDownPaymentPercent('');
-                      setTenorMonths('');
-                      setInterestRate('');
-                      setMonthlyIncomeRequirement('');
-                      setGoogleMapsUrl('');
-                      setLatitude('');
-                      setLongitude('');
-                      setActiveTab('properties');
-                    }
-                  }}
-                  className="px-4 py-2 rounded bg-brand-blue text-white"
-                >
-                  Save Property
-                </button>
-              </div>
-            </div>
-          )}
           {activeTab === 'analytics' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900">Property Performance Analytics</h3>

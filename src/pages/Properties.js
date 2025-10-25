@@ -23,16 +23,58 @@ const Properties = () => {
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
   const [alertName, setAlertName] = useState('');
 
+  // Real-time search functionality
+  const filteredProperties = useMemo(() => {
+    let filtered = [...safeProperties];
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(property => 
+        property.title?.toLowerCase().includes(query) ||
+        property.description?.toLowerCase().includes(query) ||
+        property.location?.toLowerCase().includes(query) ||
+        property.address?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply type filter
+    if (selectedType) {
+      filtered = filtered.filter(property => property.type === selectedType);
+    }
+
+    // Apply status filter
+    if (selectedStatus) {
+      filtered = filtered.filter(property => property.status === selectedStatus || property.listingType === selectedStatus);
+    }
+
+    // Apply price range filter
+    if (priceRange.min) {
+      filtered = filtered.filter(property => property.price >= parseFloat(priceRange.min));
+    }
+    if (priceRange.max) {
+      filtered = filtered.filter(property => property.price <= parseFloat(priceRange.max));
+    }
+
+    return filtered;
+  }, [safeProperties, searchQuery, selectedType, selectedStatus, priceRange]);
+
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
-    const statuses = Array.from(new Set(safeProperties.map(p => p.status).filter(Boolean)));
+    const statuses = Array.from(new Set(safeProperties.map(p => p.status || p.listingType).filter(Boolean)));
     const locations = Array.from(new Set(safeProperties.map(p => p.location?.city || p.location).filter(Boolean)));
     return {
-      types: types.length ? types : ['Apartment','House','Villa','Condo'],
+      types: types.length ? types : ['apartment','house','villa','condo','duplex'],
       statuses: statuses.length ? statuses : ['for-sale','for-rent','for-lease'],
       locations
     };
   }, [safeProperties]);
+
+  // Pagination for filtered properties
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProperties = filteredProperties.slice(startIndex, endIndex);
 
   useEffect(() => {
     // Properties are loaded automatically by the context
@@ -86,8 +128,28 @@ const Properties = () => {
     }
   }, [searchParams, setFilters]);
 
-  // Reserved for future granular filter controls
-  const handleFilterChange = () => {};
+  // Handle individual filter changes
+  const handleFilterChange = (filterType, value) => {
+    switch (filterType) {
+      case 'type':
+        setSelectedType(value);
+        break;
+      case 'status':
+        setSelectedStatus(value);
+        break;
+      case 'minPrice':
+        setPriceRange(prev => ({ ...prev, min: value }));
+        break;
+      case 'maxPrice':
+        setPriceRange(prev => ({ ...prev, max: value }));
+        break;
+      case 'search':
+        setSearchQuery(value);
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleApplyFilters = () => {
     const next = {
@@ -95,10 +157,23 @@ const Properties = () => {
       type: selectedType,
       status: selectedStatus,
       minPrice: priceRange.min,
-      maxPrice: priceRange.max
+      maxPrice: priceRange.max,
+      search: searchQuery
     };
     setFilters(next);
     fetchProperties(next, 1);
+    setCurrentPage(1);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSelectedType('');
+    setSelectedStatus('');
+    setPriceRange({ min: '', max: '' });
+    setSearchQuery('');
+    setFilters({});
+    fetchProperties({}, 1);
+    setCurrentPage(1);
   };
 
   const handleSaveSearch = () => {
@@ -272,11 +347,7 @@ const Properties = () => {
     toast.success('Filters cleared');
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(safeProperties.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProperties = safeProperties.slice(startIndex, endIndex);
+  // Pagination logic is now handled above with filteredProperties
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -357,6 +428,18 @@ const Properties = () => {
         <div className="w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
           
+          {/* Search Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search Properties</label>
+            <input
+              type="text"
+              placeholder="Search by title, location, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          
           {/* Price Range */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
@@ -411,10 +494,10 @@ const Properties = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             <button 
-              onClick={handleApplyFilters} 
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={handleClearFilters}
+              className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
             >
-              Apply Filters
+              Clear All Filters
             </button>
             <button 
               onClick={handleResetFilters}
@@ -431,9 +514,14 @@ const Properties = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                {safeProperties.length} Properties Found
+                {filteredProperties.length} Properties Found
               </h2>
-              <p className="text-sm text-gray-600">Showing {startIndex + 1}-{Math.min(endIndex, safeProperties.length)} of {safeProperties.length} properties</p>
+              <p className="text-sm text-gray-600">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredProperties.length)} of {filteredProperties.length} properties
+                {filteredProperties.length !== safeProperties.length && (
+                  <span className="text-blue-600 ml-2">(filtered from {safeProperties.length} total)</span>
+                )}
+              </p>
             </div>
             <select className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
               <option>Sort by: Most Recent</option>
@@ -490,15 +578,15 @@ const Properties = () => {
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                     <div className="flex items-center space-x-1">
                       <FaBed />
-                      <span>{property.bedrooms || 0} Bedrooms</span>
+                      <span>{property.bedrooms || property.details?.bedrooms || 0} Bedrooms</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FaBath />
-                      <span>{property.bathrooms || 0} Bathrooms</span>
+                      <span>{property.bathrooms || property.details?.bathrooms || 0} Bathrooms</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FaRulerCombined />
-                      <span>{property.area || 0}m² Area</span>
+                      <span>{property.area || property.details?.sqft || 0}m² Area</span>
                     </div>
                   </div>
 

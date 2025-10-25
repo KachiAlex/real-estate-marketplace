@@ -637,7 +637,7 @@ const Mortgage = () => {
           </div>
           
           <p className="text-xs text-gray-500 mt-4 text-center">
-            All properties are verified by Naija Luxury Homes for mortgage eligibility.
+            All properties are verified by KIKI ESTATES for mortgage eligibility.
           </p>
         </div>
       </div>
@@ -1009,3 +1009,4 @@ const Mortgage = () => {
 };
 
 export default Mortgage;
+

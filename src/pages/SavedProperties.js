@@ -30,7 +30,7 @@ const SavedProperties = () => {
         agent: {
           name: "Sarah Johnson",
           phone: "+234 801 234 5678",
-          email: "sarah@naijaluxury.com"
+          email: "sarah@kikiestate.com"
         }
       },
       {
@@ -48,7 +48,7 @@ const SavedProperties = () => {
         agent: {
           name: "Michael Adebayo",
           phone: "+234 802 345 6789",
-          email: "michael@naijaluxury.com"
+          email: "michael@kikiestate.com"
         }
       },
       {
@@ -66,7 +66,7 @@ const SavedProperties = () => {
         agent: {
           name: "Grace Okafor",
           phone: "+234 803 456 7890",
-          email: "grace@naijaluxury.com"
+          email: "grace@kikiestate.com"
         }
       },
       {
@@ -84,7 +84,7 @@ const SavedProperties = () => {
         agent: {
           name: "David Okonkwo",
           phone: "+234 804 567 8901",
-          email: "david@naijaluxury.com"
+          email: "david@kikiestate.com"
         }
       },
       {
@@ -102,7 +102,7 @@ const SavedProperties = () => {
         agent: {
           name: "Blessing Nwosu",
           phone: "+234 805 678 9012",
-          email: "blessing@naijaluxury.com"
+          email: "blessing@kikiestate.com"
         }
       }
     ];

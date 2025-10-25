@@ -5,7 +5,7 @@ import { loadGoogleMapsAPI, isGoogleMapsLoaded, initializeGoogleMapsServices } f
 const GoogleMapsAutocomplete = ({ 
   value, 
   onChange, 
-  onPlaceSelect, 
+  onPlaceSelect,
   placeholder = "Enter address...",
   className = "",
   error = false
@@ -37,7 +37,7 @@ const GoogleMapsAutocomplete = ({
     }
   };
 
-  const saveAddressToMemory = (address) => {
+  const saveAddressToMemory = useCallback((address) => {
     try {
       const memory = getAddressMemory();
       const newMemory = [
@@ -51,9 +51,9 @@ const GoogleMapsAutocomplete = ({
       console.error('Error saving address to memory:', error);
       return [];
     }
-  };
+  }, []);
 
-  const getMemorySuggestions = (input) => {
+  const getMemorySuggestions = useCallback((input) => {
     if (!input || input.length < 2) return [];
     
     const memory = getAddressMemory();
@@ -62,7 +62,7 @@ const GoogleMapsAutocomplete = ({
         item.address.toLowerCase().includes(input.toLowerCase())
       )
       .slice(0, 5); // Show max 5 memory suggestions
-  };
+  }, []);
 
   useEffect(() => {
     // Initialize Google Maps services (API should already be preloaded)
@@ -419,13 +419,13 @@ const GoogleMapsAutocomplete = ({
   return (
     <div className="relative">
       <div className="relative">
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            onFocus={handleFocus}
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onFocus={handleFocus}
           className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
             error ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
           }`}

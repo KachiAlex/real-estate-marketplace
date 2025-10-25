@@ -14,7 +14,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   const { title, body } = payload.notification || {};
-  const notificationTitle = title || 'Naija Luxury Homes';
+  const notificationTitle = title || 'KIKI ESTATES';
   const notificationOptions = { body: body || '', icon: '/logo192.png' };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

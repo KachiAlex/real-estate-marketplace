@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
-import { FaChartLine, FaFilter, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaHeart, FaShieldAlt, FaFileContract, FaLock, FaHandshake, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle, FaDollarSign } from 'react-icons/fa';
+import { FaChartLine, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaShieldAlt, FaFileContract, FaLock, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle, FaDollarSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 import InvestmentChart from '../components/InvestmentChart';
@@ -26,7 +26,7 @@ const Investment = () => {
   const [paymentReference, setPaymentReference] = useState('');
   const [createdEscrow, setCreatedEscrow] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // 1: Amount, 2: Method & Terms, 3: Review & Pay
-  const [isOpeningModal, setIsOpeningModal] = useState(false);
+  const [isOpeningModal] = useState(false);
 
   // Viewing schedule state
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -537,7 +537,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>🏠 NAIJA LUXURY HOMES</h1>
+            <h1>🏠 KIKI ESTATES</h1>
             <h2>INVESTMENT AGREEMENT</h2>
             <p>Agreement ID: ${investment?.id}</p>
           </div>
@@ -585,12 +585,12 @@ const Investment = () => {
 
           <div class="section">
             <h3>5. TERMS & CONDITIONS</h3>
-            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents by Naija Luxury Homes legal team.</p>
+            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents by KIKI ESTATES legal team.</p>
           </div>
 
           <div class="section">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-            <p><strong>Digital Signature:</strong> Electronically signed via Naija Luxury Homes platform</p>
+            <p><strong>Digital Signature:</strong> Electronically signed via KIKI ESTATES platform</p>
           </div>
         </body>
         </html>
@@ -615,7 +615,7 @@ const Investment = () => {
 
           <div class="section">
             <h3>ESCROW FUND PROTECTION</h3>
-            <p>Your investment amount of <strong>₦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed by Naija Luxury Homes until all conditions are met.</p>
+            <p>Your investment amount of <strong>₦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed by KIKI ESTATES until all conditions are met.</p>
           </div>
 
           <div class="section">
@@ -1930,3 +1930,4 @@ const Investment = () => {
 };
 
 export default Investment;
+

@@ -35,7 +35,7 @@ const Contact = () => {
     {
       icon: FaEnvelope,
       title: 'Email',
-      details: ['info@naijaluxuryhomes.com', 'support@naijaluxuryhomes.com'],
+      details: ['info@kikiestate.com', 'support@kikiestate.com'],
       description: 'Send us an email anytime'
     },
     {
@@ -62,7 +62,7 @@ const Contact = () => {
     {
       icon: FaTelegram,
       name: 'Telegram',
-      contact: '@NaijaLuxurySupport',
+      contact: '@KikiEstateSupport',
       description: 'Get help through Telegram'
     }
   ];
@@ -221,7 +221,7 @@ const Contact = () => {
                     <label htmlFor="privacy" className="text-sm text-gray-600">
                       I agree to the <a href="#" className="text-brand-blue hover:underline">Privacy Policy</a> and 
                       <a href="#" className="text-brand-blue hover:underline"> Terms of Service</a>. 
-                      I consent to being contacted by Naija Luxury Homes regarding my inquiry.
+                      I consent to being contacted by KIKI ESTATES regarding my inquiry.
                     </label>
                   </div>
                 </div>

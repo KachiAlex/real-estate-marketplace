@@ -20,17 +20,49 @@ const AdminPropertyVerification = () => {
   const loadVerificationRequests = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/admin/verification-requests`);
+      setError('');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch verification requests');
-      }
-
-      const data = await response.json();
-      setVerificationRequests(data.verificationRequests || []);
+      // Skip API call and use mock data
+      const mockVerificationRequests = [
+        {
+          id: '1',
+          propertyId: 'prop_001',
+          vendorId: 'user_001',
+          vendorEmail: 'john@example.com',
+          propertyTitle: 'Luxury Villa in Lekki',
+          propertyType: 'House',
+          propertyPrice: 500000000,
+          submittedAt: new Date().toISOString(),
+          status: 'pending',
+          documents: [
+            { type: 'title_deed', url: 'https://example.com/title.pdf', verified: false },
+            { type: 'survey_plan', url: 'https://example.com/survey.pdf', verified: false }
+          ]
+        },
+        {
+          id: '2',
+          propertyId: 'prop_002',
+          vendorId: 'user_002',
+          vendorEmail: 'jane@example.com',
+          propertyTitle: 'Modern Apartment in Victoria Island',
+          propertyType: 'Apartment',
+          propertyPrice: 120000000,
+          submittedAt: new Date().toISOString(),
+          status: 'pending',
+          documents: [
+            { type: 'title_deed', url: 'https://example.com/title2.pdf', verified: false },
+            { type: 'c_of_o', url: 'https://example.com/coo.pdf', verified: false }
+          ]
+        }
+      ];
+      
+      setVerificationRequests(mockVerificationRequests);
+      console.log('AdminPropertyVerification: Using mock data (API unavailable)');
     } catch (err) {
       setError('Failed to load verification requests');
       console.error('Error:', err);
+      // Use empty array as fallback
+      setVerificationRequests([]);
     } finally {
       setLoading(false);
     }
@@ -41,20 +73,9 @@ const AdminPropertyVerification = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/verification/${requestId}/approve`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          adminNotes
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to approve property');
-      }
-
+      // Simulate API call with local state update
+      console.log('AdminPropertyVerification: Approving property', requestId);
+      
       // Update local state
       setVerificationRequests(prev => 
         prev.filter(req => req.id !== requestId)
@@ -64,7 +85,7 @@ const AdminPropertyVerification = () => {
       setAdminNotes('');
       
       // Show success message
-      alert('Property approved successfully!');
+      alert('Property approved successfully! (Mock)');
       
     } catch (err) {
       setError('Failed to approve property. Please try again.');
@@ -84,21 +105,9 @@ const AdminPropertyVerification = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/verification/${requestId}/reject`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          rejectionReason,
-          adminNotes
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to reject property');
-      }
-
+      // Simulate API call with local state update
+      console.log('AdminPropertyVerification: Rejecting property', requestId);
+      
       // Update local state
       setVerificationRequests(prev => 
         prev.filter(req => req.id !== requestId)
@@ -109,7 +118,7 @@ const AdminPropertyVerification = () => {
       setAdminNotes('');
       
       // Show success message
-      alert('Property rejected successfully! Vendor will be notified.');
+      alert('Property rejected successfully! (Mock)');
       
     } catch (err) {
       setError('Failed to reject property. Please try again.');

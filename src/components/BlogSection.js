@@ -15,22 +15,96 @@ const BlogSection = () => {
     try {
       setLoading(true);
       
-      // Load featured blogs
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-      const featuredResponse = await fetch(`${API_BASE_URL}/api/blog?featured=true&limit=3`);
-      const featuredData = await featuredResponse.json();
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (featuredData.success) {
-        setFeaturedBlogs(featuredData.data);
-      }
+      // Mock featured blogs data
+      const mockFeaturedBlogs = [
+        {
+          id: 1,
+          title: '10 Essential Tips for First-Time Home Buyers in Nigeria',
+          excerpt: 'Navigate the Nigerian real estate market with confidence using these expert tips for first-time buyers.',
+          category: 'real-estate-tips',
+          author: 'Sarah Johnson',
+          publishDate: '2024-01-15',
+          readTime: '5 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=250&fit=crop',
+          slug: 'first-time-home-buyer-tips'
+        },
+        {
+          id: 2,
+          title: 'Lagos Real Estate Market Trends 2024',
+          excerpt: 'Discover the latest trends and opportunities in Lagos real estate market for 2024.',
+          category: 'market-news',
+          author: 'Michael Brown',
+          publishDate: '2024-01-12',
+          readTime: '7 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=250&fit=crop',
+          slug: 'lagos-real-estate-trends-2024'
+        },
+        {
+          id: 3,
+          title: 'Investment Opportunities in Abuja Properties',
+          excerpt: 'Explore lucrative investment opportunities in Abuja\'s growing real estate market.',
+          category: 'investment-guides',
+          author: 'Emily Davis',
+          publishDate: '2024-01-10',
+          readTime: '6 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=250&fit=crop',
+          slug: 'abuja-property-investment-opportunities'
+        }
+      ];
 
-      // Load recent blogs
-      const recentResponse = await fetch(`${API_BASE_URL}/api/blog?limit=4&sort=newest`);
-      const recentData = await recentResponse.json();
+      // Mock recent blogs data
+      const mockRecentBlogs = [
+        {
+          id: 4,
+          title: 'Understanding Property Valuation in Nigeria',
+          excerpt: 'Learn how property valuation works in Nigeria and what factors affect property prices.',
+          category: 'real-estate-tips',
+          author: 'David Wilson',
+          publishDate: '2024-01-08',
+          readTime: '4 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=250&fit=crop',
+          slug: 'property-valuation-nigeria'
+        },
+        {
+          id: 5,
+          title: 'Rental Property Management Best Practices',
+          excerpt: 'Essential tips for managing rental properties effectively in Nigeria.',
+          category: 'property-management',
+          author: 'Lisa Anderson',
+          publishDate: '2024-01-05',
+          readTime: '8 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=250&fit=crop',
+          slug: 'rental-property-management-tips'
+        },
+        {
+          id: 6,
+          title: 'Mortgage Options for Nigerian Home Buyers',
+          excerpt: 'Comprehensive guide to mortgage options available for home buyers in Nigeria.',
+          category: 'financing',
+          author: 'Robert Taylor',
+          publishDate: '2024-01-03',
+          readTime: '6 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop',
+          slug: 'mortgage-options-nigeria'
+        },
+        {
+          id: 7,
+          title: 'Property Investment Strategies for Beginners',
+          excerpt: 'Start your property investment journey with these proven strategies.',
+          category: 'investment-guides',
+          author: 'Jennifer Martinez',
+          publishDate: '2024-01-01',
+          readTime: '9 min read',
+          featuredImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=250&fit=crop',
+          slug: 'property-investment-strategies-beginners'
+        }
+      ];
       
-      if (recentData.success) {
-        setRecentBlogs(recentData.data);
-      }
+      setFeaturedBlogs(mockFeaturedBlogs);
+      setRecentBlogs(mockRecentBlogs);
     } catch (error) {
       console.error('Error loading blog data:', error);
     } finally {
@@ -39,7 +113,12 @@ const BlogSection = () => {
   };
 
   const formatDate = (dateString) => {
-    return format(new Date(dateString), 'MMM dd, yyyy');
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
 
   const getCategoryName = (categorySlug) => {
@@ -117,12 +196,12 @@ const BlogSection = () => {
             <h3 className="text-2xl font-semibold text-gray-900 mb-8">Featured Articles</h3>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {featuredBlogs.map((blog, index) => (
-                <article key={blog._id} className={`${index === 0 ? 'lg:col-span-2' : ''} bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow`}>
+                <article key={blog.id} className={`${index === 0 ? 'lg:col-span-2' : ''} bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow`}>
                   <Link to={`/blog/${blog.slug}`}>
                     <div className="relative">
                       <img
-                        src={blog.featuredImage.url}
-                        alt={blog.featuredImage.alt || blog.title}
+                        src={blog.featuredImage}
+                        alt={blog.title}
                         className={`w-full object-cover ${index === 0 ? 'h-64' : 'h-48'}`}
                       />
                       <div className="absolute top-4 left-4">
@@ -139,7 +218,7 @@ const BlogSection = () => {
                         {getCategoryName(blog.category)}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {blog.readTime} min read
+                        {blog.readTime}
                       </span>
                     </div>
 
@@ -155,17 +234,17 @@ const BlogSection = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <img
-                          src={blog.author.avatar || '/default-avatar.png'}
-                          alt={blog.author.name}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold text-sm">
+                            {blog.author.charAt(0)}
+                          </span>
+                        </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {blog.author.name}
+                            {blog.author}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {formatDate(blog.publishedAt)}
+                            {formatDate(blog.publishDate)}
                           </p>
                         </div>
                       </div>
@@ -176,13 +255,13 @@ const BlogSection = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          <span>{blog.views}</span>
+                          <span>1.2k</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
-                          <span>{blog.likes}</span>
+                          <span>89</span>
                         </div>
                       </div>
                     </div>
@@ -199,11 +278,11 @@ const BlogSection = () => {
             <h3 className="text-2xl font-semibold text-gray-900 mb-8">Latest Articles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {recentBlogs.map((blog) => (
-                <article key={blog._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <article key={blog.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                   <Link to={`/blog/${blog.slug}`}>
                     <img
-                      src={blog.featuredImage.url}
-                      alt={blog.featuredImage.alt || blog.title}
+                      src={blog.featuredImage}
+                      alt={blog.title}
                       className="w-full h-40 object-cover"
                     />
                   </Link>
@@ -214,7 +293,7 @@ const BlogSection = () => {
                         {getCategoryName(blog.category)}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {blog.readTime}m
+                        {blog.readTime}
                       </span>
                     </div>
 
@@ -230,17 +309,17 @@ const BlogSection = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <img
-                          src={blog.author.avatar || '/default-avatar.png'}
-                          alt={blog.author.name}
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold text-xs">
+                            {blog.author.charAt(0)}
+                          </span>
+                        </div>
                         <span className="text-xs text-gray-500">
-                          {blog.author.name}
+                          {blog.author}
                         </span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {formatDate(blog.publishedAt)}
+                        {formatDate(blog.publishDate)}
                       </span>
                     </div>
                   </div>

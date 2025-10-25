@@ -81,7 +81,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">ADMIN PANEL</p>
-            <p className="text-sm font-semibold text-gray-900">Naija Luxury Homes</p>
+            <p className="text-sm font-semibold text-gray-900">KIKI ESTATES</p>
           </div>
         </div>
       </div>

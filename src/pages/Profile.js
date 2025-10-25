@@ -6,7 +6,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    email: user?.email || '',
+    email: user?.email || user?.user?.email || '', // Use login email from auth
     phone: user?.phone || '',
     bio: user?.bio || ''
   });
@@ -33,7 +33,7 @@ const Profile = () => {
     const newErrors = {};
     if (!formData.firstName) newErrors.firstName = 'First name is required';
     if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
+    // Email validation removed - email cannot be changed
     return newErrors;
   };
 
@@ -116,17 +116,18 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-gray-400 text-xs">(Cannot be changed)</span>
+                  </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                   />
-                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                  <p className="mt-1 text-xs text-gray-500">Your email is locked to your login credentials</p>
                 </div>
 
                 <div>

@@ -237,19 +237,19 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <FaBed className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-600">{property.bedrooms || 'N/A'} Bedrooms</span>
+                      <span className="text-gray-600">{property.bedrooms || property.details?.bedrooms || 'N/A'} Bedrooms</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <FaBath className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-600">{property.bathrooms || 'N/A'} Bathrooms</span>
+                      <span className="text-gray-600">{property.bathrooms || property.details?.bathrooms || 'N/A'} Bathrooms</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <FaRuler className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-600">{property.area || 'N/A'} sq ft</span>
+                      <span className="text-gray-600">{property.area || property.details?.sqft || 'N/A'} sq ft</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <FaCar className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-600">{property.parking || 'N/A'} Parking</span>
+                      <span className="text-gray-600">{property.parking || property.details?.parking || 'N/A'} Parking</span>
                     </div>
                   </div>
                 </div>

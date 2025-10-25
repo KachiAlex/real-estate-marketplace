@@ -305,9 +305,9 @@ const BillingPayments = () => {
         phone_number: user?.phone
       },
       customizations: {
-        title: 'Naija Luxury Homes',
+        title: 'KIKI ESTATES',
         description: description,
-        logo: 'https://naijaluxuryhomes.com/logo.png'
+        logo: 'https://kikiestate.com/logo.png'
       }
     };
 
@@ -900,3 +900,4 @@ const BillingPayments = () => {
 };
 
 export default BillingPayments;
+

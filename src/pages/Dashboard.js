@@ -666,15 +666,15 @@ const Dashboard = () => {
                   <div className="property-features">
                     <div className="flex items-center space-x-1">
                       <FaBed />
-                      <span>{property.bedrooms} Bedrooms</span>
+                      <span>{property.bedrooms || property.details?.bedrooms || 0} Bedrooms</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FaBath />
-                      <span>{property.bathrooms} Bathrooms</span>
+                      <span>{property.bathrooms || property.details?.bathrooms || 0} Bathrooms</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FaRuler />
-                      <span>{property.area}m² Area</span>
+                      <span>{property.area || property.details?.sqft || 0}m² Area</span>
                     </div>
               </div>
             </div>

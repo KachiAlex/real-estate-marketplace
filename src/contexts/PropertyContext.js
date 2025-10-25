@@ -123,14 +123,26 @@ export const PropertyProvider = ({ children }) => {
     const loadProperties = () => {
       try {
         // Use mock data directly for now (since backend is not deployed to production)
-        const propertiesData = mockProperties.map(property => ({
-          ...property,
-          bedrooms: property.details?.bedrooms || 0,
-          bathrooms: property.details?.bathrooms || 0,
-          area: property.details?.sqft || 0,
-          location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
-        }));
+        const propertiesData = mockProperties.map(property => {
+          const details = property.details || {};
+          return {
+            ...property,
+            bedrooms: property.bedrooms || details.bedrooms || 0,
+            bathrooms: property.bathrooms || details.bathrooms || 0,
+            area: property.area || details.sqft || 0,
+            parking: property.parking || details.parking || 'N/A',
+            location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
+            image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+            details: {
+              bedrooms: details.bedrooms || property.bedrooms || 0,
+              bathrooms: details.bathrooms || property.bathrooms || 0,
+              sqft: details.sqft || property.area || 0,
+              parking: details.parking || property.parking || 'N/A',
+              yearBuilt: details.yearBuilt || null,
+              lotSize: details.lotSize || null
+            }
+          };
+        });
         setProperties(propertiesData);
         console.log('Loaded mock properties:', propertiesData.length);
       } catch (error) {
@@ -182,20 +194,71 @@ export const PropertyProvider = ({ children }) => {
           (p.title || '').toLowerCase().includes(searchLower) ||
           (p.description || '').toLowerCase().includes(searchLower) ||
           (p.location?.address || '').toLowerCase().includes(searchLower) ||
-          (p.location?.city || '').toLowerCase().includes(searchLower)
+          (p.location?.city || '').toLowerCase().includes(searchLower) ||
+          (p.address || '').toLowerCase().includes(searchLower)
         );
       }
-      if (newFilters.minPrice) data = data.filter(p => (p.price || 0) >= parseInt(newFilters.minPrice));
-      if (newFilters.maxPrice) data = data.filter(p => (p.price || 0) <= parseInt(newFilters.maxPrice));
-      if (newFilters.bedrooms) data = data.filter(p => (p.details?.bedrooms || 0) >= parseInt(newFilters.bedrooms));
-      if (newFilters.bathrooms) data = data.filter(p => (p.details?.bathrooms || 0) >= parseInt(newFilters.bathrooms));
-      if (newFilters.verified === 'true') data = data.filter(p => p.isVerified === true);
+
+      // Price range filters
+      if (newFilters.minPrice) {
+        data = data.filter(p => p.price >= parseFloat(newFilters.minPrice));
+      }
+      if (newFilters.maxPrice) {
+        data = data.filter(p => p.price <= parseFloat(newFilters.maxPrice));
+      }
+
+      // Bedrooms filter
+      if (newFilters.bedrooms) {
+        data = data.filter(p => (p.bedrooms || p.details?.bedrooms || 0) >= parseInt(newFilters.bedrooms));
+      }
+
+      // Bathrooms filter
+      if (newFilters.bathrooms) {
+        data = data.filter(p => (p.bathrooms || p.details?.bathrooms || 0) >= parseInt(newFilters.bathrooms));
+      }
+
+      // Area filter
+      if (newFilters.minArea) {
+        data = data.filter(p => (p.area || p.details?.sqft || 0) >= parseFloat(newFilters.minArea));
+      }
+      if (newFilters.maxArea) {
+        data = data.filter(p => (p.area || p.details?.sqft || 0) <= parseFloat(newFilters.maxArea));
+      }
+
+      // Features filter
+      if (newFilters.features && newFilters.features.length > 0) {
+        data = data.filter(p => {
+          const propertyFeatures = p.features || p.amenities || [];
+          return newFilters.features.every(feature => 
+            propertyFeatures.some(pf => pf.toLowerCase().includes(feature.toLowerCase()))
+          );
+        });
+      }
+
+      // Verification filter
+      if (newFilters.verified === 'true') {
+        data = data.filter(p => p.isVerified === true);
+      }
       else if (newFilters.verified === 'false') data = data.filter(p => p.isVerified === false);
 
-      const propertiesData = data.map(property => ({
-        ...property,
-        bedrooms: property.details?.bedrooms || 0
-      }));
+      const propertiesData = data.map(property => {
+        const details = property.details || {};
+        return {
+          ...property,
+          bedrooms: property.bedrooms || details.bedrooms || 0,
+          bathrooms: property.bathrooms || details.bathrooms || 0,
+          area: property.area || details.sqft || 0,
+          parking: property.parking || details.parking || 'N/A',
+          details: {
+            bedrooms: details.bedrooms || property.bedrooms || 0,
+            bathrooms: details.bathrooms || property.bathrooms || 0,
+            sqft: details.sqft || property.area || 0,
+            parking: details.parking || property.parking || 'N/A',
+            yearBuilt: details.yearBuilt || null,
+            lotSize: details.lotSize || null
+          }
+        };
+      });
 
       setProperties(propertiesData);
       setFilters(newFilters);
@@ -247,10 +310,24 @@ export const PropertyProvider = ({ children }) => {
           filteredProperties = filteredProperties.filter(p => p.isVerified === false);
         }
 
-        const propertiesData = filteredProperties.map(property => ({
-          ...property,
-          bedrooms: property.details?.bedrooms || 0
-        }));
+        const propertiesData = filteredProperties.map(property => {
+          const details = property.details || {};
+          return {
+            ...property,
+            bedrooms: property.bedrooms || details.bedrooms || 0,
+            bathrooms: property.bathrooms || details.bathrooms || 0,
+            area: property.area || details.sqft || 0,
+            parking: property.parking || details.parking || 'N/A',
+            details: {
+              bedrooms: details.bedrooms || property.bedrooms || 0,
+              bathrooms: details.bathrooms || property.bathrooms || 0,
+              sqft: details.sqft || property.area || 0,
+              parking: details.parking || property.parking || 'N/A',
+              yearBuilt: details.yearBuilt || null,
+              lotSize: details.lotSize || null
+            }
+          };
+        });
 
         setProperties(propertiesData);
         setFilters(newFilters);
@@ -275,13 +352,23 @@ export const PropertyProvider = ({ children }) => {
       const property = mockProperties.find(p => p.id === propertyId);
       
       if (property) {
+        const details = property.details || {};
         return {
           ...property,
-          bedrooms: property.details?.bedrooms || 0,
-          bathrooms: property.details?.bathrooms || 0,
-          area: property.details?.sqft || 0,
+          bedrooms: property.bedrooms || details.bedrooms || 0,
+          bathrooms: property.bathrooms || details.bathrooms || 0,
+          area: property.area || details.sqft || 0,
+          parking: property.parking || details.parking || 'N/A',
           location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+          details: {
+            bedrooms: details.bedrooms || property.bedrooms || 0,
+            bathrooms: details.bathrooms || property.bathrooms || 0,
+            sqft: details.sqft || property.area || 0,
+            parking: details.parking || property.parking || 'N/A',
+            yearBuilt: details.yearBuilt || null,
+            lotSize: details.lotSize || null
+          }
         };
       } else {
         throw new Error('Property not found');
@@ -682,7 +769,31 @@ export const PropertyProvider = ({ children }) => {
         });
       }
       
-      setProperties(filteredProperties);
+      // Normalize property data for consistent display
+      const normalizedProperties = filteredProperties.map(property => {
+        // Ensure details object exists and has proper values
+        const details = property.details || {};
+        
+        return {
+          ...property,
+          // Keep both flat and nested versions for compatibility
+          bedrooms: property.bedrooms || details.bedrooms || 0,
+          bathrooms: property.bathrooms || details.bathrooms || 0,
+          area: property.area || details.sqft || 0,
+          parking: property.parking || details.parking || 'N/A',
+          // Ensure details object is properly structured
+          details: {
+            bedrooms: details.bedrooms || property.bedrooms || 0,
+            bathrooms: details.bathrooms || property.bathrooms || 0,
+            sqft: details.sqft || property.area || 0,
+            parking: details.parking || property.parking || 'N/A',
+            yearBuilt: details.yearBuilt || null,
+            lotSize: details.lotSize || null
+          }
+        };
+      });
+      
+      setProperties(normalizedProperties);
       
       // Calculate stats from all properties (not just filtered)
       const stats = {

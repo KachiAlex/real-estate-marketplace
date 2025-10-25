@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
 import NotificationDropdown from '../NotificationDropdown';
+import GlobalSearch from '../GlobalSearch';
+import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
+  const { isSearchOpen, openSearch, closeSearch, handleResultClick } = useGlobalSearch();
 
   const handleLogout = () => {
     logout();
@@ -39,6 +42,19 @@ const Header = () => {
     }
   };
 
+  // Keyboard shortcut for global search (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        openSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [openSearch]);
+
   return (
     <header className="bg-brand-blue shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,7 +64,7 @@ const Header = () => {
             <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
               <FaHome className="text-white text-xl" />
             </div>
-            <span className="text-2xl font-bold text-white">Naija Luxury Homes</span>
+            <span className="text-2xl font-bold text-white">KIKI ESTATES</span>
           </Link>
 
           {/* Search Bar */}
@@ -57,15 +73,18 @@ const Header = () => {
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search for properties..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search properties, investments, users..."
+                onClick={openSearch}
+                readOnly
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               />
             </div>
-            <select className="ml-2 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
-              <option>All Properties</option>
-              <option>For Sale</option>
-              <option>For Rent</option>
-            </select>
+            <button
+              onClick={openSearch}
+              className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Search
+            </button>
           </div>
 
           {/* Desktop User Menu */}
@@ -352,6 +371,15 @@ const Header = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Global Search Modal */}
+      {isSearchOpen && (
+        <GlobalSearch
+          isOpen={isSearchOpen}
+          onClose={closeSearch}
+          onResultClick={handleResultClick}
+        />
       )}
     </header>
   );

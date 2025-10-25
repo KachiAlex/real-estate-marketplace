@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
+
+// Import configurations
+const connectDB = require('./config/database');
+const { securityConfig } = require('./config/security');
+const { createLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,13 +20,8 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 5000;
 
-// Database connection (optional for mock data)
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/realestate', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(async () => {
-  console.log('✅ Connected to MongoDB');
+// Database connection
+connectDB().then(async () => {
   // Initialize admin settings
   await initializeAdminSettings();
   // Initialize notification templates
@@ -34,11 +31,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/realestat
   notificationService.initializeSocketIO(io);
   // Verify email service connection
   const emailStatus = await emailService.verifyConnection();
-  console.log('📧 Email service status:', emailStatus.success ? 'Ready' : 'Failed');
-})
-.catch((error) => {
-  console.warn('⚠️ MongoDB connection failed, using mock data only:', error.message);
-  console.log('📝 Server will run with mock data only');
+  infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
+}).catch((error) => {
+  errorLogger(error, null, { context: 'Database initialization' });
 });
 
 // Import models
@@ -55,22 +50,22 @@ const NotificationTemplate = require('./models/NotificationTemplate');
 const { protect, authorize } = require('./middleware/auth');
 const { validate, sanitizeInput, adminValidation } = require('./middleware/validation');
 const { logAdminAction } = require('./middleware/audit');
+const sanitizeMiddleware = require('./middleware/sanitize');
+const { requireRole, requireAnyRole, checkOwnership } = require('./middleware/roleValidation');
 
 // Import services
 const notificationService = require('./services/notificationService');
 const emailService = require('./services/emailService');
 
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: true, // Allow all origins for now
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
-}));
-app.use(morgan('combined'));
+app.use(securityConfig.helmet);
+app.use(cors(securityConfig.cors));
+app.use(createLogger());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Apply input sanitization to all routes
+app.use(sanitizeMiddleware);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -90,14 +85,33 @@ io.on('connection', (socket) => {
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use(limiter);
 
-// Flutterwave configuration
-const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY || 'FLWSECK_TEST-1234567890abcdef';
-const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-1234567890abcdef';
+// Validate required environment variables
+const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('⚠️ Server will not start in production without these variables');
+  process.exit(1);
+}
+
+// Warn about missing payment keys
+if (!process.env.FLUTTERWAVE_SECRET_KEY && process.env.NODE_ENV === 'production') {
+  warnLogger('FLUTTERWAVE_SECRET_KEY not set - payment features will not work');
+}
+
+// Warn about missing Cloudinary keys
+if (!process.env.CLOUDINARY_CLOUD_NAME && process.env.NODE_ENV === 'production') {
+  warnLogger('Cloudinary not configured - file upload features will not work');
+}
 
 // Import mock data
 const mockUsers = require('./data/mockUsers');
@@ -339,7 +353,7 @@ app.get('/api/agents', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  errorLogger(err, req);
   
   if (err.name === 'ValidationError') {
     return res.status(400).json({ 
@@ -355,11 +369,25 @@ app.use((err, req, res, next) => {
       message: 'Invalid ID format'
     });
   }
+
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token'
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired'
+    });
+  }
   
-  res.status(500).json({ 
+  res.status(err.statusCode || 500).json({ 
     success: false,
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 
@@ -372,14 +400,20 @@ app.use('*', (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
-  console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
-  console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
-  console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
-  console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
-  console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
+  infoLogger(`Server running on port ${PORT}`, { 
+    environment: process.env.NODE_ENV,
+    port: PORT 
+  });
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
+    console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
+    console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
+    console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
+    console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
+    console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
+  }
 });
 
 module.exports = app; 

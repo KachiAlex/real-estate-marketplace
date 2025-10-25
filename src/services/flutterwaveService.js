@@ -41,7 +41,7 @@ class FlutterwaveService {
           name
         },
         customizations: {
-          title: 'Naija Luxury Homes',
+          title: 'KIKI ESTATES',
           description: 'Property Purchase Payment',
           logo: 'https://your-logo-url.com/logo.png'
         },
@@ -295,3 +295,4 @@ class FlutterwaveService {
 const flutterwaveService = new FlutterwaveService();
 
 export default flutterwaveService;
+

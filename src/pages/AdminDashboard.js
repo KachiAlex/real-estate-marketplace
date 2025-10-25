@@ -7,6 +7,7 @@ import BlogManagement from '../components/BlogManagement';
 import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDataSeeder from '../components/AdminDataSeeder';
+import AdminDisputesManagement from '../components/AdminDisputesManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -88,99 +89,38 @@ const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        console.log('AdminDashboard: Loading admin data...');
+        console.log('AdminDashboard: Using mock data (API endpoints unavailable)');
         
-        // Try to fetch from backend API first
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-        const [escrowRes, usersRes, vendorsRes, buyersRes, settingsRes, disputesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/admin/escrow`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Escrow API failed:', err);
-            return { success: false };
-          }),
-          fetch(`${API_BASE_URL}/api/admin/users?page=${pagination.currentPage}&limit=${pagination.itemsPerPage}`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Users API failed:', err);
-            return { success: false };
-          }),
-          fetch(`${API_BASE_URL}/api/admin/vendors`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Vendors API failed:', err);
-            return { success: false };
-          }),
-          fetch(`${API_BASE_URL}/api/admin/buyers`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Buyers API failed:', err);
-            return { success: false };
-          }),
-          fetch(`${API_BASE_URL}/api/admin/settings`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Settings API failed:', err);
-            return { success: false };
-          }),
-          fetch(`${API_BASE_URL}/api/admin/disputes`).then(r => r.json()).catch(err => {
-            console.log('AdminDashboard: Disputes API failed:', err);
-            return { success: false };
-          })
-        ]);
+        // Skip API calls and use fallback mock data directly
+        // Mock escrow data
+        const mockEscrows = [
+          { id: '1', propertyId: '1', buyerId: '1', sellerId: '2', amount: 5000000, status: 'active', createdAt: new Date().toISOString() },
+          { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
+        ];
+        
+        // Mock disputes data
+        const mockDisputes = [
+          { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
+        ];
+        
+        // Mock users data
+        const mockUsers = [
+          { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'user', isVerified: true, createdAt: '2024-01-15' },
+          { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'user', isVerified: true, createdAt: '2024-01-16' },
+          { id: '3', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', isVerified: true, createdAt: '2024-01-01' },
+          { id: '4', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'user', isVerified: true, createdAt: '2024-01-20' }
+        ];
 
-        console.log('AdminDashboard: API responses:', {
-          escrowSuccess: escrowRes?.success,
-          usersSuccess: usersRes?.success,
-          vendorsSuccess: vendorsRes?.success,
-          buyersSuccess: buyersRes?.success,
-          settingsSuccess: settingsRes?.success,
-          disputesSuccess: disputesRes?.success
-        });
-
-        // Set data from API responses or use fallback
-        if (escrowRes?.success) {
-          setEscrows(escrowRes.data || []);
-          setDisputes((escrowRes.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
-        } else {
-          // Fallback mock data
-          setEscrows([
-            { id: '1', propertyId: '1', buyerId: '1', sellerId: '2', amount: 5000000, status: 'active', createdAt: new Date().toISOString() },
-            { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
-          ]);
-          setDisputes([
-            { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
-          ]);
-        }
+        // Set mock data
+        setEscrows(mockEscrows);
+        setDisputes(mockDisputes);
+        setUsers(mockUsers);
         
-        if (usersRes?.success) {
-          setUsers(usersRes.data || []);
-          if (usersRes.pagination) {
-            setPagination(prev => ({
-              ...prev,
-              currentPage: usersRes.pagination.currentPage,
-              totalPages: usersRes.pagination.totalPages,
-              totalItems: usersRes.pagination.totalItems
-            }));
-          }
-        } else {
-          // Fallback mock users
-          setUsers([
-            { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'user' },
-            { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'user' },
-            { id: '3', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin' }
-          ]);
-        }
+        // Set vendors as users with 'user' role
+        setVendors(mockUsers.filter(u => u.role === 'user'));
         
-        if (vendorsRes?.success) {
-          setVendors(vendorsRes.data || []);
-        } else {
-          setVendors(users.filter(u => u.role === 'user'));
-        }
-        
-        if (buyersRes?.success) {
-          setBuyers(buyersRes.data || []);
-        } else {
-          setBuyers(users.filter(u => u.role === 'user'));
-        }
-        
-        if (settingsRes?.success) {
-          setSettings(settingsRes.data || settings);
-        }
-        
-        if (disputesRes?.success) {
-          setDisputes(disputesRes.data || disputes);
-        }
+        // Set buyers as users with 'user' role
+        setBuyers(mockUsers.filter(u => u.role === 'user'));
         
         console.log('AdminDashboard: Data loaded successfully');
       } catch (error) {
@@ -191,7 +131,8 @@ const AdminDashboard = () => {
     if (user && user.role === 'admin') {
       load();
     }
-  }, [user, settings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleResolveEscrow = async (escrowId, decision) => {
     try {
@@ -766,32 +707,7 @@ const AdminDashboard = () => {
 
         {/* Disputes Tab */}
         {activeTab === 'disputes' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Disputes</h2>
-              <p className="text-sm text-gray-500">Transactions requiring admin mediation</p>
-            </div>
-            <div className="p-6">
-              {disputes.length === 0 ? (
-                <p className="text-gray-600">No disputes at the moment.</p>
-              ) : (
-                <ul className="divide-y divide-gray-200">
-                  {disputes.map(d => (
-                    <li key={d.id} className="py-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{d.propertyTitle}</p>
-                        <p className="text-sm text-gray-500">Buyer: {d.buyerName} · Seller: {d.sellerName}</p>
-                      </div>
-                      <div className="space-x-3">
-                        <button onClick={() => handleResolveEscrow(d.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
-                        <button onClick={() => handleResolveEscrow(d.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+          <AdminDisputesManagement disputes={disputes} />
         )}
 
         {/* Users Tab */}

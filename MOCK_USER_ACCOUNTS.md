@@ -148,11 +148,11 @@ This document contains all the mock user accounts with their complete details fo
 ## 👨‍💼 Admin Account
 
 ### Admin User (admin_001)
-- **Email**: `admin@naijaluxuryhomes.com`
+- **Email**: `admin@kikiestate.com`
 - **Password**: `admin123`
 - **Phone**: `+234-800-000-0000`
 - **Role**: Admin
-- **Occupation**: System Administrator at Naija Luxury Homes
+- **Occupation**: System Administrator at Kiki Estate
 - **Properties**: None (Admin doesn't own properties)
 - **Bank Details**: First Bank of Nigeria - 0000000000
 - **KYC Status**: Verified
@@ -181,7 +181,7 @@ This document contains all the mock user accounts with their complete details fo
 ## 🔐 Login Instructions
 
 1. **For Regular Users**: Use any of the user emails above with password `password123`
-2. **For Admin**: Use `admin@naijaluxuryhomes.com` with password `admin123`
+2. **For Admin**: Use `admin@kikiestate.com` with password `admin123`
 3. **All accounts are pre-verified and ready for testing**
 
 ## 💼 Business Use Cases

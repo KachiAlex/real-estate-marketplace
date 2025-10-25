@@ -7,25 +7,62 @@ const HomeSections = () => {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [loading, setLoading] = useState(false);
 
-  // Fetch agents data
+  // Mock agents data
   useEffect(() => {
-    const fetchAgents = async () => {
-      setLoading(true);
-      try {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-        const response = await fetch(`${API_BASE_URL}/api/agents?location=${selectedLocation}`);
-        const data = await response.json();
-        if (data.success) {
-          setAgents(data.data);
+    setLoading(true);
+    // Simulate API call delay
+    setTimeout(() => {
+      const mockAgents = [
+        {
+          id: 1,
+          name: 'Sarah Johnson',
+          location: 'Lagos',
+          phone: '+234 801 234 5678',
+          email: 'sarah@example.com',
+          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+          propertiesSold: 45,
+          rating: 4.9
+        },
+        {
+          id: 2,
+          name: 'Michael Brown',
+          location: 'Abuja',
+          phone: '+234 802 345 6789',
+          email: 'michael@example.com',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+          propertiesSold: 32,
+          rating: 4.8
+        },
+        {
+          id: 3,
+          name: 'Emily Davis',
+          location: 'Lagos',
+          phone: '+234 803 456 7890',
+          email: 'emily@example.com',
+          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+          propertiesSold: 28,
+          rating: 4.7
+        },
+        {
+          id: 4,
+          name: 'David Wilson',
+          location: 'Rivers',
+          phone: '+234 804 567 8901',
+          email: 'david@example.com',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+          propertiesSold: 38,
+          rating: 4.9
         }
-      } catch (error) {
-        console.error('Error fetching agents:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      ];
 
-    fetchAgents();
+      // Filter agents based on selected location
+      const filteredAgents = selectedLocation === 'all' 
+        ? mockAgents 
+        : mockAgents.filter(agent => agent.location === selectedLocation);
+      
+      setAgents(filteredAgents);
+      setLoading(false);
+    }, 500);
   }, [selectedLocation]);
 
   const locations = [

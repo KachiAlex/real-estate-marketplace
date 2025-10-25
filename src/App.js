@@ -8,47 +8,54 @@ import { VendorProvider } from './contexts/VendorContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { MortgageProvider } from './contexts/MortgageContext';
+import { TourProvider } from './contexts/TourContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import VendorSidebar from './components/layout/VendorSidebar';
 import VendorLayout from './components/layout/VendorLayout';
+import LoadingSpinner from './components/LoadingSpinner';
+import KIKI from './components/KIKI';
+import AITourGuide from './components/AITourGuide';
+import TourStartButton from './components/TourStartButton';
+
+// Eagerly load critical pages (shown immediately on load)
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import PropertyDetail from './pages/PropertyDetail';
-import AddProperty from './pages/AddProperty';
-import AdminDashboard from './pages/AdminDashboard';
-import Profile from './pages/Profile';
-import About from './pages/About';
-import Blog from './pages/Blog';
-import BlogDetail from './pages/BlogDetail';
-import Escrow from './pages/Escrow';
-import Investments from './pages/Investments';
-import InvestmentDetail from './pages/InvestmentDetail';
-import InvestmentOpportunities from './pages/InvestmentOpportunities';
-import InvestmentCompanyDashboard from './pages/InvestmentCompanyDashboard';
-import EscrowTransaction from './pages/EscrowTransaction';
-import InvestorDashboard from './pages/InvestorDashboard';
-import Mortgages from './pages/Mortgages';
-import SearchResults from './pages/SearchResults';
-import SavedProperties from './pages/SavedProperties';
-import MyInquiries from './pages/MyInquiries';
-import PropertyAlerts from './pages/PropertyAlerts';
-import Messages from './pages/Messages';
-import Investment from './pages/Investment';
-import Mortgage from './pages/Mortgage';
-import HelpSupport from './pages/HelpSupport';
-import BillingPayments from './pages/BillingPayments';
-import EscrowPaymentFlow from './components/EscrowPaymentFlow';
-import VendorInspectionRequests from './pages/VendorInspectionRequests';
-import BuyerInspectionRequests from './pages/BuyerInspectionRequests';
-import LoadingSpinner from './components/LoadingSpinner';
-import KIKI from './components/KIKI';
 
-// Lazy load vendor pages for better performance
+// Lazy load all other pages for better performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Properties = lazy(() => import('./pages/Properties'));
+const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
+const AddProperty = lazy(() => import('./pages/AddProperty'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const About = lazy(() => import('./pages/About'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogDetail = lazy(() => import('./pages/BlogDetail'));
+const Escrow = lazy(() => import('./pages/Escrow'));
+const Investments = lazy(() => import('./pages/Investments'));
+const InvestmentDetail = lazy(() => import('./pages/InvestmentDetail'));
+const InvestmentOpportunities = lazy(() => import('./pages/InvestmentOpportunities'));
+const InvestmentCompanyDashboard = lazy(() => import('./pages/InvestmentCompanyDashboard'));
+const EscrowTransaction = lazy(() => import('./pages/EscrowTransaction'));
+const InvestorDashboard = lazy(() => import('./pages/InvestorDashboard'));
+const Mortgages = lazy(() => import('./pages/Mortgages'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const SavedProperties = lazy(() => import('./pages/SavedProperties'));
+const MyInquiries = lazy(() => import('./pages/MyInquiries'));
+const PropertyAlerts = lazy(() => import('./pages/PropertyAlerts'));
+const Messages = lazy(() => import('./pages/Messages'));
+const Investment = lazy(() => import('./pages/Investment'));
+const Mortgage = lazy(() => import('./pages/Mortgage'));
+const HelpSupport = lazy(() => import('./pages/HelpSupport'));
+const BillingPayments = lazy(() => import('./pages/BillingPayments'));
+const EscrowPaymentFlow = lazy(() => import('./components/EscrowPaymentFlow'));
+const VendorInspectionRequests = lazy(() => import('./pages/VendorInspectionRequests'));
+const BuyerInspectionRequests = lazy(() => import('./pages/BuyerInspectionRequests'));
+
+// Lazy load vendor pages
 const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
 const VendorEarnings = lazy(() => import('./pages/VendorEarnings'));
 const VendorTeam = lazy(() => import('./pages/VendorTeam'));
@@ -59,17 +66,23 @@ const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 
 function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <VendorProvider>
-          <PropertyProvider>
-            <InvestmentProvider>
-              <EscrowProvider>
-                <MortgageProvider>
-                  <SidebarProvider>
+    <TourProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <VendorProvider>
+            <PropertyProvider>
+              <InvestmentProvider>
+                <EscrowProvider>
+                  <MortgageProvider>
+                    <SidebarProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
               <div className="flex flex-grow w-full">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center w-full h-screen">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                }>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
@@ -350,6 +363,7 @@ function App() {
                       </VendorLayout>
                     </ProtectedRoute>
                   } />
+                  {/* Redirect old add-property route to properties page */}
                   <Route path="/vendor/add-property" element={
                     <ProtectedRoute>
                       <VendorLayout>
@@ -423,19 +437,27 @@ function App() {
                     </ProtectedRoute>
                   } />
                 </Routes>
+                </Suspense>
               </div>
               
-              {/* Global KIKI Assistant */}
-              <KIKI />
+                                {/* Global KIKI Assistant */}
+                                <KIKI />
+
+                                {/* Tour Start Button */}
+                                <TourStartButton />
+                                
+                                {/* AI Tour Guide */}
+                                <AITourGuide />
             </div>
-                  </SidebarProvider>
-                </MortgageProvider>
-              </EscrowProvider>
-            </InvestmentProvider>
-          </PropertyProvider>
-        </VendorProvider>
-      </NotificationProvider>
-    </AuthProvider>
+                    </SidebarProvider>
+                  </MortgageProvider>
+                </EscrowProvider>
+              </InvestmentProvider>
+            </PropertyProvider>
+          </VendorProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </TourProvider>
   );
 }
 

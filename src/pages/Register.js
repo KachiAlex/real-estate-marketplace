@@ -814,12 +814,12 @@ const Register = () => {
                 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h4>
-                  <p>By accessing and using Naija Luxury Homes, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                  <p>By accessing and using KIKI ESTATES, you accept and agree to be bound by the terms and provision of this agreement.</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">2. Use License</h4>
-                  <p>Permission is granted to temporarily use Naija Luxury Homes for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
+                  <p>Permission is granted to temporarily use KIKI ESTATES for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
                 </div>
 
                 <div>
@@ -839,7 +839,7 @@ const Register = () => {
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">6. Limitation of Liability</h4>
-                  <p>In no event shall Naija Luxury Homes, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
+                  <p>In no event shall KIKI ESTATES, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
                 </div>
 
                 <div>
@@ -919,7 +919,7 @@ const Register = () => {
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">7. Contact Us</h4>
-                  <p>If you have any questions about this Privacy Policy, please contact us at privacy@naijaluxuryhomes.com</p>
+                  <p>If you have any questions about this Privacy Policy, please contact us at privacy@kikiestate.com</p>
                 </div>
               </div>
               

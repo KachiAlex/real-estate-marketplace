@@ -23,7 +23,7 @@ const HelpSupport = () => {
       questions: [
         {
           id: 1,
-          question: 'How do I create an account on Naija Luxury Homes?',
+          question: 'How do I create an account on KIKI ESTATES?',
           answer: 'Creating an account is simple! Click the "Register" button on the homepage, fill in your details including name, email, and phone number. Verify your email address and you\'re ready to start browsing properties.'
         },
         {
@@ -120,7 +120,7 @@ const HelpSupport = () => {
       icon: FaEnvelope,
       title: 'Email Support',
       description: 'Get detailed help via email',
-      contact: 'support@naijaluxuryhomes.com',
+      contact: 'support@kikiestate.com',
       availability: '24/7 response within 2 hours',
       color: 'bg-blue-100 text-blue-600'
     },
@@ -136,7 +136,7 @@ const HelpSupport = () => {
       icon: FaTelegram,
       title: 'Telegram Support',
       description: 'Get help through Telegram',
-      contact: '@NaijaLuxurySupport',
+      contact: '@KikiEstateSupport',
       availability: '24/7 instant response',
       color: 'bg-blue-100 text-blue-600'
     }
@@ -195,7 +195,7 @@ const HelpSupport = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Help & Support</h1>
         <p className="text-gray-600">
-          Get the help you need to make the most of Naija Luxury Homes
+          Get the help you need to make the most of KIKI ESTATES
         </p>
       </div>
 
@@ -443,3 +443,4 @@ const HelpSupport = () => {
 };
 
 export default HelpSupport;
+

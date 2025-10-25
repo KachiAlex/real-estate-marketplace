@@ -290,6 +290,51 @@ const InvestmentOpportunities = () => {
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+              
+              {/* Second row of filters */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <input
+                  type="number"
+                  placeholder="Min Amount (₦)"
+                  value={filters.minAmount}
+                  onChange={(e) => handleFilterChange('minAmount', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+
+                <input
+                  type="number"
+                  placeholder="Max ROI (%)"
+                  value={filters.maxROI}
+                  onChange={(e) => handleFilterChange('maxROI', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+
+                <select
+                  value={filters.duration}
+                  onChange={(e) => handleFilterChange('duration', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Duration</option>
+                  <option value="12">12 months</option>
+                  <option value="24">24 months</option>
+                  <option value="36">36 months</option>
+                  <option value="48">48 months</option>
+                  <option value="60">60 months</option>
+                </select>
+
+                <select
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Location</option>
+                  <option value="lagos">Lagos</option>
+                  <option value="abuja">Abuja</option>
+                  <option value="port harcourt">Port Harcourt</option>
+                  <option value="kano">Kano</option>
+                  <option value="ibadan">Ibadan</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -298,15 +343,17 @@ const InvestmentOpportunities = () => {
               <span className="text-sm text-gray-600">
                 {filteredInvestments.length} opportunities found
               </span>
+              
+              {/* Clear Filters Button */}
               <button
                 onClick={handleClearFilters}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
               >
                 Clear Filters
               </button>
             </div>
-
-            <div className="flex items-center space-x-2">
+            
+            <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Sort by:</span>
               <select
                 value={`${sortBy}-${sortOrder}`}
@@ -315,7 +362,7 @@ const InvestmentOpportunities = () => {
                   setSortBy(field);
                   setSortOrder(order);
                 }}
-                className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="createdAt-desc">Newest First</option>
                 <option value="createdAt-asc">Oldest First</option>

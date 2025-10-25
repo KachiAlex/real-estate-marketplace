@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
+import { useTour } from '../contexts/TourContext';
 import { 
   FaRobot, 
   FaTimes, 
@@ -18,19 +19,24 @@ import {
   FaBrain,
   FaMagic,
   FaRocket,
-  FaChartLine
+  FaChartLine,
+  FaMap,
+  FaPlay,
+  FaGraduationCap
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import KikiAI from '../services/kikiAI';
+import TourSelector from './TourSelector';
 
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [showTourSelector, setShowTourSelector] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: 'ai',
-      message: "👋 Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. How can I assist you today?",
+      message: "👋 Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -47,6 +53,7 @@ const AIAssistant = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { properties, searchProperties } = useProperty();
+  const { startTour, availableTours, isTourCompleted } = useTour();
 
   const getQuickSuggestions = () => {
     const currentPath = window.location.pathname;
@@ -118,9 +125,9 @@ const AIAssistant = () => {
         { icon: FaSearch, text: "Find properties", action: "search_properties" },
         { icon: FaBell, text: "Create property alert", action: "create_alert" },
         { icon: FaHome, text: "Browse properties", action: "browse_properties" },
+        { icon: FaMap, text: "Take a guided tour", action: "start_tour" },
         { icon: FaUser, text: "Help me get started", action: "help_started" },
-        { icon: FaQuestionCircle, text: "How can you help me?", action: "help_general" },
-        { icon: FaBrain, text: "Platform features", action: "platform_features" }
+        { icon: FaQuestionCircle, text: "How can you help me?", action: "help_general" }
       ];
     }
   };
@@ -175,45 +182,88 @@ const AIAssistant = () => {
   const speakWithFemaleVoice = (text) => {
     if (!window.speechSynthesis) return;
     
-    // Get available voices
+    // Wait for voices to load
+    const speakWithVoice = () => {
     const voices = window.speechSynthesis.getVoices();
     let selectedVoice = null;
     
-    // Try to find a female voice (common female voice names)
-    const femaleVoiceNames = [
-      'Google UK English Female', 'Google US English Female', 'Microsoft Zira Desktop',
-      'Samantha', 'Karen', 'Victoria', 'Fiona', 'Moira', 'Tessa', 'Veena',
-      'Microsoft Hazel Desktop', 'Microsoft Susan Desktop', 'Microsoft Eva Desktop'
-    ];
-    
-    // Look for female voices
+      // Priority list of natural female voices (most natural first)
+      const naturalFemaleVoices = [
+        'Samantha', // macOS - Very natural
+        'Karen', // macOS - Natural
+        'Victoria', // macOS - Natural
+        'Fiona', // macOS - Natural
+        'Moira', // macOS - Natural
+        'Tessa', // macOS - Natural
+        'Veena', // macOS - Natural
+        'Microsoft Zira Desktop', // Windows - Natural
+        'Microsoft Hazel Desktop', // Windows - Natural
+        'Microsoft Susan Desktop', // Windows - Natural
+        'Microsoft Eva Desktop', // Windows - Natural
+        'Google UK English Female', // Chrome - Natural
+        'Google US English Female', // Chrome - Natural
+        'Google Australian English Female', // Chrome - Natural
+        'Google Canadian English Female', // Chrome - Natural
+        'Google Indian English Female', // Chrome - Natural
+        'Google Irish English Female', // Chrome - Natural
+        'Google New Zealand English Female', // Chrome - Natural
+        'Google South African English Female', // Chrome - Natural
+        'Google UK English Female', // Chrome - Natural
+        'Google US English Female', // Chrome - Natural
+        'Google Welsh English Female' // Chrome - Natural
+      ];
+      
+      // Look for the most natural female voice
     selectedVoice = voices.find(voice => 
-      femaleVoiceNames.some(name => voice.name.includes(name)) ||
-      voice.name.toLowerCase().includes('female') ||
-      (voice.name.includes('Google') && voice.name.includes('Female'))
-    );
-    
-    // If no female voice found, use default
+        naturalFemaleVoices.some(name => voice.name.includes(name))
+      );
+      
+      // If no natural female voice found, look for any female voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('woman') ||
+          voice.name.toLowerCase().includes('girl')
+        );
+      }
+      
+      // If still no female voice, use the first available voice
     if (!selectedVoice && voices.length > 0) {
       selectedVoice = voices[0];
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.9; // Slightly slower for better clarity
-    utterance.pitch = 1.1; // Slightly higher pitch for female voice
-    utterance.volume = 1.0;
+      
+      // Natural speech parameters for human-like voice
+      utterance.rate = 0.85; // Slightly slower for natural conversation
+      utterance.pitch = 1.15; // Slightly higher for female voice
+      utterance.volume = 0.9; // Slightly softer for warmth
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
+      
+      // Add natural pauses and emphasis
+      const naturalText = text
+        .replace(/\./g, '. ') // Add pause after periods
+        .replace(/,/g, ', ') // Add pause after commas
+        .replace(/:/g, ': ') // Add pause after colons
+        .replace(/;/g, '; ') // Add pause after semicolons
+        .replace(/!/g, '! ') // Add pause after exclamations
+        .replace(/\?/g, '? ') // Add pause after questions
+        .replace(/\s+/g, ' '); // Clean up extra spaces
+      
+      utterance.text = naturalText;
     
     speakingRef.current = true;
     setIsSpeaking(true);
+      
     utterance.onend = () => { 
       speakingRef.current = false; 
       setIsSpeaking(false);
     };
+      
     utterance.onerror = () => { 
       speakingRef.current = false; 
       setIsSpeaking(false);
@@ -221,6 +271,15 @@ const AIAssistant = () => {
     
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
+    };
+    
+    // If voices are already loaded, speak immediately
+    if (window.speechSynthesis.getVoices().length > 0) {
+      speakWithVoice();
+    } else {
+      // Wait for voices to load
+      window.speechSynthesis.addEventListener('voiceschanged', speakWithVoice, { once: true });
+    }
   };
 
   // Lightweight capacity boost: keep rolling summary and trim history
@@ -374,14 +433,17 @@ const AIAssistant = () => {
           case "browse_properties":
             aiResponse = KikiAI.generateResponse("Help me browse properties");
             break;
+          case "start_tour":
+            aiResponse = {
+              response: "Oh, I'm absolutely thrilled to give you a guided tour! I'd love to show you around our amazing platform. Let me bring up the available tours for you. I'll be speaking the instructions for each step in a natural, conversational way, and you can use voice commands to navigate hands-free! It'll be like having a personal guide right there with you!",
+              action: { type: 'show_tour_selector' }
+            };
+            break;
           case "help_started":
             aiResponse = KikiAI.generateResponse("Help me get started on this platform");
             break;
           case "help_general":
             aiResponse = KikiAI.generateResponse("What can you help me with?");
-            break;
-          case "platform_features":
-            aiResponse = KikiAI.generateResponse("Tell me about platform features");
             break;
           
           default:
@@ -417,6 +479,8 @@ const AIAssistant = () => {
             const path = queryString ? `${aiResponse.action.path}?${queryString}` : aiResponse.action.path;
             navigate(path);
             toast.success(`Navigated to ${aiResponse.action.path}!`);
+          } else if (aiResponse.action.type === 'show_tour_selector') {
+            setShowTourSelector(true);
           }
         }, 2000);
       }
@@ -493,6 +557,19 @@ const AIAssistant = () => {
 
   const formatTime = (timestamp) => {
     return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleTourRequest = () => {
+    setShowTourSelector(true);
+    // Speak tour invitation with natural, conversational tone
+    speakText("Oh, I'm so excited to show you around! I'd absolutely love to give you a wonderful guided tour of our platform. I have some amazing tours prepared just for you! You can choose from our new user tour, vendor tour, or buyer tour. Each tour will guide you through the platform step by step with my voice instructions. I'll be speaking to you throughout the entire experience, so it'll be like having a personal guide right there with you!");
+  };
+
+  const handleStartSpecificTour = (tourId) => {
+    startTour(tourId);
+    setShowTourSelector(false);
+    addMessage("Let's start the tour! I'll guide you through each step.");
+    speakText("Fantastic choice! I'm so excited to begin your guided tour with you! I'll be speaking the instructions for each step in a natural, conversational way, and you can use voice commands to navigate hands-free. Just say 'next' to continue, 'previous' to go back, or 'skip' to skip the tour. I'm here to make this experience as smooth and enjoyable as possible for you!");
   };
 
   return (
@@ -597,6 +674,16 @@ const AIAssistant = () => {
                         </button>
                       ))}
                     </div>
+                    
+                    {/* Tour Button */}
+                    <button
+                      onClick={handleTourRequest}
+                      className="flex items-center justify-center space-x-2 p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 mt-2"
+                    >
+                      <FaMap className="text-sm" />
+                      <span className="font-medium">Take a Voice-Guided Tour</span>
+                      <FaPlay className="text-xs" />
+                    </button>
                   </div>
                 )}
                 
@@ -651,6 +738,21 @@ const AIAssistant = () => {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Tour Selector Modal */}
+      {showTourSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="relative">
+            <button
+              onClick={() => setShowTourSelector(false)}
+              className="absolute -top-4 -right-4 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            >
+              <FaTimes className="text-gray-600" />
+            </button>
+            <TourSelector onClose={() => setShowTourSelector(false)} />
+          </div>
         </div>
       )}
     </>

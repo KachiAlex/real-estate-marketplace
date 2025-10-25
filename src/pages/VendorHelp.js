@@ -189,7 +189,7 @@ const VendorHelp = () => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
           <p className="text-gray-600 mb-4">Send us a detailed message</p>
-          <p className="text-brand-blue font-semibold">vendors@naijaluxuryhomes.com</p>
+          <p className="text-brand-blue font-semibold">vendors@kikiestate.com</p>
           <p className="text-sm text-gray-500 mt-1">Response within 24 hours</p>
         </div>
 

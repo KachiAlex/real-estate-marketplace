@@ -31,7 +31,7 @@ const AvatarUpload = ({
   };
 
   const handleFileSelect = async (file) => {
-    if (!user || uploading || disabled) return;
+    if (uploading || disabled) return;
 
     // Validate file
     const validation = storageService.validateFile(
@@ -57,7 +57,9 @@ const AvatarUpload = ({
     setUploading(true);
 
     try {
-      const uploadResult = await storageService.uploadUserAvatar(file, user.uid);
+      // Use user ID if available, otherwise use a default ID
+      const userId = user?.uid || 'default-user';
+      const uploadResult = await storageService.uploadUserAvatar(file, userId);
 
       if (uploadResult.success) {
         onAvatarChange && onAvatarChange(uploadResult);
@@ -84,7 +86,7 @@ const AvatarUpload = ({
   };
 
   const handleRemoveAvatar = async () => {
-    if (!user || uploading || disabled) return;
+    if (uploading || disabled) return;
 
     try {
       // If there's a current avatar, delete it from storage

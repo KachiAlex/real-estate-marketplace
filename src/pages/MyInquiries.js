@@ -107,7 +107,7 @@ const MyInquiries = () => {
         agent: {
           name: "Sarah Johnson",
           phone: "+234 801 234 5678",
-          email: "sarah@naijaluxury.com",
+          email: "sarah@kikiestate.com",
           avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
@@ -137,7 +137,7 @@ const MyInquiries = () => {
         agent: {
           name: "Michael Adebayo",
           phone: "+234 802 345 6789",
-          email: "michael@naijaluxury.com",
+          email: "michael@kikiestate.com",
           avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
@@ -179,7 +179,7 @@ const MyInquiries = () => {
         agent: {
           name: "Grace Okafor",
           phone: "+234 803 456 7890",
-          email: "grace@naijaluxury.com",
+          email: "grace@kikiestate.com",
           avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
@@ -209,7 +209,7 @@ const MyInquiries = () => {
         agent: {
           name: "David Okonkwo",
           phone: "+234 804 567 8901",
-          email: "david@naijaluxury.com",
+          email: "david@kikiestate.com",
           avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
         },
         responses: []

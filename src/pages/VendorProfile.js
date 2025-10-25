@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FaUser, 
   FaEnvelope, 
@@ -28,7 +28,7 @@ const VendorProfile = () => {
     personal: {
       firstName: 'John',
       lastName: 'Doe',
-      email: 'john.doe@naijaluxury.com',
+      email: user?.email || 'john.doe@kikiestate.com', // Use login email from auth
       phone: '+234 801 234 5678',
       address: '123 Victoria Island, Lagos',
       bio: 'Experienced real estate professional with over 10 years in the luxury property market. Specializing in high-end residential and commercial properties across Lagos.',
@@ -38,7 +38,7 @@ const VendorProfile = () => {
       totalSales: 45
     },
     business: {
-      companyName: 'Naija Luxury Homes',
+      companyName: 'KIKI ESTATES',
       licenseNumber: 'REA-2020-001',
       specialization: 'Luxury Residential & Commercial',
       experience: '10+ years',
@@ -46,7 +46,7 @@ const VendorProfile = () => {
       certifications: ['Real Estate License', 'Property Management', 'Investment Analysis']
     },
     social: {
-      website: 'https://naijaluxury.com',
+      website: 'https://kikiestate.com',
       linkedin: 'https://linkedin.com/in/johndoe',
       twitter: 'https://twitter.com/johndoe',
       instagram: 'https://instagram.com/johndoe'
@@ -54,6 +54,20 @@ const VendorProfile = () => {
   });
 
   const [formData, setFormData] = useState(profileData);
+
+  // Load profile data from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem('vendorProfile');
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfileData(parsedProfile);
+        setFormData(parsedProfile);
+      }
+    } catch (error) {
+      console.error('Error loading profile from localStorage:', error);
+    }
+  }, []);
 
   const handleInputChange = (section, field, value) => {
     setFormData(prev => ({
@@ -68,6 +82,13 @@ const VendorProfile = () => {
   const handleSave = () => {
     setProfileData(formData);
     setIsEditing(false);
+    
+    // Save to localStorage for persistence
+    try {
+      localStorage.setItem('vendorProfile', JSON.stringify(formData));
+    } catch (error) {
+      console.error('Error saving profile to localStorage:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -128,12 +149,21 @@ const VendorProfile = () => {
             currentAvatar={profileData.personal.avatar ? { url: profileData.personal.avatar } : null}
             onAvatarChange={(avatarData) => {
               if (avatarData) {
+                const newAvatarUrl = avatarData.url;
                 setProfileData(prev => ({
                   ...prev,
-                  personal: { ...prev.personal, avatar: avatarData.url }
+                  personal: { ...prev.personal, avatar: newAvatarUrl }
+                }));
+                setFormData(prev => ({
+                  ...prev,
+                  personal: { ...prev.personal, avatar: newAvatarUrl }
                 }));
               } else {
                 setProfileData(prev => ({
+                  ...prev,
+                  personal: { ...prev.personal, avatar: null }
+                }));
+                setFormData(prev => ({
                   ...prev,
                   personal: { ...prev.personal, avatar: null }
                 }));
@@ -225,18 +255,17 @@ const VendorProfile = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      type="email"
-                      fieldKey="vendor.personal.email"
-                      value={formData.personal.email}
-                      onChange={(val) => handleInputChange('personal', 'email', val)}
-                      placeholder="name@example.com"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.personal.email}</p>
-                  )}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-gray-400 text-xs">(Locked)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.personal.email}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
@@ -450,3 +479,4 @@ const VendorProfile = () => {
 };
 
 export default VendorProfile;
+

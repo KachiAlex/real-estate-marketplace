@@ -291,6 +291,138 @@ export const InvestmentProvider = ({ children }) => {
     };
   };
 
+  // Enhanced search and filter methods
+  const searchInvestments = (query, filters = {}) => {
+    let filtered = [...investments];
+
+    // Text search
+    if (query && query.trim()) {
+      const searchTerm = query.toLowerCase();
+      filtered = filtered.filter(investment => 
+        investment.title?.toLowerCase().includes(searchTerm) ||
+        investment.description?.toLowerCase().includes(searchTerm) ||
+        investment.location?.city?.toLowerCase().includes(searchTerm) ||
+        investment.location?.address?.toLowerCase().includes(searchTerm) ||
+        investment.sponsor?.name?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply filters
+    if (filters.type) {
+      filtered = filtered.filter(investment => investment.type === filters.type);
+    }
+
+    if (filters.status) {
+      filtered = filtered.filter(investment => investment.status === filters.status);
+    }
+
+    if (filters.minAmount) {
+      filtered = filtered.filter(investment => investment.minimumInvestment >= parseFloat(filters.minAmount));
+    }
+
+    if (filters.maxAmount) {
+      filtered = filtered.filter(investment => investment.minimumInvestment <= parseFloat(filters.maxAmount));
+    }
+
+    if (filters.minROI) {
+      filtered = filtered.filter(investment => investment.expectedReturn >= parseFloat(filters.minROI));
+    }
+
+    if (filters.maxROI) {
+      filtered = filtered.filter(investment => investment.expectedReturn <= parseFloat(filters.maxROI));
+    }
+
+    if (filters.duration) {
+      filtered = filtered.filter(investment => investment.duration <= parseInt(filters.duration));
+    }
+
+    if (filters.location) {
+      filtered = filtered.filter(investment => 
+        investment.location?.city?.toLowerCase().includes(filters.location.toLowerCase()) ||
+        investment.location?.state?.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    if (filters.riskLevel) {
+      // Map risk levels to expected return ranges
+      const riskRanges = {
+        'low': { min: 0, max: 10 },
+        'medium': { min: 10, max: 15 },
+        'high': { min: 15, max: 25 }
+      };
+      const range = riskRanges[filters.riskLevel];
+      if (range) {
+        filtered = filtered.filter(investment => 
+          investment.expectedReturn >= range.min && investment.expectedReturn <= range.max
+        );
+      }
+    }
+
+    if (filters.featured) {
+      filtered = filtered.filter(investment => investment.isFeatured === true);
+    }
+
+    return filtered;
+  };
+
+  const sortInvestments = (investments, sortBy = 'createdAt', sortOrder = 'desc') => {
+    return [...investments].sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortBy) {
+        case 'expectedReturn':
+          aValue = a.expectedReturn;
+          bValue = b.expectedReturn;
+          break;
+        case 'minimumInvestment':
+          aValue = a.minimumInvestment;
+          bValue = b.minimumInvestment;
+          break;
+        case 'duration':
+          aValue = a.duration;
+          bValue = b.duration;
+          break;
+        case 'progressPercentage':
+          aValue = (a.raisedAmount / a.totalAmount) * 100;
+          bValue = (b.raisedAmount / b.totalAmount) * 100;
+          break;
+        case 'investors':
+          aValue = a.investors;
+          bValue = b.investors;
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  const getFeaturedInvestments = () => {
+    return investments.filter(investment => investment.isFeatured === true);
+  };
+
+  const getInvestmentsByType = (type) => {
+    return investments.filter(investment => investment.type === type);
+  };
+
+  const getInvestmentsByStatus = (status) => {
+    return investments.filter(investment => investment.status === status);
+  };
+
+  const getInvestmentsByLocation = (city) => {
+    return investments.filter(investment => 
+      investment.location?.city?.toLowerCase() === city.toLowerCase()
+    );
+  };
+
   const value = {
     investments,
     userInvestments,
@@ -299,7 +431,13 @@ export const InvestmentProvider = ({ children }) => {
     investInOpportunity,
     getInvestmentById,
     getUserInvestmentsByUserId,
-    getUserInvestmentSummary
+    getUserInvestmentSummary,
+    searchInvestments,
+    sortInvestments,
+    getFeaturedInvestments,
+    getInvestmentsByType,
+    getInvestmentsByStatus,
+    getInvestmentsByLocation
   };
 
   return (

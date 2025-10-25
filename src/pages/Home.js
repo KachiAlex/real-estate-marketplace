@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,24 +26,22 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState(new Set());
-  const [filteredProperties, setFilteredProperties] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('Lagos');
-  const [selectedType, setSelectedType] = useState('Apartment');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [priceRange, setPriceRange] = useState([0, 100000000]);
-  const [bedrooms, setBedrooms] = useState('2');
-  const [bathrooms, setBathrooms] = useState('3');
-  const [selectedAmenities, setSelectedAmenities] = useState([
-    'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 'WiFi', 'Furnished', 'Balcony'
-  ]);
-  const [propertyAge, setPropertyAge] = useState('New 0-5 yrs');
+  const [priceRange, setPriceRange] = useState([0, 1000000000]);
+  const [bedrooms, setBedrooms] = useState('');
+  const [bathrooms, setBathrooms] = useState('');
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [propertyAge, setPropertyAge] = useState('Any Age');
   const [sortBy, setSortBy] = useState('Most Relevant');
   const [showMoreAmenities, setShowMoreAmenities] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertiesPerPage] = useState(9);
-
+  const [displayProperties, setDisplayProperties] = useState([]);
+  
   // Mock data for the properties shown in the screenshot
   const mockProperties = [
     {
@@ -51,128 +49,184 @@ const Home = () => {
       title: "Luxury Apartment in Victoria Island",
       location: "Victoria Island, Lagos",
       price: 75000000,
-      status: "For Sale",
+      type: "Apartment",
       bedrooms: 3,
-      bathrooms: 3,
-      sqft: 175,
-      description: "Stunning 3-bedroom apartment with city views, pool, and gym access.",
-      image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
+      bathrooms: 2,
+      area: 120,
+      image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500",
+      description: "Beautiful luxury apartment with modern amenities in the heart of Victoria Island.",
+      amenities: ["Swimming Pool", "Gym", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
+      status: "For Sale",
       label: "For Sale",
-      labelColor: "bg-orange-500"
+      labelColor: "bg-green-600",
+      agent: {
+        name: "Sarah Johnson",
+        phone: "+234 801 234 5678",
+        email: "sarah@example.com"
+      }
     },
     {
       id: 2,
-      title: "Modern Family House in Lekki",
-      location: "Lekki Phase 1, Lagos",
-      price: 120000000,
-      status: "For Sale",
+      title: "Modern Villa in Ikoyi",
+      location: "Ikoyi, Lagos",
+      price: 150000000,
+      type: "Villa",
       bedrooms: 4,
-      bathrooms: 4,
-      sqft: 250,
-      description: "Spacious 4-bedroom house with modern kitchen, garden, and 24/7 security.",
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
+      bathrooms: 3,
+      area: 250,
+      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500",
+      description: "Spacious modern villa with garden and pool in exclusive Ikoyi neighborhood.",
+      amenities: ["Swimming Pool", "Garden", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Furnished"],
+      status: "For Sale",
       label: "For Sale",
-      labelColor: "bg-orange-500"
+      labelColor: "bg-green-600",
+      agent: {
+        name: "Michael Brown",
+        phone: "+234 802 345 6789",
+        email: "michael@example.com"
+      }
     },
     {
       id: 3,
-      title: "Penthouse with Ocean View in Ikoyi",
-      location: "Ikoyi, Lagos",
-      price: 95000000,
+      title: "Cozy Studio Apartment",
+      location: "Surulere, Lagos",
+      price: 45000000,
+      type: "Studio",
+      bedrooms: 1,
+      bathrooms: 1,
+      area: 45,
+      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500",
+      description: "Perfect starter home in a quiet neighborhood with all essential amenities.",
+      amenities: ["24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
       status: "For Sale",
-      bedrooms: 2,
-      bathrooms: 3,
-      sqft: 200,
-      description: "Luxurious penthouse with panoramic ocean views and private terrace.",
-      image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=300&fit=crop",
-      label: "Shortlet",
-      labelColor: "bg-blue-500"
+      label: "For Sale",
+      labelColor: "bg-green-600",
+      agent: {
+        name: "Emily Davis",
+        phone: "+234 803 456 7890",
+        email: "emily@example.com"
+      }
     },
     {
       id: 4,
-      title: "Elegant Townhouse in Maitama Island",
-      location: "Maitama, Abuja",
-      price: 75000000,
+      title: "Executive Penthouse",
+      location: "Lekki, Lagos",
+      price: 200000000,
+      type: "Penthouse",
+      bedrooms: 5,
+      bathrooms: 4,
+      area: 300,
+      image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500",
+      description: "Luxurious penthouse with panoramic city views and premium finishes.",
+      amenities: ["Swimming Pool", "Gym", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Furnished", "Balcony"],
       status: "For Sale",
-      bedrooms: 4,
-      bathrooms: 3,
-      sqft: 220,
-      description: "Contemporary townhouse with private garden and modern amenities.",
-      image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=300&fit=crop",
-      label: "New Development",
-      labelColor: "bg-red-500"
+      label: "For Sale",
+      labelColor: "bg-green-600",
+      agent: {
+        name: "David Wilson",
+        phone: "+234 804 567 8901",
+        email: "david@example.com"
+      }
     },
     {
       id: 5,
-      title: "Garden View Apartment in Ikeja GRA",
-      location: "Ikeja GRA, Lagos",
-      price: 120000000,
+      title: "Family House in Gbagada",
+      location: "Gbagada, Lagos",
+      price: 85000000,
+      type: "House",
+      bedrooms: 4,
+      bathrooms: 3,
+      area: 180,
+      image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=500",
+      description: "Spacious family house with large compound and modern amenities.",
+      amenities: ["Garden", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
       status: "For Sale",
-      bedrooms: 2,
-      bathrooms: 2,
-      sqft: 150,
-      description: "Beautiful apartment with lush garden views and modern kitchen.",
-      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop",
-      label: "Hot Deals",
-      labelColor: "bg-red-500"
+      label: "For Sale",
+      labelColor: "bg-green-600",
+      agent: {
+        name: "Lisa Anderson",
+        phone: "+234 805 678 9012",
+        email: "lisa@example.com"
+      }
     },
     {
       id: 6,
-      title: "Beachfront Villa in Banana Island",
-      location: "Banana Island, Lagos",
-      price: 95000000,
-      status: "For Sale",
-      bedrooms: 5,
-      bathrooms: 5,
-      sqft: 400,
-      description: "Exclusive beachfront villa with private pool and direct beach access.",
-      image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
-      label: "For Sale",
-      labelColor: "bg-orange-500"
-    },
-    {
-      id: 7,
-      title: "Contemporary Apartment in Maryland",
-      location: "Maryland, Lagos",
-      price: 75000000,
-      status: "For Sale",
-      bedrooms: 3,
-      bathrooms: 2,
-      sqft: 180,
-      description: "Modern apartment with open-plan living and city views.",
-      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-      label: "For Sale",
-      labelColor: "bg-orange-500"
-    },
-    {
-      id: 8,
-      title: "Luxury Villa in Asokoro",
-      location: "Asokoro, Abuja",
+      title: "Commercial Office Space",
+      location: "Victoria Island, Lagos",
       price: 120000000,
+      type: "Office",
+      bedrooms: 0,
+      bathrooms: 2,
+      area: 200,
+      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=500",
+      description: "Prime office space in the business district with modern facilities.",
+      amenities: ["24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Conference Rooms"],
       status: "For Sale",
-      bedrooms: 5,
-      bathrooms: 4,
-      sqft: 350,
-      description: "Spacious villa with swimming pool and landscaped garden.",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
       label: "For Sale",
-      labelColor: "bg-orange-500"
-    },
-    {
-      id: 9,
-      title: "Waterfront Condominium in Oniru",
-      location: "Oniru, Lagos",
-      price: 95000000,
-      status: "For Sale",
-      bedrooms: 3,
-      bathrooms: 3,
-      sqft: 200,
-      description: "Luxury condominium with panoramic lagoon views and private marina.",
-      image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-      label: "For Sale",
-      labelColor: "bg-orange-500"
+      labelColor: "bg-green-600",
+      agent: {
+        name: "Robert Taylor",
+        phone: "+234 806 789 0123",
+        email: "robert@example.com"
+      }
     }
   ];
+
+  // Real-time filtering
+  const filteredProperties = useMemo(() => {
+    let filtered = [...mockProperties];
+    
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(property => 
+        property.title?.toLowerCase().includes(query) ||
+        property.description?.toLowerCase().includes(query) ||
+        property.location?.toLowerCase().includes(query) ||
+        property.address?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply location filter
+    if (selectedLocation) {
+      filtered = filtered.filter(property => 
+        property.location?.toLowerCase().includes(selectedLocation.toLowerCase())
+      );
+    }
+    
+    // Apply property status filter
+    if (selectedStatus) {
+      filtered = filtered.filter(property => 
+        property.status === selectedStatus || property.label === selectedStatus
+      );
+    }
+    
+    // Apply property type filter
+    if (selectedType) {
+      filtered = filtered.filter(property => 
+        property.type === selectedType
+      );
+    }
+    
+    // Apply bedrooms filter
+    if (bedrooms) {
+      const bedroomCount = parseInt(bedrooms);
+      filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
+    }
+    
+    // Apply bathrooms filter
+    if (bathrooms) {
+      const bathroomCount = parseInt(bathrooms);
+      filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
+    }
+    
+    // Apply price range filter
+    filtered = filtered.filter(property => 
+      property.price >= priceRange[0] && property.price <= priceRange[1]
+    );
+    
+    return filtered;
+  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange]);
 
   // Enhanced Quick Filters with sublinks
   const quickFilters = {
@@ -240,7 +294,7 @@ const Home = () => {
 
   // Initialize filtered properties on component mount
   useEffect(() => {
-    setFilteredProperties(mockProperties);
+    setDisplayProperties(mockProperties);
   }, []);
 
   // Close dropdown when clicking outside
@@ -258,11 +312,10 @@ const Home = () => {
   }, [activeDropdown]);
   
   // Calculate pagination
-  const displayProperties = filteredProperties.length > 0 ? filteredProperties : mockProperties;
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
-  const currentProperties = displayProperties.slice(indexOfFirstProperty, indexOfLastProperty);
-  const totalPages = Math.ceil(displayProperties.length / propertiesPerPage);
+  const currentProperties = filteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
+  const totalPages = Math.ceil(filteredProperties.length / propertiesPerPage);
 
 
   const handleApplyFilters = () => {
@@ -285,7 +338,7 @@ const Home = () => {
     // Apply property type filter
     if (selectedType) {
       filtered = filtered.filter(property => 
-        property.title.toLowerCase().includes(selectedType.toLowerCase())
+        property.type === selectedType
       );
     }
     
@@ -315,9 +368,21 @@ const Home = () => {
       );
     }
     
-    setFilteredProperties(filtered);
     setCurrentPage(1);
     toast.success(`Found ${filtered.length} properties matching your criteria!`);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedLocation('Lagos');
+    setSelectedType('Apartment');
+    setSelectedStatus('');
+    setPriceRange([0, 100000000]);
+    setBedrooms('2');
+    setBathrooms('3');
+    setCurrentPage(1);
+    toast.success('Filters cleared');
   };
 
   const handleGetStarted = () => {
@@ -387,7 +452,7 @@ const Home = () => {
         break;
     }
     
-    setFilteredProperties(sorted);
+    setDisplayProperties(sorted);
     toast.success(`Sorted by ${newSortBy.toLowerCase()}`);
   };
   
@@ -840,11 +905,13 @@ const Home = () => {
                       style={{ zIndex: 3 }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-gray-300 mt-2">
+                  <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
                     <span>₦0</span>
-                    <span className="text-orange-500 font-medium bg-gray-800 px-2 py-1 rounded">
-                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
-                    </span>
+                    <div className="text-center">
+                      <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded inline-block">
+                        ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
+                      </span>
+                    </div>
                     <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
@@ -1023,15 +1090,15 @@ const Home = () => {
                       <div className="flex items-center space-x-4">
                         <span className="flex items-center">
                           <FaBed className="mr-1" />
-                          {property.bedrooms} Beds
+                          {property.bedrooms || property.details?.bedrooms || 0} Beds
                         </span>
                         <span className="flex items-center">
                           <FaBath className="mr-1" />
-                          {property.bathrooms} Baths
+                          {property.bathrooms || property.details?.bathrooms || 0} Baths
                         </span>
                         <span className="flex items-center">
                           <FaRulerCombined className="mr-1" />
-                          {property.sqft}m²
+                          {property.sqft || property.details?.sqft || property.area || 0}m²
                         </span>
                       </div>
                     </div>
@@ -1111,7 +1178,7 @@ const Home = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Naija Luxury Homes offers exclusive features to enhance your property search. 
+              KIKI ESTATES offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
@@ -1189,7 +1256,7 @@ const Home = () => {
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
                   <FaBuilding className="text-white text-xl" />
                 </div>
-                <span className="text-2xl font-bold">Naija Luxury Homes</span>
+                <span className="text-2xl font-bold">KIKI ESTATES</span>
               </div>
               <p className="text-gray-400 mb-6">
                 Your trusted partner in finding premium properties across Nigeria. 
@@ -1252,7 +1319,7 @@ const Home = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <span className="text-brand-orange">✉️</span>
-                  <p className="text-gray-400">info@naijaluxuryhomes.com</p>
+                  <p className="text-gray-400">info@kikiestate.com</p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <span className="text-brand-orange">🕒</span>
@@ -1266,7 +1333,7 @@ const Home = () => {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 text-sm">
-                © 2024 Naija Luxury Homes. All rights reserved.
+                © 2024 KIKI ESTATES. All rights reserved.
               </p>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
