@@ -30,15 +30,34 @@ const Blog = () => {
         ...filters
       });
 
-      const response = await fetch(`/api/blog?${params}`);
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/blog?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Response is not JSON, using fallback data');
+        setBlogs([]);
+        setTotalPages(0);
+        return;
+      }
+      
       const data = await response.json();
 
       if (data.success) {
         setBlogs(data.data);
-        setTotalPages(data.pagination.totalPages);
+        setTotalPages(data.pagination?.totalPages || 1);
+      } else {
+        setBlogs([]);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error('Error loading blogs:', error);
+      setBlogs([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -46,27 +65,63 @@ const Blog = () => {
 
   const loadFeaturedBlogs = async () => {
     try {
-      const response = await fetch('/api/blog/featured?limit=3');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/blog/featured?limit=3`);
+      
+      if (!response.ok) {
+        console.warn('Featured blogs API not available');
+        setFeaturedBlogs([]);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Featured blogs response is not JSON');
+        setFeaturedBlogs([]);
+        return;
+      }
+      
       const data = await response.json();
 
       if (data.success) {
         setFeaturedBlogs(data.data);
+      } else {
+        setFeaturedBlogs([]);
       }
     } catch (error) {
       console.error('Error loading featured blogs:', error);
+      setFeaturedBlogs([]);
     }
   };
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/blog/categories');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
+      
+      if (!response.ok) {
+        console.warn('Categories API not available');
+        setCategories([]);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Categories response is not JSON');
+        setCategories([]);
+        return;
+      }
+      
       const data = await response.json();
 
       if (data.success) {
         setCategories(data.data);
+      } else {
+        setCategories([]);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+      setCategories([]);
     }
   };
 

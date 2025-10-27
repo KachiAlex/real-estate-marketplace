@@ -94,27 +94,27 @@ class KikiAI {
     // Response templates for different scenarios
     this.responseTemplates = {
       greeting: [
-        "👋 Hello! I'm KIKI, your intelligent real estate assistant. How can I help you find your perfect property today?",
-        "🏠 Hi there! I'm KIKI, ready to help you navigate the real estate market. What brings you here today?",
-        "✨ Welcome! I'm KIKI, your AI-powered property companion. What can I assist you with today?"
+        "Hello! I'm KIKI, your intelligent real estate assistant. How can I help you find your perfect property today?",
+        "Hi there! I'm KIKI, ready to help you navigate the real estate market. What brings you here today?",
+        "Welcome! I'm KIKI, your AI-powered property companion. What can I assist you with today?"
       ],
       
       propertySearch: [
-        "🔍 I'd be happy to help you find the perfect property! Based on your request, I can search our database and show you relevant options.",
-        "🏡 Let me help you discover amazing properties that match your criteria. I'll use our advanced search to find the best matches.",
-        "🎯 Perfect! I understand you're looking for properties. Let me find some great options for you."
+        "I'd be happy to help you find the perfect property! Based on your request, I can search our database and show you relevant options.",
+        "Let me help you discover amazing properties that match your criteria. I'll use our advanced search to find the best matches.",
+        "Perfect! I understand you're looking for properties. Let me find some great options for you."
       ],
       
       clarification: [
-        "🤔 I want to make sure I understand you correctly. Could you provide a bit more detail about what you're looking for?",
-        "💭 That's interesting! To give you the best assistance, could you clarify what specific help you need?",
-        "🎯 I'm here to help! Could you tell me more about what you're trying to accomplish?"
+        "I want to make sure I understand you correctly. Could you provide a bit more detail about what you're looking for?",
+        "That's interesting! To give you the best assistance, could you clarify what specific help you need?",
+        "I'm here to help! Could you tell me more about what you're trying to accomplish?"
       ],
       
       error: [
-        "😅 I apologize, but I didn't quite understand that. Could you rephrase your request? I'm here to help with property search, guidance, and more!",
-        "🤖 I'm still learning! Could you try asking that in a different way? I can help with property searches, explanations, and navigation.",
-        "💡 I want to help you, but I need a bit more clarity. What specific assistance are you looking for?"
+        "I apologize, but I didn't quite understand that. Could you rephrase your request? I'm here to help with property search, guidance, and more!",
+        "I'm still learning! Could you try asking that in a different way? I can help with property searches, explanations, and navigation.",
+        "I want to help you, but I need a bit more clarity. What specific assistance are you looking for?"
       ]
     };
   }
@@ -348,22 +348,22 @@ class KikiAI {
     let action = null;
     
     if (entities.location || entities.price || entities.propertyType || entities.bedrooms) {
-      response += "\n\n🎯 Based on your criteria, I found some great matches!";
+      response += "\n\nBased on your criteria, I found some great matches!";
       
       if (entities.location) {
-        response += `\n📍 Location: ${entities.location}`;
+        response += `\nLocation: ${entities.location}`;
       }
       if (entities.price) {
-        response += `\n💰 Budget: ₦${entities.price.toLocaleString()}`;
+        response += `\nBudget: ${this.formatPrice(entities.price)}`;
       }
       if (entities.propertyType) {
-        response += `\n🏠 Type: ${entities.propertyType}`;
+        response += `\nType: ${entities.propertyType}`;
       }
       if (entities.bedrooms) {
-        response += `\n🛏️ Bedrooms: ${entities.bedrooms}`;
+        response += `\nBedrooms: ${entities.bedrooms}`;
       }
       if (entities.amenities.length > 0) {
-        response += `\n✨ Amenities: ${entities.amenities.join(', ')}`;
+        response += `\nAmenities: ${entities.amenities.join(', ')}`;
       }
       
       response += "\n\nWould you like me to show you these properties?";
@@ -385,11 +385,23 @@ class KikiAI {
     return { response, action, entities };
   }
   
+  // Helper method to format price in words for speech
+  formatPrice(amount) {
+    if (amount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(1)} million naira`;
+    } else if (amount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(0)} thousand naira`;
+    }
+    return `${amount.toLocaleString()} naira`;
+  }
+
   handlePriceQuery(message, entities) {
-    let response = "💰 I can help you understand pricing in our market!\n\n";
+    let response = "I can help you understand pricing in our market!\n\n";
     
     if (entities.price) {
-      response += `For ₦${entities.price.toLocaleString()}, you can find:\n`;
+      response += `For ${this.formatPrice(entities.price)}, you can find:\n`;
       
       if (entities.price < 30000000) {
         response += "• Studio and 1-bedroom apartments\n• Starter homes in developing areas\n• Great investment opportunities";
@@ -398,14 +410,14 @@ class KikiAI {
       } else if (entities.price < 150000000) {
         response += "• 3-4 bedroom apartments\n• Luxury condos\n• Houses in prime locations";
       } else {
-        response += "• Luxury penthouses\n• Villas and mansions\n• Premium properties in exclusive areas";
+        response += "luxury penthouses, villas and mansions, and premium properties in exclusive areas.";
       }
     } else {
-      response += "Our properties range from ₦20M to ₦250M+. Here's what you can expect:\n\n";
-      response += "🏠 **₦20M - ₦50M**: Studio to 2-bedroom apartments\n";
-      response += "🏡 **₦50M - ₦100M**: 2-3 bedroom apartments, townhouses\n";
-      response += "🏰 **₦100M - ₦200M**: Luxury apartments, houses\n";
-      response += "👑 **₦200M+**: Penthouses, villas, mansions\n\n";
+      response += "Our properties range from twenty million to over two hundred and fifty million naira. Here's what you can expect:\n\n";
+      response += "Twenty to fifty million naira: Studio to 2-bedroom apartments\n";
+      response += "Fifty to one hundred million naira: 2-3 bedroom apartments and townhouses\n";
+      response += "One hundred to two hundred million naira: Luxury apartments and houses\n";
+      response += "Two hundred million naira plus: Penthouses, villas and mansions\n\n";
       response += "What's your budget range? I can show you specific properties!";
     }
     
@@ -413,7 +425,7 @@ class KikiAI {
   }
   
   handleLocationQuery(message, entities) {
-    let response = "📍 I can help you explore different areas!\n\n";
+    let response = "I can help you explore different areas!\n\n";
     
     if (entities.location) {
       response += `Great choice! ${entities.location} is a fantastic area with:\n\n`;
@@ -433,11 +445,11 @@ class KikiAI {
       
       response += "\n\nWould you like me to show you properties in this area?";
     } else {
-      response += "**Popular Areas in Nigeria:**\n\n";
-      response += "🏙️ **Lagos**: Victoria Island, Lekki, Ikoyi, Surulere\n";
-      response += "🏛️ **Abuja**: Maitama, Asokoro, Wuse 2, Gwarinpa\n";
-      response += "🏭 **Port Harcourt**: GRA, Trans-Amadi, Rumuola\n";
-      response += "🏘️ **Kano**: Nassarawa, Tarauni, Fagge\n\n";
+      response += "Popular Areas in Nigeria:\n\n";
+      response += "Lagos: Victoria Island, Lekki, Ikoyi, Surulere\n";
+      response += "Abuja: Maitama, Asokoro, Wuse 2, Gwarinpa\n";
+      response += "Port Harcourt: GRA, Trans-Amadi, Rumuola\n";
+      response += "Kano: Nassarawa, Tarauni, Fagge\n\n";
       response += "Which area interests you most?";
     }
     
@@ -445,37 +457,37 @@ class KikiAI {
   }
   
   handleHelpRequest(message) {
-    const response = `🤝 I'm KIKI, your intelligent real estate assistant! I can help you with:
+    const response = `I'm KIKI, your intelligent real estate assistant! I can help you with:
 
-🔍 **Property Search**
-• Find properties by location, price, type
-• Advanced filtering and sorting
-• Property comparisons
+Property Search
+Find properties by location, price, type
+Advanced filtering and sorting
+Property comparisons
 
-💰 **Financial Services**
-• Mortgage calculations
-• Payment plans and financing
-• Investment opportunities
+Financial Services
+Mortgage calculations
+Payment plans and financing
+Investment opportunities
 
-📋 **Process Guidance**
-• Buying process explanation
-• Document requirements
-• Legal procedures
+Process Guidance
+Buying process explanation
+Document requirements
+Legal procedures
 
-🔒 **Secure Transactions**
-• Escrow services
-• Payment protection
-• Document verification
+Secure Transactions
+Escrow services
+Payment protection
+Document verification
 
-👤 **Agent Services**
-• Connect with verified agents
-• Schedule property viewings
-• Get expert advice
+Agent Services
+Connect with verified agents
+Schedule property viewings
+Get expert advice
 
-💡 **Smart Features**
-• Property alerts and notifications
-• Saved searches and favorites
-• Market insights and trends
+Smart Features
+Property alerts and notifications
+Saved searches and favorites
+Market insights and trends
 
 What specific help do you need? I'm here to make your real estate journey smooth and successful!`;
     
@@ -483,12 +495,12 @@ What specific help do you need? I'm here to make your real estate journey smooth
   }
   
   handleActionRequest(message, entities) {
-    let response = "🎯 I can help you with that action!\n\n";
+    let response = "I can help you with that action!\n\n";
     
     if (message.toLowerCase().includes('alert')) {
-      response += "🔔 I'll help you create a property alert! This will notify you when new properties matching your criteria become available.\n\n";
+      response += "I'll help you create a property alert! This will notify you when new properties matching your criteria become available.\n\n";
       response += "Tell me your preferences:\n";
-      response += "• Location\n• Property type\n• Price range\n• Number of bedrooms\n• Amenities";
+      response += "Location, Property type, Price range, Number of bedrooms, Amenities";
       
       return {
         response,
@@ -498,8 +510,8 @@ What specific help do you need? I'm here to make your real estate journey smooth
     }
     
     if (message.toLowerCase().includes('register') || message.toLowerCase().includes('sign up')) {
-      response += "📝 Registration is quick and easy! You'll get access to:\n";
-      response += "• Save and favorite properties\n• Create property alerts\n• Contact agents directly\n• Use escrow services\n• Track your inquiries\n\n";
+      response += "Registration is quick and easy! You'll get access to:\n";
+      response += "Save and favorite properties, Create property alerts, Contact agents directly, Use escrow services, Track your inquiries\n\n";
       response += "Would you like me to take you to the registration page?";
       
       return {
@@ -510,8 +522,8 @@ What specific help do you need? I'm here to make your real estate journey smooth
     }
     
     if (message.toLowerCase().includes('contact') || message.toLowerCase().includes('call')) {
-      response += "📞 I can help you connect with our agents! Our verified agents are ready to assist you with:\n";
-      response += "• Property viewings\n• Market information\n• Negotiations\n• Documentation\n\n";
+      response += "I can help you connect with our agents! Our verified agents are ready to assist you with:\n";
+      response += "Property viewings, Market information, Negotiations, Documentation\n\n";
       response += "Would you like to see our agent directory or contact a specific agent?";
       
       return { response, action: null, entities };
@@ -521,57 +533,57 @@ What specific help do you need? I'm here to make your real estate journey smooth
   }
   
   handleFinanceQuery(message) {
-    const response = `🏦 I can help you with financing options!
+    const response = `I can help you with financing options!
 
-**Mortgage Services:**
-• Pre-approval assistance
-• Interest rate comparisons
-• Monthly payment calculations
-• Down payment planning
+Mortgage Services:
+Pre-approval assistance
+Interest rate comparisons
+Monthly payment calculations
+Down payment planning
 
-**Payment Options:**
-• Bank financing
-• Developer financing
-• Rent-to-own schemes
-• Installment plans
+Payment Options:
+Bank financing
+Developer financing
+Rent-to-own schemes
+Installment plans
 
-**Investment Financing:**
-• Property investment loans
-• REIT opportunities
-• Crowdfunding options
-• Portfolio financing
+Investment Financing:
+Property investment loans
+REIT opportunities
+Crowdfunding options
+Portfolio financing
 
 Would you like me to:
-• Show you our mortgage calculator
-• Connect you with finance partners
-• Explain different payment options
-• Help with investment financing?`;
+Show you our mortgage calculator
+Connect you with finance partners
+Explain different payment options
+Help with investment financing?`;
     
     return { response, action: null, entities: {} };
   }
   
   handleDocumentQuery(message) {
-    const response = `📋 Document verification is crucial for safe property transactions!
+    const response = `Document verification is crucial for safe property transactions!
 
-**Required Documents:**
-• Title deed verification
-• Survey plans
-• Building approval
-• Tax clearance certificates
-• Environmental compliance
+Required Documents:
+Title deed verification
+Survey plans
+Building approval
+Tax clearance certificates
+Environmental compliance
 
-**Our Legal Services:**
-• Document verification
-• Title search and clearance
-• Legal opinion services
-• Transaction documentation
-• Post-purchase support
+Our Legal Services:
+Document verification
+Title search and clearance
+Legal opinion services
+Transaction documentation
+Post-purchase support
 
-**Escrow Protection:**
-• Secure document handling
-• Verified ownership transfer
-• Legal compliance check
-• Risk-free transactions
+Escrow Protection:
+Secure document handling
+Verified ownership transfer
+Legal compliance check
+Risk-free transactions
 
 Would you like me to explain any specific document requirements or show you our legal services?`;
     
@@ -579,28 +591,28 @@ Would you like me to explain any specific document requirements or show you our 
   }
   
   handleAgentQuery(message) {
-    const response = `👤 Our verified agents are here to help!
+    const response = `Our verified agents are here to help!
 
-**Agent Services:**
-• Property viewings and tours
-• Market analysis and pricing
-• Negotiation assistance
-• Documentation support
-• Post-purchase services
+Agent Services:
+Property viewings and tours
+Market analysis and pricing
+Negotiation assistance
+Documentation support
+Post-purchase services
 
-**How to Connect:**
-• Browse agent profiles
-• Schedule viewings
-• Direct messaging
-• Video consultations
-• In-person meetings
+How to Connect:
+Browse agent profiles
+Schedule viewings
+Direct messaging
+Video consultations
+In-person meetings
 
-**Agent Verification:**
-• Licensed professionals
-• Background verified
-• Performance rated
-• Customer reviewed
-• Continuously monitored
+Agent Verification:
+Licensed professionals
+Background verified
+Performance rated
+Customer reviewed
+Continuously monitored
 
 Would you like me to help you find an agent or show you how to contact one?`;
     
@@ -608,28 +620,28 @@ Would you like me to help you find an agent or show you how to contact one?`;
   }
   
   handleInvestmentQuery(message) {
-    const response = `💰 Great investment opportunities await!
+    const response = `Great investment opportunities await!
 
-**Investment Options:**
-• REITs (Real Estate Investment Trusts)
-• Land banking schemes
-• Property crowdfunding
-• Commercial real estate
-• Development projects
+Investment Options:
+REITs (Real Estate Investment Trusts)
+Land banking schemes
+Property crowdfunding
+Commercial real estate
+Development projects
 
-**Investment Benefits:**
-• Diversified portfolio
-• Professional management
-• Regular returns
-• Tax advantages
-• Liquidity options
+Investment Benefits:
+Diversified portfolio
+Professional management
+Regular returns
+Tax advantages
+Liquidity options
 
-**Risk Management:**
-• Thorough due diligence
-• Professional valuations
-• Legal compliance
-• Insurance coverage
-• Exit strategies
+Risk Management:
+Thorough due diligence
+Professional valuations
+Legal compliance
+Insurance coverage
+Exit strategies
 
 Would you like me to show you current investment opportunities or explain any specific investment type?`;
     
@@ -637,29 +649,29 @@ Would you like me to show you current investment opportunities or explain any sp
   }
   
   handleEscrowQuery(message) {
-    const response = `🔒 Our escrow service ensures secure transactions!
+    const response = `Our escrow service ensures secure transactions!
 
-**How Escrow Works:**
-1️⃣ **Initiation**: Buyer starts purchase process
-2️⃣ **Fund Holding**: Money held in secure account
-3️⃣ **Verification**: Property and documents verified
-4️⃣ **Approval**: Buyer approves after inspection
-5️⃣ **Release**: Funds released to seller
-6️⃣ **Transfer**: Property ownership transferred
+How Escrow Works:
+Step 1: Initiation. Buyer starts purchase process.
+Step 2: Fund Holding. Money held in secure account.
+Step 3: Verification. Property and documents verified.
+Step 4: Approval. Buyer approves after inspection.
+Step 5: Release. Funds released to seller.
+Step 6: Transfer. Property ownership transferred.
 
-**Escrow Benefits:**
-• Financial protection for both parties
-• Document verification
-• Legal compliance
-• Dispute resolution
-• Professional oversight
+Escrow Benefits:
+Financial protection for both parties
+Document verification
+Legal compliance
+Dispute resolution
+Professional oversight
 
-**Escrow Process:**
-• 3-5 business days typical
-• 24/7 online tracking
-• Dedicated support team
-• Legal documentation
-• Secure payment processing
+Escrow Process:
+3-5 business days typical
+24/7 online tracking
+Dedicated support team
+Legal documentation
+Secure payment processing
 
 Would you like me to walk you through the escrow process or answer specific questions?`;
     
@@ -667,28 +679,28 @@ Would you like me to walk you through the escrow process or answer specific ques
   }
   
   handleSavedPropertiesQuery(message) {
-    const response = `❤️ Your saved properties are easily accessible!
+    const response = `Your saved properties are easily accessible!
 
-**Saved Properties Features:**
-• Quick access to favorites
-• Price change notifications
-• Availability updates
-• Comparison tools
-• Sharing options
+Saved Properties Features:
+Quick access to favorites
+Price change notifications
+Availability updates
+Comparison tools
+Sharing options
 
-**Managing Your Favorites:**
-• Add/remove properties
-• Organize by categories
-• Set price alerts
-• Track property status
-• Export property lists
+Managing Your Favorites:
+Add or remove properties
+Organize by categories
+Set price alerts
+Track property status
+Export property lists
 
-**Smart Notifications:**
-• Price reductions
-• New similar properties
-• Market updates
-• Agent communications
-• Viewing reminders
+Smart Notifications:
+Price reductions
+New similar properties
+Market updates
+Agent communications
+Viewing reminders
 
 Would you like me to show you your saved properties or help you manage them?`;
     
@@ -699,7 +711,7 @@ Would you like me to show you your saved properties or help you manage them?`;
     // Use conversation history for better context
     const recentContext = this.context.conversationHistory.slice(-3);
     
-    let response = "🤖 I understand you're asking about that topic. ";
+    let response = "I understand you're asking about that topic. ";
     
     // Check if we have relevant context
     if (recentContext.length > 0) {

@@ -2,190 +2,253 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
-// Mock investment opportunities data
+// Mock investment opportunities data - All new investments
 const mockInvestmentOpportunities = [
   {
-    id: '1',
-    title: 'Downtown Commercial Complex',
-    description: 'Prime downtown commercial property with high rental yield potential. Located in the heart of the business district.',
-    type: 'commercial',
-    totalAmount: 2000000000, // ₦2,000,000,000
-    minimumInvestment: 20000000, // ₦20,000,000
-    raisedAmount: 1280000000, // ₦1,280,000,000
-    investors: 64,
-    expectedReturn: 12.5,
-    dividendRate: 8.5,
-    duration: 36,
-    location: { address: '123 Business District', city: 'Lagos', state: 'Lagos' },
-    images: ['https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop'],
+    id: 'inv_001',
+    title: 'Premium Beachfront Resort Development',
+    description: 'Luxury beachfront resort with private beach access, infinity pools, and world-class amenities. Ideal for high-end tourism and events.',
+    type: 'hospitality',
+    totalAmount: 5000000000, // ₦5,000,000,000
+    minimumInvestment: 50000000, // ₦50,000,000
+    raisedAmount: 2500000000, // ₦2,500,000,000
+    investors: 50,
+    expectedReturn: 22.5,
+    dividendRate: 15.0,
+    duration: 72,
+    location: { address: 'Lekki Beachfront', city: 'Lagos', state: 'Lagos' },
+    images: ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop'],
     status: 'fundraising',
-    createdAt: '2024-01-15T10:00:00Z',
-    sponsor: { name: 'Real Estate Development Corp', experience: '15+ years', rating: 4.8 },
+    createdAt: '2024-02-15T10:00:00Z',
+    sponsor: { name: 'Ocean View Resorts Ltd', experience: '30+ years', rating: 4.9 },
     sponsorId: '2' // Admin User
   },
   {
-    id: '2',
-    title: 'Suburban Residential Portfolio',
-    description: 'Diversified portfolio of suburban residential properties with stable rental income.',
-    type: 'residential',
-    totalAmount: 800000000, // ₦800,000,000
-    minimumInvestment: 10000000, // ₦10,000,000
-    raisedAmount: 720000000, // ₦720,000,000
-    investors: 72,
-    expectedReturn: 8.2,
-    dividendRate: 6.5,
+    id: 'inv_002',
+    title: 'Mixed-Use Development Complex',
+    description: 'Modern mixed-use development featuring residential apartments, retail spaces, and office facilities in one integrated community.',
+    type: 'mixed-use',
+    totalAmount: 3500000000, // ₦3,500,000,000
+    minimumInvestment: 30000000, // ₦30,000,000
+    raisedAmount: 2100000000, // ₦2,100,000,000
+    investors: 70,
+    expectedReturn: 16.8,
+    dividendRate: 11.5,
     duration: 60,
-    location: { address: 'Multiple Locations', city: 'Lagos', state: 'Lagos' },
-    images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'],
-    status: 'active',
-    createdAt: '2024-01-10T14:30:00Z',
-    sponsor: { name: 'Suburban Properties LLC', experience: '20+ years', rating: 4.9 },
+    location: { address: 'Central Business District', city: 'Abuja', state: 'FCT' },
+    images: ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop'],
+    status: 'fundraising',
+    createdAt: '2024-02-12T14:30:00Z',
+    sponsor: { name: 'Metro Developers Group', experience: '25+ years', rating: 4.8 },
+    sponsorId: '1' // John Doe
+  },
+  {
+    id: 'inv_003',
+    title: 'Industrial Warehouse Complex',
+    description: 'State-of-the-art warehouse and logistics facility with 24/7 security, loading docks, and proximity to major ports.',
+    type: 'industrial',
+    totalAmount: 2800000000, // ₦2,800,000,000
+    minimumInvestment: 40000000, // ₦40,000,000
+    raisedAmount: 1960000000, // ₦1,960,000,000
+    investors: 49,
+    expectedReturn: 14.5,
+    dividendRate: 9.8,
+    duration: 54,
+    location: { address: 'Apapa Industrial Zone', city: 'Lagos', state: 'Lagos' },
+    images: ['https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&h=400&fit=crop'],
+    status: 'fundraising',
+    createdAt: '2024-02-08T09:15:00Z',
+    sponsor: { name: 'Logistics Properties Inc', experience: '20+ years', rating: 4.7 },
     sponsorId: '3' // Onyedikachi Akoma
   },
   {
-    id: '3',
-    title: 'Luxury Waterfront Apartments',
-    description: 'Premium waterfront residential development with stunning lagoon views and world-class amenities.',
+    id: 'inv_004',
+    title: 'Elite Residential Estate',
+    description: 'Ultra-luxurious gated community with smart homes, community center, sports facilities, and round-the-clock security.',
     type: 'residential',
-    totalAmount: 1500000000, // ₦1,500,000,000
-    minimumInvestment: 15000000, // ₦15,000,000
-    raisedAmount: 900000000, // ₦900,000,000
-    investors: 60,
-    expectedReturn: 15.2,
-    dividendRate: 10.5,
-    duration: 48,
-    location: { address: '456 Waterfront Drive', city: 'Lagos', state: 'Lagos' },
-    images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop'],
+    totalAmount: 4200000000, // ₦4,200,000,000
+    minimumInvestment: 60000000, // ₦60,000,000
+    raisedAmount: 2520000000, // ₦2,520,000,000
+    investors: 42,
+    expectedReturn: 19.2,
+    dividendRate: 13.5,
+    duration: 66,
+    location: { address: 'Victoria Island', city: 'Lagos', state: 'Lagos' },
+    images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=600&h=400&fit=crop'],
     status: 'fundraising',
-    createdAt: '2024-02-01T09:00:00Z',
-    sponsor: { name: 'Waterfront Developments Ltd', experience: '25+ years', rating: 4.7 },
+    createdAt: '2024-02-18T11:00:00Z',
+    sponsor: { name: 'Elite Communities Ltd', experience: '28+ years', rating: 4.9 },
     sponsorId: '2' // Admin User
   },
   {
-    id: '4',
-    title: 'Tech Hub Office Complex',
-    description: 'Modern office complex designed for tech companies with flexible workspaces and high-speed connectivity.',
-    type: 'commercial',
-    totalAmount: 3000000000, // ₦3,000,000,000
-    minimumInvestment: 50000000, // ₦50,000,000
-    raisedAmount: 1800000000, // ₦1,800,000,000
-    investors: 36,
+    id: 'inv_005',
+    title: 'Medical Center & Health Facility',
+    description: 'Modern medical center with specialized departments, diagnostic equipment, and outpatient services.',
+    type: 'healthcare',
+    totalAmount: 2200000000, // ₦2,200,000,000
+    minimumInvestment: 35000000, // ₦35,000,000
+    raisedAmount: 1540000000, // ₦1,540,000,000
+    investors: 44,
+    expectedReturn: 13.8,
+    dividendRate: 9.2,
+    duration: 48,
+    location: { address: 'Garki District', city: 'Abuja', state: 'FCT' },
+    images: ['https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=600&h=400&fit=crop'],
+    status: 'fundraising',
+    createdAt: '2024-02-10T13:45:00Z',
+    sponsor: { name: 'Healthcare Real Estate Group', experience: '15+ years', rating: 4.6 },
+    sponsorId: '1' // John Doe
+  },
+  {
+    id: 'inv_006',
+    title: 'Educational Campus Development',
+    description: 'Premium educational facility with modern classrooms, laboratories, library, and sports facilities for quality education.',
+    type: 'education',
+    totalAmount: 1800000000, // ₦1,800,000,000
+    minimumInvestment: 25000000, // ₦25,000,000
+    raisedAmount: 1260000000, // ₦1,260,000,000
+    investors: 50,
+    expectedReturn: 12.5,
+    dividendRate: 8.5,
+    duration: 42,
+    location: { address: 'Ikeja GRA', city: 'Lagos', state: 'Lagos' },
+    images: ['https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&h=400&fit=crop'],
+    status: 'fundraising',
+    createdAt: '2024-02-05T10:20:00Z',
+    sponsor: { name: 'Education Real Estate Corp', experience: '22+ years', rating: 4.8 },
+    sponsorId: '3' // Onyedikachi Akoma
+  },
+  {
+    id: 'inv_007',
+    title: 'Luxury Boutique Hotel',
+    description: 'Intimate boutique hotel with unique design, fine dining restaurant, spa facilities, and personalized guest services.',
+    type: 'hospitality',
+    totalAmount: 1500000000, // ₦1,500,000,000
+    minimumInvestment: 20000000, // ₦20,000,000
+    raisedAmount: 1050000000, // ₦1,050,000,000
+    investors: 52,
     expectedReturn: 18.5,
     dividendRate: 12.0,
     duration: 60,
-    location: { address: '789 Tech District', city: 'Lagos', state: 'Lagos' },
-    images: ['https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop'],
+    location: { address: 'Ikoyi District', city: 'Lagos', state: 'Lagos' },
+    images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop'],
     status: 'active',
-    createdAt: '2024-01-20T11:30:00Z',
-    sponsor: { name: 'Tech Real Estate Group', experience: '12+ years', rating: 4.9 },
-    sponsorId: '1' // John Doe
+    createdAt: '2024-01-25T15:00:00Z',
+    sponsor: { name: 'Boutique Hotels Group', experience: '18+ years', rating: 4.7 },
+    sponsorId: '2' // Admin User
   },
   {
-    id: '5',
-    title: 'Retail Shopping Center',
-    description: 'Prime retail shopping center in high-traffic area with anchor tenants and strong footfall.',
-    type: 'retail',
-    totalAmount: 1200000000, // ₦1,200,000,000
-    minimumInvestment: 25000000, // ₦25,000,000
-    raisedAmount: 960000000, // ₦960,000,000
-    investors: 38,
-    expectedReturn: 14.8,
-    dividendRate: 9.5,
-    duration: 42,
-    location: { address: '321 Shopping District', city: 'Lagos', state: 'Lagos' },
-    images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop'],
+    id: 'inv_008',
+    title: 'Agricultural Farm & Processing Plant',
+    description: 'Large-scale agricultural farm with modern processing facilities for food production and export.',
+    type: 'agricultural',
+    totalAmount: 3200000000, // ₦3,200,000,000
+    minimumInvestment: 45000000, // ₦45,000,000
+    raisedAmount: 1920000000, // ₦1,920,000,000
+    investors: 42,
+    expectedReturn: 15.5,
+    dividendRate: 10.5,
+    duration: 72,
+    location: { address: 'Ogun State', city: 'Abeokuta', state: 'Ogun' },
+    images: ['https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=600&h=400&fit=crop'],
     status: 'fundraising',
-    createdAt: '2024-02-10T14:00:00Z',
-    sponsor: { name: 'Retail Properties Inc', experience: '18+ years', rating: 4.6 },
-    sponsorId: '3' // Onyedikachi Akoma
+    createdAt: '2024-02-20T08:30:00Z',
+    sponsor: { name: 'AgriTech Farms Ltd', experience: '12+ years', rating: 4.6 },
+    sponsorId: '1' // John Doe
   }
 ];
 
-// Mock user investments
+// Mock user investments - linked to new investments
 const mockUserInvestments = [
   {
-    id: '1',
+    id: 'usr_inv_001',
     userId: '3', // Onyedikachi Akoma
-    investmentId: '1',
-    investmentTitle: 'Downtown Commercial Complex',
-    amount: 40000000, // ₦40,000,000
+    investmentId: 'inv_001',
+    investmentTitle: 'Premium Beachfront Resort Development',
+    propertyId: 'prop_005',
+    amount: 100000000, // ₦100,000,000
     shares: 2,
-    investmentDate: '2024-01-20T10:00:00Z',
+    investmentDate: '2024-02-16T10:00:00Z',
     status: 'active',
-    totalDividendsEarned: 3400000, // ₦3,400,000
-    expectedMonthlyDividend: 283333, // ₦283,333
-    totalReturn: 12.5,
+    totalDividendsEarned: 7500000, // ₦7,500,000
+    expectedMonthlyDividend: 1250000, // ₦1,250,000
+    totalReturn: 22.5,
     sponsorId: '2' // Admin User
   },
   {
-    id: '2',
+    id: 'usr_inv_002',
     userId: '3', // Onyedikachi Akoma
-    investmentId: '4',
-    investmentTitle: 'Tech Hub Office Complex',
-    amount: 75000000, // ₦75,000,000
-    shares: 1.5,
-    investmentDate: '2024-01-25T14:30:00Z',
+    investmentId: 'inv_007',
+    investmentTitle: 'Luxury Boutique Hotel',
+    propertyId: 'prop_010',
+    amount: 40000000, // ₦40,000,000
+    shares: 2,
+    investmentDate: '2024-01-28T14:30:00Z',
     status: 'active',
-    totalDividendsEarned: 2250000, // ₦2,250,000
-    expectedMonthlyDividend: 750000, // ₦750,000
+    totalDividendsEarned: 2400000, // ₦2,400,000
+    expectedMonthlyDividend: 400000, // ₦400,000
     totalReturn: 18.5,
+    sponsorId: '2' // Admin User
+  },
+  {
+    id: 'usr_inv_003',
+    userId: '1', // John Doe
+    investmentId: 'inv_002',
+    investmentTitle: 'Mixed-Use Development Complex',
+    propertyId: 'prop_003',
+    amount: 90000000, // ₦90,000,000
+    shares: 3,
+    investmentDate: '2024-02-14T09:15:00Z',
+    status: 'active',
+    totalDividendsEarned: 5175000, // ₦5,175,000
+    expectedMonthlyDividend: 862500, // ₦862,500
+    totalReturn: 16.8,
     sponsorId: '1' // John Doe
   },
   {
-    id: '3',
+    id: 'usr_inv_004',
     userId: '1', // John Doe
-    investmentId: '2',
-    investmentTitle: 'Suburban Residential Portfolio',
-    amount: 20000000, // ₦20,000,000
+    investmentId: 'inv_004',
+    investmentTitle: 'Elite Residential Estate',
+    propertyId: 'prop_004',
+    amount: 120000000, // ₦120,000,000
     shares: 2,
-    investmentDate: '2024-01-15T09:15:00Z',
+    investmentDate: '2024-02-20T11:20:00Z',
     status: 'active',
-    totalDividendsEarned: 1300000, // ₦1,300,000
-    expectedMonthlyDividend: 108333, // ₦108,333
-    totalReturn: 8.2,
-    sponsorId: '3' // Onyedikachi Akoma
-  },
-  {
-    id: '4',
-    userId: '1', // John Doe
-    investmentId: '3',
-    investmentTitle: 'Luxury Waterfront Apartments',
-    amount: 30000000, // ₦30,000,000
-    shares: 2,
-    investmentDate: '2024-02-05T11:45:00Z',
-    status: 'pending_approval',
-    totalDividendsEarned: 0,
-    expectedMonthlyDividend: 262500, // ₦262,500
-    totalReturn: 15.2,
+    totalDividendsEarned: 8100000, // ₦8,100,000
+    expectedMonthlyDividend: 1350000, // ₦1,350,000
+    totalReturn: 19.2,
     sponsorId: '2' // Admin User
   },
   {
-    id: '5',
+    id: 'usr_inv_005',
     userId: '2', // Admin User
-    investmentId: '5',
-    investmentTitle: 'Retail Shopping Center',
-    amount: 50000000, // ₦50,000,000
+    investmentId: 'inv_005',
+    investmentTitle: 'Medical Center & Health Facility',
+    propertyId: 'prop_007',
+    amount: 70000000, // ₦70,000,000
     shares: 2,
-    investmentDate: '2024-02-12T16:20:00Z',
+    investmentDate: '2024-02-12T13:00:00Z',
     status: 'active',
-    totalDividendsEarned: 950000, // ₦950,000
-    expectedMonthlyDividend: 395833, // ₦395,833
-    totalReturn: 14.8,
-    sponsorId: '3' // Onyedikachi Akoma
+    totalDividendsEarned: 3220000, // ₦3,220,000
+    expectedMonthlyDividend: 536667, // ₦536,667
+    totalReturn: 13.8,
+    sponsorId: '1' // John Doe
   },
   {
-    id: '6',
-    userId: '2', // Admin User
-    investmentId: '1',
-    investmentTitle: 'Downtown Commercial Complex',
-    amount: 100000000, // ₦100,000,000
-    shares: 5,
-    investmentDate: '2024-01-18T08:30:00Z',
-    status: 'completed',
-    totalDividendsEarned: 8500000, // ₦8,500,000
-    expectedMonthlyDividend: 708333, // ₦708,333
+    id: 'usr_inv_006',
+    userId: '3', // Onyedikachi Akoma
+    investmentId: 'inv_006',
+    investmentTitle: 'Educational Campus Development',
+    propertyId: 'prop_005',
+    amount: 50000000, // ₦50,000,000
+    shares: 2,
+    investmentDate: '2024-02-08T10:30:00Z',
+    status: 'active',
+    totalDividendsEarned: 2125000, // ₦2,125,000
+    expectedMonthlyDividend: 354167, // ₦354,167
     totalReturn: 12.5,
-    sponsorId: '2' // Admin User (self-investment)
+    sponsorId: '3' // Onyedikachi Akoma
   }
 ];
 

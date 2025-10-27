@@ -1,5 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { FaCheck, FaTimes, FaEye, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { 
+  FaCheck, 
+  FaTimes, 
+  FaEye, 
+  FaSpinner, 
+  FaExclamationTriangle,
+  FaHome,
+  FaUser,
+  FaMoneyBillWave,
+  FaCalendar,
+  FaClock,
+  FaDownload,
+  FaImage,
+  FaMapMarkerAlt,
+  FaBed,
+  FaBath,
+  FaRuler,
+  FaSearch,
+  FaFilter,
+  FaInfoCircle
+} from 'react-icons/fa';
 
 const AdminPropertyVerification = () => {
   const [verificationRequests, setVerificationRequests] = useState([]);
@@ -10,6 +30,10 @@ const AdminPropertyVerification = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [error, setError] = useState('');
+  const [verificationFee, setVerificationFee] = useState(50000);
+  const [savingFee, setSavingFee] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
 
@@ -22,36 +46,62 @@ const AdminPropertyVerification = () => {
       setLoading(true);
       setError('');
       
-      // Skip API call and use mock data
+      // Enhanced mock data with better structure
       const mockVerificationRequests = [
         {
           id: '1',
           propertyId: 'prop_001',
           vendorId: 'user_001',
+          vendorName: 'John Doe',
           vendorEmail: 'john@example.com',
           propertyTitle: 'Luxury Villa in Lekki',
-          propertyType: 'House',
+          propertyDescription: 'A beautiful 5-bedroom luxury villa with modern amenities, swimming pool, and garden space.',
           propertyPrice: 500000000,
-          submittedAt: new Date().toISOString(),
+          propertyLocation: {
+            address: 'No. 15 Admiralty Way',
+            city: 'Lekki',
+            state: 'Lagos'
+          },
+          propertyType: 'House',
+          bedrooms: 5,
+          bathrooms: 4,
+          area: 350,
+          submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentCompletedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'pending',
+          verificationFee: 50000,
+          images: ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800'],
           documents: [
-            { type: 'title_deed', url: 'https://example.com/title.pdf', verified: false },
-            { type: 'survey_plan', url: 'https://example.com/survey.pdf', verified: false }
+            { type: 'title_deed', name: 'Title Deed', url: 'https://example.com/title.pdf' },
+            { type: 'survey_plan', name: 'Survey Plan', url: 'https://example.com/survey.pdf' }
           ]
         },
         {
           id: '2',
           propertyId: 'prop_002',
           vendorId: 'user_002',
+          vendorName: 'Jane Smith',
           vendorEmail: 'jane@example.com',
           propertyTitle: 'Modern Apartment in Victoria Island',
-          propertyType: 'Apartment',
+          propertyDescription: 'A sleek 3-bedroom apartment in the heart of Victoria Island with stunning ocean views.',
           propertyPrice: 120000000,
-          submittedAt: new Date().toISOString(),
+          propertyLocation: {
+            address: 'Plot 25 Ozumba Mbadiwe',
+            city: 'Victoria Island',
+            state: 'Lagos'
+          },
+          propertyType: 'Apartment',
+          bedrooms: 3,
+          bathrooms: 2,
+          area: 180,
+          submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentCompletedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'pending',
+          verificationFee: 50000,
+          images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
           documents: [
-            { type: 'title_deed', url: 'https://example.com/title2.pdf', verified: false },
-            { type: 'c_of_o', url: 'https://example.com/coo.pdf', verified: false }
+            { type: 'title_deed', name: 'Title Deed', url: 'https://example.com/title2.pdf' },
+            { type: 'c_of_o', name: 'C of O', url: 'https://example.com/coo.pdf' }
           ]
         }
       ];
@@ -61,7 +111,6 @@ const AdminPropertyVerification = () => {
     } catch (err) {
       setError('Failed to load verification requests');
       console.error('Error:', err);
-      // Use empty array as fallback
       setVerificationRequests([]);
     } finally {
       setLoading(false);
@@ -170,6 +219,32 @@ const AdminPropertyVerification = () => {
     );
   };
 
+  const handleSaveVerificationFee = async () => {
+    try {
+      setSavingFee(true);
+      console.log('Saving verification fee:', verificationFee);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      alert('Verification fee updated successfully!');
+    } catch (error) {
+      console.error('Error saving verification fee:', error);
+      alert('Failed to save verification fee');
+    } finally {
+      setSavingFee(false);
+    }
+  };
+
+  const filteredRequests = verificationRequests.filter(request => {
+    const matchesSearch = 
+      request.propertyTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.vendorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.vendorEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filterStatus === 'all' || request.status === filterStatus;
+    
+    return matchesSearch && matchesFilter;
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -181,96 +256,224 @@ const AdminPropertyVerification = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Property Verification Requests</h2>
-        <button
-          onClick={loadVerificationRequests}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Refresh
-        </button>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm font-medium">Total Requests</p>
+              <p className="text-3xl font-bold mt-2">{verificationRequests.length}</p>
+            </div>
+            <div className="bg-blue-400 bg-opacity-30 rounded-full p-3">
+              <FaClock className="text-2xl" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-yellow-100 text-sm font-medium">Pending Review</p>
+              <p className="text-3xl font-bold mt-2">
+                {verificationRequests.filter(r => r.status === 'pending').length}
+              </p>
+            </div>
+            <div className="bg-yellow-400 bg-opacity-30 rounded-full p-3">
+              <FaExclamationTriangle className="text-2xl" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm font-medium">Approved</p>
+              <p className="text-3xl font-bold mt-2">
+                {verificationRequests.filter(r => r.status === 'approved').length}
+              </p>
+            </div>
+            <div className="bg-green-400 bg-opacity-30 rounded-full p-3">
+              <FaCheck className="text-2xl" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm font-medium">Total Revenue</p>
+              <p className="text-2xl font-bold mt-2">
+                {formatCurrency(verificationRequests.reduce((sum, r) => sum + (r.verificationFee || 0), 0))}
+              </p>
+            </div>
+            <div className="bg-purple-400 bg-opacity-30 rounded-full p-3">
+              <FaMoneyBillWave className="text-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Verification Settings Card */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Verification Settings</h2>
+            <p className="text-sm text-gray-600 mt-1">Configure property verification fee</p>
+          </div>
+          <div className="bg-blue-100 rounded-full p-3">
+            <FaMoneyBillWave className="text-blue-600 text-xl" />
+          </div>
+        </div>
+        <div className="flex items-end space-x-4">
+          <div className="flex-1 max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Verification Fee (NGN)
+            </label>
+            <input
+              type="number"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              value={verificationFee}
+              onChange={(e) => setVerificationFee(e.target.value)}
+              min={0}
+              placeholder="Enter verification fee"
+            />
+          </div>
+          <button
+            onClick={handleSaveVerificationFee}
+            disabled={savingFee}
+            className={`px-6 py-3 rounded-lg text-white font-medium transition ${
+              savingFee ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
+            }`}
+          >
+            {savingFee ? 'Saving...' : 'Save Fee'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mt-3 flex items-center">
+          <FaInfoCircle className="mr-2" />
+          Vendors will be charged this amount when requesting property verification.
+        </p>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search properties, vendors..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="relative">
+            <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <div className="flex items-center">
-            <FaExclamationTriangle className="mr-2" />
-            {error}
-          </div>
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg flex items-center">
+          <FaExclamationTriangle className="mr-3" />
+          {error}
         </div>
       )}
 
-      {verificationRequests.length === 0 ? (
-        <div className="text-center py-12">
-          <FaEye className="text-4xl text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Verification Requests</h3>
+      {filteredRequests.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl shadow-lg border border-gray-200">
+          <div className="bg-gray-100 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+            <FaHome className="text-4xl text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Verification Requests</h3>
           <p className="text-gray-500">There are currently no properties pending verification.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Property
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Owner
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fee Paid
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {verificationRequests.map((request) => (
-                  <tr key={request.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {request.property?.title || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {request.property?.location?.city}, {request.property?.location?.state}
+        <div className="space-y-4">
+          {filteredRequests.map((request) => (
+            <div key={request.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Property Image and Details */}
+                  <div className="lg:col-span-2">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
+                          <img 
+                            src={request.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'} 
+                            alt={request.propertyTitle}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      User ID: {request.userId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(request.verificationFee)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(request.paymentCompletedAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(request.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-1">{request.propertyTitle}</h3>
+                            <div className="flex items-center text-sm text-gray-600 mb-2">
+                              <FaMapMarkerAlt className="mr-1" />
+                              {request.propertyLocation?.address}, {request.propertyLocation?.city}, {request.propertyLocation?.state}
+                            </div>
+                          </div>
+                          {getStatusBadge(request.status)}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{request.propertyDescription}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <span className="flex items-center">
+                            <FaBed className="mr-1" /> {request.bedrooms}
+                          </span>
+                          <span className="flex items-center">
+                            <FaBath className="mr-1" /> {request.bathrooms}
+                          </span>
+                          <span className="flex items-center">
+                            <FaRuler className="mr-1" /> {request.area} sqm
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Verification Info and Actions */}
+                  <div className="border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-6">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Vendor</p>
+                        <p className="text-sm font-medium text-gray-900">{request.vendorName}</p>
+                        <p className="text-xs text-gray-600">{request.vendorEmail}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Verification Fee</p>
+                        <p className="text-lg font-bold text-green-600">{formatCurrency(request.verificationFee)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Submitted</p>
+                        <p className="text-sm text-gray-900 flex items-center">
+                          <FaCalendar className="mr-1" /> {formatDate(request.submittedAt)}
+                        </p>
+                      </div>
                       <button
                         onClick={() => openModal(request)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition"
                       >
-                        <FaEye className="inline mr-1" />
-                        Review
+                        <FaEye />
+                        <span>Review Details</span>
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -302,31 +505,35 @@ const AdminPropertyVerification = () => {
                   <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Title</label>
-                      <p className="text-sm text-gray-900">{selectedRequest.property?.title}</p>
+                      <p className="text-sm text-gray-900">{selectedRequest.propertyTitle}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Description</label>
-                      <p className="text-sm text-gray-900">{selectedRequest.property?.description}</p>
+                      <p className="text-sm text-gray-900">{selectedRequest.propertyDescription}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Price</label>
-                      <p className="text-sm text-gray-900">{formatCurrency(selectedRequest.property?.price)}</p>
+                      <p className="text-sm text-gray-900">{formatCurrency(selectedRequest.propertyPrice)}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Location</label>
                       <p className="text-sm text-gray-900">
-                        {selectedRequest.property?.location?.address}, {selectedRequest.property?.location?.city}, {selectedRequest.property?.location?.state}
+                        {selectedRequest.propertyLocation?.address}, {selectedRequest.propertyLocation?.city}, {selectedRequest.propertyLocation?.state}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Type</label>
-                      <p className="text-sm text-gray-900 capitalize">{selectedRequest.property?.type}</p>
+                      <p className="text-sm text-gray-900 capitalize">{selectedRequest.propertyType}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Bedrooms/Bathrooms</label>
                       <p className="text-sm text-gray-900">
-                        {selectedRequest.property?.details?.bedrooms} bed, {selectedRequest.property?.details?.bathrooms} bath
+                        {selectedRequest.bedrooms} bed, {selectedRequest.bathrooms} bath
                       </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Area</label>
+                      <p className="text-sm text-gray-900">{selectedRequest.area} sqm</p>
                     </div>
                   </div>
                 </div>

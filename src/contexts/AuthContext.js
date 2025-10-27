@@ -1,10 +1,181 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../config/firebase';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  signInAnonymously, 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  updateProfile
+} from 'firebase/auth';
 import toast from 'react-hot-toast';
 
-// Mock users for authentication
+// Mock users for authentication - includes all vendor accounts from documentation
 const mockUsers = [
+  // Property Owners
+  {
+    id: 'user_001',
+    firstName: 'Adebayo',
+    lastName: 'Oluwaseun',
+    email: 'adebayo.oluwaseun@gmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_002',
+    firstName: 'Chioma',
+    lastName: 'Nwosu',
+    email: 'chioma.nwosu@yahoo.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_003',
+    firstName: 'Emmanuel',
+    lastName: 'Adeyemi',
+    email: 'emmanuel.adeyemi@hotmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_004',
+    firstName: 'Fatima',
+    lastName: 'Ibrahim',
+    email: 'fatima.ibrahim@gmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_005',
+    firstName: 'Oluwaseun',
+    lastName: 'Akoma',
+    email: 'oluwaseun.akoma@gmail.com',
+    password: 'password123',
+    role: 'vendor',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_006',
+    firstName: 'Blessing',
+    lastName: 'Okafor',
+    email: 'blessing.okafor@outlook.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_007',
+    firstName: 'Ibrahim',
+    lastName: 'Musa',
+    email: 'ibrahim.musa@gmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_008',
+    firstName: 'Grace',
+    lastName: 'Eze',
+    email: 'grace.eze@yahoo.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_009',
+    firstName: 'Kemi',
+    lastName: 'Adebayo',
+    email: 'kemi.adebayo@gmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_010',
+    firstName: 'Tunde',
+    lastName: 'Ogunlana',
+    email: 'tunde.ogunlana@hotmail.com',
+    password: 'password123',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'user_011',
+    firstName: 'Onyedikachi',
+    lastName: 'Akoma',
+    email: 'onyedika.akoma@gmail.com',
+    password: 'dikaoliver2660',
+    role: 'user',
+    roles: ['buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  },
+  // Vendor Accounts
+  {
+    id: 'agent_001',
+    firstName: 'Emeka',
+    lastName: 'Okafor',
+    email: 'emeka.okafor@lagosagents.com',
+    password: 'agent123',
+    role: 'vendor',
+    roles: ['vendor'],
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'agent_002',
+    firstName: 'Fatima',
+    lastName: 'Ibrahim',
+    email: 'fatima.ibrahim@abujaagents.com',
+    password: 'agent123',
+    role: 'vendor',
+    roles: ['vendor'],
+    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'agent_003',
+    firstName: 'Chidi',
+    lastName: 'Nwankwo',
+    email: 'chidi.nwankwo@riversagents.com',
+    password: 'agent123',
+    role: 'vendor',
+    roles: ['vendor'],
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    id: 'owner_001',
+    firstName: 'Aisha',
+    lastName: 'Mohammed',
+    email: 'aisha.mohammed@propertyowner.com',
+    password: 'owner123',
+    role: 'vendor',
+    roles: ['vendor'],
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+  },
+  // Admin Account
+  {
+    id: 'admin_001',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@kikiestate.com',
+    password: 'admin123',
+    role: 'admin',
+    roles: ['admin', 'buyer', 'vendor'],
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+  },
+  // Legacy test accounts
   {
     id: '1',
     firstName: 'John',
@@ -12,7 +183,7 @@ const mockUsers = [
     email: 'john@example.com',
     password: 'password123',
     role: 'user',
-    roles: ['buyer', 'vendor'], // User can be both buyer and vendor
+    roles: ['buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -22,18 +193,8 @@ const mockUsers = [
     email: 'admin@example.com',
     password: 'admin123',
     role: 'admin',
-    roles: ['admin', 'buyer', 'vendor'], // Admin can access all roles
+    roles: ['admin', 'buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    id: '3',
-    firstName: 'Onyedikachi',
-    lastName: 'Akoma',
-    email: 'onyedika.akoma@gmail.com',
-    password: 'dikaoliver2660',
-    role: 'user',
-    roles: ['buyer', 'vendor'], // User can be both buyer and vendor
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
   }
 ];
 
@@ -86,15 +247,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
+        // Check if we already have a saved user from localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        
+        if (savedUser) {
+          // User already logged in via mock authentication
+          try {
+            const userData = JSON.parse(savedUser);
+            setUser(userData);
+            setFirebaseAuthReady(true);
+            setLoading(false);
+            return; // Don't create guest user
+          } catch (error) {
+            console.error('Error parsing saved user:', error);
+            localStorage.removeItem('currentUser');
+          }
+        }
+        
+        // No saved user - check Firebase auth
         if (!fbUser) {
           await signInAnonymously(auth);
           return; // wait for next auth state change where user exists
         }
+        
         // We have a Firebase user (anonymous or real)
         setFirebaseAuthReady(true);
 
-        // If app has no mock user yet, synthesize one from Firebase for seamless UI
-        const savedUser = localStorage.getItem('currentUser');
+        // Only create guest if we truly have no saved user
         if (!savedUser) {
           const synthesized = {
             id: fbUser.uid,
@@ -173,6 +352,88 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       setError(error.message);
       toast.error(error.message);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Sign-In function
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      const result = await signInWithPopup(auth, provider);
+      const fbUser = result.user;
+      
+      // Extract name from displayName
+      const nameParts = fbUser.displayName?.split(' ') || [];
+      const firstName = nameParts[0] || 'User';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Create user object
+      const googleUser = {
+        id: fbUser.uid,
+        firstName,
+        lastName,
+        email: fbUser.email,
+        role: 'user',
+        roles: ['buyer', 'vendor'],
+        activeRole: 'buyer',
+        avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        provider: 'google'
+      };
+      
+      // Check if this email exists in mock users
+      const existingMockUser = mockUsers.find(u => u.email === fbUser.email);
+      if (existingMockUser) {
+        // Use existing user's roles and role
+        googleUser.role = existingMockUser.role;
+        googleUser.roles = existingMockUser.roles;
+        
+        // Update profile with Google data
+        if (fbUser.photoURL) {
+          await updateProfile(fbUser, { photoURL: fbUser.photoURL });
+        }
+      }
+      
+      setUser(googleUser);
+      localStorage.setItem('currentUser', JSON.stringify(googleUser));
+      localStorage.setItem('activeRole', googleUser.activeRole);
+      
+      // Handle redirect after login
+      const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      if (redirectTo) {
+        setRedirectUrl(null);
+        localStorage.removeItem('authRedirectUrl');
+      }
+      
+      toast.success('Signed in with Google successfully!');
+      
+      // Register FCM token after login
+      try {
+        const { registerFcmToken } = await import('../services/messagingService');
+        const token = await registerFcmToken(process.env.REACT_APP_FIREBASE_VAPID_KEY);
+        if (token) {
+          const { db } = await import('../config/firebase');
+          const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
+          await setDoc(doc(db, 'userFcmTokens', googleUser.id), { tokens: arrayUnion(token) }, { merge: true });
+        }
+      } catch (e) {
+        console.warn('FCM registration skipped or failed:', e?.message || e);
+      }
+      
+      return { success: true, user: googleUser, redirectUrl: redirectTo };
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError(error.message);
+      toast.error(error.message || 'Failed to sign in with Google');
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -380,6 +641,7 @@ export const AuthProvider = ({ children }) => {
     activeRole,
     firebaseAuthReady,
     login,
+    signInWithGoogle,
     register,
     logout,
     updateUserProfile,

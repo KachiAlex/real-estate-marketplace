@@ -6,7 +6,6 @@ import AdminSidebar from '../components/layout/AdminSidebar';
 import BlogManagement from '../components/BlogManagement';
 import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
-import AdminDataSeeder from '../components/AdminDataSeeder';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 
 const AdminDashboard = () => {
@@ -36,8 +35,6 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [buyers, setBuyers] = useState([]);
-  const [settings, setSettings] = useState({ verificationFee: 50000 });
-  const [savingSettings, setSavingSettings] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [selectedPropertyForModal, setSelectedPropertyForModal] = useState(null);
@@ -72,7 +69,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','escrow','disputes','users','blog','seeder','settings'].includes(t)) {
+    if (t && ['properties','verification','escrow','disputes','users','blog'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,24 +88,70 @@ const AdminDashboard = () => {
       try {
         console.log('AdminDashboard: Using mock data (API endpoints unavailable)');
         
-        // Skip API calls and use fallback mock data directly
-        // Mock escrow data
-        const mockEscrows = [
-          { id: '1', propertyId: '1', buyerId: '1', sellerId: '2', amount: 5000000, status: 'active', createdAt: new Date().toISOString() },
-          { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
-        ];
-        
-        // Mock disputes data
-        const mockDisputes = [
-          { id: '2', propertyId: '2', buyerId: '3', sellerId: '4', amount: 7500000, status: 'disputed', createdAt: new Date().toISOString() }
-        ];
-        
         // Mock users data
         const mockUsers = [
           { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'user', isVerified: true, createdAt: '2024-01-15' },
           { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'user', isVerified: true, createdAt: '2024-01-16' },
-          { id: '3', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', isVerified: true, createdAt: '2024-01-01' },
-          { id: '4', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'user', isVerified: true, createdAt: '2024-01-20' }
+          { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', role: 'user', isVerified: true, createdAt: '2024-01-17' },
+          { id: '4', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', role: 'user', isVerified: true, createdAt: '2024-01-18' },
+          { id: '5', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', isVerified: true, createdAt: '2024-01-01' },
+          { id: '6', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'user', isVerified: true, createdAt: '2024-01-20' }
+        ];
+
+        // Mock escrow data with full details
+        const mockEscrows = [
+          { 
+            id: '1', 
+            propertyId: '1', 
+            propertyTitle: 'Luxury Villa in Lekki',
+            buyerId: '1', 
+            buyerName: 'John Doe',
+            sellerId: '2', 
+            sellerName: 'Jane Smith',
+            amount: 50000000, 
+            status: 'active', 
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() 
+          },
+          { 
+            id: '2', 
+            propertyId: '2', 
+            propertyTitle: 'Modern Apartment in Victoria Island',
+            buyerId: '3', 
+            buyerName: 'Michael Brown',
+            sellerId: '4', 
+            sellerName: 'Sarah Johnson',
+            amount: 75000000, 
+            status: 'disputed', 
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() 
+          },
+          { 
+            id: '3', 
+            propertyId: '3', 
+            propertyTitle: 'Penthouse in Ikoyi',
+            buyerId: '6', 
+            buyerName: 'Onyedikachi Akoma',
+            sellerId: '1', 
+            sellerName: 'John Doe',
+            amount: 120000000, 
+            status: 'pending', 
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() 
+          }
+        ];
+        
+        // Mock disputes data with full details
+        const mockDisputes = [
+          { 
+            id: '2', 
+            propertyId: '2', 
+            propertyTitle: 'Modern Apartment in Victoria Island',
+            buyerId: '3', 
+            buyerName: 'Michael Brown',
+            sellerId: '4', 
+            sellerName: 'Sarah Johnson',
+            amount: 75000000, 
+            status: 'disputed', 
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() 
+          }
         ];
 
         // Set mock data
@@ -151,22 +194,6 @@ const AdminDashboard = () => {
         }
       }
     } catch (_) {}
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      setSavingSettings(true);
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-      const res = await fetch(`${API_BASE_URL}/api/admin/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verificationFee: Number(settings.verificationFee || 0) })
-      });
-      const data = await res.json();
-      if (data.success) setSettings(data.data);
-    } finally {
-      setSavingSettings(false);
-    }
   };
 
   const handleStatusFilter = (status) => {
@@ -416,11 +443,9 @@ const AdminDashboard = () => {
               {activeTab === 'verification' && 'Property verification requests and approvals'}
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
-              {activeTab === 'users' && 'User account management'}
-              {activeTab === 'blog' && 'Blog content management'}
-              {activeTab === 'seeder' && 'Add sample data to Firestore database'}
-              {activeTab === 'settings' && 'System configuration and settings'}
-            </p>
+                             {activeTab === 'users' && 'User account management'}
+               {activeTab === 'blog' && 'Blog content management'}
+             </p>
         </div>
       </div>
 
@@ -614,7 +639,26 @@ const AdminDashboard = () => {
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : '-'}
+                      {(() => {
+                        try {
+                          const dateValue = property.createdAt || property.listedDate || property.datePosted;
+                          if (!dateValue) return '-';
+                          
+                          const date = new Date(dateValue);
+                          // Check if date is valid
+                          if (isNaN(date.getTime())) return '-';
+                          
+                          // Format as MM/DD/YYYY or use toLocaleDateString
+                          return date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          });
+                        } catch (error) {
+                          console.error('Error formatting date:', error, property);
+                          return '-';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -888,39 +932,6 @@ const AdminDashboard = () => {
           <AdminPropertyVerification />
         )}
 
-        {/* Data Seeder Tab */}
-        {activeTab === 'seeder' && (
-          <AdminDataSeeder />
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Settings</h2>
-            </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Verification Fee (NGN)</label>
-                <input
-                  type="number"
-                  className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={settings.verificationFee}
-                  onChange={(e) => setSettings(s => ({ ...s, verificationFee: e.target.value }))}
-                  min={0}
-                />
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                  className={`ml-3 px-4 py-2 rounded-md text-white ${savingSettings ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-                >
-                  {savingSettings ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-              <div className="text-sm text-gray-500">Vendors will be charged this amount when requesting property verification.</div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Verification Modal */}

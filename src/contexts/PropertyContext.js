@@ -40,42 +40,39 @@ export const PROPERTY_TYPES = [
   'warehouse'
 ];
 
-// Mock properties data - Now imported from backend data files
-// This will be replaced with API calls to backend
-const mockProperties = [
-  // Sample properties for frontend display
-  // Full data will come from backend API
+// Backend mock properties data - same as in Home.js
+const backendMockProperties = [
   {
     id: 'prop_001',
     title: 'Beautiful Family Home in Lekki Phase 1',
-    description: 'Spacious 3-bedroom home with modern amenities, stunning views of the lagoon, and premium finishes throughout.',
+    description: 'Spacious 3-bedroom home with modern amenities, stunning views of the lagoon, and premium finishes throughout. Perfect for families seeking luxury living.',
     price: 185000000,
     type: 'house',
     status: 'for-sale',
-    details: { bedrooms: 3, bathrooms: 2, sqft: 1800 },
-    location: { address: '123 Lekki Phase 1', city: 'Lagos', state: 'Lagos' },
-    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
-    owner: { firstName: 'Adebayo', lastName: 'Oluwaseun' },
+    details: { bedrooms: 3, bathrooms: 2, sqft: 1800, yearBuilt: 2018, parking: 2, furnished: 'semi-furnished' },
+    location: { address: '123 Lekki Phase 1', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4654, lng: 3.4654 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
     views: 45,
     isVerified: false,
-    createdAt: new Date().toISOString(),
-    listingType: 'for-sale'
+    amenities: ['Swimming Pool', 'Gym', '24/7 Security', 'Garden', 'Parking'],
+    createdAt: '2024-01-10'
   },
   {
     id: 'prop_002',
     title: 'Modern Downtown Apartment in Victoria Island',
-    description: 'Luxury 2-bedroom apartment in the heart of Victoria Island with premium finishes and city views.',
+    description: 'Luxury 2-bedroom apartment in the heart of Victoria Island with premium finishes, city views, and access to world-class amenities.',
     price: 1200000,
     type: 'apartment',
     status: 'for-rent',
-    details: { bedrooms: 2, bathrooms: 1, sqft: 1200 },
-    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos' },
-    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', isPrimary: true }],
-    owner: { firstName: 'Adebayo', lastName: 'Oluwaseun' },
+    details: { bedrooms: 2, bathrooms: 1, sqft: 1200, yearBuilt: 2020, parking: 1, furnished: 'fully-furnished' },
+    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos', zipCode: '101241', coordinates: { lat: 6.4281, lng: 3.4219 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
     views: 32,
     isVerified: true,
-    createdAt: new Date().toISOString(),
-    listingType: 'for-rent'
+    amenities: ['Concierge', 'Gym', 'Swimming Pool', 'Security', 'Parking'],
+    createdAt: '2024-01-08'
   },
   {
     id: 'prop_003',
@@ -84,16 +81,138 @@ const mockProperties = [
     price: 520000000,
     type: 'apartment',
     status: 'for-sale',
-    details: { bedrooms: 4, bathrooms: 3, sqft: 2800 },
-    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos' },
-    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop', isPrimary: true }],
-    owner: { firstName: 'Chioma', lastName: 'Nwosu' },
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2800, yearBuilt: 2021, parking: 3, furnished: 'fully-furnished' },
+    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4528, lng: 3.4068 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_002', firstName: 'Chioma', lastName: 'Nwosu', email: 'chioma.nwosu@yahoo.com', phone: '+234-802-345-6789' },
     views: 89,
     isVerified: true,
-    createdAt: new Date().toISOString(),
-    listingType: 'for-sale'
+    amenities: ['Rooftop Pool', 'Private Elevator', 'Concierge', 'Gym', 'Security'],
+    createdAt: '2024-01-05'
+  },
+  {
+    id: 'prop_004',
+    title: 'Cozy Studio Apartment in Surulere',
+    description: 'Perfect starter home in a vibrant neighborhood with modern amenities and easy access to transportation.',
+    price: 800000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 1, bathrooms: 1, sqft: 650, yearBuilt: 2019, parking: 1, furnished: 'unfurnished' },
+    location: { address: '321 Surulere', city: 'Lagos', state: 'Lagos', zipCode: '101283', coordinates: { lat: 6.5000, lng: 3.3500 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_002', firstName: 'Chioma', lastName: 'Nwosu', email: 'chioma.nwosu@yahoo.com', phone: '+234-802-345-6789' },
+    views: 24,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-12'
+  },
+  {
+    id: 'prop_005',
+    title: 'Suburban Villa with Private Pool',
+    description: 'Spacious family villa with private pool, garden, and premium amenities in a secure gated community.',
+    price: 310000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 5, bathrooms: 4, sqft: 3200, yearBuilt: 2017, parking: 4, furnished: 'semi-furnished' },
+    location: { address: '456 Magodo GRA', city: 'Lagos', state: 'Lagos', zipCode: '105001', coordinates: { lat: 6.6000, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_003', firstName: 'Emmanuel', lastName: 'Adeyemi', email: 'emmanuel.adeyemi@hotmail.com', phone: '+234-803-456-7890' },
+    views: 67,
+    isVerified: false,
+    amenities: ['Private Pool', 'Garden', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-15'
+  },
+  {
+    id: 'prop_007',
+    title: 'Luxury Townhouse in Ikoyi',
+    description: 'Elegant townhouse with premium finishes, private garden, and access to exclusive community amenities.',
+    price: 450000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2400, yearBuilt: 2019, parking: 3, furnished: 'fully-furnished' },
+    location: { address: '654 Ikoyi', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4500, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_004', firstName: 'Fatima', lastName: 'Ibrahim', email: 'fatima.ibrahim@gmail.com', phone: '+234-804-567-8901' },
+    views: 78,
+    isVerified: true,
+    amenities: ['Private Garden', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-06'
+  },
+  {
+    id: 'prop_010',
+    title: 'Luxury Apartment in Banana Island',
+    description: 'Exclusive apartment with panoramic ocean views and access to world-class amenities.',
+    price: 380000000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 3, sqft: 2200, yearBuilt: 2021, parking: 2, furnished: 'fully-furnished' },
+    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4528, lng: 3.4068 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_005', firstName: 'Oluwaseun', lastName: 'Akoma', email: 'oluwaseun.akoma@gmail.com', phone: '+234-805-678-9012' },
+    views: 156,
+    isVerified: true,
+    amenities: ['Ocean Views', 'Concierge', 'Gym', 'Swimming Pool', 'Security'],
+    createdAt: '2024-01-01'
   }
 ];
+
+// Transform backend properties to the format expected by the app
+const transformProperty = (prop) => {
+  const statusMap = { 'for-sale': 'For Sale', 'for-rent': 'For Rent', 'for-lease': 'For Lease' };
+  const typeMap = { 'house': 'House', 'apartment': 'Apartment', 'commercial': 'Office', 'villa': 'Villa', 'penthouse': 'Penthouse', 'townhouse': 'Townhouse' };
+
+  return {
+    id: prop.id, // Keep the original ID format
+    numericId: parseInt(prop.id.replace('prop_', '')), // For compatibility with numeric IDs
+    title: prop.title,
+    location: `${prop.location.address}, ${prop.location.city}, ${prop.location.state}`,
+    address: prop.location.address,
+    city: prop.location.city,
+    state: prop.location.state,
+    zipCode: prop.location.zipCode,
+    coordinates: prop.location.coordinates,
+    price: prop.price,
+    type: typeMap[prop.type] || prop.type,
+    typeSlug: prop.type,
+    bedrooms: prop.details.bedrooms,
+    bathrooms: prop.details.bathrooms,
+    sqft: prop.details.sqft,
+    area: prop.details.sqft,
+    yearBuilt: prop.details.yearBuilt,
+    parking: prop.details.parking,
+    furnished: prop.details.furnished,
+    image: prop.images[0]?.url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
+    images: prop.images.map(img => img.url),
+    description: prop.description,
+    amenities: prop.amenities || [],
+    status: statusMap[prop.status] || prop.status,
+    statusSlug: prop.status,
+    listingType: prop.status,
+    label: statusMap[prop.status] || prop.status,
+    labelColor: 'bg-green-600',
+    agent: {
+      name: `${prop.owner.firstName} ${prop.owner.lastName}`,
+      phone: prop.owner.phone,
+      email: prop.owner.email
+    },
+    owner: prop.owner,
+    ownerId: prop.owner.id,
+    ownerEmail: prop.owner.email,
+    isVerified: prop.isVerified,
+    views: prop.views,
+    createdAt: prop.createdAt,
+    // Add more fields that might be expected
+    propertyFeatures: [],
+    nearbyAttractions: [],
+    schoolRatings: {},
+    crimeStats: {},
+    marketTrends: {},
+    neighborhood: prop.location.city
+  };
+};
+
+// Mock properties data - Now using backend data with proper transformation
+const mockProperties = backendMockProperties.map(transformProperty);
 
 export const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState([]);
@@ -349,7 +468,12 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      const property = mockProperties.find(p => p.id === propertyId);
+      // Try to find property by string ID (prop_001) or numeric ID
+      const property = mockProperties.find(p => 
+        p.id === propertyId || 
+        p.numericId === propertyId ||
+        p.propertyId === propertyId
+      );
       
       if (property) {
         const details = property.details || {};
@@ -360,13 +484,13 @@ export const PropertyProvider = ({ children }) => {
           area: property.area || details.sqft || 0,
           parking: property.parking || details.parking || 'N/A',
           location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-          image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+          image: property.images?.[0]?.url || property.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
           details: {
             bedrooms: details.bedrooms || property.bedrooms || 0,
             bathrooms: details.bathrooms || property.bathrooms || 0,
             sqft: details.sqft || property.area || 0,
             parking: details.parking || property.parking || 'N/A',
-            yearBuilt: details.yearBuilt || null,
+            yearBuilt: details.yearBuilt || property.yearBuilt || null,
             lotSize: details.lotSize || null
           }
         };

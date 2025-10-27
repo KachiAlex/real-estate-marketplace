@@ -36,7 +36,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "👋 Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
+      message: "Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -179,14 +179,52 @@ const AIAssistant = () => {
     } catch (_) {}
   };
 
+  // Clean text for speech - remove icons, emojis, and special characters
+  const cleanTextForSpeech = (text) => {
+    if (!text) return '';
+    
+    let cleaned = text
+      // Remove common emojis and special characters
+      .replace(/👋|👨|👩|🎉|💰|🏠|🏢|🌍|⭐|🔍|📱|💡|📊|💬|🚀|📈|🎯|🛡️|✅|❌|⚠️|ℹ️/g, '')
+      // Remove icon placeholders and HTML-like tags
+      .replace(/<[^>]*>/g, '')
+      .replace(/\{icon\}/gi, '')
+      .replace(/\{emoji\}/gi, '')
+      .replace(/\{.*?\}/g, '')
+      // Remove markdown formatting
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      // Remove URLs
+      .replace(/https?:\/\/[^\s]+/g, '')
+      // Remove special unicode characters
+      .replace(/[^\w\s.,!?;:'"-]/g, ' ')
+      // Clean up multiple spaces
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return cleaned;
+  };
+
   const speakWithFemaleVoice = (text) => {
     if (!window.speechSynthesis) return;
     
+    // Clean the text first to remove any icons, emojis, or special characters
+    const cleanedText = cleanTextForSpeech(text);
+    
+    if (!cleanedText) {
+      console.warn('No text to speak after cleaning');
+      return;
+    }
+    
     // Wait for voices to load
     const speakWithVoice = () => {
-    const voices = window.speechSynthesis.getVoices();
-    let selectedVoice = null;
-    
+      const voices = window.speechSynthesis.getVoices();
+      let selectedVoice = null;
+      
       // Priority list of natural female voices (most natural first)
       const naturalFemaleVoices = [
         'Samantha', // macOS - Very natural
@@ -208,13 +246,11 @@ const AIAssistant = () => {
         'Google Irish English Female', // Chrome - Natural
         'Google New Zealand English Female', // Chrome - Natural
         'Google South African English Female', // Chrome - Natural
-        'Google UK English Female', // Chrome - Natural
-        'Google US English Female', // Chrome - Natural
         'Google Welsh English Female' // Chrome - Natural
       ];
       
       // Look for the most natural female voice
-    selectedVoice = voices.find(voice => 
+      selectedVoice = voices.find(voice => 
         naturalFemaleVoices.some(name => voice.name.includes(name))
       );
       
@@ -228,49 +264,56 @@ const AIAssistant = () => {
       }
       
       // If still no female voice, use the first available voice
-    if (!selectedVoice && voices.length > 0) {
-      selectedVoice = voices[0];
-    }
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+      if (!selectedVoice && voices.length > 0) {
+        selectedVoice = voices[0];
+      }
+      
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
+      utterance.lang = 'en-US';
       
       // Natural speech parameters for human-like voice
-      utterance.rate = 0.85; // Slightly slower for natural conversation
-      utterance.pitch = 1.15; // Slightly higher for female voice
-      utterance.volume = 0.9; // Slightly softer for warmth
-    
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
+      utterance.rate = 0.88; // Slightly slower for natural conversation
+      utterance.pitch = 1.2; // Slightly higher for female voice
+      utterance.volume = 0.95; // Clear and warm
       
-      // Add natural pauses and emphasis
-      const naturalText = text
-        .replace(/\./g, '. ') // Add pause after periods
-        .replace(/,/g, ', ') // Add pause after commas
-        .replace(/:/g, ': ') // Add pause after colons
-        .replace(/;/g, '; ') // Add pause after semicolons
-        .replace(/!/g, '! ') // Add pause after exclamations
-        .replace(/\?/g, '? ') // Add pause after questions
-        .replace(/\s+/g, ' '); // Clean up extra spaces
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      
+      // Add natural pauses for better speech flow
+      const naturalText = cleanedText
+        .replace(/\.(?=\S)/g, '. ') // Add pause after periods (only if followed by text)
+        .replace(/,(?=\S)/g, ', ') // Add pause after commas
+        .replace(/:(?=\S)/g, ': ') // Add pause after colons
+        .replace(/;(?=\S)/g, '; ') // Add pause after semicolons
+        .replace(/!(?=\S)/g, '! ') // Add pause after exclamations
+        .replace(/\?(?=\S)/g, '? ') // Add pause after questions
+        .replace(/\s+/g, ' ') // Clean up extra spaces
+        .trim();
       
       utterance.text = naturalText;
-    
-    speakingRef.current = true;
-    setIsSpeaking(true);
       
-    utterance.onend = () => { 
-      speakingRef.current = false; 
-      setIsSpeaking(false);
-    };
+      speakingRef.current = true;
+      setIsSpeaking(true);
       
-    utterance.onerror = () => { 
-      speakingRef.current = false; 
-      setIsSpeaking(false);
-    };
-    
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+      utterance.onend = () => { 
+        speakingRef.current = false; 
+        setIsSpeaking(false);
+      };
+      
+      utterance.onerror = (error) => { 
+        console.error('Speech synthesis error:', error);
+        speakingRef.current = false; 
+        setIsSpeaking(false);
+      };
+      
+      // Cancel any ongoing speech before starting new one
+      window.speechSynthesis.cancel();
+      
+      // Small delay to ensure cancellation takes effect
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 100);
     };
     
     // If voices are already loaded, speak immediately

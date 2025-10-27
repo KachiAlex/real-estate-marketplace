@@ -318,32 +318,7 @@ const HomeSections = () => {
             </div>
           </div>
 
-          {/* Quick State Navigation */}
-          <div className="mt-12">
-            <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
-              Quick State Navigation
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {[
-                'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
-                'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo',
-                'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna',
-                'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-                'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo',
-                'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT'
-              ].map((state) => (
-                <Link
-                  key={state}
-                  to={`/properties?location=${state}`}
-                  className="block p-3 text-center bg-white rounded-lg shadow-sm hover:shadow-md hover:bg-blue-50 transition-all duration-300 border border-gray-200 hover:border-blue-300"
-                >
-                  <span className="text-sm font-medium text-gray-700 hover:text-blue-600">
-                    {state}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+
         </section>
       </div>
     </div>

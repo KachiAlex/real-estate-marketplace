@@ -2,6 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import toast from 'react-hot-toast';
+import { 
+  calculateMonthlyPayment, 
+  generatePaymentSchedule, 
+  getNextPayment, 
+  getDaysUntilPayment,
+  getUpcomingPayments as getUpcomingPaymentsUtil 
+} from '../utils/mortgageCalculator';
 
 // Mock mortgage data
 const mockMortgages = [
@@ -102,9 +109,44 @@ export const MortgageProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load mock data immediately
+    // Load mock data immediately and generate payment schedules
     if (user) {
-      setMortgages(mockMortgages.filter(mortgage => mortgage.userId === user.id));
+      const userMortgages = mockMortgages.filter(mortgage => mortgage.userId === user.id);
+      
+      // Generate payment schedules for each mortgage
+      const mortgagesWithSchedules = userMortgages.map(mortgage => {
+        // Check if schedule hasn't been generated yet
+        if (!mortgage.paymentSchedule || mortgage.paymentSchedule.length === 0) {
+          const schedule = generatePaymentSchedule(
+            mortgage.loanAmount,
+            mortgage.interestRate,
+            mortgage.loanTerm,
+            mortgage.startDate,
+            mortgage.downPayment
+          );
+          
+          // Mark already paid payments in the schedule
+          schedule.forEach(payment => {
+            const paidPayment = mortgage.paymentHistory.find(p => 
+              payment.dueDate === p.dueDate || 
+              (payment.paymentNumber && p.paymentNumber === payment.paymentNumber)
+            );
+            if (paidPayment) {
+              payment.status = 'paid';
+              payment.paidDate = paidPayment.paidDate;
+              payment.paymentMethod = paidPayment.paymentMethod;
+            }
+          });
+          
+          return {
+            ...mortgage,
+            paymentSchedule: schedule
+          };
+        }
+        return mortgage;
+      });
+      
+      setMortgages(mortgagesWithSchedules);
     }
   }, [user]);
 
@@ -121,15 +163,39 @@ export const MortgageProvider = ({ children }) => {
     const upcomingPayments = [];
     
     mortgages.forEach(mortgage => {
-      const nextPaymentDate = new Date(mortgage.nextPaymentDate);
-      const daysUntilPayment = Math.ceil((nextPaymentDate - now) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilPayment <= 30 && daysUntilPayment >= 0) {
-        upcomingPayments.push({
-          ...mortgage,
-          daysUntilPayment,
-          paymentAmount: mortgage.monthlyPayment
-        });
+      // Use payment schedule if available, otherwise fall back to nextPaymentDate
+      if (mortgage.paymentSchedule && mortgage.paymentSchedule.length > 0) {
+        const nextPayment = getNextPayment(mortgage.paymentSchedule);
+        if (nextPayment) {
+          const daysUntilPayment = getDaysUntilPayment(nextPayment.dueDate);
+          if (daysUntilPayment <= 30 && daysUntilPayment >= 0) {
+            upcomingPayments.push({
+              mortgageId: mortgage.id,
+              mortgageTitle: mortgage.propertyTitle,
+              mortgageLocation: mortgage.propertyLocation,
+              payment: nextPayment,
+              daysUntilPayment,
+              paymentAmount: nextPayment.amount,
+              dueDate: nextPayment.dueDate,
+              remainingBalance: nextPayment.remainingBalance
+            });
+          }
+        }
+      } else {
+        // Fallback to old method
+        const nextPaymentDate = new Date(mortgage.nextPaymentDate);
+        const daysUntilPayment = getDaysUntilPayment(mortgage.nextPaymentDate);
+        
+        if (daysUntilPayment <= 30 && daysUntilPayment >= 0) {
+          upcomingPayments.push({
+            mortgageId: mortgage.id,
+            mortgageTitle: mortgage.propertyTitle,
+            mortgageLocation: mortgage.propertyLocation,
+            daysUntilPayment,
+            paymentAmount: mortgage.monthlyPayment,
+            dueDate: mortgage.nextPaymentDate
+          });
+        }
       }
     });
     
@@ -149,7 +215,17 @@ export const MortgageProvider = ({ children }) => {
         return { success: false };
       }
 
-      if (paymentAmount !== mortgage.monthlyPayment) {
+      // Get the next payment from the schedule if available
+      let nextPayment = null;
+      let paymentNumber = mortgage.paymentsMade + 1;
+      
+      if (mortgage.paymentSchedule && mortgage.paymentSchedule.length > 0) {
+        nextPayment = getNextPayment(mortgage.paymentSchedule);
+        if (nextPayment) {
+          paymentAmount = nextPayment.amount;
+          paymentNumber = nextPayment.paymentNumber;
+        }
+      } else if (paymentAmount !== mortgage.monthlyPayment) {
         toast.error(`Payment amount must be exactly ₦${mortgage.monthlyPayment.toLocaleString()}`);
         return { success: false };
       }
@@ -159,11 +235,13 @@ export const MortgageProvider = ({ children }) => {
       // Create new payment record
       const newPayment = {
         id: `PAY-${Date.now()}`,
+        paymentNumber: paymentNumber,
         amount: paymentAmount,
-        dueDate: mortgage.nextPaymentDate,
+        dueDate: nextPayment ? nextPayment.dueDate : mortgage.nextPaymentDate,
         paidDate: new Date().toISOString(),
         status: 'paid',
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        type: nextPayment?.type || 'monthly'
       };
 
       // Update mortgage with new payment
@@ -171,10 +249,25 @@ export const MortgageProvider = ({ children }) => {
         ...mortgage,
         paymentsMade: mortgage.paymentsMade + 1,
         paymentsRemaining: mortgage.paymentsRemaining - 1,
-        nextPaymentDate: getNextPaymentDate(mortgage.nextPaymentDate),
+        nextPaymentDate: nextPayment ? nextPayment.dueDate : getNextPaymentDate(mortgage.nextPaymentDate),
         paymentHistory: [...mortgage.paymentHistory, newPayment],
         updatedAt: new Date().toISOString()
       };
+
+      // Update payment schedule if it exists
+      if (updatedMortgage.paymentSchedule && updatedMortgage.paymentSchedule.length > 0) {
+        updatedMortgage.paymentSchedule = updatedMortgage.paymentSchedule.map(payment => {
+          if (payment.paymentNumber === paymentNumber) {
+            return {
+              ...payment,
+              status: 'paid',
+              paidDate: newPayment.paidDate,
+              paymentMethod: paymentMethod
+            };
+          }
+          return payment;
+        });
+      }
 
       // Update mortgages array
       setMortgages(prev => 
@@ -218,9 +311,22 @@ export const MortgageProvider = ({ children }) => {
 
   const scheduleNextPaymentNotification = async (mortgage) => {
     try {
+      // Get the next payment from schedule
+      let nextPayment = null;
+      let paymentAmount = mortgage.monthlyPayment;
+      let nextPaymentDate = mortgage.nextPaymentDate;
+      
+      if (mortgage.paymentSchedule && mortgage.paymentSchedule.length > 0) {
+        nextPayment = getNextPayment(mortgage.paymentSchedule);
+        if (nextPayment) {
+          paymentAmount = nextPayment.amount;
+          nextPaymentDate = nextPayment.dueDate;
+        }
+      }
+      
       // Schedule notification for 7 days before next payment
-      const nextPaymentDate = new Date(mortgage.nextPaymentDate);
-      const notificationDate = new Date(nextPaymentDate);
+      const nextPaymentDateObj = new Date(nextPaymentDate);
+      const notificationDate = new Date(nextPaymentDateObj);
       notificationDate.setDate(notificationDate.getDate() - 7);
 
       const now = new Date();
@@ -232,13 +338,13 @@ export const MortgageProvider = ({ children }) => {
           await createTestNotification({
             type: 'mortgage_payment_reminder',
             title: 'Upcoming Mortgage Payment',
-            message: `Your mortgage payment of ₦${mortgage.monthlyPayment.toLocaleString()} for ${mortgage.propertyTitle} is due in 7 days.`,
+            message: `Your mortgage payment of ₦${paymentAmount.toLocaleString()} for ${mortgage.propertyTitle} is due in 7 days.`,
             priority: 'high',
             data: {
               mortgageId: mortgage.id,
-              amount: mortgage.monthlyPayment,
+              amount: paymentAmount,
               propertyTitle: mortgage.propertyTitle,
-              dueDate: mortgage.nextPaymentDate,
+              dueDate: nextPaymentDate,
               paymentAction: 'make_payment'
             }
           });
@@ -246,7 +352,7 @@ export const MortgageProvider = ({ children }) => {
       }
 
       // Also schedule a day-before notification
-      const dayBeforeDate = new Date(nextPaymentDate);
+      const dayBeforeDate = new Date(nextPaymentDateObj);
       dayBeforeDate.setDate(dayBeforeDate.getDate() - 1);
       const dayBeforeDelay = dayBeforeDate.getTime() - now.getTime();
 
@@ -255,13 +361,13 @@ export const MortgageProvider = ({ children }) => {
           await createTestNotification({
             type: 'mortgage_payment_urgent',
             title: 'Mortgage Payment Due Tomorrow',
-            message: `Your mortgage payment of ₦${mortgage.monthlyPayment.toLocaleString()} for ${mortgage.propertyTitle} is due tomorrow.`,
+            message: `Your mortgage payment of ₦${paymentAmount.toLocaleString()} for ${mortgage.propertyTitle} is due tomorrow.`,
             priority: 'urgent',
             data: {
               mortgageId: mortgage.id,
-              amount: mortgage.monthlyPayment,
+              amount: paymentAmount,
               propertyTitle: mortgage.propertyTitle,
-              dueDate: mortgage.nextPaymentDate,
+              dueDate: nextPaymentDate,
               paymentAction: 'make_payment'
             }
           });
@@ -288,6 +394,62 @@ export const MortgageProvider = ({ children }) => {
     };
   };
 
+  const enableAutoPay = async (mortgageId) => {
+    try {
+      const mortgage = getMortgageById(mortgageId);
+      if (!mortgage) {
+        toast.error('Mortgage not found');
+        return { success: false };
+      }
+
+      const updatedMortgage = {
+        ...mortgage,
+        autoPay: true,
+        autoPayEnabledDate: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      setMortgages(prev => 
+        prev.map(m => m.id === mortgageId ? updatedMortgage : m)
+      );
+
+      toast.success('Auto-pay enabled successfully! Payments will be processed automatically on the due date.');
+      return { success: true, mortgage: updatedMortgage };
+    } catch (error) {
+      console.error('Error enabling auto-pay:', error);
+      toast.error('Failed to enable auto-pay');
+      return { success: false, error: error.message };
+    }
+  };
+
+  const disableAutoPay = async (mortgageId) => {
+    try {
+      const mortgage = getMortgageById(mortgageId);
+      if (!mortgage) {
+        toast.error('Mortgage not found');
+        return { success: false };
+      }
+
+      const updatedMortgage = {
+        ...mortgage,
+        autoPay: false,
+        autoPayDisabledDate: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      setMortgages(prev => 
+        prev.map(m => m.id === mortgageId ? updatedMortgage : m)
+      );
+
+      toast.success('Auto-pay disabled successfully!');
+      return { success: true, mortgage: updatedMortgage };
+    } catch (error) {
+      console.error('Error disabling auto-pay:', error);
+      toast.error('Failed to disable auto-pay');
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     mortgages,
     loading,
@@ -295,7 +457,9 @@ export const MortgageProvider = ({ children }) => {
     getUserMortgages,
     getUpcomingPayments,
     makePayment,
-    getPaymentSummary
+    getPaymentSummary,
+    enableAutoPay,
+    disableAutoPay
   };
 
   return (

@@ -14,7 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const { login, switchRole, setUser } = useAuth();
+  const { login, signInWithGoogle, switchRole, setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -320,11 +320,35 @@ const Login = () => {
 
           {/* Social Login Buttons */}
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <button className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1">
+            <button 
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  const result = await signInWithGoogle();
+                  if (result.success) {
+                    // Same logic as regular login
+                    if (result.user && result.user.role === 'admin') {
+                      navigate(result.redirectUrl || '/admin', { replace: true });
+                    } else if (result.user && result.user.roles && result.user.roles.length > 1) {
+                      setLoggedInUser(result.user);
+                      setShowRoleSelection(true);
+                    } else {
+                      navigate(result.redirectUrl || '/dashboard', { replace: true });
+                    }
+                  }
+                } catch (error) {
+                  console.error('Google sign-in error:', error);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <FaGoogle className="text-red-500 mr-2" />
               Google
             </button>
-            <button className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1">
+            <button disabled className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-400 cursor-not-allowed">
               <FaFacebook className="text-blue-600 mr-2" />
               Facebook
             </button>

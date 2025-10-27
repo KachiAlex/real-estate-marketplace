@@ -29,7 +29,7 @@ const Register = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState(0);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const { register } = useAuth();
+  const { register, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   // Generate captcha question
@@ -770,11 +770,27 @@ const Register = () => {
 
           {/* Social Login Buttons */}
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <button className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1">
+            <button 
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  const result = await signInWithGoogle();
+                  if (result.success) {
+                    navigate(result.redirectUrl || '/dashboard', { replace: true });
+                  }
+                } catch (error) {
+                  console.error('Google sign-in error:', error);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <FaGoogle className="text-red-500 mr-2" />
               Google
             </button>
-            <button className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1">
+            <button disabled className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-400 cursor-not-allowed">
               <FaFacebook className="text-blue-600 mr-2" />
               Facebook
             </button>

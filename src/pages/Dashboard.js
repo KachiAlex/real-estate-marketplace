@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { useMortgage } from '../contexts/MortgageContext';
-import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave } from 'react-icons/fa';
+import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
 
@@ -487,11 +487,22 @@ const Dashboard = () => {
                                   </span>
                                 </p>
                               </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-gray-900">
-                                  ₦{investment.totalDividendsEarned.toLocaleString()}
-                                </p>
-                                <p className="text-sm text-gray-600">Earned</p>
+                              <div className="flex items-center space-x-4">
+                                <div className="text-right">
+                                  <p className="font-semibold text-gray-900">
+                                    ₦{investment.totalDividendsEarned.toLocaleString()}
+                                  </p>
+                                  <p className="text-sm text-gray-600">Earned</p>
+                                </div>
+                                {investment.propertyId && (
+                                  <button
+                                    onClick={() => navigate(`/property/${investment.propertyId}`)}
+                                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center space-x-1"
+                                  >
+                                    <FaEye className="text-xs" />
+                                    <span>View Property</span>
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}

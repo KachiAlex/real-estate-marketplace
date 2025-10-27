@@ -15,11 +15,394 @@ import {
   FaPlay,
   FaSort,
   FaBed,
-  FaBath
+  FaBath,
+  FaShieldAlt,
+  FaLock,
+  FaFileContract,
+  FaHandshake,
+  FaClock,
+  FaCertificate,
+  FaUsers,
+  FaMobileAlt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import BlogSection from '../components/BlogSection';
+import HeroBannerCarousel from '../components/HeroBannerCarousel';
+
+// Mock properties from backend/data/mockProperties.js - transformed for frontend
+const backendMockProperties = [
+  {
+    id: 'prop_001',
+    title: 'Beautiful Family Home in Lekki Phase 1',
+    description: 'Spacious 3-bedroom home with modern amenities, stunning views of the lagoon, and premium finishes throughout. Perfect for families seeking luxury living.',
+    price: 185000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 2, sqft: 1800, yearBuilt: 2018, parking: 2, furnished: 'semi-furnished' },
+    location: { address: '123 Lekki Phase 1', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4654, lng: 3.4654 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
+    views: 45,
+    isVerified: false,
+    amenities: ['Swimming Pool', 'Gym', '24/7 Security', 'Garden', 'Parking'],
+    createdAt: '2024-01-10'
+  },
+  {
+    id: 'prop_002',
+    title: 'Modern Downtown Apartment in Victoria Island',
+    description: 'Luxury 2-bedroom apartment in the heart of Victoria Island with premium finishes, city views, and access to world-class amenities.',
+    price: 1200000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 2, bathrooms: 1, sqft: 1200, yearBuilt: 2020, parking: 1, furnished: 'fully-furnished' },
+    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos', zipCode: '101241', coordinates: { lat: 6.4281, lng: 3.4219 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
+    views: 32,
+    isVerified: true,
+    amenities: ['Concierge', 'Gym', 'Swimming Pool', 'Security', 'Parking'],
+    createdAt: '2024-01-08'
+  },
+  {
+    id: 'prop_003',
+    title: 'Luxury Penthouse Suite with Ocean Views',
+    description: 'Stunning penthouse with panoramic city and ocean views, premium finishes, and exclusive access to rooftop amenities.',
+    price: 520000000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2800, yearBuilt: 2021, parking: 3, furnished: 'fully-furnished' },
+    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4528, lng: 3.4068 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_002', firstName: 'Chioma', lastName: 'Nwosu', email: 'chioma.nwosu@yahoo.com', phone: '+234-802-345-6789' },
+    views: 89,
+    isVerified: true,
+    amenities: ['Rooftop Pool', 'Private Elevator', 'Concierge', 'Gym', 'Security'],
+    createdAt: '2024-01-05'
+  },
+  {
+    id: 'prop_004',
+    title: 'Cozy Studio Apartment in Surulere',
+    description: 'Perfect starter home in a vibrant neighborhood with modern amenities and easy access to transportation.',
+    price: 800000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 1, bathrooms: 1, sqft: 650, yearBuilt: 2019, parking: 1, furnished: 'unfurnished' },
+    location: { address: '321 Surulere', city: 'Lagos', state: 'Lagos', zipCode: '101283', coordinates: { lat: 6.5000, lng: 3.3500 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_002', firstName: 'Chioma', lastName: 'Nwosu', email: 'chioma.nwosu@yahoo.com', phone: '+234-802-345-6789' },
+    views: 24,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-12'
+  },
+  {
+    id: 'prop_005',
+    title: 'Suburban Villa with Private Pool',
+    description: 'Spacious family villa with private pool, garden, and premium amenities in a secure gated community.',
+    price: 310000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 5, bathrooms: 4, sqft: 3200, yearBuilt: 2017, parking: 4, furnished: 'semi-furnished' },
+    location: { address: '456 Magodo GRA', city: 'Lagos', state: 'Lagos', zipCode: '105001', coordinates: { lat: 6.6000, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_003', firstName: 'Emmanuel', lastName: 'Adeyemi', email: 'emmanuel.adeyemi@hotmail.com', phone: '+234-803-456-7890' },
+    views: 67,
+    isVerified: false,
+    amenities: ['Private Pool', 'Garden', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-15'
+  },
+  {
+    id: 'prop_006',
+    title: 'Commercial Office Space in Ikeja GRA',
+    description: 'Prime commercial space perfect for business operations with modern facilities and excellent location.',
+    price: 3500000,
+    type: 'commercial',
+    status: 'for-lease',
+    details: { bedrooms: 0, bathrooms: 2, sqft: 1500, yearBuilt: 2016, parking: 6, furnished: 'unfurnished' },
+    location: { address: '123 Ikeja GRA', city: 'Lagos', state: 'Lagos', zipCode: '100001', coordinates: { lat: 6.6000, lng: 3.3500 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_003', firstName: 'Emmanuel', lastName: 'Adeyemi', email: 'emmanuel.adeyemi@hotmail.com', phone: '+234-803-456-7890' },
+    views: 43,
+    isVerified: true,
+    amenities: ['Parking', 'Security', 'Power Backup', 'Water Supply', 'Air Conditioning'],
+    createdAt: '2024-01-18'
+  },
+  {
+    id: 'prop_007',
+    title: 'Luxury Townhouse in Ikoyi',
+    description: 'Elegant townhouse with premium finishes, private garden, and access to exclusive community amenities.',
+    price: 450000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2400, yearBuilt: 2019, parking: 3, furnished: 'fully-furnished' },
+    location: { address: '654 Ikoyi', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4500, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_004', firstName: 'Fatima', lastName: 'Ibrahim', email: 'fatima.ibrahim@gmail.com', phone: '+234-804-567-8901' },
+    views: 78,
+    isVerified: true,
+    amenities: ['Private Garden', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-06'
+  },
+  {
+    id: 'prop_008',
+    title: 'Modern Apartment in Yaba',
+    description: 'Contemporary 2-bedroom apartment with modern amenities and easy access to business districts.',
+    price: 950000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 2, bathrooms: 2, sqft: 1100, yearBuilt: 2020, parking: 2, furnished: 'semi-furnished' },
+    location: { address: '321 Yaba', city: 'Lagos', state: 'Lagos', zipCode: '101212', coordinates: { lat: 6.5000, lng: 3.3800 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_004', firstName: 'Fatima', lastName: 'Ibrahim', email: 'fatima.ibrahim@gmail.com', phone: '+234-804-567-8901' },
+    views: 35,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Gym', 'Water Supply'],
+    createdAt: '2024-01-14'
+  },
+  {
+    id: 'prop_009',
+    title: 'Executive Duplex in Magodo',
+    description: 'Spacious executive duplex with premium finishes, private pool, and exclusive community access.',
+    price: 280000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 6, bathrooms: 5, sqft: 3800, yearBuilt: 2018, parking: 5, furnished: 'semi-furnished' },
+    location: { address: '456 Magodo GRA', city: 'Lagos', state: 'Lagos', zipCode: '105001', coordinates: { lat: 6.6000, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_005', firstName: 'Oluwaseun', lastName: 'Akoma', email: 'oluwaseun.akoma@gmail.com', phone: '+234-805-678-9012' },
+    views: 92,
+    isVerified: true,
+    amenities: ['Private Pool', 'Garden', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-03'
+  },
+  {
+    id: 'prop_010',
+    title: 'Luxury Apartment in Banana Island',
+    description: 'Exclusive apartment with panoramic ocean views and access to world-class amenities.',
+    price: 380000000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 3, sqft: 2200, yearBuilt: 2021, parking: 2, furnished: 'fully-furnished' },
+    location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4528, lng: 3.4068 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_005', firstName: 'Oluwaseun', lastName: 'Akoma', email: 'oluwaseun.akoma@gmail.com', phone: '+234-805-678-9012' },
+    views: 156,
+    isVerified: true,
+    amenities: ['Ocean Views', 'Concierge', 'Gym', 'Swimming Pool', 'Security'],
+    createdAt: '2024-01-01'
+  },
+  {
+    id: 'prop_011',
+    title: 'Commercial Retail Space in Victoria Island',
+    description: 'Prime retail space in bustling Victoria Island, perfect for retail businesses and restaurants.',
+    price: 2800000,
+    type: 'commercial',
+    status: 'for-lease',
+    details: { bedrooms: 0, bathrooms: 1, sqft: 800, yearBuilt: 2015, parking: 4, furnished: 'unfurnished' },
+    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos', zipCode: '101241', coordinates: { lat: 6.4281, lng: 3.4219 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_005', firstName: 'Oluwaseun', lastName: 'Akoma', email: 'oluwaseun.akoma@gmail.com', phone: '+234-805-678-9012' },
+    views: 67,
+    isVerified: true,
+    amenities: ['Parking', 'Security', 'Power Backup', 'Water Supply'],
+    createdAt: '2024-01-16'
+  },
+  {
+    id: 'prop_012',
+    title: 'Family Home in Gbagada',
+    description: 'Comfortable family home with modern amenities and easy access to schools and hospitals.',
+    price: 150000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 2, sqft: 1600, yearBuilt: 2016, parking: 2, furnished: 'unfurnished' },
+    location: { address: '987 Gbagada', city: 'Lagos', state: 'Lagos', zipCode: '100234', coordinates: { lat: 6.5500, lng: 3.3800 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_006', firstName: 'Blessing', lastName: 'Okafor', email: 'blessing.okafor@outlook.com', phone: '+234-806-789-0123' },
+    views: 43,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-19'
+  },
+  {
+    id: 'prop_013',
+    title: 'Modern Studio in Port Harcourt',
+    description: 'Contemporary studio apartment perfect for young professionals with modern amenities.',
+    price: 650000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 1, bathrooms: 1, sqft: 550, yearBuilt: 2019, parking: 1, furnished: 'semi-furnished' },
+    location: { address: '789 Port Harcourt', city: 'Port Harcourt', state: 'Rivers', zipCode: '500001', coordinates: { lat: 4.8156, lng: 7.0498 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_007', firstName: 'Ibrahim', lastName: 'Musa', email: 'ibrahim.musa@gmail.com', phone: '+234-807-890-1234' },
+    views: 28,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-17'
+  },
+  {
+    id: 'prop_014',
+    title: 'Executive Villa in Port Harcourt',
+    description: 'Luxury villa with premium finishes, private garden, and exclusive amenities in a secure community.',
+    price: 220000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2600, yearBuilt: 2017, parking: 3, furnished: 'semi-furnished' },
+    location: { address: '456 GRA Phase 2', city: 'Port Harcourt', state: 'Rivers', zipCode: '500001', coordinates: { lat: 4.8156, lng: 7.0498 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_007', firstName: 'Ibrahim', lastName: 'Musa', email: 'ibrahim.musa@gmail.com', phone: '+234-807-890-1234' },
+    views: 89,
+    isVerified: true,
+    amenities: ['Private Garden', 'Security', 'Parking', 'Power Backup', 'Water Supply'],
+    createdAt: '2024-01-11'
+  },
+  {
+    id: 'prop_015',
+    title: 'Medical Professional Apartment',
+    description: 'Comfortable apartment perfect for medical professionals with modern amenities and easy access to hospitals.',
+    price: 750000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 2, bathrooms: 2, sqft: 950, yearBuilt: 2020, parking: 1, furnished: 'semi-furnished' },
+    location: { address: '321 Yaba', city: 'Lagos', state: 'Lagos', zipCode: '101212', coordinates: { lat: 6.5000, lng: 3.3800 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_008', firstName: 'Grace', lastName: 'Eze', email: 'grace.eze@yahoo.com', phone: '+234-808-901-2345' },
+    views: 41,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-13'
+  },
+  {
+    id: 'prop_016',
+    title: 'Luxury Apartment in Ikoyi',
+    description: 'Exclusive apartment with premium finishes and access to world-class amenities.',
+    price: 420000000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 3, sqft: 2000, yearBuilt: 2020, parking: 2, furnished: 'fully-furnished' },
+    location: { address: '654 Ikoyi', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4500, lng: 3.4000 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_009', firstName: 'Kemi', lastName: 'Adebayo', email: 'kemi.adebayo@gmail.com', phone: '+234-809-012-3456' },
+    views: 124,
+    isVerified: true,
+    amenities: ['Concierge', 'Gym', 'Swimming Pool', 'Security', 'Parking'],
+    createdAt: '2024-01-07'
+  },
+  {
+    id: 'prop_017',
+    title: 'Modern Townhouse in Lekki',
+    description: 'Contemporary townhouse with premium finishes and access to community amenities.',
+    price: 180000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 3, sqft: 2100, yearBuilt: 2019, parking: 3, furnished: 'semi-furnished' },
+    location: { address: '789 Lekki Phase 2', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4654, lng: 3.4654 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_009', firstName: 'Kemi', lastName: 'Adebayo', email: 'kemi.adebayo@gmail.com', phone: '+234-809-012-3456' },
+    views: 76,
+    isVerified: false,
+    amenities: ['Community Pool', 'Security', 'Parking', 'Power Backup'],
+    createdAt: '2024-01-09'
+  },
+  {
+    id: 'prop_018',
+    title: 'Architectural Masterpiece in Gbagada',
+    description: 'Unique architectural design with premium finishes and modern amenities.',
+    price: 195000000,
+    type: 'house',
+    status: 'for-sale',
+    details: { bedrooms: 3, bathrooms: 3, sqft: 1900, yearBuilt: 2021, parking: 2, furnished: 'fully-furnished' },
+    location: { address: '987 Gbagada', city: 'Lagos', state: 'Lagos', zipCode: '100234', coordinates: { lat: 6.5500, lng: 3.3800 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_010', firstName: 'Tunde', lastName: 'Ogunlana', email: 'tunde.ogunlana@hotmail.com', phone: '+234-810-123-4567' },
+    views: 98,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Garden', 'Power Backup'],
+    createdAt: '2024-01-04'
+  },
+  {
+    id: 'prop_019',
+    title: 'Luxury Penthouse in Victoria Island',
+    description: 'Exclusive penthouse with panoramic ocean views and premium amenities.',
+    price: 650000000,
+    type: 'apartment',
+    status: 'for-sale',
+    details: { bedrooms: 4, bathrooms: 4, sqft: 3000, yearBuilt: 2022, parking: 3, furnished: 'fully-furnished' },
+    location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos', zipCode: '101241', coordinates: { lat: 6.4281, lng: 3.4219 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_010', firstName: 'Tunde', lastName: 'Ogunlana', email: 'tunde.ogunlana@hotmail.com', phone: '+234-810-123-4567' },
+    views: 203,
+    isVerified: true,
+    amenities: ['Ocean Views', 'Rooftop Pool', 'Concierge', 'Gym', 'Security'],
+    createdAt: '2024-01-02'
+  },
+  {
+    id: 'prop_020',
+    title: 'Cozy Studio in Surulere',
+    description: 'Perfect starter home in a vibrant neighborhood with modern amenities.',
+    price: 550000,
+    type: 'apartment',
+    status: 'for-rent',
+    details: { bedrooms: 1, bathrooms: 1, sqft: 500, yearBuilt: 2018, parking: 1, furnished: 'unfurnished' },
+    location: { address: '321 Surulere', city: 'Lagos', state: 'Lagos', zipCode: '101283', coordinates: { lat: 6.5000, lng: 3.3500 } },
+    images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
+    owner: { id: 'user_010', firstName: 'Tunde', lastName: 'Ogunlana', email: 'tunde.ogunlana@hotmail.com', phone: '+234-810-123-4567' },
+    views: 19,
+    isVerified: true,
+    amenities: ['Security', 'Parking', 'Water Supply', 'Power Backup'],
+    createdAt: '2024-01-21'
+  }
+];
+
+// Transform backend format to frontend format
+const transformPropertyForFrontend = (prop) => {
+  // Convert status format
+  const statusMap = {
+    'for-sale': 'For Sale',
+    'for-rent': 'For Rent',
+    'for-lease': 'For Lease'
+  };
+
+  // Convert type format
+  const typeMap = {
+    'house': 'House',
+    'apartment': 'Apartment',
+    'commercial': 'Office',
+    'villa': 'Villa',
+    'penthouse': 'Penthouse',
+    'townhouse': 'Townhouse'
+  };
+
+  return {
+    id: parseInt(prop.id.replace('prop_', '')), // Numeric ID for listing
+    propertyId: prop.id, // Original string ID for detail page lookup
+    title: prop.title,
+    location: `${prop.location.address}, ${prop.location.city}, ${prop.location.state}`,
+    price: prop.price,
+    type: typeMap[prop.type] || prop.type,
+    bedrooms: prop.details.bedrooms,
+    bathrooms: prop.details.bathrooms,
+    area: prop.details.sqft,
+    image: prop.images[0]?.url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
+    description: prop.description,
+    amenities: prop.amenities || [],
+    status: statusMap[prop.status] || prop.status,
+    label: statusMap[prop.status] || prop.status,
+    labelColor: 'bg-green-600',
+    agent: {
+      name: `${prop.owner.firstName} ${prop.owner.lastName}`,
+      phone: prop.owner.phone,
+      email: prop.owner.email
+    },
+    ownerId: prop.owner.id,
+    ownerEmail: prop.owner.email,
+    isVerified: prop.isVerified,
+    views: prop.views
+  };
+};
+
+// Transform all properties
+const mockProperties = backendMockProperties.map(transformPropertyForFrontend);
 
 const Home = () => {
   const { properties, toggleFavorite } = useProperty();
@@ -42,136 +425,6 @@ const Home = () => {
   const [propertiesPerPage] = useState(9);
   const [displayProperties, setDisplayProperties] = useState([]);
   
-  // Mock data for the properties shown in the screenshot
-  const mockProperties = [
-    {
-      id: 1,
-      title: "Luxury Apartment in Victoria Island",
-      location: "Victoria Island, Lagos",
-      price: 75000000,
-      type: "Apartment",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 120,
-      image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500",
-      description: "Beautiful luxury apartment with modern amenities in the heart of Victoria Island.",
-      amenities: ["Swimming Pool", "Gym", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "Sarah Johnson",
-        phone: "+234 801 234 5678",
-        email: "sarah@example.com"
-      }
-    },
-    {
-      id: 2,
-      title: "Modern Villa in Ikoyi",
-      location: "Ikoyi, Lagos",
-      price: 150000000,
-      type: "Villa",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 250,
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500",
-      description: "Spacious modern villa with garden and pool in exclusive Ikoyi neighborhood.",
-      amenities: ["Swimming Pool", "Garden", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Furnished"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "Michael Brown",
-        phone: "+234 802 345 6789",
-        email: "michael@example.com"
-      }
-    },
-    {
-      id: 3,
-      title: "Cozy Studio Apartment",
-      location: "Surulere, Lagos",
-      price: 45000000,
-      type: "Studio",
-      bedrooms: 1,
-      bathrooms: 1,
-      area: 45,
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500",
-      description: "Perfect starter home in a quiet neighborhood with all essential amenities.",
-      amenities: ["24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "Emily Davis",
-        phone: "+234 803 456 7890",
-        email: "emily@example.com"
-      }
-    },
-    {
-      id: 4,
-      title: "Executive Penthouse",
-      location: "Lekki, Lagos",
-      price: 200000000,
-      type: "Penthouse",
-      bedrooms: 5,
-      bathrooms: 4,
-      area: 300,
-      image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500",
-      description: "Luxurious penthouse with panoramic city views and premium finishes.",
-      amenities: ["Swimming Pool", "Gym", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Furnished", "Balcony"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "David Wilson",
-        phone: "+234 804 567 8901",
-        email: "david@example.com"
-      }
-    },
-    {
-      id: 5,
-      title: "Family House in Gbagada",
-      location: "Gbagada, Lagos",
-      price: 85000000,
-      type: "House",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 180,
-      image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=500",
-      description: "Spacious family house with large compound and modern amenities.",
-      amenities: ["Garden", "24/7 Security", "Air Conditioning", "Parking Space", "WiFi"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "Lisa Anderson",
-        phone: "+234 805 678 9012",
-        email: "lisa@example.com"
-      }
-    },
-    {
-      id: 6,
-      title: "Commercial Office Space",
-      location: "Victoria Island, Lagos",
-      price: 120000000,
-      type: "Office",
-      bedrooms: 0,
-      bathrooms: 2,
-      area: 200,
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=500",
-      description: "Prime office space in the business district with modern facilities.",
-      amenities: ["24/7 Security", "Air Conditioning", "Parking Space", "WiFi", "Conference Rooms"],
-      status: "For Sale",
-      label: "For Sale",
-      labelColor: "bg-green-600",
-      agent: {
-        name: "Robert Taylor",
-        phone: "+234 806 789 0123",
-        email: "robert@example.com"
-      }
-    }
-  ];
-
   // Real-time filtering
   const filteredProperties = useMemo(() => {
     let filtered = [...mockProperties];
@@ -416,7 +669,7 @@ const Home = () => {
     const shareData = {
       title: property.title,
       text: `Check out this amazing property: ${property.title}`,
-      url: `${window.location.origin}/property/${property.id}`
+      url: `${window.location.origin}/property/${property.propertyId || property.id}`
     };
     
     try {
@@ -531,20 +784,9 @@ const Home = () => {
         `
       }} />
       
-      {/* Hero Section */}
-      <div className="bg-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <p className="text-orange-500 text-sm font-medium mb-2">Discover Premium Listing</p>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Find Your Perfect Property in Nigeria
-            </h1>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Browse our curated collection of verified properties across Nigeria's most sought-after locations. 
-              Explore luxury homes, apartments, and investment opportunities with confidence.
-            </p>
-          </div>
-        </div>
+      {/* Hero Banner Carousel - Full Width */}
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-16">
+        <HeroBannerCarousel />
       </div>
 
       {/* Navigation Menu Bar */}
@@ -909,8 +1151,8 @@ const Home = () => {
                     <span>₦0</span>
                     <div className="text-center">
                       <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded inline-block">
-                        ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
-                      </span>
+                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
+                    </span>
                     </div>
                     <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
@@ -1103,7 +1345,7 @@ const Home = () => {
                       </div>
                     </div>
                     <Link
-                      to={`/property/${property.id}`}
+                      to={`/property/${property.propertyId || property.id}`}
                       className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
                       title={`View details for ${property.title}`}
                     >
@@ -1168,6 +1410,215 @@ const Home = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Security & Value Proposition Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 rounded-full mb-6">
+              <FaLock className="text-yellow-300" />
+              <p className="font-medium">Bank-Level Security</p>
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Why Choose KIKI ESTATES for Secure Real Estate?
+            </h2>
+            
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+              We understand the risks in real estate transactions. That's why we've built the most secure 
+              property marketplace in Nigeria with multiple layers of protection for buyers, sellers, and investors.
+            </p>
+          </div>
+
+          {/* Security Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {/* Escrow Protection */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaShieldAlt className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">Escrow Protection</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                Your money is held in secure escrow until the transaction is complete. No payments are released 
+                until both parties are satisfied. Our escrow system protects your funds at every stage.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-yellow-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Automatic refund protection</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-yellow-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Identity verification required</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-yellow-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Payment processed only on agreement</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Verified Properties */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaCertificate className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">Property Verification</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                Every property listing undergoes rigorous verification. We confirm ownership, legality, 
+                documents, and accuracy of details before listing. No fake listings on our platform.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-green-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Complete document verification</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-green-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Ownership and title confirmation</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-green-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Physical inspection reports</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Dispute Resolution */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaHandshake className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">Fair Dispute Resolution</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                If something goes wrong, we're here to help. Our expert team mediates disputes fairly 
+                and ensures both parties are treated justly. We provide transparent resolution processes.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-purple-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Expert mediation team</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-purple-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Evidence-based decisions</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-purple-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Quick turnaround times</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal Compliance */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaFileContract className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">Legal Documentation</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                We guide you through all legal requirements. From contracts to deed transfers, our legal 
+                framework ensures compliance with Nigerian real estate laws and regulations.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-red-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Standardized legal contracts</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-red-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Professional legal guidance</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-red-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Government compliance support</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* 24/7 Support */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaClock className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">24/7 Support</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                Our dedicated support team is available around the clock to assist you with any concerns. 
+                Get help via phone, email, or live chat whenever you need it.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-blue-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Instant live chat support</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-blue-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Phone and email assistance</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-blue-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Transaction progress tracking</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Mobile Access */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <FaMobileAlt className="text-3xl text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-center">Mobile-First Platform</h3>
+              <p className="text-blue-100 text-center leading-relaxed">
+                Browse, search, and complete transactions from anywhere. Our mobile-optimized platform 
+                makes real estate investing accessible from your phone, tablet, or computer.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-blue-50">
+                <li className="flex items-start">
+                  <FaCheck className="text-indigo-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Responsive design for all devices</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-indigo-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Quick property notifications</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCheck className="text-indigo-400 mr-2 mt-1 flex-shrink-0" />
+                  <span>Secure mobile payments</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div className="bg-white text-gray-900 rounded-2xl p-12 text-center shadow-2xl">
+            <h3 className="text-3xl md:text-4xl font-bold mb-4">
+              Ready to Invest Securely?
+            </h3>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Join thousands of smart investors who trust KIKI ESTATES for their real estate transactions. 
+              Start browsing verified properties today.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={() => navigate('/properties')}
+                className="px-10 py-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group"
+              >
+                <span>Explore Properties</span>
+                <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+              
+              {!user && (
+                <button 
+                  onClick={() => navigate('/register')}
+                  className="px-10 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Create Free Account
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

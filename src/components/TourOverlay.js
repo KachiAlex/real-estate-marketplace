@@ -22,6 +22,7 @@ const TourOverlay = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [voiceCommands, setVoiceCommands] = useState([]);
+  const [showWelcome, setShowWelcome] = useState(false);
   const recognitionRef = useRef(null);
   const speakingRef = useRef(false);
 
@@ -41,7 +42,12 @@ const TourOverlay = () => {
       { command: 'complete', action: () => handleComplete() },
       { command: 'finish tour', action: () => handleComplete() },
       { command: 'pause', action: () => setIsPaused(true) },
-      { command: 'resume', action: () => setIsPaused(false) }
+      { command: 'resume', action: () => setIsPaused(false) },
+      { command: 'yes', action: () => handleWelcomeResponse(true) },
+      { command: 'start tour', action: () => handleWelcomeResponse(true) },
+      { command: 'begin tour', action: () => handleWelcomeResponse(true) },
+      { command: 'no', action: () => handleWelcomeResponse(false) },
+      { command: 'decline', action: () => handleWelcomeResponse(false) }
     ]);
   }, []);
 
@@ -132,9 +138,15 @@ const TourOverlay = () => {
         utterance.onend = () => { 
           speakingRef.current = false; 
           setIsSpeaking(false);
+          // Stop text animation when voice ends
+          const textElement = document.querySelector('.tour-bubble .text-center');
+          if (textElement) {
+            textElement.style.animation = 'none';
+          }
         };
         
-        utterance.onerror = () => { 
+        utterance.onerror = (event) => { 
+          console.error('Speech synthesis error:', event.error);
           speakingRef.current = false; 
           setIsSpeaking(false);
         };
@@ -243,11 +255,25 @@ const TourOverlay = () => {
     }
   }, [highlightedElement, currentStep]);
 
-  // Auto-speak tour instructions when step changes
+  // Show welcome message when tour starts
   useEffect(() => {
-    if (currentStep && voiceEnabled) {
+    if (isTourActive && currentStep && currentStep.id === 'welcome') {
+      setShowWelcome(true);
+      // Speak welcome message
+      const welcomeMessage = "Hello! I'm KIKI, your AI assistant. Would you like me to give you a guided tour of our amazing real estate platform? I can show you all the wonderful features we have to offer. Just say 'yes' to start the tour, or 'no' to skip it.";
+      setTimeout(() => {
+        speakText(welcomeMessage);
+      }, 500);
+    } else if (isTourActive && currentStep && currentStep.id !== 'welcome') {
+      setShowWelcome(false);
+    }
+  }, [isTourActive, currentStep]);
+
+  // Auto-speak tour instructions when step changes (but not for welcome step)
+  useEffect(() => {
+    if (currentStep && voiceEnabled && currentStep.id !== 'welcome') {
       // Create more natural, conversational instruction text
-      const naturalInstruction = `Hi there! ${currentStep.title}. ${currentStep.content}. When you're ready, you can say 'next' to continue, 'previous' to go back, or 'skip' to skip the tour. Take your time!`;
+      const naturalInstruction = `${currentStep.title}. ${currentStep.content}. When you're ready, you can say 'next' to continue, 'previous' to go back, or 'skip' to skip the tour.`;
       setTimeout(() => {
         speakText(naturalInstruction);
       }, 1000); // Longer delay to allow page navigation and scrolling to complete
@@ -267,6 +293,106 @@ const TourOverlay = () => {
   }, []);
 
   if (!isTourActive || !currentStep) return null;
+
+  // Show welcome message for welcome step
+  if (showWelcome && currentStep.id === 'welcome') {
+    return (
+      <>
+        {/* CSS Animation for moving text */}
+        <style>
+          {`
+            @keyframes scrollText {
+              0% { 
+                transform: translateX(100%); 
+                opacity: 0;
+              }
+              10% { 
+                opacity: 1;
+              }
+              90% { 
+                opacity: 1;
+              }
+              100% { 
+                transform: translateX(-100%); 
+                opacity: 0;
+              }
+            }
+            
+            .tour-bubble {
+              background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1);
+              backdrop-filter: blur(10px);
+            }
+          `}
+        </style>
+        
+        {/* Overlay */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity duration-300"
+          onClick={handleSkip}
+        />
+        
+        {/* Welcome Bubble */}
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1001,
+          borderRadius: '50%',
+          border: '2px solid #3b82f6',
+          width: '200px',
+          height: '200px',
+          padding: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div className="relative w-full h-full flex flex-col items-center justify-center">
+            {/* Voice status indicators */}
+            <div className="absolute top-2 left-2 flex space-x-1">
+              {isSpeaking && <span className="text-blue-500 text-xs">🔊</span>}
+              {isListening && <span className="text-red-500 text-xs">🎤</span>}
+            </div>
+            
+            {/* Welcome text content */}
+            <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+              <div className="text-center text-sm text-gray-700 leading-tight px-2">
+                <div className="font-semibold text-blue-600 mb-2">👋 Welcome!</div>
+                <div className="subtitle-bubble text-blue-800 px-3 py-1 rounded-full text-xs inline-block">
+                  Would you like a guided tour of our platform?
+                </div>
+              </div>
+            </div>
+            
+            {/* Response buttons */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
+              <button
+                onClick={() => handleWelcomeResponse(true)}
+                className="w-8 h-8 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                title="Yes, start tour"
+              >
+                ✓
+              </button>
+              
+              <button
+                onClick={() => handleWelcomeResponse(false)}
+                className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                title="No, skip tour"
+              >
+                ✗
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const handleNext = () => {
     if (currentStep.id === 'welcome' || currentStep.id === 'vendor-welcome' || currentStep.id === 'buyer-welcome') {
@@ -289,6 +415,17 @@ const TourOverlay = () => {
     completeTour(tourSteps[0]?.id || 'unknown');
   };
 
+  const handleWelcomeResponse = (accepted) => {
+    if (accepted) {
+      setShowWelcome(false);
+      // Continue to next step
+      nextStep();
+    } else {
+      // Skip the tour
+      skipTour();
+    }
+  };
+
   const getTooltipPosition = () => {
     if (!currentStep.position) return 'bottom';
     return currentStep.position;
@@ -299,12 +436,16 @@ const TourOverlay = () => {
     const baseStyle = {
       position: 'fixed',
       zIndex: 1001,
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      border: '1px solid #e5e7eb',
-      maxWidth: '400px',
-      padding: '24px'
+      borderRadius: '50%',
+      border: '2px solid #3b82f6',
+      width: '180px',
+      height: '180px',
+      padding: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease'
     };
 
     if (position === 'center') {
@@ -327,30 +468,30 @@ const TourOverlay = () => {
           case 'bottom':
             return {
               ...baseStyle,
-              top: rect.bottom + scrollTop + 16,
-              left: rect.left + scrollLeft,
-              transform: 'translateX(-50%)'
+              top: rect.bottom + scrollTop + 20,
+              left: rect.left + scrollLeft + rect.width / 2,
+              transform: 'translate(-50%, 0)'
             };
           case 'top':
             return {
               ...baseStyle,
-              top: rect.top + scrollTop - 16,
-              left: rect.left + scrollLeft,
-              transform: 'translate(-50%, -100%)'
+              top: rect.top + scrollTop - 200,
+              left: rect.left + scrollLeft + rect.width / 2,
+              transform: 'translate(-50%, 0)'
             };
           case 'left':
             return {
               ...baseStyle,
               top: rect.top + scrollTop + rect.height / 2,
-              left: rect.left + scrollLeft - 16,
-              transform: 'translate(-100%, -50%)'
+              left: rect.left + scrollLeft - 200,
+              transform: 'translate(0, -50%)'
             };
           case 'right':
             return {
               ...baseStyle,
               top: rect.top + scrollTop + rect.height / 2,
-              left: rect.right + scrollLeft + 16,
-              transform: 'translateY(-50%)'
+              left: rect.right + scrollLeft + 20,
+              transform: 'translate(0, -50%)'
             };
           default:
             return baseStyle;
@@ -366,6 +507,46 @@ const TourOverlay = () => {
 
   return (
     <>
+      {/* CSS Animation for moving text */}
+      <style>
+        {`
+          @keyframes scrollText {
+            0% { 
+              transform: translateX(100%); 
+              opacity: 0;
+            }
+            10% { 
+              opacity: 1;
+            }
+            90% { 
+              opacity: 1;
+            }
+            100% { 
+              transform: translateX(-100%); 
+              opacity: 0;
+            }
+          }
+          
+          .subtitle-bubble {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #3b82f6;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
+          }
+          
+          .subtitle-bubble:hover {
+            background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+            transform: scale(1.05);
+          }
+          
+          .tour-bubble {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1);
+            backdrop-filter: blur(10px);
+          }
+        `}
+      </style>
+      
       {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity duration-300"
@@ -377,122 +558,79 @@ const TourOverlay = () => {
         <div style={highlightStyle} />
       )}
       
-      {/* Tooltip */}
-      <div style={getTooltipStyle()}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
-                {currentTourStep + 1}
-              </span>
+      {/* Spherical Bubble Tooltip */}
+      <div style={getTooltipStyle()} className="tour-bubble">
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
+          {/* Step indicator */}
+          <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+            {currentTourStep + 1}
+          </div>
+          
+          {/* Voice status indicators */}
+          <div className="absolute top-2 left-2 flex space-x-1">
+            {isSpeaking && <span className="text-blue-500 text-xs">🔊</span>}
+            {isListening && <span className="text-red-500 text-xs">🎤</span>}
+          </div>
+          
+          {/* Moving text content */}
+          <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden relative">
+            {/* Title */}
+            <div className="text-center text-sm font-semibold text-blue-600 mb-2">
+              {currentStep.title}
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {currentStep.title}
-              </h3>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>Step {currentTourStep + 1} of {tourSteps.length}</span>
-                <span>•</span>
-                <span>{Math.round(tourProgress)}% complete</span>
-                {isSpeaking && <span className="text-blue-500">🔊 Speaking...</span>}
-                {isListening && <span className="text-red-500">🎤 Listening...</span>}
-              </div>
+            
+            {/* Subtitle as horizontal bubble */}
+            <div 
+              className="subtitle-bubble text-blue-800 px-3 py-1 rounded-full text-xs inline-block max-w-full"
+              style={{
+                animation: currentStep.content.length > 60 && isSpeaking ? `scrollText ${Math.max(8, currentStep.content.length * 0.1)}s linear infinite` : 'none',
+                whiteSpace: 'nowrap',
+                width: 'max-content',
+                left: currentStep.content.length > 60 ? '100%' : '50%',
+                transform: currentStep.content.length > 60 ? 'none' : 'translateX(-50%)'
+              }}
+            >
+              {currentStep.content}
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            {/* Voice Controls */}
-            <button
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`p-2 rounded-lg transition-colors ${
-                voiceEnabled ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-400 hover:bg-gray-50'
-              }`}
-              title={voiceEnabled ? 'Disable voice' : 'Enable voice'}
-            >
-              {voiceEnabled ? <FaVolumeUp size={16} /> : <FaVolumeMute size={16} />}
-            </button>
-            <button
-              onClick={toggleListening}
-              className={`p-2 rounded-lg transition-colors ${
-                isListening ? 'text-red-500 hover:bg-red-50' : 'text-gray-500 hover:bg-gray-50'
-              }`}
-              title={isListening ? 'Stop listening' : 'Start voice commands'}
-            >
-              <FaMicrophone size={16} />
-            </button>
-            <button
-              onClick={handleSkip}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <FaTimes size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-          <div 
-            className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${tourProgress}%` }}
-          />
-        </div>
-
-        {/* Content */}
-        <div className="mb-6">
-          <p className="text-gray-700 leading-relaxed">
-            {currentStep.content}
-          </p>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          
+          {/* Navigation controls */}
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-1">
             <button
               onClick={handlePrevious}
               disabled={isFirstStep}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-6 h-6 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-xs transition-colors"
+              title="Previous"
             >
-              <FaChevronLeft size={14} />
-              <span>Previous</span>
+              <FaChevronLeft size={8} />
             </button>
-          </div>
-
-          <div className="flex items-center space-x-2">
+            
             <button
               onClick={handleSkip}
-              className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+              className="w-6 h-6 bg-red-200 hover:bg-red-300 rounded-full flex items-center justify-center text-xs transition-colors"
+              title="Skip"
             >
-              Skip Tour
+              <FaTimes size={8} />
             </button>
             
             {isLastStep ? (
               <button
                 onClick={handleComplete}
-                className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+                className="w-6 h-6 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                title="Complete"
               >
-                <span>Complete Tour</span>
-                <FaPlay size={12} />
+                <FaPlay size={8} />
               </button>
             ) : (
               <button
                 onClick={handleNext}
-                className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+                className="w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                title="Next"
               >
-                <span>Next</span>
-                <FaChevronRight size={14} />
+                <FaChevronRight size={8} />
               </button>
             )}
           </div>
-        </div>
-
-        {/* Tour Tips */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>💡 Tip:</strong> You can click anywhere outside this tooltip to skip the tour, or use the navigation buttons to go step by step.
-          </p>
-          <p className="text-sm text-blue-800 mt-2">
-            <strong>🎤 Voice Commands:</strong> Say "next", "previous", "skip", or "complete" to navigate the tour hands-free!
-          </p>
         </div>
       </div>
     </>

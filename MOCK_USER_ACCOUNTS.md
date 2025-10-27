@@ -201,6 +201,111 @@ This document contains all the mock user accounts with their complete details fo
 - Manage user accounts and properties
 - Monitor transaction activities
 
+## 🏢 Vendor Accounts (Property Sellers & Agents)
+
+### Vendor Account 1: Emeka Okafor (agent_001)
+- **Email**: `emeka.okafor@lagosagents.com`
+- **Password**: `agent123`
+- **Phone**: `+234-803-111-2222`
+- **Role**: Vendor (Real Estate Agent)
+- **Business Name**: Lagos Prime Properties
+- **Location**: Lagos, Victoria Island
+- **Experience**: 5+ years
+- **Account Status**: Active & Verified
+- **Properties Managed**: None currently
+- **Bank Details**: Guaranty Trust Bank - 1111111111
+- **KYC Status**: Verified
+- **Access**: Full vendor dashboard access, can create property listings, manage inquiries
+
+### Vendor Account 2: Fatima Ibrahim (agent_002)
+- **Email**: `fatima.ibrahim@abujaagents.com`
+- **Password**: `agent123`
+- **Phone**: `+234-804-333-4444`
+- **Role**: Vendor (Real Estate Agent)
+- **Business Name**: Abuja Elite Realty
+- **Location**: Abuja, Asokoro District
+- **Experience**: 7+ years
+- **Account Status**: Active & Verified
+- **Properties Managed**: None currently
+- **Bank Details**: Access Bank - 2222222222
+- **KYC Status**: Verified
+- **Access**: Full vendor dashboard access, can create property listings, manage inquiries
+
+### Vendor Account 3: Chidi Nwankwo (agent_003)
+- **Email**: `chidi.nwankwo@riversagents.com`
+- **Password**: `agent123`
+- **Phone**: `+234-805-555-6666`
+- **Role**: Vendor (Real Estate Agent)
+- **Business Name**: Port Harcourt Properties
+- **Location**: Port Harcourt, GRA Phase 2
+- **Experience**: 10+ years
+- **Account Status**: Active & Verified
+- **Properties Managed**: None currently
+- **Bank Details**: Zenith Bank - 3333333333
+- **KYC Status**: Verified
+- **Access**: Full vendor dashboard access, can create property listings, manage inquiries
+
+### Vendor Account 4: Aisha Mohammed (owner_001) - Property Developer
+- **Email**: `aisha.mohammed@propertyowner.com`
+- **Password**: `owner123`
+- **Phone**: `+234-806-777-8888`
+- **Role**: Vendor (Property Developer)
+- **Business Name**: Mohammed Properties Ltd
+- **Location**: Lagos, Ikoyi
+- **Experience**: 15+ years
+- **Account Status**: Active & Verified
+- **Properties Owned**: 2 properties
+  - Medical Professional Apartment (₦750,000/month)
+  - Luxury Apartment in Ikoyi (₦420,000,000)
+- **Bank Details**: United Bank for Africa - 4444444444
+- **KYC Status**: Verified
+- **Access**: Full vendor dashboard access, manages property listings, receives inquiries
+
+## 📊 Property to Vendor Mapping
+
+### Properties Linked to Vendor Accounts:
+
+**Aisha Mohammed (owner_001)** owns and manages:
+1. **Medical Professional Apartment** (prop_016)
+   - Type: Apartment (2-bedroom)
+   - Price: ₦750,000/month
+   - Location: Yaba, Lagos
+   - Status: For Rent
+   
+2. **Luxury Apartment in Ikoyi** (prop_016 - Note: This appears to be a duplicate reference)
+   - Type: Apartment (3-bedroom)
+   - Price: ₦420,000,000
+   - Location: Ikoyi, Lagos
+   - Status: For Sale
+
+**Note**: The property mapping in the mock data shows some properties are linked to regular users (user_004, user_008, etc.) who should be converted to vendor accounts if you want them to manage properties through the vendor dashboard.
+
+## 🔐 Vendor Login Instructions
+
+### To Access Vendor Dashboard:
+
+1. **Go to**: `/vendor/dashboard` or login with any vendor account
+2. **Vendor Accounts Available**:
+   - Agent Emeka Okafor: `emeka.okafor@lagosagents.com` / `agent123`
+   - Agent Fatima Ibrahim: `fatima.ibrahim@abujaagents.com` / `agent123`
+   - Agent Chidi Nwankwo: `chidi.nwankwo@riversagents.com` / `agent123`
+   - Property Developer Aisha Mohammed: `aisha.mohammed@propertyowner.com` / `owner123`
+
+3. **Vendor Dashboard Features**:
+   - Property listings management
+   - Inspection requests handling
+   - Earnings tracking
+   - Team management
+   - Contract management
+
+### To Grant Vendor Access to Regular Users:
+
+To allow regular users (like Oluwaseun Akoma, Fatima Ibrahim, etc.) to access the vendor dashboard:
+
+1. Update their `role` from `'user'` to `'vendor'` in the database
+2. Add `vendorData` object to their profile
+3. They will then have access to `/vendor/dashboard`
+
 ## 📱 Contact Information
 
 All mock users have realistic Nigerian phone numbers and email addresses that can be used for testing SMS notifications and email communications.

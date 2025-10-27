@@ -9,7 +9,6 @@ import {
   FaChartBar,
   FaHome,
   FaBlog,
-  FaDatabase,
   FaCheckCircle
 } from 'react-icons/fa';
 
@@ -52,18 +51,6 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       label: 'Blog', 
       icon: FaBlog,
       description: 'Manage blog posts and content'
-    },
-    { 
-      id: 'seeder', 
-      label: 'Data Seeder', 
-      icon: FaDatabase,
-      description: 'Add sample data to Firestore'
-    },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: FaCog,
-      description: 'System configuration'
     }
   ];
 
