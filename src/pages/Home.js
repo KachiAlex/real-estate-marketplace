@@ -29,6 +29,7 @@ import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import BlogSection from '../components/BlogSection';
 import HeroBannerCarousel from '../components/HeroBannerCarousel';
+import SEO from '../components/SEO';
 
 // Mock properties from backend/data/mockProperties.js - transformed for frontend
 const backendMockProperties = [
@@ -715,7 +716,13 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <>
+      <SEO 
+        title="Find Your Dream Property in Nigeria"
+        description="Browse thousands of properties for sale, rent, and investment across Nigeria. Luxury homes, apartments, land, and commercial properties."
+        keywords="real estate Nigeria, buy property Nigeria, rent property Lagos, property for sale, investment property, luxury homes"
+      />
+      <div className="min-h-screen bg-gray-50 w-full">
       {/* Custom CSS for Range Slider */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -1797,6 +1804,7 @@ const Home = () => {
       </footer>
       
     </div>
+    </>
   );
 };
 

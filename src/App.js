@@ -18,6 +18,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import KIKI from './components/KIKI';
 import AITourGuide from './components/AITourGuide';
 import TourStartButton from './components/TourStartButton';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Eagerly load critical pages (shown immediately on load)
 import Home from './pages/Home';
@@ -78,6 +79,7 @@ function App() {
             <div className="flex flex-col min-h-screen">
               <Header />
               <div className="flex flex-grow w-full">
+                <ErrorBoundary>
                 <Suspense fallback={
                   <div className="flex items-center justify-center w-full h-screen">
                     <LoadingSpinner size="lg" />
@@ -438,6 +440,7 @@ function App() {
                   } />
                 </Routes>
                 </Suspense>
+                </ErrorBoundary>
               </div>
               
                                 {/* Global KIKI Assistant */}
