@@ -8,6 +8,8 @@ import {
   Image,
   Dimensions,
   TextInput,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mockProperties } from '../utils/mockData';
@@ -18,6 +20,8 @@ export default function PropertiesScreen({ navigation }) {
   const [properties] = useState(mockProperties);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProperties, setFilteredProperties] = useState(properties);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedAgeFilter, setSelectedAgeFilter] = useState('any');
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -41,10 +45,12 @@ export default function PropertiesScreen({ navigation }) {
     >
       <Image source={{ uri: item.images[0] }} style={styles.propertyImage} />
       <View style={styles.propertyContent}>
-        <Text style={styles.propertyTitle}>{item.title}</Text>
+        <Text style={styles.propertyTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
         <View style={styles.propertyLocation}>
           <Ionicons name="location-outline" size={14} color="#6b7280" />
-          <Text style={styles.propertyLocationText}>
+          <Text style={styles.propertyLocationText} numberOfLines={1}>
             {item.location.address}, {item.location.city}
           </Text>
         </View>
@@ -84,7 +90,7 @@ export default function PropertiesScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Search Header */}
       <View style={styles.header}>
         <View style={styles.searchBar}>
@@ -95,9 +101,104 @@ export default function PropertiesScreen({ navigation }) {
             value={searchQuery}
             onChangeText={handleSearch}
           />
-          <Ionicons name="options-outline" size={20} color="#9ca3af" />
+          <TouchableOpacity onPress={() => setShowFilters(true)}>
+            <Ionicons name="options-outline" size={20} color="#9ca3af" />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilters}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Properties</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)}>
+                <Ionicons name="close" size={24} color="#1f2937" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterLabel}>Property Age</Text>
+              <View style={styles.filterButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    selectedAgeFilter === 'any' && styles.filterButtonActive,
+                  ]}
+                  onPress={() => setSelectedAgeFilter('any')}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      selectedAgeFilter === 'any' && styles.filterButtonTextActive,
+                    ]}
+                  >
+                    Any Age
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    selectedAgeFilter === 'new' && styles.filterButtonActive,
+                  ]}
+                  onPress={() => setSelectedAgeFilter('new')}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      selectedAgeFilter === 'new' && styles.filterButtonTextActive,
+                    ]}
+                  >
+                    New (0-5 yrs)
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    selectedAgeFilter === 'old' && styles.filterButtonActive,
+                  ]}
+                  onPress={() => setSelectedAgeFilter('old')}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      selectedAgeFilter === 'old' && styles.filterButtonTextActive,
+                    ]}
+                  >
+                    5-10 yrs
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={() => {
+                  setSelectedAgeFilter('any');
+                }}
+              >
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={() => {
+                  setShowFilters(false);
+                  // Apply filters logic here
+                }}
+              >
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
       {/* Results Count */}
       <View style={styles.resultsHeader}>
@@ -114,7 +215,7 @@ export default function PropertiesScreen({ navigation }) {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -229,6 +330,105 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#065f46',
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  filterSection: {
+    padding: 20,
+  },
+  filterLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  filterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    minWidth: 100,
+    marginRight: 12,
+    marginBottom: 12,
+  },
+  filterButtonActive: {
+    backgroundColor: '#f97316',
+    borderColor: '#f97316',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  filterButtonTextActive: {
+    color: '#ffffff',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  resetButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  resetButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  applyButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#f97316',
+    alignItems: 'center',
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });
 

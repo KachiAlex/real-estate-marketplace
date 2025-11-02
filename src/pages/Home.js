@@ -1156,11 +1156,9 @@ const Home = () => {
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
                     <span>₦0</span>
-                    <div className="text-center">
-                      <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded inline-block">
+                    <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded">
                       ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
                     </span>
-                    </div>
                     <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">

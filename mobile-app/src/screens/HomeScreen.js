@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mockProperties } from '../utils/mockData';
@@ -17,7 +18,8 @@ export default function HomeScreen({ navigation }) {
   const featuredProperty = mockProperties[0];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -169,7 +171,8 @@ export default function HomeScreen({ navigation }) {
           ))}
         </ScrollView>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -182,7 +185,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   greeting: {
     fontSize: 14,
@@ -209,8 +214,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 20,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -222,8 +227,8 @@ const styles = StyleSheet.create({
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 20,
+    marginBottom: 28,
   },
   actionCard: {
     alignItems: 'center',
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   featuredCard: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#ffffff',
@@ -271,6 +276,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    marginBottom: 32,
   },
   featuredImage: {
     width: '100%',
@@ -335,8 +341,9 @@ const styles = StyleSheet.create({
     color: '#065f46',
   },
   propertyCard: {
-    width: width * 0.7,
-    marginLeft: 24,
+    width: width * 0.75,
+    marginLeft: 20,
+    marginRight: 8,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#ffffff',

@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,7 +17,8 @@ export default function PropertyDetailScreen({ route, navigation }) {
   const { property } = route.params;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
       {/* Image Gallery */}
       <View style={styles.imageContainer}>
         <Image source={{ uri: property.images[0] }} style={styles.mainImage} />
@@ -97,7 +99,8 @@ export default function PropertyDetailScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -137,7 +140,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 24,
+    padding: 20,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -147,9 +151,10 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1f2937',
+    marginRight: 12,
   },
   verifiedBadge: {
     flexDirection: 'row',
