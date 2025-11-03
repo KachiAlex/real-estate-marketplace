@@ -23,7 +23,7 @@ const BlogSection = () => {
         let featuredBlogsList = [];
         
         if (!featuredResponse.ok) {
-          console.warn('Featured blogs API not available');
+          // API not available - silently continue
         } else {
           const contentType = featuredResponse.headers.get('content-type');
           if (!contentType || !contentType.includes('application/json')) {
@@ -31,7 +31,10 @@ const BlogSection = () => {
           } else {
             const featuredData = await featuredResponse.json();
             if (featuredData.success && featuredData.data) {
-              featuredBlogsList = featuredData.data.blogs || [];
+              // Backend returns data as array directly, not data.blogs
+              featuredBlogsList = Array.isArray(featuredData.data) 
+                ? featuredData.data 
+                : (featuredData.data.blogs || []);
             }
           }
         }
@@ -41,7 +44,7 @@ const BlogSection = () => {
         const recentResponse = await fetch(`${API_BASE_URL}/api/blog?limit=4&sort=newest`);
         
         if (!recentResponse.ok) {
-          console.warn('Recent blogs API not available');
+          // API not available - silently continue
           setRecentBlogs([]);
         } else {
           const contentType = recentResponse.headers.get('content-type');
@@ -51,9 +54,13 @@ const BlogSection = () => {
           } else {
             const recentData = await recentResponse.json();
             if (recentData.success && recentData.data) {
+              // Backend returns data as array directly, not data.blogs
+              const recentBlogsList = Array.isArray(recentData.data) 
+                ? recentData.data 
+                : (recentData.data.blogs || []);
               // Filter out featured blogs from recent blogs
               const featuredIds = featuredBlogsList.map(b => b._id || b.id);
-              const filteredRecent = recentData.data.blogs?.filter(b => !featuredIds.includes(b._id || b.id)) || [];
+              const filteredRecent = recentBlogsList.filter(b => !featuredIds.includes(b._id || b.id));
               setRecentBlogs(filteredRecent.slice(0, 4));
             } else {
               setRecentBlogs([]);
@@ -61,8 +68,8 @@ const BlogSection = () => {
           }
         }
       } catch (apiError) {
-        console.warn('API call failed, using fallback data:', apiError);
-        // Fallback to empty arrays if API fails
+        // Silently fail - API may not be available, that's okay
+        // Component will just show empty state or not render blog section
         setFeaturedBlogs([]);
         setRecentBlogs([]);
       }
@@ -163,12 +170,13 @@ const BlogSection = () => {
                                     <Link to={`/blog/${blog.slug}`}>
                     <div className="relative">
                       <img
-                        src={blog.featuredImage?.url || blog.featuredImage}
+                        src={blog.featuredImage?.url || blog.featuredImage || 'https://via.placeholder.com/800x600?text=Real+Estate'}
                         alt={blog.title}
                         className={`w-full object-cover ${index === 0 ? 'h-64' : 'h-48'}`}
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=250&fit=crop';
+                          e.target.src = 'https://via.placeholder.com/800x600?text=Real+Estate';
                         }}
+                        loading="lazy"
                       />
                     <div className="absolute top-4 left-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -251,12 +259,13 @@ const BlogSection = () => {
                 <article key={blog._id || blog.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                   <Link to={`/blog/${blog.slug}`}>
                     <img
-                      src={blog.featuredImage?.url || blog.featuredImage}
+                      src={blog.featuredImage?.url || blog.featuredImage || 'https://via.placeholder.com/400x250?text=Real+Estate'}
                       alt={blog.title}
                       className="w-full h-40 object-cover"
                       onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=250&fit=crop';
+                        e.target.src = 'https://via.placeholder.com/400x250?text=Real+Estate';
                       }}
+                      loading="lazy"
                     />
                   </Link>
                   

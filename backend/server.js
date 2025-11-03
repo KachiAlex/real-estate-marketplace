@@ -6,6 +6,7 @@ require('dotenv').config();
 
 // Import configurations
 const connectDB = require('./config/database');
+const { initializeFirestore } = require('./config/firestore');
 const { securityConfig } = require('./config/security');
 const { createLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
 const rateLimit = require('express-rate-limit');
@@ -20,7 +21,16 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 5000;
 
-// Database connection
+// Initialize Firestore (Firebase)
+try {
+  initializeFirestore();
+  console.log('✅ Firestore initialized');
+} catch (error) {
+  console.warn('⚠️ Firestore initialization failed:', error.message);
+  console.warn('⚠️ Blog routes will use Firestore, but connection may fail');
+}
+
+// Database connection (MongoDB - for other models that still use it)
 connectDB().then(async () => {
   // Initialize admin settings
   await initializeAdminSettings();
@@ -231,78 +241,8 @@ const mockBlogs = [
   }
 ];
 
-// Blog API Routes
-app.get('/api/blog', async (req, res) => {
-  try {
-    const { page = 1, limit = 10, category, featured } = req.query;
-    
-    // Use mock data for now
-    let blogs = mockBlogs.filter(blog => blog.status === 'published');
-    
-    if (category) {
-      blogs = blogs.filter(blog => blog.category === category);
-    }
-    
-    if (featured === 'true') {
-      blogs = blogs.filter(blog => blog.featured === true);
-    }
-    
-    // Sort by creation date (newest first)
-    blogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    const total = blogs.length;
-    const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + parseInt(limit);
-    const paginatedBlogs = blogs.slice(startIndex, endIndex);
-
-  res.json({
-    success: true,
-      data: paginatedBlogs,
-    pagination: {
-      currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
-        totalItems: total,
-      itemsPerPage: parseInt(limit)
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching blogs:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch blogs',
-      error: error.message
-    });
-  }
-});
-
-app.get('/api/blog/:slug', async (req, res) => {
-  try {
-    // Use mock data for now
-    const blog = mockBlogs.find(b => b.slug === req.params.slug && b.status === 'published');
-    
-    if (!blog) {
-    return res.status(404).json({
-      success: false,
-        message: 'Blog post not found'
-      });
-    }
-    
-    // Increment view count (simulate)
-    blog.views = (blog.views || 0) + 1;
-  
-  res.json({
-    success: true,
-      data: blog
-    });
-  } catch (error) {
-    console.error('Error fetching blog:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch blog',
-      error: error.message
-    });
-  }
-});
+// Blog API Routes are handled by ./routes/blog.js (registered above)
+// Mock routes removed to avoid conflicts - proper routes with MongoDB support are available
 
 // Agents API Route
 app.get('/api/agents', (req, res) => {

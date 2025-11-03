@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Blog = require('../models/Blog');
-const User = require('../models/User');
+const blogService = require('../services/blogService');
 const { protect, authorize } = require('../middleware/auth');
 const { validate, sanitizeInput } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
@@ -66,6 +65,7 @@ router.get('/', [
   query('category').optional().isString(),
   query('tag').optional().isString(),
   query('search').optional().isString(),
+  query('featured').optional().isBoolean().withMessage('Featured must be a boolean'),
   query('sort').optional().isIn(['newest', 'oldest', 'popular', 'trending']),
   validate
 ], async (req, res) => {
@@ -76,59 +76,71 @@ router.get('/', [
       category,
       tag,
       search,
+      featured,
       sort = 'newest'
     } = req.query;
 
     // Build filter object
-    const filter = {
+    const filters = {
       status: 'published',
-      publishedAt: { $lte: new Date() }
+      publishedAt: new Date() // Only get published blogs
     };
 
     if (category) {
-      filter.category = category;
+      filters.category = category;
     }
 
     if (tag) {
-      filter.tags = { $in: [tag.toLowerCase()] };
+      filters.tags = tag.toLowerCase();
+    }
+
+    if (featured === 'true' || featured === true) {
+      filters.featured = true;
     }
 
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { excerpt: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
-      ];
+      filters.search = search;
     }
 
-    // Build sort object
-    let sortObj = {};
+    // Determine sort field and order
+    let sortBy = 'publishedAt';
+    let sortOrder = 'desc';
+    
     switch (sort) {
       case 'oldest':
-        sortObj = { publishedAt: 1 };
+        sortBy = 'publishedAt';
+        sortOrder = 'asc';
         break;
       case 'popular':
-        sortObj = { views: -1, publishedAt: -1 };
+        sortBy = 'views';
+        sortOrder = 'desc';
         break;
       case 'trending':
-        sortObj = { likes: -1, shares: -1, views: -1 };
+        sortBy = 'trending';
+        sortOrder = 'desc';
         break;
-      default:
-        sortObj = { publishedAt: -1 };
+      default: // newest
+        sortBy = 'publishedAt';
+        sortOrder = 'desc';
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const result = await blogService.getBlogs(
+      filters,
+      sortBy,
+      sortOrder,
+      parseInt(limit),
+      offset
+    );
 
-    const blogs = await Blog.find(filter)
-      .populate('author.id', 'firstName lastName avatar')
-      .select('-content') // Exclude full content for list view
-      .sort(sortObj)
-      .skip(skip)
-      .limit(parseInt(limit));
+    // Format response to match MongoDB structure
+    const blogs = result.blogs.map(blog => ({
+      _id: blog.id,
+      id: blog.id,
+      ...blog
+    }));
 
-    const total = await Blog.countDocuments(filter);
-    const totalPages = Math.ceil(total / parseInt(limit));
+    const totalPages = Math.ceil(result.total / parseInt(limit));
 
     res.json({
       success: true,
@@ -136,7 +148,7 @@ router.get('/', [
       pagination: {
         currentPage: parseInt(page),
         totalPages,
-        totalItems: total,
+        totalItems: result.total,
         itemsPerPage: parseInt(limit)
       }
     });
@@ -156,14 +168,18 @@ router.get('/featured', async (req, res) => {
   try {
     const { limit = 5 } = req.query;
 
-    const blogs = await Blog.getFeatured()
-      .populate('author.id', 'firstName lastName avatar')
-      .select('-content')
-      .limit(parseInt(limit));
+    const blogs = await blogService.getFeaturedBlogs(parseInt(limit));
+
+    // Format response to match MongoDB structure
+    const formattedBlogs = blogs.map(blog => ({
+      _id: blog.id,
+      id: blog.id,
+      ...blog
+    }));
 
     res.json({
       success: true,
-      data: blogs
+      data: formattedBlogs
     });
   } catch (error) {
     console.error('Error fetching featured blogs:', error);
@@ -182,14 +198,7 @@ router.get('/:slug', [
   validate
 ], async (req, res) => {
   try {
-    const blog = await Blog.findOne({
-      slug: req.params.slug,
-      status: 'published',
-      publishedAt: { $lte: new Date() }
-    })
-    .populate('author.id', 'firstName lastName avatar bio')
-    .populate('relatedProperties', 'title price images location')
-    .populate('relatedPosts', 'title slug excerpt featuredImage publishedAt');
+    const blog = await blogService.getBlogBySlug(req.params.slug);
 
     if (!blog) {
       return res.status(404).json({
@@ -199,11 +208,21 @@ router.get('/:slug', [
     }
 
     // Increment views
-    await blog.incrementViews();
+    if (blog.id) {
+      await blogService.incrementViews(blog.id);
+      blog.views = (blog.views || 0) + 1;
+    }
+
+    // Format response to match MongoDB structure
+    const formattedBlog = {
+      _id: blog.id,
+      id: blog.id,
+      ...blog
+    };
 
     res.json({
       success: true,
-      data: blog
+      data: formattedBlog
     });
   } catch (error) {
     console.error('Error fetching blog:', error);
@@ -225,11 +244,8 @@ router.get('/:slug/related', [
   try {
     const { limit = 4 } = req.query;
 
-    // First get the current blog to find related posts
-    const currentBlog = await Blog.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    });
+    // First get the current blog
+    const currentBlog = await blogService.getBlogBySlug(req.params.slug);
 
     if (!currentBlog) {
       return res.status(404).json({
@@ -238,24 +254,19 @@ router.get('/:slug/related', [
       });
     }
 
-    // Find related blogs by category and tags
-    const relatedBlogs = await Blog.find({
-      _id: { $ne: currentBlog._id },
-      status: 'published',
-      publishedAt: { $lte: new Date() },
-      $or: [
-        { category: currentBlog.category },
-        { tags: { $in: currentBlog.tags } }
-      ]
-    })
-    .populate('author.id', 'firstName lastName avatar')
-    .select('-content')
-    .sort({ publishedAt: -1 })
-    .limit(parseInt(limit));
+    // Get related blogs
+    const relatedBlogs = await blogService.getRelatedBlogs(currentBlog, parseInt(limit));
+
+    // Format response to match MongoDB structure
+    const formattedBlogs = relatedBlogs.map(blog => ({
+      _id: blog.id,
+      id: blog.id,
+      ...blog
+    }));
 
     res.json({
       success: true,
-      data: relatedBlogs
+      data: formattedBlogs
     });
   } catch (error) {
     console.error('Error fetching related blogs:', error);
@@ -271,10 +282,7 @@ router.get('/:slug/related', [
 // @access  Private
 router.post('/:slug/like', protect, async (req, res) => {
   try {
-    const blog = await Blog.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    });
+    const blog = await blogService.getBlogBySlug(req.params.slug);
 
     if (!blog) {
       return res.status(404).json({
@@ -283,12 +291,12 @@ router.post('/:slug/like', protect, async (req, res) => {
       });
     }
 
-    await blog.addLike();
+    await blogService.incrementLikes(blog.id);
 
     res.json({
       success: true,
       message: 'Blog post liked successfully',
-      likes: blog.likes + 1
+      likes: (blog.likes || 0) + 1
     });
   } catch (error) {
     console.error('Error liking blog:', error);
@@ -304,10 +312,7 @@ router.post('/:slug/like', protect, async (req, res) => {
 // @access  Private
 router.post('/:slug/share', protect, async (req, res) => {
   try {
-    const blog = await Blog.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    });
+    const blog = await blogService.getBlogBySlug(req.params.slug);
 
     if (!blog) {
       return res.status(404).json({
@@ -316,12 +321,12 @@ router.post('/:slug/share', protect, async (req, res) => {
       });
     }
 
-    await blog.addShare();
+    await blogService.incrementShares(blog.id);
 
     res.json({
       success: true,
       message: 'Blog post shared successfully',
-      shares: blog.shares + 1
+      shares: (blog.shares || 0) + 1
     });
   } catch (error) {
     console.error('Error sharing blog:', error);
@@ -344,10 +349,7 @@ router.post('/:slug/comments', [
   validate
 ], async (req, res) => {
   try {
-    const blog = await Blog.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    });
+    const blog = await blogService.getBlogBySlug(req.params.slug);
 
     if (!blog) {
       return res.status(404).json({
@@ -373,13 +375,12 @@ router.post('/:slug/comments', [
       isApproved: false // Comments need approval
     };
 
-    blog.comments.push(comment);
-    await blog.save();
+    const newComment = await blogService.addComment(blog.id, comment);
 
     res.json({
       success: true,
       message: 'Comment added successfully. It will be visible after approval.',
-      data: blog.comments[blog.comments.length - 1]
+      data: newComment
     });
   } catch (error) {
     console.error('Error adding comment:', error);
@@ -395,11 +396,7 @@ router.post('/:slug/comments', [
 // @access  Public
 router.get('/categories', async (req, res) => {
   try {
-    const categories = await Blog.aggregate([
-      { $match: { status: 'published' } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
+    const categories = await blogService.getCategories();
 
     const categoryNames = {
       'real-estate-tips': 'Real Estate Tips',
@@ -417,8 +414,8 @@ router.get('/categories', async (req, res) => {
     };
 
     const formattedCategories = categories.map(cat => ({
-      slug: cat._id,
-      name: categoryNames[cat._id] || cat._id,
+      slug: cat.slug,
+      name: categoryNames[cat.slug] || cat.slug,
       count: cat.count
     }));
 
@@ -442,13 +439,7 @@ router.get('/tags', async (req, res) => {
   try {
     const { limit = 20 } = req.query;
 
-    const tags = await Blog.aggregate([
-      { $match: { status: 'published' } },
-      { $unwind: '$tags' },
-      { $group: { _id: '$tags', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: parseInt(limit) }
-    ]);
+    const tags = await blogService.getPopularTags(parseInt(limit));
 
     res.json({
       success: true,
