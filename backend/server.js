@@ -28,6 +28,8 @@ try {
 } catch (error) {
   console.warn('⚠️ Firestore initialization failed:', error.message);
   console.warn('⚠️ Blog routes will use Firestore, but connection may fail');
+  console.warn('📝 To fix: Set FIREBASE_SERVICE_ACCOUNT_KEY or GOOGLE_APPLICATION_CREDENTIALS');
+  console.warn('📚 See backend/FIRESTORE_SETUP.md for setup instructions');
 }
 
 // Database connection (MongoDB - for other models that still use it)
