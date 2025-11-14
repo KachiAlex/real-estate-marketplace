@@ -6,7 +6,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState({
+    properties: [],
+    investments: [],
+    users: []
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // all, properties, investments, users
   const searchRef = useRef(null);
@@ -38,7 +42,7 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
   useEffect(() => {
     const performSearch = async () => {
       if (!query.trim()) {
-        setResults([]);
+        setResults({ properties: [], investments: [], users: [] });
         return;
       }
 
@@ -52,14 +56,14 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
 
         // Search properties
         if (activeTab === 'all' || activeTab === 'properties') {
-          const propertyResults = searchProperties(query, {});
-          searchResults.properties = propertyResults.slice(0, 5); // Limit to 5 results
+          const propertyResults = searchProperties ? searchProperties(query, {}) : [];
+          searchResults.properties = Array.isArray(propertyResults) ? propertyResults.slice(0, 5) : []; // Limit to 5 results
         }
 
         // Search investments
         if (activeTab === 'all' || activeTab === 'investments') {
-          const investmentResults = searchInvestments(query, {});
-          searchResults.investments = investmentResults.slice(0, 5); // Limit to 5 results
+          const investmentResults = searchInvestments ? searchInvestments(query, {}) : [];
+          searchResults.investments = Array.isArray(investmentResults) ? investmentResults.slice(0, 5) : []; // Limit to 5 results
         }
 
         // Search users (mock data for now)
@@ -124,7 +128,7 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
     });
   };
 
-  const totalResults = results.properties.length + results.investments.length + results.users.length;
+  const totalResults = (results?.properties?.length || 0) + (results?.investments?.length || 0) + (results?.users?.length || 0);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20">
@@ -154,9 +158,9 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
         <div className="flex border-b border-gray-200">
           {[
             { key: 'all', label: 'All', count: totalResults },
-            { key: 'properties', label: 'Properties', count: results.properties.length },
-            { key: 'investments', label: 'Investments', count: results.investments.length },
-            { key: 'users', label: 'Users', count: results.users.length }
+            { key: 'properties', label: 'Properties', count: results?.properties?.length || 0 },
+            { key: 'investments', label: 'Investments', count: results?.investments?.length || 0 },
+            { key: 'users', label: 'Users', count: results?.users?.length || 0 }
           ].map(tab => (
             <button
               key={tab.key}
@@ -182,14 +186,14 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
           ) : query.trim() ? (
             <div className="p-4">
               {/* Properties Results */}
-              {(activeTab === 'all' || activeTab === 'properties') && results.properties.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'properties') && (results?.properties?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <FaBuilding className="mr-2" />
-                    Properties ({results.properties.length})
+                    Properties ({(results?.properties?.length || 0)})
                   </h3>
                   <div className="space-y-2">
-                    {results.properties.map(property => (
+                    {(results?.properties || []).map(property => (
                       <div
                         key={property.id}
                         onClick={() => handleResultClick('property', property)}
@@ -225,14 +229,14 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
               )}
 
               {/* Investments Results */}
-              {(activeTab === 'all' || activeTab === 'investments') && results.investments.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'investments') && (results?.investments?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <FaChartLine className="mr-2" />
-                    Investments ({results.investments.length})
+                    Investments ({(results?.investments?.length || 0)})
                   </h3>
                   <div className="space-y-2">
-                    {results.investments.map(investment => (
+                    {(results?.investments || []).map(investment => (
                       <div
                         key={investment.id}
                         onClick={() => handleResultClick('investment', investment)}
@@ -273,14 +277,14 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
               )}
 
               {/* Users Results */}
-              {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'users') && (results?.users?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <FaUser className="mr-2" />
-                    Users ({results.users.length})
+                    Users ({(results?.users?.length || 0)})
                   </h3>
                   <div className="space-y-2">
-                    {results.users.map(user => (
+                    {(results?.users || []).map(user => (
                       <div
                         key={user.id}
                         onClick={() => handleResultClick('user', user)}
