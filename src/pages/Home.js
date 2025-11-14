@@ -427,68 +427,80 @@ const Home = () => {
   
   // Real-time filtering
   const filteredProperties = useMemo(() => {
+    // Ensure mockProperties is an array
+    if (!Array.isArray(mockProperties)) {
+      return [];
+    }
+    
     let filtered = [...mockProperties];
     
     // Apply search query
-    if (searchQuery.trim()) {
+    if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(property => 
-        property.title?.toLowerCase().includes(query) ||
-        property.description?.toLowerCase().includes(query) ||
-        property.location?.toLowerCase().includes(query) ||
-        property.address?.toLowerCase().includes(query)
+        property?.title?.toLowerCase().includes(query) ||
+        property?.description?.toLowerCase().includes(query) ||
+        property?.location?.toLowerCase().includes(query) ||
+        property?.address?.toLowerCase().includes(query)
       );
     }
     
     // Apply location filter
     if (selectedLocation) {
       filtered = filtered.filter(property => 
-        property.location?.toLowerCase().includes(selectedLocation.toLowerCase())
+        property?.location?.toLowerCase().includes(selectedLocation.toLowerCase())
       );
     }
     
     // Apply property status filter
     if (selectedStatus) {
       filtered = filtered.filter(property => 
-        property.status === selectedStatus || property.label === selectedStatus
+        property?.status === selectedStatus || property?.label === selectedStatus
       );
     }
     
     // Apply property type filter
     if (selectedType) {
       filtered = filtered.filter(property => 
-        property.type === selectedType
+        property?.type === selectedType
       );
     }
     
     // Apply bedrooms filter
     if (bedrooms) {
       const bedroomCount = parseInt(bedrooms);
-      filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
+      if (!isNaN(bedroomCount)) {
+        filtered = filtered.filter(property => (property?.bedrooms || 0) >= bedroomCount);
+      }
     }
     
     // Apply bathrooms filter
     if (bathrooms) {
       const bathroomCount = parseInt(bathrooms);
-      filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
+      if (!isNaN(bathroomCount)) {
+        filtered = filtered.filter(property => (property?.bathrooms || 0) >= bathroomCount);
+      }
     }
     
     // Apply price range filter
-    filtered = filtered.filter(property => 
-      property.price >= priceRange[0] && property.price <= priceRange[1]
-    );
+    if (Array.isArray(priceRange) && priceRange.length === 2) {
+      filtered = filtered.filter(property => {
+        const price = property?.price || 0;
+        return price >= priceRange[0] && price <= priceRange[1];
+      });
+    }
     
     // Apply sorting
     let sorted = [...filtered];
     switch (sortBy) {
       case 'Price Low to High':
-        sorted.sort((a, b) => a.price - b.price);
+        sorted.sort((a, b) => (a?.price || 0) - (b?.price || 0));
         break;
       case 'Price High to Low':
-        sorted.sort((a, b) => b.price - a.price);
+        sorted.sort((a, b) => (b?.price || 0) - (a?.price || 0));
         break;
       case 'Newest':
-        sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        sorted.sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0));
         break;
       default:
         // Most Relevant - keep original order
@@ -582,10 +594,11 @@ const Home = () => {
   }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange]);
 
   // Calculate pagination
+  const safeFilteredProperties = Array.isArray(filteredProperties) ? filteredProperties : [];
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
-  const currentProperties = filteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
-  const totalPages = Math.ceil(filteredProperties.length / propertiesPerPage);
+  const currentProperties = safeFilteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
+  const totalPages = Math.ceil(safeFilteredProperties.length / propertiesPerPage);
 
 
   const handleApplyFilters = () => {
@@ -1267,8 +1280,8 @@ const Home = () => {
           <div className="flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-700">{filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'} found</p>
-              {filteredProperties.length > 0 && (
+              <p className="text-gray-700">{(filteredProperties?.length || 0)} {(filteredProperties?.length || 0) === 1 ? 'property' : 'properties'} found</p>
+              {(filteredProperties?.length || 0) > 0 && (
                 <div className="flex items-center space-x-2">
                   <FaSort className="text-gray-400" title="Sort properties" />
                   <select
@@ -1287,7 +1300,7 @@ const Home = () => {
             </div>
 
             {/* Property Grid */}
-            {filteredProperties.length > 0 ? (
+            {(filteredProperties?.length || 0) > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentProperties.map((property) => (
                 <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
@@ -1381,7 +1394,7 @@ const Home = () => {
             )}
 
             {/* Pagination */}
-            {filteredProperties.length > 0 && totalPages > 1 && (
+            {(filteredProperties?.length || 0) > 0 && totalPages > 1 && (
               <div className="flex items-center justify-center mt-8 space-x-2">
                 <button 
                   onClick={() => handlePaginationClick(currentPage - 1)}
