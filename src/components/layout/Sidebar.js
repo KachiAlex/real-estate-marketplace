@@ -22,6 +22,11 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Don't render sidebar if user is not authenticated
+  if (!user) {
+    return null;
+  }
+
   const isActive = (path) => {
     return location.pathname === path;
   };

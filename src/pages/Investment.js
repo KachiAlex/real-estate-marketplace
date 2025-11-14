@@ -389,7 +389,7 @@ const Investment = () => {
         vendorId: scheduleProject.sponsor?.id || scheduleProject.vendorId || 'mock-vendor-id',
         vendorEmail: scheduleProject.sponsor?.email || scheduleProject.vendorEmail || user?.email,
         buyerId: user?.id,
-        buyerName: user ? `${user.firstName} ${user.lastName}` : 'Guest',
+        buyerName: user ? `${user.firstName} ${user.lastName}` : 'User',
         buyerEmail: user?.email,
         preferredDate: scheduleDate,
         preferredTime: scheduleTime,

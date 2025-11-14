@@ -33,11 +33,8 @@ const StaticHeroBanner = () => {
         <div className="w-full max-w-6xl">
           {/* Main Heading */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-tight">
-              Find Your Dream Property
-              <span className="block text-orange-400 mt-2">
-                in Nigeria
-              </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+              Find Your Dream Property <span className="text-orange-400">in Nigeria</span>
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               Secure real estate transactions with escrow protection, verified listings, and transparent processes
@@ -68,41 +65,16 @@ const StaticHeroBanner = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button 
-              onClick={() => navigate('/properties')}
-              className="group px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center justify-center space-x-2 text-lg"
-            >
-              <span>Browse Properties</span>
-              <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
-            </button>
-            
-            {!user && (
+          {!user && (
+            <div className="flex justify-center items-center">
               <button 
                 onClick={() => navigate('/register')}
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 transition-all duration-300 shadow-xl text-lg"
               >
                 Get Started Free
               </button>
-            )}
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[
-              { label: '100% Secure', value: '100%' },
-              { label: 'Verified', value: '✓' },
-              { label: '24/7 Support', value: '24/7' },
-              { label: 'Escrow Protected', value: '🔒' }
-            ].map((item, idx) => (
-              <div key={idx} className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/20 transition-all text-center">
-                <div className="text-2xl font-bold text-white mb-1">
-                  {item.value}
-                </div>
-                <div className="text-sm text-white/90">{item.label}</div>
-              </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

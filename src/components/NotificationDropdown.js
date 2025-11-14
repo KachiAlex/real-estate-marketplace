@@ -272,11 +272,16 @@ const NotificationDropdown = () => {
     return date.toLocaleDateString();
   };
 
+  const handleBellClick = () => {
+    // Navigate to alerts page when bell icon is clicked
+    navigate('/alerts');
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Notification Bell */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleBellClick}
         className="relative p-2 text-white hover:text-brand-orange transition-colors"
       >
         <FaBell className="text-xl" />

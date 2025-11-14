@@ -2,7 +2,6 @@
 import { auth } from '../config/firebase';
 import { 
   onAuthStateChanged, 
-  signInAnonymously, 
   signInWithPopup, 
   GoogleAuthProvider,
   signOut as firebaseSignOut,
@@ -216,6 +215,17 @@ export const AuthProvider = ({ children }) => {
   const [activeRole, setActiveRole] = useState('buyer'); // Default role
   const [firebaseAuthReady, setFirebaseAuthReady] = useState(false);
 
+  // Helper function to check if user is a guest user
+  const isGuestUser = (userData) => {
+    if (!userData) return false;
+    return (
+      userData.firstName === 'Guest' ||
+      userData.email?.includes('guest') ||
+      userData.email?.includes('anonymous') ||
+      userData.email === 'anonymous@guest.local'
+    );
+  };
+
   // Check for existing session and redirect URL on load
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -225,10 +235,19 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        setUser(userData);
-        } catch (error) {
+        // Clear guest users - they should not be loaded
+        if (isGuestUser(userData)) {
+          console.log('Removing guest user from localStorage');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('activeRole');
+          setUser(null);
+        } else {
+          setUser(userData);
+        }
+      } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('currentUser');
+        setUser(null);
       }
     }
     
@@ -236,14 +255,22 @@ export const AuthProvider = ({ children }) => {
       setRedirectUrl(savedRedirectUrl);
     }
     
-    if (savedActiveRole) {
-      setActiveRole(savedActiveRole);
+    // Only set activeRole if we have a valid (non-guest) user
+    if (savedActiveRole && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        if (!isGuestUser(userData)) {
+          setActiveRole(savedActiveRole);
+        }
+      } catch (error) {
+        // Ignore error, don't set activeRole
+      }
     }
     // Mark hydration complete; onAuthStateChanged will also flip loading to false
     setLoading(false);
   }, []);
 
-  // Ensure Firebase Auth is initialized (anonymous sign-in) so Firestore rules see request.auth != null
+  // Initialize Firebase Auth state (no anonymous sign-in)
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
@@ -254,45 +281,41 @@ export const AuthProvider = ({ children }) => {
           // User already logged in via mock authentication
           try {
             const userData = JSON.parse(savedUser);
+            // Clear guest users - they should not be loaded
+            if (isGuestUser(userData)) {
+              console.log('Removing guest user from localStorage');
+              localStorage.removeItem('currentUser');
+              localStorage.removeItem('activeRole');
+              setUser(null);
+              setFirebaseAuthReady(true);
+              setLoading(false);
+              return;
+            }
             setUser(userData);
             setFirebaseAuthReady(true);
             setLoading(false);
-            return; // Don't create guest user
+            return;
           } catch (error) {
             console.error('Error parsing saved user:', error);
             localStorage.removeItem('currentUser');
+            setUser(null);
           }
         }
         
-        // No saved user - check Firebase auth
+        // No saved user and no Firebase user - user is not authenticated
         if (!fbUser) {
-          await signInAnonymously(auth);
-          return; // wait for next auth state change where user exists
+          setUser(null);
+          setFirebaseAuthReady(true);
+          setLoading(false);
+          return;
         }
         
-        // We have a Firebase user (anonymous or real)
+        // We have a Firebase user (from Google sign-in)
         setFirebaseAuthReady(true);
-
-        // Only create guest if we truly have no saved user
-        if (!savedUser) {
-          const synthesized = {
-            id: fbUser.uid,
-            firstName: 'Guest',
-            lastName: 'User',
-            email: fbUser.email || 'anonymous@guest.local',
-            role: 'user',
-            roles: ['buyer'],
-            activeRole: 'buyer',
-            avatar: 'https://picsum.photos/150/150'
-          };
-          setUser(synthesized);
-          localStorage.setItem('currentUser', JSON.stringify(synthesized));
-          localStorage.setItem('activeRole', 'buyer');
-        }
-        // Auth is ready at this point
         setLoading(false);
       } catch (e) {
-        console.warn('Anonymous sign-in failed:', e?.message || e);
+        console.warn('Auth state check failed:', e?.message || e);
+        setUser(null);
         setLoading(false);
       }
     });
@@ -459,6 +482,8 @@ export const AuthProvider = ({ children }) => {
         lastName,
         email,
         role: 'user',
+        roles: ['buyer'],
+        activeRole: 'buyer',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       };
 
@@ -467,7 +492,9 @@ export const AuthProvider = ({ children }) => {
       
       const { password: _, ...userWithoutPassword } = newUser;
       setUser(userWithoutPassword);
+      setActiveRole('buyer');
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      localStorage.setItem('activeRole', 'buyer');
       
       // Handle redirect after registration
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
@@ -490,7 +517,13 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setUser(null);
+      setActiveRole('buyer');
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('activeRole');
+      // Sign out from Firebase if signed in
+      if (auth.currentUser) {
+        await firebaseSignOut(auth);
+      }
       toast.success('Logged out successfully');
       return { success: true };
     } catch (error) {

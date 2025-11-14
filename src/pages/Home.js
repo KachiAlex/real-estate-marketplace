@@ -23,7 +23,9 @@ import {
   FaClock,
   FaCertificate,
   FaUsers,
-  FaMobileAlt
+  FaMobileAlt,
+  FaPhone,
+  FaEnvelope
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
@@ -414,7 +416,6 @@ const Home = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [priceRange, setPriceRange] = useState([0, 1000000000]);
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
@@ -510,19 +511,6 @@ const Home = () => {
     return sorted;
   }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange, sortBy]);
 
-  // Enhanced Quick Filters with sublinks
-  const quickFilters = {
-    'All Properties': [],
-    'For Sale': ['House', 'Apartment', 'Condo', 'Penthouse', 'Land', 'Villa', 'Townhouse'],
-    'For Rent': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Kaduna', 'Enugu', 'Aba'],
-    'Shortlet': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Calabar', 'Jos', 'Ibadan', 'Kaduna'],
-    'New Developments': [],
-    'Waterfront': [],
-    'Luxury': [],
-    'Blog': [],
-    'Diasporan Services': ['Legal Services', 'Account & Book Keeping', 'Business Office for consultation']
-  };
-
   // All Nigerian States
   const locations = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 
@@ -571,23 +559,8 @@ const Home = () => {
     setBathrooms('');
     setPriceRange([0, 100000000]);
     setSearchQuery('');
-    setActiveDropdown(null);
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (activeDropdown && !event.target.closest('.dropdown-container')) {
-        setActiveDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [activeDropdown]);
-  
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -805,179 +778,6 @@ const Home = () => {
       {/* Static Hero Banner with Search - Full Width */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-16">
         <StaticHeroBanner />
-      </div>
-
-      {/* Navigation Menu Bar */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-center space-x-8 py-4">
-            {/* For Sale */}
-            <div className="relative dropdown-container">
-                <button
-                onClick={() => setActiveDropdown(activeDropdown === 'For Sale' ? null : 'For Sale')}
-                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
-                  activeDropdown === 'For Sale' ? 'text-orange-600' : 'text-gray-700'
-                }`}
-              >
-                <span>For Sale</span>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${
-                    activeDropdown === 'For Sale' ? 'rotate-180' : ''
-                  }`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-                </button>
-              
-              {activeDropdown === 'For Sale' && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                  <div className="py-2">
-                    {quickFilters['For Sale'].map((item) => (
-                      <Link
-                        key={item}
-                        to={`/properties?type=${encodeURIComponent(item)}&status=For Sale`}
-                        onClick={() => setActiveDropdown(null)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                      >
-                        {item}
-                      </Link>
-              ))}
-            </div>
-          </div>
-              )}
-            </div>
-
-            {/* For Rent */}
-            <div className="relative dropdown-container">
-              <button
-                onClick={() => setActiveDropdown(activeDropdown === 'For Rent' ? null : 'For Rent')}
-                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
-                  activeDropdown === 'For Rent' ? 'text-orange-600' : 'text-gray-700'
-                }`}
-              >
-                <span>For Rent</span>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${
-                    activeDropdown === 'For Rent' ? 'rotate-180' : ''
-                  }`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {activeDropdown === 'For Rent' && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                  <div className="py-2">
-                    {quickFilters['For Rent'].map((location) => (
-                      <Link
-                        key={location}
-                        to={`/properties?location=${encodeURIComponent(location)}&status=For Rent`}
-                        onClick={() => setActiveDropdown(null)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                      >
-                        {location}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Shortlet */}
-            <div className="relative dropdown-container">
-              <button
-                onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
-                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
-                  activeDropdown === 'Shortlet' ? 'text-orange-600' : 'text-gray-700'
-                }`}
-              >
-                <span>Shortlet</span>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${
-                    activeDropdown === 'Shortlet' ? 'rotate-180' : ''
-                  }`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {activeDropdown === 'Shortlet' && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                  <div className="py-2">
-                    {quickFilters['Shortlet'].map((location) => (
-                      <Link
-                        key={location}
-                        to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
-                        onClick={() => setActiveDropdown(null)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                      >
-                        {location}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Blog */}
-            <Link
-              to="/blog"
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
-            >
-              Blog
-            </Link>
-
-            {/* Diasporan Services */}
-            <div className="relative dropdown-container">
-              <button
-                onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
-                className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors hover:text-orange-600 ${
-                  activeDropdown === 'Diasporan Services' ? 'text-orange-600' : 'text-gray-700'
-                }`}
-              >
-                <span>Diasporan Services</span>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${
-                    activeDropdown === 'Diasporan Services' ? 'rotate-180' : ''
-                  }`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {activeDropdown === 'Diasporan Services' && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                  <div className="py-2">
-                    {quickFilters['Diasporan Services'].map((service) => (
-                      <button
-                        key={service}
-                        onClick={() => {
-                          toast.info(`${service} - Coming soon!`);
-                          setActiveDropdown(null);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                      >
-                        {service}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -1801,15 +1601,15 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">ðŸ“ž</span>
+                  <FaPhone className="text-brand-orange" />
                   <p className="text-gray-400">+234 800 123 4567</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">âœ‰ï¸</span>
+                  <FaEnvelope className="text-brand-orange" />
                   <p className="text-gray-400">info@propertyark.com</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">ðŸ•’</span>
+                  <FaClock className="text-brand-orange" />
                   <p className="text-gray-400">Mon - Fri: 9:00 AM - 6:00 PM</p>
                 </div>
               </div>

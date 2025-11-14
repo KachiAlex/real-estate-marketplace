@@ -1,21 +1,37 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaHome, FaBars, FaTimes, FaSearch, FaBell, FaEnvelope } from 'react-icons/fa';
 import NotificationDropdown from '../NotificationDropdown';
 import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
+import toast from 'react-hot-toast';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const { isSearchOpen, openSearch, closeSearch, handleResultClick } = useGlobalSearch();
   
   // Hide search bar on home page since it's in the banner
   const isHomePage = location.pathname === '/';
+
+  // Quick Filters with sublinks
+  const quickFilters = {
+    'All Properties': [],
+    'For Sale': ['House', 'Apartment', 'Condo', 'Penthouse', 'Land', 'Villa', 'Townhouse'],
+    'For Rent': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Kaduna', 'Enugu', 'Aba'],
+    'Shortlet': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Calabar', 'Jos', 'Ibadan', 'Kaduna'],
+    'New Developments': [],
+    'Waterfront': [],
+    'Luxury': [],
+    'Blog': [],
+    'Diasporan Services': ['Legal Services', 'Account & Book Keeping', 'Business Office for consultation']
+  };
 
   const handleLogout = () => {
     logout();
@@ -59,17 +75,202 @@ const Header = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [openSearch]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeDropdown && !event.target.closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
   return (
     <header className="bg-brand-blue shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
-              <FaHome className="text-white text-xl" />
-            </div>
-            <span className="text-2xl font-bold text-white">Property Ark</span>
-          </Link>
+          <div className="flex items-center space-x-8">
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
+                <FaHome className="text-white text-xl" />
+              </div>
+              <span className="text-2xl font-bold text-white">Property Ark</span>
+            </Link>
+
+            {/* Navigation Menu */}
+            <nav className="hidden lg:flex items-center space-x-6">
+              {/* For Sale */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => setActiveDropdown(activeDropdown === 'For Sale' ? null : 'For Sale')}
+                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeDropdown === 'For Sale' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  }`}
+                >
+                  <span>For Sale</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${
+                      activeDropdown === 'For Sale' ? 'rotate-180' : ''
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {activeDropdown === 'For Sale' && (
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                    <div className="py-2">
+                      {quickFilters['For Sale'].map((item) => (
+                        <Link
+                          key={item}
+                          to={`/properties?type=${encodeURIComponent(item)}&status=For Sale`}
+                          onClick={() => setActiveDropdown(null)}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {item}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* For Rent */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => setActiveDropdown(activeDropdown === 'For Rent' ? null : 'For Rent')}
+                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeDropdown === 'For Rent' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  }`}
+                >
+                  <span>For Rent</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${
+                      activeDropdown === 'For Rent' ? 'rotate-180' : ''
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {activeDropdown === 'For Rent' && (
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                    <div className="py-2">
+                      {quickFilters['For Rent'].map((location) => (
+                        <Link
+                          key={location}
+                          to={`/properties?location=${encodeURIComponent(location)}&status=For Rent`}
+                          onClick={() => setActiveDropdown(null)}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {location}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Shortlet */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
+                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeDropdown === 'Shortlet' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  }`}
+                >
+                  <span>Shortlet</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${
+                      activeDropdown === 'Shortlet' ? 'rotate-180' : ''
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {activeDropdown === 'Shortlet' && (
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                    <div className="py-2">
+                      {quickFilters['Shortlet'].map((location) => (
+                        <Link
+                          key={location}
+                          to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
+                          onClick={() => setActiveDropdown(null)}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {location}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Blog */}
+              <Link
+                to="/blog"
+                className="px-3 py-2 text-sm font-medium text-white hover:text-orange-300 transition-colors"
+              >
+                Blog
+              </Link>
+
+              {/* Diasporan Services */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
+                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeDropdown === 'Diasporan Services' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  }`}
+                >
+                  <span>Diasporan Services</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${
+                      activeDropdown === 'Diasporan Services' ? 'rotate-180' : ''
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {activeDropdown === 'Diasporan Services' && (
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                    <div className="py-2">
+                      {quickFilters['Diasporan Services'].map((service) => (
+                        <button
+                          key={service}
+                          onClick={() => {
+                            toast.info(`${service} - Coming soon!`);
+                            setActiveDropdown(null);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {service}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </nav>
+          </div>
 
           {/* Search Bar - Hidden on home page */}
           {!isHomePage && (
@@ -100,11 +301,13 @@ const Header = () => {
                 {/* Notification Icons */}
                 <div className="flex items-center space-x-3">
                   <NotificationDropdown />
-                         <div className="relative">
-                           <FaEnvelope className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
-                           <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
-                         </div>
-                         <FaHeart className="text-white text-lg cursor-pointer hover:text-brand-orange transition-colors" />
+                  <Link 
+                    to="/messages"
+                    className="relative cursor-pointer"
+                  >
+                    <FaEnvelope className="text-white text-lg hover:text-brand-orange transition-colors" />
+                    <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
+                  </Link>
                 </div>
                 
               <div className="relative">

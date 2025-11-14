@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaTimes, FaBuilding, FaChartLine, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
@@ -12,7 +12,7 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
     users: []
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // all, properties, investments, users
+  const [activeTab, setActiveTab] = useState('all');
   const searchRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -54,19 +54,16 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
           users: []
         };
 
-        // Search properties
         if (activeTab === 'all' || activeTab === 'properties') {
           const propertyResults = searchProperties ? searchProperties(query, {}) : [];
-          searchResults.properties = Array.isArray(propertyResults) ? propertyResults.slice(0, 5) : []; // Limit to 5 results
+          searchResults.properties = Array.isArray(propertyResults) ? propertyResults.slice(0, 5) : [];
         }
 
-        // Search investments
         if (activeTab === 'all' || activeTab === 'investments') {
           const investmentResults = searchInvestments ? searchInvestments(query, {}) : [];
-          searchResults.investments = Array.isArray(investmentResults) ? investmentResults.slice(0, 5) : []; // Limit to 5 results
+          searchResults.investments = Array.isArray(investmentResults) ? investmentResults.slice(0, 5) : [];
         }
 
-        // Search users (mock data for now)
         if (activeTab === 'all' || activeTab === 'users') {
           const mockUsers = [
             { id: '1', name: 'John Doe', email: 'john@example.com', role: 'buyer', avatar: null },
@@ -98,19 +95,6 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
     onClose();
   };
 
-  const getResultIcon = (type) => {
-    switch (type) {
-      case 'property':
-        return <FaBuilding className="text-blue-500" />;
-      case 'investment':
-        return <FaChartLine className="text-green-500" />;
-      case 'user':
-        return <FaUser className="text-purple-500" />;
-      default:
-        return <FaSearch className="text-gray-500" />;
-    }
-  };
-
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -120,20 +104,35 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
     }).format(price);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-NG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const totalResults = (results?.properties?.length || 0) + (results?.investments?.length || 0) + (results?.users?.length || 0);
 
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20">
-      <div ref={searchRef} className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-        {/* Search Header */}
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 pointer-events-none">
+      <div 
+        className="absolute inset-0 bg-black bg-opacity-20 pointer-events-auto"
+        onClick={onClose}
+      />
+      
+      <div 
+        ref={searchRef} 
+        className="relative bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 pointer-events-auto transform transition-all duration-200 ease-out opacity-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <FaSearch className="text-gray-400" />
@@ -148,13 +147,13 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close search"
             >
               <FaTimes className="text-gray-400" />
             </button>
           </div>
         </div>
 
-        {/* Search Tabs */}
         <div className="flex border-b border-gray-200">
           {[
             { key: 'all', label: 'All', count: totalResults },
@@ -176,8 +175,7 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
           ))}
         </div>
 
-        {/* Search Results */}
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
@@ -185,7 +183,6 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
             </div>
           ) : query.trim() ? (
             <div className="p-4">
-              {/* Properties Results */}
               {(activeTab === 'all' || activeTab === 'properties') && (results?.properties?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -228,7 +225,6 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
                 </div>
               )}
 
-              {/* Investments Results */}
               {(activeTab === 'all' || activeTab === 'investments') && (results?.investments?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -276,7 +272,6 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
                 </div>
               )}
 
-              {/* Users Results */}
               {(activeTab === 'all' || activeTab === 'users') && (results?.users?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -316,7 +311,6 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
                 </div>
               )}
 
-              {/* No Results */}
               {totalResults === 0 && (
                 <div className="text-center py-8">
                   <FaSearch className="mx-auto text-gray-300 text-4xl mb-3" />
@@ -334,19 +328,14 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
           )}
         </div>
 
-        {/* Search Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-4">
-              <span>Press <kbd className="px-2 py-1 bg-white border border-gray-300 rounded">Esc</kbd> to close</span>
-            </div>
-            <div>
-              {totalResults > 0 && (
-                <span>{totalResults} result{totalResults !== 1 ? 's' : ''} found</span>
-              )}
+        {totalResults > 0 && (
+          <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>{totalResults} result{totalResults !== 1 ? 's' : ''} found</span>
+              <span className="text-xs">Press <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">Esc</kbd> to close</span>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

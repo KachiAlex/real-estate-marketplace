@@ -76,9 +76,9 @@ function App() {
                 <EscrowProvider>
                   <MortgageProvider>
                     <SidebarProvider>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
               <Header />
-              <div className="flex flex-grow w-full">
+              <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
                 <ErrorBoundary>
                 <Suspense fallback={
                   <div className="flex items-center justify-center w-full h-screen">
@@ -90,12 +90,14 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/properties" element={
-                    <div className="flex w-full">
-                      <Sidebar />
-                      <main className="flex-1 ml-64">
-                        <Properties />
-                      </main>
-                    </div>
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <Properties />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
                   } />
                   <Route path="/my-inspections" element={
                     <ProtectedRoute>
@@ -138,23 +140,27 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/property/:id" element={
-                    <div className="flex w-full">
-                      <Sidebar />
-                      <main className="flex-1 ml-64">
-                        <PropertyDetail />
-                      </main>
-                    </div>
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <PropertyDetail />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
                   } />
                   <Route path="/about" element={<About />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogDetail />} />
                   <Route path="/search" element={
-                    <div className="flex w-full">
-                      <Sidebar />
-                      <main className="flex-1 ml-64">
-                        <SearchResults />
-                      </main>
-                    </div>
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-64">
+                          <SearchResults />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
                   } />
                   
                   {/* Protected Routes with Permanent Sidebar */}
