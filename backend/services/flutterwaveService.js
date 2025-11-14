@@ -1,4 +1,4 @@
-const axios = require('axios');
+﻿const axios = require('axios');
 
 class FlutterwaveService {
   constructor() {
@@ -21,9 +21,9 @@ class FlutterwaveService {
           name: paymentData.customer.name
         },
         customizations: {
-          title: 'KIKI ESTATES',
+          title: 'PROPERTY ARK',
           description: paymentData.description,
-          logo: 'https://kikiestate.com/logo.png'
+          logo: 'https://propertyark.com/logo.png'
         }
       };
 
@@ -146,4 +146,5 @@ class FlutterwaveService {
 }
 
 module.exports = new FlutterwaveService();
+
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaTimes, FaBuilding, FaChartLine, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
@@ -66,7 +66,7 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
         if (activeTab === 'all' || activeTab === 'users') {
           const mockUsers = [
             { id: '1', name: 'John Doe', email: 'john@example.com', role: 'buyer', avatar: null },
-            { id: '2', name: 'Admin User', email: 'admin@kikiestate.com', role: 'admin', avatar: null },
+            { id: '2', name: 'Admin User', email: 'admin@propertyark.com', role: 'admin', avatar: null },
             { id: '3', name: 'Onyedikachi Akoma', email: 'onyedikachi@example.com', role: 'vendor', avatar: null }
           ];
           
@@ -349,3 +349,4 @@ const GlobalSearch = ({ isOpen, onClose, onResultClick }) => {
 };
 
 export default GlobalSearch;
+

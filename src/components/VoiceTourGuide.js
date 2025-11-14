@@ -268,7 +268,7 @@ const VoiceTourGuide = () => {
               <FaMicrophone className="text-white text-xs" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">KIKI Tour Guide</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">Property Ark Tour Guide</h3>
               <p className="text-xs text-gray-500">Step {currentTourStep + 1} of {tourSteps.length}</p>
             </div>
           </div>

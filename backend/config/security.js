@@ -1,4 +1,4 @@
-const helmet = require('helmet');
+﻿const helmet = require('helmet');
 
 // Security configuration
 const securityConfig = {
@@ -27,8 +27,8 @@ const securityConfig = {
         process.env.FRONTEND_URL,
         'http://localhost:3000',
         'http://localhost:3001',
-        'https://kikiestate.com',
-        'https://www.kikiestate.com'
+        'https://propertyark.com',
+        'https://www.propertyark.com'
       ].filter(Boolean);
 
       // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -149,4 +149,5 @@ module.exports = {
   isValidFileType,
   isValidFileSize
 };
+
 

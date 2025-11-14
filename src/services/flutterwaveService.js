@@ -1,4 +1,4 @@
-// Flutterwave Payment Integration Service
+﻿// Flutterwave Payment Integration Service
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../config/firebase';
 
@@ -41,7 +41,7 @@ class FlutterwaveService {
           name
         },
         customizations: {
-          title: 'KIKI ESTATES',
+          title: 'Property Ark',
           description: 'Property Purchase Payment',
           logo: 'https://your-logo-url.com/logo.png'
         },
@@ -295,4 +295,6 @@ class FlutterwaveService {
 const flutterwaveService = new FlutterwaveService();
 
 export default flutterwaveService;
+
+
 

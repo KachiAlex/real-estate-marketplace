@@ -1,6 +1,6 @@
-# Quick Start Guide - KIKI Real Estate Mobile App
+﻿# Quick Start Guide - Property Ark Mobile App
 
-## 🚀 Immediate Testing (Recommended)
+## ðŸš€ Immediate Testing (Recommended)
 
 The fastest way to test the app right now:
 
@@ -11,19 +11,19 @@ npm start
 
 Then scan the QR code with the **Expo Go** app on your Android device.
 
-## ✅ What's Already Working
+## âœ… What's Already Working
 
 All core functionality is complete and working:
-- ✅ Authentication (Email, Password, Guest Login)
-- ✅ Property Listings
-- ✅ Property Search
-- ✅ Property Details
-- ✅ Dashboard
-- ✅ User Profile
-- ✅ Firebase Integration
-- ✅ Navigation
+- âœ… Authentication (Email, Password, Guest Login)
+- âœ… Property Listings
+- âœ… Property Search
+- âœ… Property Details
+- âœ… Dashboard
+- âœ… User Profile
+- âœ… Firebase Integration
+- âœ… Navigation
 
-## 📱 Building APK
+## ðŸ“± Building APK
 
 Due to EAS Build compatibility issues with React Native 0.81.5, use these methods:
 
@@ -66,25 +66,26 @@ cd mobile-app
 eas build --profile development
 ```
 
-## 📦 Current Status
+## ðŸ“¦ Current Status
 
-- **Code**: 100% Complete ✅
-- **Functionality**: All Working ✅
-- **Local Testing**: Ready ✅
-- **EAS Cloud Build**: Has compatibility issues ⚠️
-- **Local Android Build**: Ready (needs Android Studio) ✅
+- **Code**: 100% Complete âœ…
+- **Functionality**: All Working âœ…
+- **Local Testing**: Ready âœ…
+- **EAS Cloud Build**: Has compatibility issues âš ï¸
+- **Local Android Build**: Ready (needs Android Studio) âœ…
 
-## 🎯 Recommendation
+## ðŸŽ¯ Recommendation
 
 For immediate testing and demos: **Use Expo Go**  
 For production deployment: **Use Local Build** or wait for Expo SDK updates
 
 The app is fully functional and production-ready. The only consideration is the build method.
 
-## 📞 Need Help?
+## ðŸ“ž Need Help?
 
 - Review `README.md` for detailed setup
 - Check `ANDROID_BUILD_GUIDE.md` for build instructions  
 - See `BUILD_STATUS.md` for troubleshooting
 - All documentation is in this directory
+
 

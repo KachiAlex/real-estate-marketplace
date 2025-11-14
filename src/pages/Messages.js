@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaEnvelope, FaSearch, FaPaperPlane, FaPhone, FaVideo, FaEllipsisV, FaReply, FaForward, FaArchive, FaTrash, FaStar, FaCircle, FaCheck, FaCheckDouble, FaImage, FaFile, FaSmile } from 'react-icons/fa';
 
@@ -22,7 +22,7 @@ const Messages = () => {
           role: "Property Agent",
           avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
           phone: "+234 801 234 5678",
-          email: "sarah@kikiestate.com",
+          email: "sarah@propertyark.com",
           isOnline: true
         },
         property: {
@@ -78,7 +78,7 @@ const Messages = () => {
           role: "Property Agent",
           avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
           phone: "+234 802 345 6789",
-          email: "michael@kikiestate.com",
+          email: "michael@propertyark.com",
           isOnline: false
         },
         property: {
@@ -87,7 +87,7 @@ const Messages = () => {
           image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop"
         },
         lastMessage: {
-          text: "The maintenance fee is ₦150,000 monthly and includes all amenities I mentioned.",
+          text: "The maintenance fee is â‚¦150,000 monthly and includes all amenities I mentioned.",
           timestamp: "2024-01-12T16:10:00Z",
           sender: "agent",
           isRead: true
@@ -105,7 +105,7 @@ const Messages = () => {
           },
           {
             id: 2,
-            text: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
+            text: "The monthly maintenance fee is â‚¦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
             timestamp: "2024-01-12T11:45:00Z",
             sender: "agent",
             isRead: true
@@ -134,7 +134,7 @@ const Messages = () => {
           role: "Property Agent",
           avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
           phone: "+234 803 456 7890",
-          email: "grace@kikiestate.com",
+          email: "grace@propertyark.com",
           isOnline: true
         },
         property: {
@@ -176,7 +176,7 @@ const Messages = () => {
           role: "Property Agent",
           avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
           phone: "+234 804 567 8901",
-          email: "david@kikiestate.com",
+          email: "david@propertyark.com",
           isOnline: false
         },
         property: {
@@ -545,3 +545,4 @@ const Messages = () => {
 };
 
 export default Messages;
+

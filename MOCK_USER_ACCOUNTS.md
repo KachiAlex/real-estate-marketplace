@@ -1,8 +1,8 @@
-# Mock User Accounts for Real Estate Marketplace
+﻿# Mock User Accounts for Real Estate Marketplace
 
 This document contains all the mock user accounts with their complete details for testing and development purposes.
 
-## 🏠 Property Owners
+## ðŸ  Property Owners
 
 ### 1. Adebayo Oluwaseun (user_001)
 - **Email**: `adebayo.oluwaseun@gmail.com`
@@ -14,8 +14,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: First Bank - 0123456789
 - **KYC Status**: Verified
 - **Properties Owned**: 
-  - Beautiful Family Home in Lekki Phase 1 (₦185,000,000)
-  - Modern Downtown Apartment in Victoria Island (₦1,200,000/month)
+  - Beautiful Family Home in Lekki Phase 1 (â‚¦185,000,000)
+  - Modern Downtown Apartment in Victoria Island (â‚¦1,200,000/month)
 
 ### 2. Chioma Nwosu (user_002)
 - **Email**: `chioma.nwosu@yahoo.com`
@@ -27,8 +27,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Guaranty Trust Bank - 9876543210
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Luxury Penthouse Suite with Ocean Views (₦520,000,000)
-  - Cozy Studio Apartment in Surulere (₦800,000/month)
+  - Luxury Penthouse Suite with Ocean Views (â‚¦520,000,000)
+  - Cozy Studio Apartment in Surulere (â‚¦800,000/month)
 
 ### 3. Emmanuel Adeyemi (user_003)
 - **Email**: `emmanuel.adeyemi@hotmail.com`
@@ -40,8 +40,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Access Bank - 1122334455
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Suburban Villa with Private Pool (₦310,000,000)
-  - Commercial Office Space in Ikeja GRA (₦3,500,000/month)
+  - Suburban Villa with Private Pool (â‚¦310,000,000)
+  - Commercial Office Space in Ikeja GRA (â‚¦3,500,000/month)
 
 ### 4. Fatima Ibrahim (user_004)
 - **Email**: `fatima.ibrahim@gmail.com`
@@ -53,8 +53,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Zenith Bank - 5566778899
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Luxury Townhouse in Ikoyi (₦450,000,000)
-  - Modern Apartment in Yaba (₦950,000/month)
+  - Luxury Townhouse in Ikoyi (â‚¦450,000,000)
+  - Modern Apartment in Yaba (â‚¦950,000/month)
 
 ### 5. Oluwaseun Akoma (user_005)
 - **Email**: `oluwaseun.akoma@gmail.com`
@@ -66,9 +66,9 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: United Bank for Africa - 9988776655
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Executive Duplex in Magodo (₦280,000,000)
-  - Luxury Apartment in Banana Island (₦380,000,000)
-  - Commercial Retail Space in Victoria Island (₦2,800,000/month)
+  - Executive Duplex in Magodo (â‚¦280,000,000)
+  - Luxury Apartment in Banana Island (â‚¦380,000,000)
+  - Commercial Retail Space in Victoria Island (â‚¦2,800,000/month)
 
 ### 6. Blessing Okafor (user_006)
 - **Email**: `blessing.okafor@outlook.com`
@@ -80,8 +80,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Fidelity Bank - 4433221100
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Family Home in Gbagada (₦150,000,000)
-  - Modern Studio in Port Harcourt (₦650,000/month)
+  - Family Home in Gbagada (â‚¦150,000,000)
+  - Modern Studio in Port Harcourt (â‚¦650,000/month)
 
 ### 7. Ibrahim Musa (user_007)
 - **Email**: `ibrahim.musa@gmail.com`
@@ -93,8 +93,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: First Bank of Nigeria - 7788990011
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Executive Villa in Port Harcourt (₦220,000,000)
-  - Medical Professional Apartment (₦750,000/month)
+  - Executive Villa in Port Harcourt (â‚¦220,000,000)
+  - Medical Professional Apartment (â‚¦750,000/month)
 
 ### 8. Grace Eze (user_008)
 - **Email**: `grace.eze@yahoo.com`
@@ -106,7 +106,7 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Guaranty Trust Bank - 2233445566
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Luxury Apartment in Ikoyi (₦420,000,000)
+  - Luxury Apartment in Ikoyi (â‚¦420,000,000)
 
 ### 9. Kemi Adebayo (user_009)
 - **Email**: `kemi.adebayo@gmail.com`
@@ -118,8 +118,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Access Bank - 6677889900
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Modern Townhouse in Lekki (₦180,000,000)
-  - Architectural Masterpiece in Gbagada (₦195,000,000)
+  - Modern Townhouse in Lekki (â‚¦180,000,000)
+  - Architectural Masterpiece in Gbagada (â‚¦195,000,000)
 
 ### 10. Tunde Ogunlana (user_010)
 - **Email**: `tunde.ogunlana@hotmail.com`
@@ -131,8 +131,8 @@ This document contains all the mock user accounts with their complete details fo
 - **Bank Details**: Zenith Bank - 8899001122
 - **KYC Status**: Verified
 - **Properties Owned**:
-  - Luxury Penthouse in Victoria Island (₦650,000,000)
-  - Cozy Studio in Surulere (₦550,000/month)
+  - Luxury Penthouse in Victoria Island (â‚¦650,000,000)
+  - Cozy Studio in Surulere (â‚¦550,000/month)
 
 ### 11. Onyedikachi Akoma (user_011)
 - **Email**: `onyedika.akoma@gmail.com`
@@ -145,19 +145,19 @@ This document contains all the mock user accounts with their complete details fo
 - **KYC Status**: Verified
 - **Location**: Abuja, FCT
 
-## 👨‍💼 Admin Account
+## ðŸ‘¨â€ðŸ’¼ Admin Account
 
 ### Admin User (admin_001)
-- **Email**: `admin@kikiestate.com`
+- **Email**: `admin@propertyark.com`
 - **Password**: `admin123`
 - **Phone**: `+234-800-000-0000`
 - **Role**: Admin
-- **Occupation**: System Administrator at Kiki Estate
+- **Occupation**: System Administrator at Property Ark
 - **Properties**: None (Admin doesn't own properties)
 - **Bank Details**: First Bank of Nigeria - 0000000000
 - **KYC Status**: Verified
 
-## 📊 Property Summary
+## ðŸ“Š Property Summary
 
 ### Total Properties: 20
 - **For Sale**: 12 properties
@@ -170,21 +170,21 @@ This document contains all the mock user accounts with their complete details fo
 - **Commercial**: 1 property
 
 ### Price Range:
-- **Sale Properties**: ₦150,000,000 - ₦650,000,000
-- **Rental Properties**: ₦550,000 - ₦3,500,000/month
+- **Sale Properties**: â‚¦150,000,000 - â‚¦650,000,000
+- **Rental Properties**: â‚¦550,000 - â‚¦3,500,000/month
 
 ### Locations:
 - **Lagos**: 17 properties
 - **Port Harcourt**: 2 properties
 - **Abuja**: 1 property
 
-## 🔐 Login Instructions
+## ðŸ” Login Instructions
 
 1. **For Regular Users**: Use any of the user emails above with password `password123`
-2. **For Admin**: Use `admin@kikiestate.com` with password `admin123`
+2. **For Admin**: Use `admin@propertyark.com` with password `admin123`
 3. **All accounts are pre-verified and ready for testing**
 
-## 💼 Business Use Cases
+## ðŸ’¼ Business Use Cases
 
 ### Property Management
 - View all properties owned by each user
@@ -201,7 +201,7 @@ This document contains all the mock user accounts with their complete details fo
 - Manage user accounts and properties
 - Monitor transaction activities
 
-## 🏢 Vendor Accounts (Property Sellers & Agents)
+## ðŸ¢ Vendor Accounts (Property Sellers & Agents)
 
 ### Vendor Account 1: Emeka Okafor (agent_001)
 - **Email**: `emeka.okafor@lagosagents.com`
@@ -255,32 +255,32 @@ This document contains all the mock user accounts with their complete details fo
 - **Experience**: 15+ years
 - **Account Status**: Active & Verified
 - **Properties Owned**: 2 properties
-  - Medical Professional Apartment (₦750,000/month)
-  - Luxury Apartment in Ikoyi (₦420,000,000)
+  - Medical Professional Apartment (â‚¦750,000/month)
+  - Luxury Apartment in Ikoyi (â‚¦420,000,000)
 - **Bank Details**: United Bank for Africa - 4444444444
 - **KYC Status**: Verified
 - **Access**: Full vendor dashboard access, manages property listings, receives inquiries
 
-## 📊 Property to Vendor Mapping
+## ðŸ“Š Property to Vendor Mapping
 
 ### Properties Linked to Vendor Accounts:
 
 **Aisha Mohammed (owner_001)** owns and manages:
 1. **Medical Professional Apartment** (prop_016)
    - Type: Apartment (2-bedroom)
-   - Price: ₦750,000/month
+   - Price: â‚¦750,000/month
    - Location: Yaba, Lagos
    - Status: For Rent
    
 2. **Luxury Apartment in Ikoyi** (prop_016 - Note: This appears to be a duplicate reference)
    - Type: Apartment (3-bedroom)
-   - Price: ₦420,000,000
+   - Price: â‚¦420,000,000
    - Location: Ikoyi, Lagos
    - Status: For Sale
 
 **Note**: The property mapping in the mock data shows some properties are linked to regular users (user_004, user_008, etc.) who should be converted to vendor accounts if you want them to manage properties through the vendor dashboard.
 
-## 🔐 Vendor Login Instructions
+## ðŸ” Vendor Login Instructions
 
 ### To Access Vendor Dashboard:
 
@@ -306,10 +306,11 @@ To allow regular users (like Oluwaseun Akoma, Fatima Ibrahim, etc.) to access th
 2. Add `vendorData` object to their profile
 3. They will then have access to `/vendor/dashboard`
 
-## 📱 Contact Information
+## ðŸ“± Contact Information
 
 All mock users have realistic Nigerian phone numbers and email addresses that can be used for testing SMS notifications and email communications.
 
 ---
 
 **Note**: These are mock accounts for development and testing purposes only. Do not use these credentials in production environments.
+

@@ -1,40 +1,40 @@
-# KIKI AI Assistant Tour Feature
+﻿# Property Ark AI Assistant Tour Feature
 
 ## Overview
 
-The KIKI AI Assistant now includes a comprehensive guided tour system that allows users to explore the platform step-by-step. The tour feature provides interactive guidance, page navigation, and educational content to help users understand the platform's capabilities.
+The Property Ark AI Assistant now includes a comprehensive guided tour system that allows users to explore the platform step-by-step. The tour feature provides interactive guidance, page navigation, and educational content to help users understand the platform's capabilities.
 
 ## Features
 
-### 🎯 Multiple Tour Types
+### ðŸŽ¯ Multiple Tour Types
 - **New User Tour**: Perfect for first-time users to get familiar with the platform
 - **Vendor Tour**: Learn how to list and manage properties effectively  
 - **Buyer Tour**: Discover how to find and purchase properties
 
-### 🚀 Interactive Navigation
+### ðŸš€ Interactive Navigation
 - **Page Navigation**: Tours automatically navigate between different pages
 - **Element Highlighting**: Visual highlighting of important UI elements
 - **Step-by-step Guidance**: Clear instructions for each step
 - **Progress Tracking**: Visual progress bar and step counter
 
-### 🎨 User Experience
+### ðŸŽ¨ User Experience
 - **Responsive Design**: Works on desktop and mobile devices
-- **Voice Integration**: Tours work with KIKI's voice features
+- **Voice Integration**: Tours work with Property Ark's voice features
 - **Tour Persistence**: Completed tours are remembered
 - **Skip Option**: Users can skip tours at any time
 
-### 🎤 Voice Activation Features
-- **Audible Instructions**: KIKI speaks each tour step clearly
+### ðŸŽ¤ Voice Activation Features
+- **Audible Instructions**: Property Ark speaks each tour step clearly
 - **Voice Commands**: Navigate tours hands-free using voice commands
 - **Female Voice**: Uses a friendly female voice for better user experience
 - **Voice Controls**: Toggle voice on/off and start/stop voice recognition
-- **Real-time Feedback**: Visual indicators show when KIKI is speaking or listening
+- **Real-time Feedback**: Visual indicators show when Property Ark is speaking or listening
 
 ## How to Use
 
 ### Starting a Tour
 
-1. **Via KIKI Assistant**: Click the KIKI button and select "Take a Guided Tour"
+1. **Via Property Ark Assistant**: Click the Property Ark button and select "Take a Guided Tour"
 2. **Tour Selector**: Choose from available tours based on your role
 3. **Direct Navigation**: Tours automatically navigate between pages
 
@@ -107,7 +107,7 @@ Add `data-tour="element-id"` attributes to elements you want to highlight:
 - Property browsing
 - Investment opportunities
 - Dashboard overview
-- KIKI assistant introduction
+- Property Ark assistant introduction
 
 ### Vendor Tour
 - Vendor dashboard introduction
@@ -150,7 +150,7 @@ Tours use Tailwind CSS classes and can be customized by modifying:
 
 ## Integration Points
 
-### KIKI AI Assistant
+### Property Ark AI Assistant
 - Tour suggestions in quick actions
 - Tour selector modal
 - Voice integration for tour guidance
@@ -239,4 +239,5 @@ Enable debug mode by adding `console.log` statements in tour components to track
 
 ## Conclusion
 
-The KIKI AI Assistant tour feature provides an engaging and educational way for users to explore the platform. With multiple tour types, interactive navigation, and comprehensive guidance, users can quickly understand and utilize all platform features effectively.
+The Property Ark AI Assistant tour feature provides an engaging and educational way for users to explore the platform. With multiple tour types, interactive navigation, and comprehensive guidance, users can quickly understand and utilize all platform features effectively.
+

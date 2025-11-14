@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const TourContext = createContext();
@@ -46,8 +46,8 @@ export const TourProvider = ({ children }) => {
       steps: [
         {
           id: 'welcome',
-          title: 'Welcome to KIKI ESTATES!',
-          content: 'Hi there! I\'m KIKI, your friendly AI assistant. I\'m so excited to show you around our amazing platform! Let me take you on a comprehensive tour where you\'ll discover all the wonderful features we have to offer.',
+          title: 'Welcome to Property Ark!',
+          content: 'Hi there! I\'m your Property Ark AI assistant. I\'m so excited to show you around our amazing platform! Let me take you on a comprehensive tour where you\'ll discover all the wonderful features we have to offer.',
           target: null,
           action: null,
           position: 'center'
@@ -181,10 +181,10 @@ export const TourProvider = ({ children }) => {
           position: 'center'
         },
         {
-          id: 'kiki-help',
+          id: 'assistant-help',
           title: 'I\'m Always Here to Help!',
           content: 'Remember, I\'m always available to help you! Just click my icon to ask questions, get assistance, or take another tour. I\'m here to make your experience amazing!',
-          target: 'kiki-button',
+          target: 'assistant-button',
           action: null,
           position: 'left'
         },
@@ -206,8 +206,8 @@ export const TourProvider = ({ children }) => {
       steps: [
         {
           id: 'welcome',
-          title: 'Welcome to KIKI ESTATES!',
-          content: 'I\'m KIKI, your AI assistant. Let me show you around our platform and help you get started.',
+          title: 'Welcome to Property Ark!',
+          content: 'I\'m your Property Ark AI assistant. Let me show you around our platform and help you get started.',
           target: null,
           action: null,
           position: 'center'
@@ -277,10 +277,10 @@ export const TourProvider = ({ children }) => {
           position: 'center'
         },
         {
-          id: 'kiki-help',
+          id: 'assistant-help',
           title: 'I\'m Always Here!',
           content: 'Remember, I\'m always available to help! Just click my icon to ask questions or get assistance.',
-          target: 'kiki-button',
+          target: 'assistant-button',
           action: null,
           position: 'left'
         }
@@ -620,3 +620,5 @@ export const TourProvider = ({ children }) => {
     </TourContext.Provider>
   );
 };
+
+

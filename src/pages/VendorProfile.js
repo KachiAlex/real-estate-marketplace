@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   FaUser, 
   FaEnvelope, 
@@ -28,7 +28,7 @@ const VendorProfile = () => {
     personal: {
       firstName: 'John',
       lastName: 'Doe',
-      email: user?.email || 'john.doe@kikiestate.com', // Use login email from auth
+      email: user?.email || 'john.doe@propertyark.com', // Use login email from auth
       phone: '+234 801 234 5678',
       address: '123 Victoria Island, Lagos',
       bio: 'Experienced real estate professional with over 10 years in the luxury property market. Specializing in high-end residential and commercial properties across Lagos.',
@@ -38,7 +38,7 @@ const VendorProfile = () => {
       totalSales: 45
     },
     business: {
-      companyName: 'KIKI ESTATES',
+      companyName: 'Property Ark',
       licenseNumber: 'REA-2020-001',
       specialization: 'Luxury Residential & Commercial',
       experience: '10+ years',
@@ -46,7 +46,7 @@ const VendorProfile = () => {
       certifications: ['Real Estate License', 'Property Management', 'Investment Analysis']
     },
     social: {
-      website: 'https://kikiestate.com',
+      website: 'https://propertyark.com',
       linkedin: 'https://linkedin.com/in/johndoe',
       twitter: 'https://twitter.com/johndoe',
       instagram: 'https://instagram.com/johndoe'
@@ -479,4 +479,6 @@ const VendorProfile = () => {
 };
 
 export default VendorProfile;
+
+
 

@@ -56,6 +56,28 @@ const blogValidation = [
     .withMessage('Allow comments must be a boolean')
 ];
 
+// @desc    Test route - simple blog endpoint without validation
+// @route   GET /api/blog/test
+// @access  Public
+router.get('/test', async (req, res) => {
+  console.log('📝 Blog test route called');
+  try {
+    const result = await blogService.getBlogs({}, 'publishedAt', 'desc', 10, 0);
+    res.json({
+      success: true,
+      data: result.blogs || [],
+      total: result.total || 0
+    });
+  } catch (error) {
+    console.error('Error in blog test route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // @desc    Get all published blogs
 // @route   GET /api/blog
 // @access  Public
@@ -67,8 +89,9 @@ router.get('/', [
   query('search').optional().isString(),
   query('featured').optional().isBoolean().withMessage('Featured must be a boolean'),
   query('sort').optional().isIn(['newest', 'oldest', 'popular', 'trending']),
-  validate
+  validate()
 ], async (req, res) => {
+  console.log('📝 Blog route handler called', { path: req.path, query: req.query });
   try {
     const {
       page = 1,
@@ -133,14 +156,28 @@ router.get('/', [
       offset
     );
 
+    // Handle undefined or null result
+    if (!result || !result.blogs) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: parseInt(limit)
+        }
+      });
+    }
+
     // Format response to match MongoDB structure
-    const blogs = result.blogs.map(blog => ({
+    const blogs = (result.blogs || []).map(blog => ({
       _id: blog.id,
       id: blog.id,
       ...blog
     }));
 
-    const totalPages = Math.ceil(result.total / parseInt(limit));
+    const totalPages = Math.ceil((result.total || 0) / parseInt(limit));
 
     res.json({
       success: true,
@@ -195,7 +232,7 @@ router.get('/featured', async (req, res) => {
 // @access  Public
 router.get('/:slug', [
   param('slug').isSlug().withMessage('Invalid slug'),
-  validate
+  validate()
 ], async (req, res) => {
   try {
     const blog = await blogService.getBlogBySlug(req.params.slug);
@@ -239,7 +276,7 @@ router.get('/:slug', [
 router.get('/:slug/related', [
   param('slug').isSlug().withMessage('Invalid slug'),
   query('limit').optional().isInt({ min: 1, max: 10 }).withMessage('Limit must be between 1 and 10'),
-  validate
+  validate()
 ], async (req, res) => {
   try {
     const { limit = 4 } = req.query;
@@ -346,7 +383,7 @@ router.post('/:slug/comments', [
     .trim()
     .isLength({ min: 10, max: 1000 })
     .withMessage('Comment must be between 10 and 1000 characters'),
-  validate
+  validate()
 ], async (req, res) => {
   try {
     const blog = await blogService.getBlogBySlug(req.params.slug);

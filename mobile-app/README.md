@@ -1,17 +1,17 @@
-# KIKI Real Estate Mobile App
+﻿# Property Ark Mobile App
 
-React Native mobile application for the KIKI Real Estate marketplace, built with Expo.
+React Native mobile application for the Property Ark marketplace, built with Expo.
 
 ## Features
 
-- 🔐 Firebase Authentication (Email/Password & Guest Login)
-- 🏠 Property Listings & Search
-- 📱 Property Details & Gallery
-- 💰 Investment Tracking
-- 🏦 Mortgage Management
-- 👤 User Profile & Settings
-- 🔔 Push Notifications (Coming Soon)
-- 📍 Location Services
+- ðŸ” Firebase Authentication (Email/Password & Guest Login)
+- ðŸ  Property Listings & Search
+- ðŸ“± Property Details & Gallery
+- ðŸ’° Investment Tracking
+- ðŸ¦ Mortgage Management
+- ðŸ‘¤ User Profile & Settings
+- ðŸ”” Push Notifications (Coming Soon)
+- ðŸ“ Location Services
 
 ## Tech Stack
 
@@ -80,26 +80,26 @@ eas build -p android --profile production
 
 ```
 mobile-app/
-├── src/
-│   ├── screens/          # Screen components
-│   │   ├── HomeScreen.js
-│   │   ├── PropertiesScreen.js
-│   │   ├── PropertyDetailScreen.js
-│   │   ├── DashboardScreen.js
-│   │   ├── ProfileScreen.js
-│   │   ├── LoginScreen.js
-│   │   ├── RegisterScreen.js
-│   │   └── SplashScreen.js
-│   ├── navigation/       # Navigation configuration
-│   │   └── AppNavigator.js
-│   ├── config/          # Configuration files
-│   │   └── firebase.js
-│   ├── utils/           # Utility functions
-│   │   └── mockData.js
-│   └── components/      # Reusable components
-├── assets/              # Images and static assets
-├── App.js              # Main app component
-└── app.json            # Expo configuration
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ screens/          # Screen components
+â”‚   â”‚   â”œâ”€â”€ HomeScreen.js
+â”‚   â”‚   â”œâ”€â”€ PropertiesScreen.js
+â”‚   â”‚   â”œâ”€â”€ PropertyDetailScreen.js
+â”‚   â”‚   â”œâ”€â”€ DashboardScreen.js
+â”‚   â”‚   â”œâ”€â”€ ProfileScreen.js
+â”‚   â”‚   â”œâ”€â”€ LoginScreen.js
+â”‚   â”‚   â”œâ”€â”€ RegisterScreen.js
+â”‚   â”‚   â””â”€â”€ SplashScreen.js
+â”‚   â”œâ”€â”€ navigation/       # Navigation configuration
+â”‚   â”‚   â””â”€â”€ AppNavigator.js
+â”‚   â”œâ”€â”€ config/          # Configuration files
+â”‚   â”‚   â””â”€â”€ firebase.js
+â”‚   â”œâ”€â”€ utils/           # Utility functions
+â”‚   â”‚   â””â”€â”€ mockData.js
+â”‚   â””â”€â”€ components/      # Reusable components
+â”œâ”€â”€ assets/              # Images and static assets
+â”œâ”€â”€ App.js              # Main app component
+â””â”€â”€ app.json            # Expo configuration
 ```
 
 ## Configuration
@@ -120,7 +120,7 @@ const firebaseConfig = {
 ### Android Configuration
 
 The app is configured in `app.json` with:
-- Package name: `com.kikirealestate.app`
+- Package name: `com.propertyark.app`
 - Permissions for location, camera, and storage
 - Orange brand color (#f97316)
 
@@ -203,5 +203,6 @@ eas build -p android --profile production
 
 ## License
 
-Copyright © 2024 KIKI Real Estate. All rights reserved.
+Copyright Â© 2024 Property Ark. All rights reserved.
+
 

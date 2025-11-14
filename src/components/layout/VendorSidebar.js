@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useVendor } from '../../contexts/VendorContext';
@@ -82,7 +82,7 @@ const VendorSidebar = () => {
             </div>
             {!isCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-gray-900">KIKI ESTATES</h1>
+                <h1 className="text-lg font-bold text-gray-900">Property Ark</h1>
                 <p className="text-xs text-gray-500">Vendor Portal</p>
               </div>
             )}
@@ -277,3 +277,5 @@ const VendorSidebar = () => {
 };
 
 export default VendorSidebar;
+
+

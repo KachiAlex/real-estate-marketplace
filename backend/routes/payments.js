@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
@@ -120,7 +120,7 @@ router.post('/initialize',
   protect,
   sanitizeInput,
   validate([
-    body('amount').isNumeric().isFloat({ min: 100 }).withMessage('Amount must be at least ₦100'),
+    body('amount').isNumeric().isFloat({ min: 100 }).withMessage('Amount must be at least â‚¦100'),
     body('paymentMethod').isIn(['flutterwave', 'paystack', 'stripe', 'bank_transfer']).withMessage('Invalid payment method'),
     body('paymentType').isIn(['property_purchase', 'investment', 'escrow', 'subscription', 'commission']).withMessage('Invalid payment type'),
     body('relatedEntity.type').isIn(['property', 'investment', 'escrow', 'subscription']).withMessage('Invalid related entity type'),
@@ -244,9 +244,9 @@ router.post('/initialize',
               success: true,
               data: {
                 bankDetails: {
-                  bankName: 'KIKI ESTATES Bank',
+                  bankName: 'PROPERTY ARK Bank',
                   accountNumber: '1234567890',
-                  accountName: 'KIKI ESTATES Escrow Account'
+                  accountName: 'PROPERTY ARK Escrow Account'
                 },
                 reference,
                 amount: amount + totalFees
@@ -386,7 +386,7 @@ router.post('/:id/verify',
             sender: null,
             type: 'payment_received',
             title: 'Payment Successful',
-            message: `Your payment of ₦${payment.amount.toLocaleString()} has been processed successfully`,
+            message: `Your payment of â‚¦${payment.amount.toLocaleString()} has been processed successfully`,
             data: {
               paymentId: payment._id,
               amount: payment.amount,
@@ -505,7 +505,7 @@ router.post('/:id/refund',
   sanitizeInput,
   validate([
     param('id').isMongoId().withMessage('Valid payment ID is required'),
-    body('amount').isNumeric().isFloat({ min: 1 }).withMessage('Refund amount must be at least ₦1'),
+    body('amount').isNumeric().isFloat({ min: 1 }).withMessage('Refund amount must be at least â‚¦1'),
     body('reason').trim().isLength({ min: 5, max: 500 }).withMessage('Reason must be between 5 and 500 characters')
   ]),
   async (req, res) => {
@@ -541,7 +541,7 @@ router.post('/:id/refund',
         sender: req.user._id,
         type: 'payment_failed',
         title: 'Payment Refunded',
-        message: `Your payment of ₦${req.body.amount.toLocaleString()} has been refunded: ${req.body.reason}`,
+        message: `Your payment of â‚¦${req.body.amount.toLocaleString()} has been refunded: ${req.body.reason}`,
         data: {
           paymentId: payment._id,
           refundAmount: req.body.amount,
@@ -683,8 +683,8 @@ router.post('/webhook/:provider',
         const notificationType = status === 'completed' ? 'payment_received' : 'payment_failed';
         const title = status === 'completed' ? 'Payment Successful' : 'Payment Failed';
         const message = status === 'completed' 
-          ? `Your payment of ₦${payment.amount.toLocaleString()} has been processed successfully`
-          : `Your payment of ₦${payment.amount.toLocaleString()} failed to process`;
+          ? `Your payment of â‚¦${payment.amount.toLocaleString()} has been processed successfully`
+          : `Your payment of â‚¦${payment.amount.toLocaleString()} failed to process`;
 
         await notificationService.createNotification({
           recipient: payment.userId,
@@ -715,3 +715,4 @@ router.post('/webhook/:provider',
 );
 
 module.exports = router; 
+

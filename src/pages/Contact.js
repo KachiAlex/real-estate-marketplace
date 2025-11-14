@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaWhatsapp, FaTelegram } from 'react-icons/fa';
 
 const Contact = () => {
@@ -35,7 +35,7 @@ const Contact = () => {
     {
       icon: FaEnvelope,
       title: 'Email',
-      details: ['info@kikiestate.com', 'support@kikiestate.com'],
+      details: ['info@propertyark.com', 'support@propertyark.com'],
       description: 'Send us an email anytime'
     },
     {
@@ -62,7 +62,7 @@ const Contact = () => {
     {
       icon: FaTelegram,
       name: 'Telegram',
-      contact: '@KikiEstateSupport',
+      contact: '@PropertyArkSupport',
       description: 'Get help through Telegram'
     }
   ];
@@ -221,7 +221,7 @@ const Contact = () => {
                     <label htmlFor="privacy" className="text-sm text-gray-600">
                       I agree to the <a href="#" className="text-brand-blue hover:underline">Privacy Policy</a> and 
                       <a href="#" className="text-brand-blue hover:underline"> Terms of Service</a>. 
-                      I consent to being contacted by KIKI ESTATES regarding my inquiry.
+                      I consent to being contacted by Property Ark regarding my inquiry.
                     </label>
                   </div>
                 </div>
@@ -269,3 +269,5 @@ const Contact = () => {
 };
 
 export default Contact;
+
+

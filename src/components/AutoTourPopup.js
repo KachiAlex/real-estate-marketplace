@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { FaPlay, FaTimes, FaRobot, FaVolumeUp } from 'react-icons/fa';
 import { useTour } from '../contexts/TourContext';
 
@@ -39,7 +39,7 @@ const AutoTourPopup = () => {
         selectedVoice = voices[0];
       }
       
-      const welcomeText = "Welcome to KIKI ESTATES! I'm KIKI, your friendly AI assistant. I'm so excited to meet you! I'd love to give you a comprehensive tour of our amazing platform. Would you like me to show you around?";
+      const welcomeText = "Welcome to Property Ark! I'm your Property Ark AI assistant. I'm so excited to meet you! I'd love to give you a comprehensive tour of our amazing platform. Would you like me to show you around?";
       
       const utterance = new SpeechSynthesisUtterance(welcomeText);
       utterance.lang = 'en-US';
@@ -94,10 +94,10 @@ const AutoTourPopup = () => {
             {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse text-xl" />}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome to KIKI ESTATES! 🏠
+            Welcome to Property Ark! ðŸ 
           </h2>
           <p className="text-gray-600">
-            I'm KIKI, your friendly AI assistant! I'm so excited to meet you and show you around our amazing platform.
+            I'm your Property Ark AI assistant! I'm so excited to meet you and show you around our amazing platform.
           </p>
         </div>
 
@@ -109,7 +109,7 @@ const AutoTourPopup = () => {
           </p>
           <div className="bg-blue-50 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>🎤 Voice-Guided Tour:</strong> I'll speak to you throughout the tour and you can use voice commands to navigate hands-free!
+              <strong>ðŸŽ¤ Voice-Guided Tour:</strong> I'll speak to you throughout the tour and you can use voice commands to navigate hands-free!
             </p>
           </div>
         </div>
@@ -135,7 +135,7 @@ const AutoTourPopup = () => {
         {/* Tour Features */}
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600">
-            <strong>✨ What you'll discover:</strong> Property search, investment opportunities, vendor features, 
+            <strong>âœ¨ What you'll discover:</strong> Property search, investment opportunities, vendor features, 
             personal dashboard, and much more!
           </p>
         </div>
@@ -145,3 +145,5 @@ const AutoTourPopup = () => {
 };
 
 export default AutoTourPopup;
+
+

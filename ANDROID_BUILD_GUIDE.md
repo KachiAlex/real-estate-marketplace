@@ -1,6 +1,6 @@
-# Android Build Guide for KIKI Real Estate Mobile App
+﻿# Android Build Guide for Property Ark Mobile App
 
-This guide provides step-by-step instructions for building and deploying the Android version of the KIKI Real Estate mobile app.
+This guide provides step-by-step instructions for building and deploying the Android version of the Property Ark mobile app.
 
 ## Prerequisites
 
@@ -185,9 +185,9 @@ Located in `app.json`:
 ```json
 {
   "expo": {
-    "name": "KIKI Real Estate",
-    "slug": "kiki-real-estate",
-    "package": "com.kikirealestate.app",
+    "name": "Property Ark",
+    "slug": "property-ark",
+    "package": "com.propertyark.app",
     "version": "1.0.0"
   }
 }
@@ -372,17 +372,17 @@ For changes requiring native code:
 
 ## Current Features
 
-✅ Firebase Authentication  
-✅ Property Listings  
-✅ Search & Filter  
-✅ Property Details  
-✅ Dashboard  
-✅ User Profile  
-✅ Guest Login  
-⏳ Push Notifications (In Progress)  
-⏳ Location Services (In Progress)  
-⏳ Offline Support (Planned)  
-⏳ Dark Mode (Planned)  
+âœ… Firebase Authentication  
+âœ… Property Listings  
+âœ… Search & Filter  
+âœ… Property Details  
+âœ… Dashboard  
+âœ… User Profile  
+âœ… Guest Login  
+â³ Push Notifications (In Progress)  
+â³ Location Services (In Progress)  
+â³ Offline Support (Planned)  
+â³ Dark Mode (Planned)  
 
 ## Next Steps
 
@@ -396,4 +396,5 @@ For changes requiring native code:
 ## Contact
 
 For issues or questions, contact the development team.
+
 

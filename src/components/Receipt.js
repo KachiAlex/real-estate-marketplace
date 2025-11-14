@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { FaCheckCircle, FaShieldAlt, FaCalendar, FaUser, FaHome, FaCreditCard, FaReceipt, FaClock, FaArrowRight, FaDownload } from 'react-icons/fa';
 
 const Receipt = ({ transaction, onClose }) => {
@@ -13,7 +13,7 @@ const Receipt = ({ transaction, onClose }) => {
   };
 
   const formatCurrency = (amount) => {
-    return `₦${amount?.toLocaleString()}`;
+    return `â‚¦${amount?.toLocaleString()}`;
   };
 
   const generateReceiptNumber = (transactionId) => {
@@ -188,16 +188,16 @@ const Receipt = ({ transaction, onClose }) => {
         <body>
           <div class="receipt-container">
             <div class="receipt-header">
-              <div class="company-logo">🏠 KIKI ESTATES</div>
+              <div class="company-logo">ðŸ  Property Ark</div>
               <div class="receipt-title">Payment Receipt</div>
               <div class="receipt-number">Receipt #${generateReceiptNumber(transaction.id)}</div>
             </div>
             
             <div class="receipt-body">
               <div class="status-badge status-${transaction.status}">
-                ${transaction.status === 'completed' ? '✅ Completed' : 
-                  transaction.status === 'pending' ? '⏳ Pending' : 
-                  transaction.status === 'in-progress' ? '🔄 In Progress' : transaction.status}
+                ${transaction.status === 'completed' ? 'âœ… Completed' : 
+                  transaction.status === 'pending' ? 'â³ Pending' : 
+                  transaction.status === 'in-progress' ? 'ðŸ”„ In Progress' : transaction.status}
               </div>
               
               <div class="info-grid">
@@ -255,7 +255,7 @@ const Receipt = ({ transaction, onClose }) => {
                 </div>
                 <div class="amount-row">
                   <span>Processing Fee:</span>
-                  <span>₦2,500</span>
+                  <span>â‚¦2,500</span>
                 </div>
                 <div class="amount-row total">
                   <span>Total Amount:</span>
@@ -264,15 +264,15 @@ const Receipt = ({ transaction, onClose }) => {
               </div>
               
               <div class="escrow-notice">
-                <h4>🔒 Escrow Protection</h4>
+                <h4>ðŸ”’ Escrow Protection</h4>
                 <p>Your payment is secured through our escrow service. Funds are held safely until all conditions are met and you approve the release to the vendor.</p>
               </div>
             </div>
             
             <div class="receipt-footer">
-              <p><strong>KIKI ESTATES</strong> - Your Trusted Real Estate Partner</p>
+              <p><strong>Property Ark</strong> - Your Trusted Real Estate Partner</p>
               <p>123 Victoria Island, Lagos, Nigeria | +234 800 123 4567</p>
-              <p>Email: support@kikiestate.com | Website: www.kikiestate.com</p>
+              <p>Email: support@propertyark.com | Website: www.propertyark.com</p>
               <div class="footer-links">
                 <a href="#">Terms of Service</a>
                 <a href="#">Privacy Policy</a>
@@ -308,7 +308,7 @@ const Receipt = ({ transaction, onClose }) => {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-8 text-center">
           <div className="flex items-center justify-center mb-4">
             <FaHome className="text-3xl mr-3" />
-            <h1 className="text-3xl font-bold">KIKI ESTATES</h1>
+            <h1 className="text-3xl font-bold">Property Ark</h1>
           </div>
           <div className="flex items-center justify-center mb-2">
             <FaReceipt className="mr-2" />
@@ -414,7 +414,7 @@ const Receipt = ({ transaction, onClose }) => {
               </div>
               <div className="flex justify-between">
                 <span>Processing Fee:</span>
-                <span className="font-semibold">₦2,500</span>
+                <span className="font-semibold">â‚¦2,500</span>
               </div>
               <div className="border-t-2 border-gray-300 pt-3 mt-3">
                 <div className="flex justify-between text-xl font-bold text-orange-600">
@@ -463,9 +463,9 @@ const Receipt = ({ transaction, onClose }) => {
 
         {/* Footer */}
         <div className="bg-gray-100 border-t px-8 py-6 text-center text-sm text-gray-600">
-          <p className="font-semibold mb-2">KIKI ESTATES - Your Trusted Real Estate Partner</p>
+          <p className="font-semibold mb-2">Property Ark - Your Trusted Real Estate Partner</p>
           <p>123 Victoria Island, Lagos, Nigeria | +234 800 123 4567</p>
-          <p>Email: support@kikiestate.com | Website: www.kikiestate.com</p>
+          <p>Email: support@propertyark.com | Website: www.propertyark.com</p>
           <p className="mt-3 text-xs">
             This is a computer-generated receipt. No signature required.
             <br />
@@ -478,3 +478,5 @@ const Receipt = ({ transaction, onClose }) => {
 };
 
 export default Receipt;
+
+

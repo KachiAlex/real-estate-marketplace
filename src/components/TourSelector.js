@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { FaPlay, FaUser, FaStore, FaHome, FaCheckCircle, FaClock, FaMicrophone, FaVolumeUp } from 'react-icons/fa';
 import { useTour } from '../contexts/TourContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,7 @@ const TourSelector = ({ onClose }) => {
 
   // Speak welcome message when component mounts
   useEffect(() => {
-    const welcomeMessage = "Hello there! Welcome to KIKI ESTATES! I'm KIKI, your friendly AI assistant. I'm so excited to show you around our platform! I can give you a wonderful guided tour that will help you discover all the amazing features we have. Please choose from the available tours below to get started. I'll be speaking to you throughout the tour, so make sure your speakers are on!";
+    const welcomeMessage = "Hello there! Welcome to Property Ark! I'm your Property Ark AI assistant. I'm so excited to show you around our platform! I can give you a wonderful guided tour that will help you discover all the amazing features we have. Please choose from the available tours below to get started. I'll be speaking to you throughout the tour, so make sure your speakers are on!";
     speakText(welcomeMessage);
   }, []);
 
@@ -164,7 +164,7 @@ const TourSelector = ({ onClose }) => {
       <div className="text-center mb-6">
         <div className="flex items-center justify-center space-x-2 mb-2">
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome to KIKI ESTATES! 🏠
+            Welcome to Property Ark! ðŸ 
           </h2>
           {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse" />}
         </div>
@@ -233,7 +233,7 @@ const TourSelector = ({ onClose }) => {
 
                 {isCompleted && (
                   <div className="mt-2 text-xs text-green-600 font-medium">
-                    ✓ Completed
+                    âœ“ Completed
                   </div>
                 )}
               </div>
@@ -264,7 +264,7 @@ const TourSelector = ({ onClose }) => {
       {/* Tour Tips */}
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-600">
-          <strong>💡 Tip:</strong> You can take multiple tours and revisit them anytime. 
+          <strong>ðŸ’¡ Tip:</strong> You can take multiple tours and revisit them anytime. 
           Each tour is designed to help you get the most out of our platform.
         </p>
       </div>
@@ -273,4 +273,6 @@ const TourSelector = ({ onClose }) => {
 };
 
 export default TourSelector;
+
+
 

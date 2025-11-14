@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTour } from '../contexts/TourContext';
 import { FaRobot, FaTimes, FaVolumeUp, FaMicrophone } from 'react-icons/fa';
@@ -21,7 +21,7 @@ const AITourGuide = () => {
   // Auto-navigation steps with dialogue
   const tourDialogue = [
     {
-      message: "Hi there! I'm KIKI, your friendly AI assistant! Welcome to KIKI ESTATES! 🏠",
+      message: "Hi there! I'm your Property Ark AI assistant! Welcome to Property Ark! 🏠",
       action: null,
       delay: 3000
     },
@@ -321,4 +321,5 @@ const AITourGuide = () => {
 };
 
 export default AITourGuide;
+
 

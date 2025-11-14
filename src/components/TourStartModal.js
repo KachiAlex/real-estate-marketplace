@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { FaPlay, FaTimes, FaVolumeUp, FaMicrophone } from 'react-icons/fa';
 
 const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
@@ -7,7 +7,7 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
 
   // Speak welcome message when component mounts
   useEffect(() => {
-    const welcomeMessage = "Welcome to KIKI ESTATES! I'm KIKI, your friendly AI assistant. I'd love to give you a guided tour of our amazing platform. The tour will be completely voice-guided, so I'll speak to you as we explore each section. You can use voice commands to navigate, and there will always be a skip button if you want to end the tour early. Would you like to start the tour?";
+    const welcomeMessage = "Welcome to Property Ark! I'm your Property Ark AI assistant. I'd love to give you a guided tour of our amazing platform. The tour will be completely voice-guided, so I'll speak to you as we explore each section. You can use voice commands to navigate, and there will always be a skip button if you want to end the tour early. Would you like to start the tour?";
     speakText(welcomeMessage);
   }, []);
 
@@ -139,8 +139,8 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
               <FaMicrophone className="text-white text-lg" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Welcome to KIKI ESTATES!</h2>
-              <p className="text-sm text-gray-600">Your AI Assistant KIKI</p>
+              <h2 className="text-xl font-bold text-gray-900">Welcome to Property Ark!</h2>
+              <p className="text-sm text-gray-600">Your Property Ark AI Assistant</p>
             </div>
           </div>
           {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse" />}
@@ -149,15 +149,15 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
         {/* Content */}
         <div className="mb-6">
           <p className="text-gray-700 mb-4">
-            I'm KIKI, your friendly AI assistant! I'd love to give you a guided tour of our amazing platform.
+            I'm your Property Ark AI assistant! I'd love to give you a guided tour of our amazing platform.
           </p>
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">🎤 Voice-Guided Tour Features:</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">ðŸŽ¤ Voice-Guided Tour Features:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Completely voice-guided experience</li>
-              <li>• Navigate with voice commands</li>
-              <li>• Skip button available anytime</li>
-              <li>• Natural, conversational guidance</li>
+              <li>â€¢ Completely voice-guided experience</li>
+              <li>â€¢ Navigate with voice commands</li>
+              <li>â€¢ Skip button available anytime</li>
+              <li>â€¢ Natural, conversational guidance</li>
             </ul>
           </div>
         </div>
@@ -189,4 +189,6 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
 };
 
 export default TourStartModal;
+
+
 

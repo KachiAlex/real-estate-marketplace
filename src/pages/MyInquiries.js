@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaQuestionCircle, FaPhone, FaEnvelope, FaCalendar, FaMapMarkerAlt, FaBed, FaBath, FaRuler, FaEye, FaReply, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaShoppingCart } from 'react-icons/fa';
@@ -107,7 +107,7 @@ const MyInquiries = () => {
         agent: {
           name: "Sarah Johnson",
           phone: "+234 801 234 5678",
-          email: "sarah@kikiestate.com",
+          email: "sarah@propertyark.com",
           avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
@@ -137,13 +137,13 @@ const MyInquiries = () => {
         agent: {
           name: "Michael Adebayo",
           phone: "+234 802 345 6789",
-          email: "michael@kikiestate.com",
+          email: "michael@propertyark.com",
           avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
           {
             id: 1,
-            message: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
+            message: "The monthly maintenance fee is â‚¦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
             date: "2024-01-12T11:45:00Z",
             from: "agent"
           },
@@ -179,7 +179,7 @@ const MyInquiries = () => {
         agent: {
           name: "Grace Okafor",
           phone: "+234 803 456 7890",
-          email: "grace@kikiestate.com",
+          email: "grace@propertyark.com",
           avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
         },
         responses: [
@@ -209,7 +209,7 @@ const MyInquiries = () => {
         agent: {
           name: "David Okonkwo",
           phone: "+234 804 567 8901",
-          email: "david@kikiestate.com",
+          email: "david@propertyark.com",
           avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
         },
         responses: []
@@ -447,12 +447,12 @@ const MyInquiries = () => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <FaRuler />
-                        <span>{inquiry.property.area}m²</span>
+                        <span>{inquiry.property.area}mÂ²</span>
                       </div>
                     </div>
                     <div className="mt-2">
                       <span className="text-xl font-bold text-gray-900">
-                        ₦{inquiry.property.price.toLocaleString()}
+                        â‚¦{inquiry.property.price.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -496,7 +496,7 @@ const MyInquiries = () => {
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - ₦{inquiry.property.price.toLocaleString()}
+                        Buy Property - â‚¦{inquiry.property.price.toLocaleString()}
                       </button>
                       <button 
                         onClick={() => handleScheduleViewing(inquiry.property)}
@@ -629,3 +629,4 @@ const MyInquiries = () => {
 };
 
 export default MyInquiries;
+

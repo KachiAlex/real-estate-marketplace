@@ -41,6 +41,10 @@ const convertTimestamps = (doc) => {
 const getBlogs = async (filters = {}, sortBy = 'publishedAt', sortOrder = 'desc', limit = 10, offset = 0) => {
   try {
     const db = getFirestore();
+    if (!db) {
+      console.error('Firestore not initialized');
+      return { blogs: [], total: 0, hasMore: false };
+    }
     let query = db.collection(COLLECTION);
     
     // Apply filters
@@ -134,7 +138,8 @@ const getBlogs = async (filters = {}, sortBy = 'publishedAt', sortOrder = 'desc'
     };
   } catch (error) {
     console.error('Error fetching blogs from Firestore:', error);
-    throw error;
+    // Return empty result instead of throwing to prevent server crashes
+    return { blogs: [], total: 0, hasMore: false };
   }
 };
 

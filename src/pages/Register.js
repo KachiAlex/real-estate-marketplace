@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
@@ -52,7 +52,7 @@ const Register = () => {
         answer = num1 - num2;
         break;
       case '*':
-        question = `${num1} × ${num2}`;
+        question = `${num1} Ã— ${num2}`;
         answer = num1 * num2;
         break;
     }
@@ -470,7 +470,7 @@ const Register = () => {
                   className="px-3 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl transition-colors"
                   title="Generate new question"
                 >
-                  🔄
+                  ðŸ”„
                 </button>
               </div>
               <input
@@ -727,11 +727,11 @@ const Register = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <h4 className="font-semibold text-blue-900 mb-2">Vendor Benefits:</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• List unlimited properties</li>
-                    <li>• Access to buyer leads</li>
-                    <li>• Secure escrow payments</li>
-                    <li>• Professional support</li>
-                    <li>• Marketing tools</li>
+                    <li>â€¢ List unlimited properties</li>
+                    <li>â€¢ Access to buyer leads</li>
+                    <li>â€¢ Secure escrow payments</li>
+                    <li>â€¢ Professional support</li>
+                    <li>â€¢ Marketing tools</li>
                   </ul>
                 </div>
               </div>
@@ -830,12 +830,12 @@ const Register = () => {
                 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h4>
-                  <p>By accessing and using KIKI ESTATES, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                  <p>By accessing and using Property Ark, you accept and agree to be bound by the terms and provision of this agreement.</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">2. Use License</h4>
-                  <p>Permission is granted to temporarily use KIKI ESTATES for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
+                  <p>Permission is granted to temporarily use Property Ark for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
                 </div>
 
                 <div>
@@ -855,7 +855,7 @@ const Register = () => {
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">6. Limitation of Liability</h4>
-                  <p>In no event shall KIKI ESTATES, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
+                  <p>In no event shall Property Ark, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages.</p>
                 </div>
 
                 <div>
@@ -935,7 +935,7 @@ const Register = () => {
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">7. Contact Us</h4>
-                  <p>If you have any questions about this Privacy Policy, please contact us at privacy@kikiestate.com</p>
+                  <p>If you have any questions about this Privacy Policy, please contact us at privacy@propertyark.com</p>
                 </div>
               </div>
               
@@ -956,3 +956,5 @@ const Register = () => {
 };
 
 export default Register; 
+
+

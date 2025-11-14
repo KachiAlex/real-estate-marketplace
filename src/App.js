@@ -15,7 +15,7 @@ import Sidebar from './components/layout/Sidebar';
 import VendorSidebar from './components/layout/VendorSidebar';
 import VendorLayout from './components/layout/VendorLayout';
 import LoadingSpinner from './components/LoadingSpinner';
-import KIKI from './components/KIKI';
+import PropertyArkAssistant from './components/PropertyArkAssistant';
 import AITourGuide from './components/AITourGuide';
 import TourStartButton from './components/TourStartButton';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -443,8 +443,8 @@ function App() {
                 </ErrorBoundary>
               </div>
               
-                                {/* Global KIKI Assistant */}
-                                <KIKI />
+                                {/* Property Ark Assistant */}
+                                <PropertyArkAssistant />
 
                                 {/* Tour Start Button */}
                                 <TourStartButton />

@@ -1,5 +1,5 @@
-// Advanced KIKI AI Service - ChatGPT-like capabilities for real estate
-class KikiAI {
+﻿// Advanced Property Ark AI Service - ChatGPT-like capabilities for real estate
+class PropertyArkAI {
   constructor() {
     this.context = {
       user: null,
@@ -23,11 +23,11 @@ class KikiAI {
       
       // Price-related intents
       price: {
-        keywords: ['price', 'cost', 'expensive', 'cheap', 'budget', 'affordable', 'naira', '₦'],
+        keywords: ['price', 'cost', 'expensive', 'cheap', 'budget', 'affordable', 'naira', '\u20A6'],
         patterns: [
-          /(?:under|below|less than|max|maximum)\s+(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i,
-          /(?:between|from|to)\s+(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?\s*(?:and|to)\s+(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i,
-          /(?:budget|can afford|spend)\s+(?:is|of)?\s*(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i
+          /(?:under|below|less than|max|maximum)\s+(?:\u20A6|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i,
+          /(?:between|from|to)\s+(?:\u20A6|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?\s*(?:and|to)\s+(?:\u20A6|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i,
+          /(?:budget|can afford|spend)\s+(?:is|of)?\s*(?:\u20A6|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i
         ]
       },
       
@@ -94,9 +94,9 @@ class KikiAI {
     // Response templates for different scenarios
     this.responseTemplates = {
       greeting: [
-        "Hello! I'm KIKI, your intelligent real estate assistant. How can I help you find your perfect property today?",
-        "Hi there! I'm KIKI, ready to help you navigate the real estate market. What brings you here today?",
-        "Welcome! I'm KIKI, your AI-powered property companion. What can I assist you with today?"
+        "Hello! I'm Property Ark, your intelligent real estate assistant. How can I help you find your perfect property today?",
+        "Hi there! I'm Property Ark, ready to help you navigate the real estate market. What brings you here today?",
+        "Welcome! I'm Property Ark, your AI-powered property companion. What can I assist you with today?"
       ],
       
       propertySearch: [
@@ -164,7 +164,7 @@ class KikiAI {
     };
     
     // Extract price
-    const priceMatch = message.match(/(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i);
+    const priceMatch = message.match(/(?:â‚¦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i);
     if (priceMatch) {
       let amount = parseFloat(priceMatch[1].replace(/,/g, ''));
       const unit = priceMatch[0].toLowerCase();
@@ -379,7 +379,7 @@ class KikiAI {
         }
       };
     } else {
-      response += "\n\nTo give you the best results, could you tell me:\n• Your preferred location\n• Budget range\n• Property type\n• Number of bedrooms";
+      response += "\n\nTo give you the best results, could you tell me:\nâ€¢ Your preferred location\nâ€¢ Budget range\nâ€¢ Property type\nâ€¢ Number of bedrooms";
     }
     
     return { response, action, entities };
@@ -404,11 +404,11 @@ class KikiAI {
       response += `For ${this.formatPrice(entities.price)}, you can find:\n`;
       
       if (entities.price < 30000000) {
-        response += "• Studio and 1-bedroom apartments\n• Starter homes in developing areas\n• Great investment opportunities";
+        response += "â€¢ Studio and 1-bedroom apartments\nâ€¢ Starter homes in developing areas\nâ€¢ Great investment opportunities";
       } else if (entities.price < 80000000) {
-        response += "• 2-3 bedroom apartments\n• Townhouses and duplexes\n• Properties in good neighborhoods";
+        response += "â€¢ 2-3 bedroom apartments\nâ€¢ Townhouses and duplexes\nâ€¢ Properties in good neighborhoods";
       } else if (entities.price < 150000000) {
-        response += "• 3-4 bedroom apartments\n• Luxury condos\n• Houses in prime locations";
+        response += "â€¢ 3-4 bedroom apartments\nâ€¢ Luxury condos\nâ€¢ Houses in prime locations";
       } else {
         response += "luxury penthouses, villas and mansions, and premium properties in exclusive areas.";
       }
@@ -431,16 +431,16 @@ class KikiAI {
       response += `Great choice! ${entities.location} is a fantastic area with:\n\n`;
       
       const locationInfo = {
-        'lagos': '• Victoria Island - Business district\n• Lekki - Modern developments\n• Ikoyi - Upscale residential\n• Surulere - Affordable options',
-        'abuja': '• Maitama - Diplomatic area\n• Asokoro - Government district\n• Wuse 2 - Commercial hub\n• Gwarinpa - Family-friendly',
-        'port harcourt': '• GRA - Upscale residential\n• Trans-Amadi - Industrial area\n• Rumuola - Commercial district'
+        'lagos': 'â€¢ Victoria Island - Business district\nâ€¢ Lekki - Modern developments\nâ€¢ Ikoyi - Upscale residential\nâ€¢ Surulere - Affordable options',
+        'abuja': 'â€¢ Maitama - Diplomatic area\nâ€¢ Asokoro - Government district\nâ€¢ Wuse 2 - Commercial hub\nâ€¢ Gwarinpa - Family-friendly',
+        'port harcourt': 'â€¢ GRA - Upscale residential\nâ€¢ Trans-Amadi - Industrial area\nâ€¢ Rumuola - Commercial district'
       };
       
       const locationKey = entities.location.toLowerCase();
       if (locationInfo[locationKey]) {
         response += locationInfo[locationKey];
       } else {
-        response += "• Great property options\n• Good amenities and infrastructure\n• Growing real estate market";
+        response += "â€¢ Great property options\nâ€¢ Good amenities and infrastructure\nâ€¢ Growing real estate market";
       }
       
       response += "\n\nWould you like me to show you properties in this area?";
@@ -457,7 +457,7 @@ class KikiAI {
   }
   
   handleHelpRequest(message) {
-    const response = `I'm KIKI, your intelligent real estate assistant! I can help you with:
+    const response = `I'm Property Ark, your intelligent real estate assistant! I can help you with:
 
 Property Search
 Find properties by location, price, type
@@ -764,4 +764,9 @@ Would you like me to show you your saved properties or help you manage them?`;
   }
 }
 
-export default new KikiAI();
+export default new PropertyArkAI();
+
+
+
+
+

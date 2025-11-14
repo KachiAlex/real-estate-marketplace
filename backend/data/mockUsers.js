@@ -1,4 +1,4 @@
-// Comprehensive Mock Users Data for Real Estate Marketplace
+﻿// Comprehensive Mock Users Data for Real Estate Marketplace
 // All users have realistic Nigerian profiles with complete account details
 
 const mockUsers = [
@@ -513,7 +513,7 @@ const mockUsers = [
       id: 'admin_001',
       firstName: 'Admin',
       lastName: 'User',
-      email: 'admin@kikiestate.com',
+      email: 'admin@propertyark.com',
       phone: '+234-800-000-0000',
       password: 'admin123',
       role: 'admin',
@@ -523,7 +523,7 @@ const mockUsers = [
       dateOfBirth: '1980-01-01',
       gender: 'male',
       occupation: 'System Administrator',
-      company: 'KIKI ESTATES',
+      company: 'PROPERTY ARK',
       address: {
         street: '1 Admin Street',
         city: 'Lagos',
@@ -543,4 +543,5 @@ const mockUsers = [
 ];
 
 module.exports = mockUsers;
+
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   FaQuestionCircle, 
   FaSearch, 
@@ -25,7 +25,7 @@ const VendorHelp = () => {
     {
       id: 2,
       question: "What are the commission rates for vendors?",
-      answer: "Our commission structure is competitive and varies based on property value. For properties under ₦10M, we charge 3% commission. For properties ₦10M and above, we charge 2.5% commission. There are no hidden fees."
+      answer: "Our commission structure is competitive and varies based on property value. For properties under â‚¦10M, we charge 3% commission. For properties â‚¦10M and above, we charge 2.5% commission. There are no hidden fees."
     },
     {
       id: 3,
@@ -189,7 +189,7 @@ const VendorHelp = () => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
           <p className="text-gray-600 mb-4">Send us a detailed message</p>
-          <p className="text-brand-blue font-semibold">vendors@kikiestate.com</p>
+          <p className="text-brand-blue font-semibold">vendors@propertyark.com</p>
           <p className="text-sm text-gray-500 mt-1">Response within 24 hours</p>
         </div>
 
@@ -231,3 +231,4 @@ const VendorHelp = () => {
 };
 
 export default VendorHelp;
+

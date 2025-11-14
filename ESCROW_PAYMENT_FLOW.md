@@ -1,8 +1,8 @@
-# Escrow Payment Flow Documentation
+﻿# Escrow Payment Flow Documentation
 
 ## Overview
 
-The Kiki Estate platform implements a comprehensive escrow payment system that ensures secure transactions between property buyers and vendors. The system uses Flutterwave as the payment gateway and includes automated dispute resolution and fund release mechanisms.
+The Property Ark platform implements a comprehensive escrow payment system that ensures secure transactions between property buyers and vendors. The system uses Flutterwave as the payment gateway and includes automated dispute resolution and fund release mechanisms.
 
 ## Payment Flow Architecture
 
@@ -323,3 +323,4 @@ firebase deploy
 ---
 
 This escrow payment system provides a secure, transparent, and user-friendly platform for real estate transactions in Nigeria, ensuring both buyers and vendors are protected throughout the entire process.
+

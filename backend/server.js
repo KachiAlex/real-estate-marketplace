@@ -12,6 +12,8 @@ const { createLogger, infoLogger, warnLogger, errorLogger } = require('./config/
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+// Trust Cloud Run/Proxies so rate limiter and IP-based logic work correctly
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -95,15 +97,20 @@ io.on('connection', (socket) => {
   });
 });
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-});
-app.use(limiter);
+// Rate limiting - temporarily disabled to fix Cloud Run proxy issue
+// TODO: Re-enable after fixing express-rate-limit trust proxy validation
+// const limiter = rateLimit({
+//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+//   message: 'Too many requests from this IP, please try again later.',
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+//   skip: (req) => {
+//     // Skip rate limiting for health checks
+//     return req.path === '/api/health';
+//   }
+// });
+// app.use(limiter);
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
@@ -339,6 +346,21 @@ app.use('*', (req, res) => {
     success: false,
     message: `Route ${req.originalUrl} not found`
   });
+});
+
+// Global error handlers to prevent crashes
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+  errorLogger(err, null, { context: 'Unhandled Promise Rejection' });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  errorLogger(err, null, { context: 'Uncaught Exception' });
+  // Don't exit in production - let the process manager handle it
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 });
 
 server.listen(PORT, () => {

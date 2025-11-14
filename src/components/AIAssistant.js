@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -25,7 +25,7 @@ import {
   FaGraduationCap
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import KikiAI from '../services/kikiAI';
+import PropertyArkAI from '../services/propertyArkAI';
 import TourSelector from './TourSelector';
 
 const AIAssistant = () => {
@@ -36,7 +36,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "Hello! I'm KIKI, your AI Property Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
+      message: "Hello! I'm your Property Ark AI Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -185,7 +185,7 @@ const AIAssistant = () => {
     
     let cleaned = text
       // Remove common emojis and special characters
-      .replace(/👋|👨|👩|🎉|💰|🏠|🏢|🌍|⭐|🔍|📱|💡|📊|💬|🚀|📈|🎯|🛡️|✅|❌|⚠️|ℹ️/g, '')
+      .replace(/ðŸ‘‹|ðŸ‘¨|ðŸ‘©|ðŸŽ‰|ðŸ’°|ðŸ |ðŸ¢|ðŸŒ|â­|ðŸ”|ðŸ“±|ðŸ’¡|ðŸ“Š|ðŸ’¬|ðŸš€|ðŸ“ˆ|ðŸŽ¯|ðŸ›¡ï¸|âœ…|âŒ|âš ï¸|â„¹ï¸/g, '')
       // Remove icon placeholders and HTML-like tags
       .replace(/<[^>]*>/g, '')
       .replace(/\{icon\}/gi, '')
@@ -339,8 +339,8 @@ const AIAssistant = () => {
   const simulateAIResponse = (userMessage, action = null) => {
     setIsTyping(true);
     
-    // Set context for KIKI AI
-    KikiAI.setContext({
+    // Set context for Property Ark AI
+    PropertyArkAI.setContext({
       user: user,
       currentPage: window.location.pathname,
       lastAction: action
@@ -354,127 +354,127 @@ const AIAssistant = () => {
         switch (action) {
           // Home page actions
           case "search_lagos":
-            aiResponse = KikiAI.generateResponse("I want to search for properties in Lagos");
+            aiResponse = PropertyArkAI.generateResponse("I want to search for properties in Lagos");
             break;
           case "create_alert":
-            aiResponse = KikiAI.generateResponse("I want to create a property alert");
+            aiResponse = PropertyArkAI.generateResponse("I want to create a property alert");
             break;
           case "show_luxury":
-            aiResponse = KikiAI.generateResponse("Show me luxury properties");
+            aiResponse = PropertyArkAI.generateResponse("Show me luxury properties");
             break;
           case "help_register":
-            aiResponse = KikiAI.generateResponse("Help me register as a buyer");
+            aiResponse = PropertyArkAI.generateResponse("Help me register as a buyer");
             break;
           case "explain_platform":
-            aiResponse = KikiAI.generateResponse("How does this platform work?");
+            aiResponse = PropertyArkAI.generateResponse("How does this platform work?");
             break;
           case "show_investments":
-            aiResponse = KikiAI.generateResponse("Show me investment opportunities");
+            aiResponse = PropertyArkAI.generateResponse("Show me investment opportunities");
             break;
           
           // Vendor dashboard actions
           case "create_property_help":
-            aiResponse = KikiAI.generateResponse("Help me create a property listing");
+            aiResponse = PropertyArkAI.generateResponse("Help me create a property listing");
             break;
           case "manage_listings":
-            aiResponse = KikiAI.generateResponse("How do I manage my property listings?");
+            aiResponse = PropertyArkAI.generateResponse("How do I manage my property listings?");
             break;
           case "update_profile":
-            aiResponse = KikiAI.generateResponse("Help me update my profile");
+            aiResponse = PropertyArkAI.generateResponse("Help me update my profile");
             break;
           case "view_analytics":
-            aiResponse = KikiAI.generateResponse("Show me my performance analytics");
+            aiResponse = PropertyArkAI.generateResponse("Show me my performance analytics");
             break;
           case "pricing_help":
-            aiResponse = KikiAI.generateResponse("How should I price my property?");
+            aiResponse = PropertyArkAI.generateResponse("How should I price my property?");
             break;
           case "photo_tips":
-            aiResponse = KikiAI.generateResponse("Give me tips for better property photos");
+            aiResponse = PropertyArkAI.generateResponse("Give me tips for better property photos");
             break;
           
           // Properties page actions
           case "advanced_search":
-            aiResponse = KikiAI.generateResponse("Help me with advanced property search");
+            aiResponse = PropertyArkAI.generateResponse("Help me with advanced property search");
             break;
           case "save_search":
-            aiResponse = KikiAI.generateResponse("How do I save this search as an alert?");
+            aiResponse = PropertyArkAI.generateResponse("How do I save this search as an alert?");
             break;
           case "similar_properties":
-            aiResponse = KikiAI.generateResponse("Show me similar properties");
+            aiResponse = PropertyArkAI.generateResponse("Show me similar properties");
             break;
           case "contact_agent":
-            aiResponse = KikiAI.generateResponse("How do I contact the property agent?");
+            aiResponse = PropertyArkAI.generateResponse("How do I contact the property agent?");
             break;
           case "schedule_viewing":
-            aiResponse = KikiAI.generateResponse("Help me schedule a property viewing");
+            aiResponse = PropertyArkAI.generateResponse("Help me schedule a property viewing");
             break;
           case "property_valuation":
-            aiResponse = KikiAI.generateResponse("Can you help me get a property valuation?");
+            aiResponse = PropertyArkAI.generateResponse("Can you help me get a property valuation?");
             break;
           
           // Investment page actions
           case "investment_calc":
-            aiResponse = KikiAI.generateResponse("Help me with investment calculations");
+            aiResponse = PropertyArkAI.generateResponse("Help me with investment calculations");
             break;
           case "market_analysis":
-            aiResponse = KikiAI.generateResponse("Show me market analysis and trends");
+            aiResponse = PropertyArkAI.generateResponse("Show me market analysis and trends");
             break;
           case "create_portfolio":
-            aiResponse = KikiAI.generateResponse("Help me create an investment portfolio");
+            aiResponse = PropertyArkAI.generateResponse("Help me create an investment portfolio");
             break;
           case "investment_alerts":
-            aiResponse = KikiAI.generateResponse("Set up investment alerts");
+            aiResponse = PropertyArkAI.generateResponse("Set up investment alerts");
             break;
           case "risk_assessment":
-            aiResponse = KikiAI.generateResponse("Help me assess investment risks");
+            aiResponse = PropertyArkAI.generateResponse("Help me assess investment risks");
             break;
           case "investment_strategies":
-            aiResponse = KikiAI.generateResponse("What are good investment strategies?");
+            aiResponse = PropertyArkAI.generateResponse("What are good investment strategies?");
             break;
           
           // Blog page actions
           case "search_blog":
-            aiResponse = KikiAI.generateResponse("Help me search blog articles");
+            aiResponse = PropertyArkAI.generateResponse("Help me search blog articles");
             break;
           case "subscribe_blog":
-            aiResponse = KikiAI.generateResponse("How do I subscribe to blog updates?");
+            aiResponse = PropertyArkAI.generateResponse("How do I subscribe to blog updates?");
             break;
           case "latest_news":
-            aiResponse = KikiAI.generateResponse("Show me the latest property news");
+            aiResponse = PropertyArkAI.generateResponse("Show me the latest property news");
             break;
           case "share_article":
-            aiResponse = KikiAI.generateResponse("How do I share this article?");
+            aiResponse = PropertyArkAI.generateResponse("How do I share this article?");
             break;
           case "market_insights":
-            aiResponse = KikiAI.generateResponse("Give me market insights");
+            aiResponse = PropertyArkAI.generateResponse("Give me market insights");
             break;
           case "investment_tips":
-            aiResponse = KikiAI.generateResponse("Share property investment tips");
+            aiResponse = PropertyArkAI.generateResponse("Share property investment tips");
             break;
           
           // Dashboard actions
           case "check_alerts":
-            aiResponse = KikiAI.generateResponse("Show me my property alerts");
+            aiResponse = PropertyArkAI.generateResponse("Show me my property alerts");
             break;
           case "saved_properties":
-            aiResponse = KikiAI.generateResponse("Show me my saved properties");
+            aiResponse = PropertyArkAI.generateResponse("Show me my saved properties");
             break;
           case "recent_searches":
-            aiResponse = KikiAI.generateResponse("Show me my recent searches");
+            aiResponse = PropertyArkAI.generateResponse("Show me my recent searches");
             break;
           case "account_settings":
-            aiResponse = KikiAI.generateResponse("Help me with account settings");
+            aiResponse = PropertyArkAI.generateResponse("Help me with account settings");
             break;
           case "recommendations":
-            aiResponse = KikiAI.generateResponse("Give me personalized recommendations");
+            aiResponse = PropertyArkAI.generateResponse("Give me personalized recommendations");
             break;
           
           // General actions
           case "search_properties":
-            aiResponse = KikiAI.generateResponse("Help me find properties");
+            aiResponse = PropertyArkAI.generateResponse("Help me find properties");
             break;
           case "browse_properties":
-            aiResponse = KikiAI.generateResponse("Help me browse properties");
+            aiResponse = PropertyArkAI.generateResponse("Help me browse properties");
             break;
           case "start_tour":
             aiResponse = {
@@ -483,18 +483,18 @@ const AIAssistant = () => {
             };
             break;
           case "help_started":
-            aiResponse = KikiAI.generateResponse("Help me get started on this platform");
+            aiResponse = PropertyArkAI.generateResponse("Help me get started on this platform");
             break;
           case "help_general":
-            aiResponse = KikiAI.generateResponse("What can you help me with?");
+            aiResponse = PropertyArkAI.generateResponse("What can you help me with?");
             break;
           
           default:
-            aiResponse = KikiAI.generateResponse(userMessage);
+            aiResponse = PropertyArkAI.generateResponse(userMessage);
         }
       } else {
-        // Use advanced KIKI AI for natural language processing
-        aiResponse = KikiAI.generateResponse(userMessage);
+        // Use advanced Property Ark AI for natural language processing
+        aiResponse = PropertyArkAI.generateResponse(userMessage);
       }
       
       setIsTyping(false);
@@ -502,7 +502,7 @@ const AIAssistant = () => {
       speakText(aiResponse.response);
       maintainCapacity(userMessage, aiResponse.response);
       
-      // Handle actions from KIKI AI
+      // Handle actions from Property Ark AI
       if (aiResponse.action) {
         setTimeout(() => {
           if (aiResponse.action.type === 'navigate') {
@@ -623,7 +623,7 @@ const AIAssistant = () => {
           <button
             onClick={() => setIsOpen(true)}
             className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group animate-pulse"
-            title="Open KIKI Assistant"
+            title="Open Property Ark Assistant"
           >
             <FaRobot className="text-white text-2xl group-hover:scale-110 transition-transform" />
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -645,7 +645,7 @@ const AIAssistant = () => {
                 <FaRobot className="text-sm" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">KIKI - AI Assistant</h3>
+                <h3 className="font-semibold text-sm">Property Ark - AI Assistant</h3>
                 <p className="text-xs opacity-80">
                   {isSpeaking ? "🔊 Speaking..." : isListening ? "🎤 Listening..." : "Online • Ready to help"}
                 </p>
@@ -767,7 +767,7 @@ const AIAssistant = () => {
                     </button>
                     <label className="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
                       <input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} />
-                      🔊 Female voice
+                      ðŸ”Š Female voice
                     </label>
                     <span className="text-xs text-gray-400">Powered by AI</span>
                   </div>
@@ -803,3 +803,5 @@ const AIAssistant = () => {
 };
 
 export default AIAssistant;
+
+

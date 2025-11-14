@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -140,7 +140,7 @@ const Mortgage = () => {
     
     // Show additional info with mortgage details
     setTimeout(() => {
-      toast.info(`Loan Amount: ₦${mortgageApplication.requestedAmount.toLocaleString()} | Monthly Payment: ₦${mortgageApplication.monthlyPayment.toLocaleString()}`);
+      toast.info(`Loan Amount: â‚¦${mortgageApplication.requestedAmount.toLocaleString()} | Monthly Payment: â‚¦${mortgageApplication.monthlyPayment.toLocaleString()}`);
     }, 1500);
     
     setTimeout(() => {
@@ -351,14 +351,14 @@ const Mortgage = () => {
                 <FaHome className="text-brand-blue text-xl" />
               </div>
               <p className="text-sm text-gray-600">Estimated Price Range</p>
-              <p className="text-lg font-bold text-gray-900">₦25-45M</p>
+              <p className="text-lg font-bold text-gray-900">â‚¦25-45M</p>
             </div>
             <div className="text-center">
               <div className="p-3 bg-green-100 rounded-lg w-fit mx-auto mb-2">
                 <FaMoneyBillWave className="text-green-600 text-xl" />
               </div>
               <p className="text-sm text-gray-600">Recommended Down Payment</p>
-              <p className="text-lg font-bold text-gray-900">₦8.5M</p>
+              <p className="text-lg font-bold text-gray-900">â‚¦8.5M</p>
             </div>
             <div className="text-center">
               <div className="p-3 bg-orange-100 rounded-lg w-fit mx-auto mb-2">
@@ -487,9 +487,9 @@ const Mortgage = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="any">Price Range (Any price)</option>
-              <option value="20-30m">₦20M - ₦30M</option>
-              <option value="30-40m">₦30M - ₦40M</option>
-              <option value="40-50m">₦40M - ₦50M</option>
+              <option value="20-30m">â‚¦20M - â‚¦30M</option>
+              <option value="30-40m">â‚¦30M - â‚¦40M</option>
+              <option value="40-50m">â‚¦40M - â‚¦50M</option>
             </select>
             
             <select
@@ -576,15 +576,15 @@ const Mortgage = () => {
                     </span>
                     <span className="flex items-center">
                       <FaRuler className="mr-1" />
-                      {property.area} m²
+                      {property.area} mÂ²
                     </span>
                   </div>
                   
                   <div className="bg-gray-50 rounded-lg p-3 mb-4">
                     <p className="text-sm text-gray-600 mb-1">Estimated Monthly Payment</p>
-                    <p className="text-xl font-bold text-gray-900">₦{property.monthlyPayment.toLocaleString()}/month</p>
+                    <p className="text-xl font-bold text-gray-900">â‚¦{property.monthlyPayment.toLocaleString()}/month</p>
                     <div className="text-xs text-gray-500 mt-1">
-                      {property.downPaymentPercent}% Down Payment • {property.loanTerm} yrs Loan Term • {property.interestRate}% Interest Rate
+                      {property.downPaymentPercent}% Down Payment â€¢ {property.loanTerm} yrs Loan Term â€¢ {property.interestRate}% Interest Rate
                     </div>
                   </div>
                   
@@ -637,7 +637,7 @@ const Mortgage = () => {
           </div>
           
           <p className="text-xs text-gray-500 mt-4 text-center">
-            All properties are verified by KIKI ESTATES for mortgage eligibility.
+            All properties are verified by Property Ark for mortgage eligibility.
           </p>
         </div>
       </div>
@@ -712,20 +712,20 @@ const Mortgage = () => {
           <div className="mt-6 space-y-2">
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Loan Amount:</span>
-              <span className="font-medium">₦{loanAmount.toLocaleString()}</span>
+              <span className="font-medium">â‚¦{loanAmount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Total Interest:</span>
-              <span className="font-medium">₦{totalInterest.toLocaleString()}</span>
+              <span className="font-medium">â‚¦{totalInterest.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Total Payment:</span>
-              <span className="font-medium">₦{totalPayment.toLocaleString()}</span>
+              <span className="font-medium">â‚¦{totalPayment.toLocaleString()}</span>
             </div>
             <div className="border-t pt-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-gray-900">Monthly Payment:</span>
-                <span className="text-lg font-bold text-brand-blue">₦{Math.round(monthlyPayment).toLocaleString()} / month</span>
+                <span className="text-lg font-bold text-brand-blue">â‚¦{Math.round(monthlyPayment).toLocaleString()} / month</span>
               </div>
             </div>
           </div>
@@ -820,12 +820,12 @@ const Mortgage = () => {
               <h4 className="font-semibold text-gray-900 mb-2">Property Details</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p><strong>Property Price:</strong> ₦{selectedProperty.price.toLocaleString()}</p>
-                  <p><strong>Loan Amount:</strong> ₦{Math.round(selectedProperty.price * 0.8).toLocaleString()}</p>
+                  <p><strong>Property Price:</strong> â‚¦{selectedProperty.price.toLocaleString()}</p>
+                  <p><strong>Loan Amount:</strong> â‚¦{Math.round(selectedProperty.price * 0.8).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p><strong>Down Payment:</strong> ₦{Math.round(selectedProperty.price * 0.2).toLocaleString()}</p>
-                  <p><strong>Monthly Payment:</strong> ₦{Math.round((selectedProperty.price * 0.8 * 0.185) / 12).toLocaleString()}</p>
+                  <p><strong>Down Payment:</strong> â‚¦{Math.round(selectedProperty.price * 0.2).toLocaleString()}</p>
+                  <p><strong>Monthly Payment:</strong> â‚¦{Math.round((selectedProperty.price * 0.8 * 0.185) / 12).toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -880,7 +880,7 @@ const Mortgage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income (₦)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income (â‚¦)</label>
                     <MemoryInput
                       type="number"
                       fieldKey="mortgage.app.monthlyIncome"
@@ -924,7 +924,7 @@ const Mortgage = () => {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Business Income (₦)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Business Income (â‚¦)</label>
                     <MemoryInput
                       type="number"
                       fieldKey="mortgage.app.businessMonthlyIncome"
@@ -951,7 +951,7 @@ const Mortgage = () => {
                     <p className="text-sm text-gray-600">Uploaded files:</p>
                     <ul className="text-sm text-gray-500">
                       {bankStatements.map((file, index) => (
-                        <li key={index}>• {file.name}</li>
+                        <li key={index}>â€¢ {file.name}</li>
                       ))}
                     </ul>
                   </div>
@@ -1009,4 +1009,6 @@ const Mortgage = () => {
 };
 
 export default Mortgage;
+
+
 

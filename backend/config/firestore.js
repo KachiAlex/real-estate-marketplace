@@ -43,10 +43,15 @@ const initializeFirestore = () => {
 
 // Get Firestore instance
 const getFirestore = () => {
-  if (!initialized) {
-    return initializeFirestore();
+  try {
+    if (!initialized) {
+      return initializeFirestore();
+    }
+    return admin.firestore();
+  } catch (error) {
+    console.error('Error getting Firestore instance:', error);
+    return null;
   }
-  return admin.firestore();
 };
 
 module.exports = {

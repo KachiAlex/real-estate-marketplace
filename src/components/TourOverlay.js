@@ -260,7 +260,7 @@ const TourOverlay = () => {
     if (isTourActive && currentStep && currentStep.id === 'welcome') {
       setShowWelcome(true);
       // Speak welcome message
-      const welcomeMessage = "Hello! I'm KIKI, your AI assistant. Would you like me to give you a guided tour of our amazing real estate platform? I can show you all the wonderful features we have to offer. Just say 'yes' to start the tour, or 'no' to skip it.";
+      const welcomeMessage = "Hello! I'm your Property Ark AI assistant. Would you like me to give you a guided tour of our amazing real estate platform? I can show you all the wonderful features we have to offer. Just say 'yes' to start the tour, or 'no' to skip it.";
       setTimeout(() => {
         speakText(welcomeMessage);
       }, 500);

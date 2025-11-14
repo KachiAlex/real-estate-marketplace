@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -6,7 +6,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Ionicons name="home" size={80} color="#f97316" />
-      <Text style={styles.title}>KIKI Real Estate</Text>
+      <Text style={styles.title}>Property Ark</Text>
       <Text style={styles.subtitle}>Find Your Dream Property</Text>
       <ActivityIndicator size="large" color="#f97316" style={styles.loader} />
     </View>
@@ -35,4 +35,5 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 });
+
 

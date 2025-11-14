@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   FaUsers, 
   FaUserPlus, 
@@ -38,7 +38,7 @@ const VendorTeam = () => {
       id: 1,
       name: 'Sarah Johnson',
       role: 'Senior Agent',
-      email: 'sarah.johnson@kikiestate.com',
+      email: 'sarah.johnson@propertyark.com',
       phone: '+234 801 234 5678',
       joinDate: '2023-01-15',
       propertiesSold: 25,
@@ -50,7 +50,7 @@ const VendorTeam = () => {
       id: 2,
       name: 'Michael Brown',
       role: 'Junior Agent',
-      email: 'michael.brown@kikiestate.com',
+      email: 'michael.brown@propertyark.com',
       phone: '+234 802 345 6789',
       joinDate: '2023-06-20',
       propertiesSold: 12,
@@ -62,7 +62,7 @@ const VendorTeam = () => {
       id: 3,
       name: 'Emily Davis',
       role: 'Marketing Specialist',
-      email: 'emily.davis@kikiestate.com',
+      email: 'emily.davis@propertyark.com',
       phone: '+234 803 456 7890',
       joinDate: '2023-03-10',
       propertiesSold: 8,
@@ -74,7 +74,7 @@ const VendorTeam = () => {
       id: 4,
       name: 'David Wilson',
       role: 'Senior Agent',
-      email: 'david.wilson@kikiestate.com',
+      email: 'david.wilson@propertyark.com',
       phone: '+234 804 567 8901',
       joinDate: '2022-11-05',
       propertiesSold: 35,

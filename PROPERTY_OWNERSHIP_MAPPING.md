@@ -1,10 +1,10 @@
-# Property Ownership Mapping
+﻿# Property Ownership Mapping
 
 This document provides a comprehensive mapping of all mock properties to their respective owners, showing property traceability across accounts.
 
-## 📋 Quick Reference: Vendor Accounts
+## ðŸ“‹ Quick Reference: Vendor Accounts
 
-### 🏢 Active Vendor Accounts (Login to /vendor/dashboard)
+### ðŸ¢ Active Vendor Accounts (Login to /vendor/dashboard)
 
 | Email | Password | Role | Name | Properties |
 |-------|----------|------|------|------------|
@@ -15,7 +15,7 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 ---
 
-## 🏠 Complete Property to Owner Mapping
+## ðŸ  Complete Property to Owner Mapping
 
 ### User 001: Adebayo Oluwaseun
 - **Email**: `adebayo.oluwaseun@gmail.com`
@@ -24,8 +24,8 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_001 | Beautiful Family Home in Lekki Phase 1 | ₦185,000,000 | House | For Sale |
-| prop_002 | Modern Downtown Apartment in Victoria Island | ₦1,200,000/mo | Apartment | For Rent |
+| prop_001 | Beautiful Family Home in Lekki Phase 1 | â‚¦185,000,000 | House | For Sale |
+| prop_002 | Modern Downtown Apartment in Victoria Island | â‚¦1,200,000/mo | Apartment | For Rent |
 
 ### User 002: Chioma Nwosu
 - **Email**: `chioma.nwosu@yahoo.com`
@@ -34,8 +34,8 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_003 | Luxury Penthouse Suite with Ocean Views | ₦520,000,000 | Apartment | For Sale |
-| prop_004 | Cozy Studio Apartment in Surulere | ₦800,000/mo | Apartment | For Rent |
+| prop_003 | Luxury Penthouse Suite with Ocean Views | â‚¦520,000,000 | Apartment | For Sale |
+| prop_004 | Cozy Studio Apartment in Surulere | â‚¦800,000/mo | Apartment | For Rent |
 
 ### User 003: Emmanuel Adeyemi
 - **Email**: `emmanuel.adeyemi@hotmail.com`
@@ -44,8 +44,8 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_005 | Suburban Villa with Private Pool | ₦310,000,000 | House | For Sale |
-| prop_006 | Commercial Office Space in Ikeja GRA | ₦3,500,000/mo | Commercial | For Lease |
+| prop_005 | Suburban Villa with Private Pool | â‚¦310,000,000 | House | For Sale |
+| prop_006 | Commercial Office Space in Ikeja GRA | â‚¦3,500,000/mo | Commercial | For Lease |
 
 ### User 004: Fatima Ibrahim
 - **Email**: `fatima.ibrahim@gmail.com`
@@ -54,8 +54,8 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_007 | Luxury Townhouse in Ikoyi | ₦450,000,000 | House | For Sale |
-| prop_008 | Modern Apartment in Yaba | ₦950,000/mo | Apartment | For Rent |
+| prop_007 | Luxury Townhouse in Ikoyi | â‚¦450,000,000 | House | For Sale |
+| prop_008 | Modern Apartment in Yaba | â‚¦950,000/mo | Apartment | For Rent |
 
 ### User 005: Oluwaseun Akoma (Property Developer)
 - **Email**: `oluwaseun.akoma@gmail.com`
@@ -64,9 +64,9 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_009 | Executive Duplex in Magodo | ₦280,000,000 | House | For Sale |
-| prop_010 | Luxury Apartment in Banana Island | ₦380,000,000 | Apartment | For Sale |
-| prop_011 | Commercial Retail Space in Victoria Island | ₦2,800,000/mo | Commercial | For Lease |
+| prop_009 | Executive Duplex in Magodo | â‚¦280,000,000 | House | For Sale |
+| prop_010 | Luxury Apartment in Banana Island | â‚¦380,000,000 | Apartment | For Sale |
+| prop_011 | Commercial Retail Space in Victoria Island | â‚¦2,800,000/mo | Commercial | For Lease |
 
 ### User 006: Blessing Okafor
 - **Email**: `blessing.okafor@outlook.com`
@@ -75,7 +75,7 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_012 | Family Home in Gbagada | ₦150,000,000 | House | For Sale |
+| prop_012 | Family Home in Gbagada | â‚¦150,000,000 | House | For Sale |
 
 ### User 007: Ibrahim Musa
 - **Email**: `ibrahim.musa@gmail.com`
@@ -84,7 +84,7 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_014 | Executive Villa in Port Harcourt | ₦220,000,000 | House | For Sale |
+| prop_014 | Executive Villa in Port Harcourt | â‚¦220,000,000 | House | For Sale |
 
 **Note**: Property prop_013 (Modern Studio in Port Harcourt) is assigned to user_007 in mock data.
 
@@ -95,7 +95,7 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_015 | Medical Professional Apartment | ₦750,000/mo | Apartment | For Rent |
+| prop_015 | Medical Professional Apartment | â‚¦750,000/mo | Apartment | For Rent |
 
 ### User 009: Kemi Adebayo
 - **Email**: `kemi.adebayo@gmail.com`
@@ -104,8 +104,8 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_016 | Luxury Apartment in Ikoyi | ₦420,000,000 | Apartment | For Sale |
-| prop_017 | Modern Townhouse in Lekki | ₦180,000,000 | House | For Sale |
+| prop_016 | Luxury Apartment in Ikoyi | â‚¦420,000,000 | Apartment | For Sale |
+| prop_017 | Modern Townhouse in Lekki | â‚¦180,000,000 | House | For Sale |
 
 ### User 010: Tunde Ogunlana
 - **Email**: `tunde.ogunlana@hotmail.com`
@@ -114,13 +114,13 @@ This document provides a comprehensive mapping of all mock properties to their r
 
 | Property ID | Title | Price | Type | Status |
 |-------------|-------|-------|------|--------|
-| prop_018 | Architectural Masterpiece in Gbagada | ₦195,000,000 | House | For Sale |
-| prop_019 | Luxury Penthouse in Victoria Island | ₦650,000,000 | Apartment | For Sale |
-| prop_020 | Cozy Studio in Surulere | ₦550,000/mo | Apartment | For Rent |
+| prop_018 | Architectural Masterpiece in Gbagada | â‚¦195,000,000 | House | For Sale |
+| prop_019 | Luxury Penthouse in Victoria Island | â‚¦650,000,000 | Apartment | For Sale |
+| prop_020 | Cozy Studio in Surulere | â‚¦550,000/mo | Apartment | For Rent |
 
 ---
 
-## 🎯 Convert Regular Users to Vendor Accounts
+## ðŸŽ¯ Convert Regular Users to Vendor Accounts
 
 To enable property management features for these users, convert their accounts to vendor accounts:
 
@@ -161,7 +161,7 @@ Update their user data in `backend/data/mockUsers.js`:
 
 ---
 
-## 📊 Quick Summary
+## ðŸ“Š Quick Summary
 
 ### Total Properties: 20
 - **Houses**: 8 properties
@@ -180,7 +180,7 @@ Update their user data in `backend/data/mockUsers.js`:
 
 ---
 
-## 🔍 Account Access Summary
+## ðŸ” Account Access Summary
 
 ### Regular Users (user_001 to user_011):
 - **Login**: Use email with password `password123`
@@ -193,10 +193,11 @@ Update their user data in `backend/data/mockUsers.js`:
 - **4 vendors** total
 
 ### Admin Account (admin_001):
-- **Login**: `admin@kikiestate.com` with password `admin123`
+- **Login**: `admin@propertyark.com` with password `admin123`
 - **Access**: Admin dashboard, user management, property verification
 - **1 admin** total
 
 ---
 
 **For development and testing purposes only.**
+

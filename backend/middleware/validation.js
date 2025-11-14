@@ -1,24 +1,61 @@
 const { body, validationResult } = require('express-validator');
 
-// Validation middleware
+// Validation middleware - can be used with an array of validations or as chain-aware middleware
 exports.validate = (validations) => {
-  return async (req, res, next) => {
-    await Promise.all(validations.map(validation => validation.run(req)));
+  // If validations is an array, use it
+  if (validations && Array.isArray(validations)) {
+    return async (req, res, next) => {
+      try {
+        await Promise.all(validations.map(validation => validation.run(req)));
 
-    const errors = validationResult(req);
-    if (errors.isEmpty()) {
+        const errors = validationResult(req);
+        if (errors.isEmpty()) {
+          return next();
+        }
+
+        res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array().map(error => ({
+            field: error.param,
+            message: error.msg,
+            value: error.value
+          }))
+        });
+      } catch (error) {
+        console.error('Validation middleware error:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Validation error occurred'
+        });
+      }
+    };
+  }
+  
+  // If called without parameters, validate the chain (for use with express-validator chain)
+  // This assumes the validations were already set up in the middleware chain
+  return async (req, res, next) => {
+    try {
+      // Check for validation errors from the chain
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array().map(error => ({
+            field: error.param,
+            message: error.msg,
+            value: error.value
+          }))
+        });
+      }
+      // If no errors, continue to next middleware
+      return next();
+    } catch (error) {
+      console.error('Validation middleware error:', error);
+      // Log the error but don't crash - continue to next middleware
       return next();
     }
-
-    res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array().map(error => ({
-        field: error.param,
-        message: error.msg,
-        value: error.value
-      }))
-    });
   };
 };
 

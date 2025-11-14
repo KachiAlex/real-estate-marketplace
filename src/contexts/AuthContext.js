@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../config/firebase';
 import { 
   onAuthStateChanged, 
@@ -169,7 +169,7 @@ const mockUsers = [
     id: 'admin_001',
     firstName: 'Admin',
     lastName: 'User',
-    email: 'admin@kikiestate.com',
+    email: 'admin@propertyark.com',
     password: 'admin123',
     role: 'admin',
     roles: ['admin', 'buyer', 'vendor'],

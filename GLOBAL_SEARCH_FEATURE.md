@@ -1,7 +1,7 @@
-# Global Search Feature
+﻿# Global Search Feature
 
 ## Overview
-The Kiki Estate application now includes a comprehensive global search functionality that allows users to search across properties, investments, and users from anywhere in the application.
+The Property Ark application now includes a comprehensive global search functionality that allows users to search across properties, investments, and users from anywhere in the application.
 
 ## Features
 
@@ -41,9 +41,9 @@ The Kiki Estate application now includes a comprehensive global search functiona
 
 ### 5. **Navigation**
 - Click any result to navigate to its detail page:
-  - Properties → `/property/:id`
-  - Investments → `/investment/:id`
-  - Users → `/profile/:id`
+  - Properties â†’ `/property/:id`
+  - Investments â†’ `/investment/:id`
+  - Users â†’ `/profile/:id`
 - Automatic modal closure on result selection
 
 ## Technical Implementation
@@ -199,5 +199,6 @@ To test the global search feature:
 
 ## Conclusion
 
-The global search feature provides a powerful and intuitive way for users to find properties, investments, and users across the Kiki Estate platform. With its clean interface, keyboard shortcuts, and real-time filtering, it significantly enhances the user experience and makes navigation more efficient.
+The global search feature provides a powerful and intuitive way for users to find properties, investments, and users across the Property Ark platform. With its clean interface, keyboard shortcuts, and real-time filtering, it significantly enhances the user experience and makes navigation more efficient.
+
 

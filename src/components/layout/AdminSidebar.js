@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   FaBuilding, 
@@ -68,7 +68,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">ADMIN PANEL</p>
-            <p className="text-sm font-semibold text-gray-900">KIKI ESTATES</p>
+            <p className="text-sm font-semibold text-gray-900">Property Ark</p>
           </div>
         </div>
       </div>
@@ -121,3 +121,5 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
 };
 
 export default AdminSidebar;
+
+

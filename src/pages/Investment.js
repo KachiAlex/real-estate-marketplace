@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
@@ -228,7 +228,7 @@ const Investment = () => {
     }
 
     if (investmentAmount < selectedProject.minInvestment) {
-      toast.error(`Minimum investment is ₦${selectedProject.minInvestment.toLocaleString()}`);
+      toast.error(`Minimum investment is â‚¦${selectedProject.minInvestment.toLocaleString()}`);
       return;
     }
 
@@ -537,7 +537,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>🏠 KIKI ESTATES</h1>
+            <h1>ðŸ  Property Ark</h1>
             <h2>INVESTMENT AGREEMENT</h2>
             <p>Agreement ID: ${investment?.id}</p>
           </div>
@@ -545,7 +545,7 @@ const Investment = () => {
           <div class="section">
             <h3>1. INVESTMENT DETAILS</h3>
             <p><strong>Investment Project:</strong> ${investment?.investmentTitle}</p>
-            <p><strong>Investment Amount:</strong> ₦${investment?.amount?.toLocaleString()}</p>
+            <p><strong>Investment Amount:</strong> â‚¦${investment?.amount?.toLocaleString()}</p>
             <p><strong>Expected ROI:</strong> ${investment?.expectedROI}% per annum</p>
             <p><strong>Lock Period:</strong> ${investment?.lockPeriod} months</p>
             <p><strong>Investor:</strong> ${investment?.investor}</p>
@@ -555,7 +555,7 @@ const Investment = () => {
           <div class="section">
             <h3>2. ESCROW PROTECTION</h3>
             <div class="highlight">
-              <p><strong>🔒 FUND SECURITY:</strong> Your investment of ₦${investment?.amount?.toLocaleString()} is held in escrow until the vendor provides original property documents and deed as collateral.</p>
+              <p><strong>ðŸ”’ FUND SECURITY:</strong> Your investment of â‚¦${investment?.amount?.toLocaleString()} is held in escrow until the vendor provides original property documents and deed as collateral.</p>
             </div>
             <p><strong>Collateral Property:</strong> ${investment?.collateralProperty}</p>
             <p><strong>Document Status:</strong> ${investment?.documentStatus}</p>
@@ -585,12 +585,12 @@ const Investment = () => {
 
           <div class="section">
             <h3>5. TERMS & CONDITIONS</h3>
-            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents by KIKI ESTATES legal team.</p>
+            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents by Property Ark legal team.</p>
           </div>
 
           <div class="section">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-            <p><strong>Digital Signature:</strong> Electronically signed via KIKI ESTATES platform</p>
+            <p><strong>Digital Signature:</strong> Electronically signed via Property Ark platform</p>
           </div>
         </body>
         </html>
@@ -609,13 +609,13 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>🔒 ESCROW TERMS & CONDITIONS</h1>
+            <h1>ðŸ”’ ESCROW TERMS & CONDITIONS</h1>
             <p>Investment Escrow ID: ${investment?.id}</p>
           </div>
 
           <div class="section">
             <h3>ESCROW FUND PROTECTION</h3>
-            <p>Your investment amount of <strong>₦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed by KIKI ESTATES until all conditions are met.</p>
+            <p>Your investment amount of <strong>â‚¦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed by Property Ark until all conditions are met.</p>
           </div>
 
           <div class="section">
@@ -629,13 +629,13 @@ const Investment = () => {
           </div>
 
           <div class="warning">
-            <h4>⚠️ IMPORTANT PROTECTION NOTICE</h4>
+            <h4>âš ï¸ IMPORTANT PROTECTION NOTICE</h4>
             <p>Funds will NOT be released to the vendor until:</p>
             <ul>
-              <li>✅ Original property documents are submitted</li>
-              <li>✅ Legal verification is completed</li>
-              <li>✅ Property deed is registered as collateral</li>
-              <li>✅ All terms and conditions are met</li>
+              <li>âœ… Original property documents are submitted</li>
+              <li>âœ… Legal verification is completed</li>
+              <li>âœ… Property deed is registered as collateral</li>
+              <li>âœ… All terms and conditions are met</li>
             </ul>
           </div>
 
@@ -659,7 +659,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>⚠️ INVESTMENT RISK DISCLOSURE</h1>
+            <h1>âš ï¸ INVESTMENT RISK DISCLOSURE</h1>
             <p>Please read carefully before investing</p>
           </div>
 
@@ -800,11 +800,11 @@ const Investment = () => {
                   <div className="bg-gray-50 rounded-lg p-6">
                     <div className="mb-6">
                       <div className="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>₦100K</span>
-                        <span>₦500K</span>
-                        <span>₦1M</span>
-                        <span>₦1.5M</span>
-                        <span>₦2M</span>
+                        <span>â‚¦100K</span>
+                        <span>â‚¦500K</span>
+                        <span>â‚¦1M</span>
+                        <span>â‚¦1.5M</span>
+                        <span>â‚¦2M</span>
                       </div>
                       <input
                         type="range"
@@ -822,7 +822,7 @@ const Investment = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Your investment</label>
                         <input
                           type="text"
-                          value={`₦${investmentAmount.toLocaleString()}`}
+                          value={`â‚¦${investmentAmount.toLocaleString()}`}
                           readOnly
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                         />
@@ -836,7 +836,7 @@ const Investment = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Estimated annual returns</label>
                         <div className="text-2xl font-bold text-brand-blue">
-                          ₦{calculateReturns(investmentAmount, selectedProject.expectedROI)}
+                          â‚¦{calculateReturns(investmentAmount, selectedProject.expectedROI)}
                         </div>
                       </div>
                     </div>
@@ -935,7 +935,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Complete investment terms and conditions</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF • 2.3 MB</span>
+                      <span>PDF â€¢ 2.3 MB</span>
                     </div>
                   </div>
 
@@ -954,7 +954,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Fund protection and release conditions</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF • 1.8 MB</span>
+                      <span>PDF â€¢ 1.8 MB</span>
                     </div>
                   </div>
 
@@ -973,7 +973,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Investment risks and considerations</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF • 1.2 MB</span>
+                      <span>PDF â€¢ 1.2 MB</span>
                     </div>
                   </div>
 
@@ -1045,7 +1045,7 @@ const Investment = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-semibold text-orange-900 mb-2">Market Valuation Update</h4>
-                        <p className="text-orange-800 mb-3">Independent property valuation shows 18% appreciation since investment. Current market value: ₦95M (up from ₦80M).</p>
+                        <p className="text-orange-800 mb-3">Independent property valuation shows 18% appreciation since investment. Current market value: â‚¦95M (up from â‚¦80M).</p>
                         <div className="flex items-center text-sm text-orange-700">
                           <FaCalendar className="mr-2" />
                           <span>January 3, 2025</span>
@@ -1167,7 +1167,7 @@ const Investment = () => {
                         </div>
                         <div>
                           <span className="font-medium text-gray-700">Total Value Delivered:</span>
-                          <span className="ml-2 text-gray-900">₦2.5B+ in property value</span>
+                          <span className="ml-2 text-gray-900">â‚¦2.5B+ in property value</span>
                         </div>
                       </div>
                     </div>
@@ -1223,15 +1223,15 @@ const Investment = () => {
                       <div className="space-y-3">
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Lagos Luxury Towers</div>
-                          <div className="text-sm text-gray-600">Completed 2023 • ₦450M project</div>
+                          <div className="text-sm text-gray-600">Completed 2023 â€¢ â‚¦450M project</div>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Victoria Gardens</div>
-                          <div className="text-sm text-gray-600">Completed 2022 • ₦320M project</div>
+                          <div className="text-sm text-gray-600">Completed 2022 â€¢ â‚¦320M project</div>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Ikoyi Heights</div>
-                          <div className="text-sm text-gray-600">Completed 2021 • ₦280M project</div>
+                          <div className="text-sm text-gray-600">Completed 2021 â€¢ â‚¦280M project</div>
                         </div>
                       </div>
                     </div>
@@ -1284,7 +1284,7 @@ const Investment = () => {
                       <FaChevronDown className="text-gray-400" />
                     </button>
                     <div className="px-6 pb-4">
-                      <p className="text-gray-600">The minimum investment varies by project, typically ranging from ₦100,000 to ₦500,000. Each project listing clearly shows the minimum investment requirement. This ensures that property investments are accessible to a wide range of investors while maintaining project viability.</p>
+                      <p className="text-gray-600">The minimum investment varies by project, typically ranging from â‚¦100,000 to â‚¦500,000. Each project listing clearly shows the minimum investment requirement. This ensures that property investments are accessible to a wide range of investors while maintaining project viability.</p>
                     </div>
                   </div>
 
@@ -1365,7 +1365,7 @@ const Investment = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total invested</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalInvested.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.totalInvested.toLocaleString()}</p>
               <p className="text-sm text-green-600">+12.5% from last month</p>
             </div>
           </div>
@@ -1378,7 +1378,7 @@ const Investment = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalEarnings.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.totalEarnings.toLocaleString()}</p>
               <p className="text-sm text-green-600">+8.3% growth rate</p>
             </div>
           </div>
@@ -1404,7 +1404,7 @@ const Investment = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Projected Returns</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.projectedReturns.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.projectedReturns.toLocaleString()}</p>
               <p className="text-sm text-gray-600">projected by Q3 2025</p>
             </div>
           </div>
@@ -1468,7 +1468,7 @@ const Investment = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500">Min Investment</p>
-                  <p className="font-semibold">₦{project.minInvestment.toLocaleString()}</p>
+                  <p className="font-semibold">â‚¦{project.minInvestment.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Expected ROI</p>
@@ -1544,12 +1544,12 @@ const Investment = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-1">Your invested Capital</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.portfolio.investedCapital.toLocaleString()}</p>
-              <p className="text-sm text-green-600">+₦350,000 this quarter</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.portfolio.investedCapital.toLocaleString()}</p>
+              <p className="text-sm text-green-600">+â‚¦350,000 this quarter</p>
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-1">Current Portfolio Value</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.portfolio.currentValue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.portfolio.currentValue.toLocaleString()}</p>
               <p className="text-sm text-green-600">20.8% growth</p>
             </div>
             <div className="text-center">
@@ -1559,8 +1559,8 @@ const Investment = () => {
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-1">Available for Withdrawal</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.portfolio.availableForWithdrawal.toLocaleString()}</p>
-              <p className="text-sm text-gray-600">₦320,000 unlocking in 30 days</p>
+              <p className="text-2xl font-bold text-gray-900">â‚¦{investmentData.portfolio.availableForWithdrawal.toLocaleString()}</p>
+              <p className="text-sm text-gray-600">â‚¦320,000 unlocking in 30 days</p>
             </div>
           </div>
           
@@ -1588,7 +1588,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                ✕
+                âœ•
               </button>
             </div>
             {/* Project Summary */}
@@ -1616,16 +1616,16 @@ const Investment = () => {
             {/* Single-step form */}
             {!paymentSuccess && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount (₦)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount (â‚¦)</label>
                 <input
                   type="number"
                   value={Number.isFinite(investmentAmount) ? investmentAmount : ''}
                   onChange={(e) => setInvestmentAmount(parseInt(e.target.value) || 0)}
                   min={selectedProject.minInvestment}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder={`Minimum: ₦${selectedProject.minInvestment.toLocaleString()}`}
+                  placeholder={`Minimum: â‚¦${selectedProject.minInvestment.toLocaleString()}`}
                 />
-                <p className="text-sm text-gray-600 mt-1">Minimum investment: ₦{selectedProject.minInvestment.toLocaleString()}</p>
+                <p className="text-sm text-gray-600 mt-1">Minimum investment: â‚¦{selectedProject.minInvestment.toLocaleString()}</p>
 
                 {investmentAmount >= selectedProject.minInvestment && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
@@ -1633,11 +1633,11 @@ const Investment = () => {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-600">Your Investment</p>
-                        <p className="font-bold text-lg">₦{investmentAmount.toLocaleString()}</p>
+                        <p className="font-bold text-lg">â‚¦{investmentAmount.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Projected Annual Return</p>
-                        <p className="font-bold text-lg text-green-600">₦{calculateReturns(investmentAmount, selectedProject.expectedROI)}</p>
+                        <p className="font-bold text-lg text-green-600">â‚¦{calculateReturns(investmentAmount, selectedProject.expectedROI)}</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Ownership Percentage</p>
@@ -1645,7 +1645,7 @@ const Investment = () => {
                       </div>
                       <div>
                         <p className="text-gray-600">Escrow Fee (0.5%)</p>
-                        <p className="font-bold">₦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
+                        <p className="font-bold">â‚¦{Math.round(investmentAmount * 0.005).toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -1701,8 +1701,8 @@ const Investment = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3">
                     <div>
                       <p><strong>Reference:</strong> {paymentReference}</p>
-                      <p><strong>Amount:</strong> ₦{createdEscrow.amount.toLocaleString()}</p>
-                      <p><strong>Escrow Fee:</strong> ₦{createdEscrow.escrowFee.toLocaleString()}</p>
+                      <p><strong>Amount:</strong> â‚¦{createdEscrow.amount.toLocaleString()}</p>
+                      <p><strong>Escrow Fee:</strong> â‚¦{createdEscrow.escrowFee.toLocaleString()}</p>
                     </div>
                     <div>
                       <p><strong>Project:</strong> {createdEscrow.investmentTitle}</p>
@@ -1714,7 +1714,7 @@ const Investment = () => {
                 <div className="flex space-x-3">
                   <button
                     onClick={() => {
-                      const receiptHtml = `<!DOCTYPE html><html><body><h2>Investment Receipt</h2><p>Ref: ${paymentReference}</p><p>Project: ${createdEscrow.investmentTitle}</p><p>Amount: ₦${createdEscrow.amount.toLocaleString()}</p><p>Escrow Fee: ₦${createdEscrow.escrowFee.toLocaleString()}</p><p>Total: ₦${createdEscrow.totalAmount.toLocaleString()}</p><p>Status: ${createdEscrow.status.replaceAll('_',' ')}</p><p>Date: ${new Date(createdEscrow.createdAt).toLocaleString()}</p></body></html>`;
+                      const receiptHtml = `<!DOCTYPE html><html><body><h2>Investment Receipt</h2><p>Ref: ${paymentReference}</p><p>Project: ${createdEscrow.investmentTitle}</p><p>Amount: â‚¦${createdEscrow.amount.toLocaleString()}</p><p>Escrow Fee: â‚¦${createdEscrow.escrowFee.toLocaleString()}</p><p>Total: â‚¦${createdEscrow.totalAmount.toLocaleString()}</p><p>Status: ${createdEscrow.status.replaceAll('_',' ')}</p><p>Date: ${new Date(createdEscrow.createdAt).toLocaleString()}</p></body></html>`;
                       const blob = new Blob([receiptHtml], { type: 'text/html' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1812,7 +1812,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -1881,7 +1881,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -1930,4 +1930,6 @@ const Investment = () => {
 };
 
 export default Investment;
+
+
 

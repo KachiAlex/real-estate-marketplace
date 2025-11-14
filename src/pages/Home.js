@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -1056,7 +1056,7 @@ const Home = () => {
 
             {/* Price Range */}
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Price Range (₦)</label>
+              <label className="block text-sm font-medium mb-2">Price Range (â‚¦)</label>
               <div className="space-y-4">
                 <div className="flex space-x-2">
                   <input
@@ -1155,11 +1155,11 @@ const Home = () => {
                     />
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
-                    <span>₦0</span>
+                    <span>â‚¦0</span>
                     <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded">
-                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
+                      â‚¦{priceRange[0].toLocaleString()} - â‚¦{priceRange[1].toLocaleString()}
                     </span>
-                    <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
+                    <span>â‚¦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
                     Drag the slider handles or type any amount in the input fields above
@@ -1321,7 +1321,7 @@ const Home = () => {
                     </div>
                     <div className="absolute bottom-3 left-3">
                       <span className="text-2xl font-bold text-white">
-                        ₦{property.price.toLocaleString()}
+                        â‚¦{property.price.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1345,7 +1345,7 @@ const Home = () => {
                         </span>
                         <span className="flex items-center">
                           <FaRulerCombined className="mr-1" />
-                          {property.sqft || property.details?.sqft || property.area || 0}m²
+                          {property.sqft || property.details?.sqft || property.area || 0}mÂ²
                         </span>
                       </div>
                     </div>
@@ -1429,7 +1429,7 @@ const Home = () => {
             </div>
             
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Why Choose KIKI ESTATES for Secure Real Estate?
+              Why Choose Property Ark for Secure Real Estate?
             </h2>
             
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
@@ -1603,7 +1603,7 @@ const Home = () => {
               Ready to Invest Securely?
             </h3>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join thousands of smart investors who trust KIKI ESTATES for their real estate transactions. 
+              Join thousands of smart investors who trust Property Ark for their real estate transactions. 
               Start browsing verified properties today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1634,7 +1634,7 @@ const Home = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              KIKI ESTATES offers exclusive features to enhance your property search. 
+              Property Ark offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
@@ -1654,7 +1654,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More →
+                  Learn More â†’
                 </button>
               </div>
 
@@ -1671,7 +1671,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More →
+                  Learn More â†’
                 </button>
               </div>
 
@@ -1688,7 +1688,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More →
+                  Learn More â†’
                 </button>
               </div>
             </div>
@@ -1712,7 +1712,7 @@ const Home = () => {
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
                   <FaBuilding className="text-white text-xl" />
                 </div>
-                <span className="text-2xl font-bold">KIKI ESTATES</span>
+                <span className="text-2xl font-bold">Property Ark</span>
               </div>
               <p className="text-gray-400 mb-6">
                 Your trusted partner in finding premium properties across Nigeria. 
@@ -1770,15 +1770,15 @@ const Home = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">📞</span>
+                  <span className="text-brand-orange">ðŸ“ž</span>
                   <p className="text-gray-400">+234 800 123 4567</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">✉️</span>
-                  <p className="text-gray-400">info@kikiestate.com</p>
+                  <span className="text-brand-orange">âœ‰ï¸</span>
+                  <p className="text-gray-400">info@propertyark.com</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-brand-orange">🕒</span>
+                  <span className="text-brand-orange">ðŸ•’</span>
                   <p className="text-gray-400">Mon - Fri: 9:00 AM - 6:00 PM</p>
                 </div>
               </div>
@@ -1789,7 +1789,7 @@ const Home = () => {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 text-sm">
-                © 2024 KIKI ESTATES. All rights reserved.
+                © 2024 Property Ark. All rights reserved.
               </p>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>

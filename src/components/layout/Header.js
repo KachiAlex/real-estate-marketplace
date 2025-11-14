@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
@@ -64,7 +64,7 @@ const Header = () => {
             <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
               <FaHome className="text-white text-xl" />
             </div>
-            <span className="text-2xl font-bold text-white">KIKI ESTATES</span>
+            <span className="text-2xl font-bold text-white">Property Ark</span>
           </Link>
 
           {/* Search Bar */}

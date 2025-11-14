@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // KIKI ESTATES Brand Colors
+        // PROPERTY ARK Brand Colors
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -63,3 +63,4 @@ module.exports = {
   },
   plugins: [],
 }
+

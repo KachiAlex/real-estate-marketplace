@@ -12,7 +12,7 @@ class EmailService {
       // Create transporter based on environment
       if (process.env.NODE_ENV === 'production') {
         // Production email service (e.g., SendGrid, AWS SES)
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           service: process.env.EMAIL_SERVICE || 'gmail',
           auth: {
             user: process.env.EMAIL_USER,
@@ -21,7 +21,7 @@ class EmailService {
         });
       } else {
         // Development - use ethereal email for testing
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           host: 'smtp.ethereal.email',
           port: 587,
           secure: false,

@@ -1,4 +1,4 @@
-/* global importScripts, firebase */
+﻿/* global importScripts, firebase */
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
@@ -14,9 +14,10 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   const { title, body } = payload.notification || {};
-  const notificationTitle = title || 'KIKI ESTATES';
+  const notificationTitle = title || 'PROPERTY ARK';
   const notificationOptions = { body: body || '', icon: '/logo192.png' };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
 
 

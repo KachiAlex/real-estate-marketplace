@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaVideo, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaMapMarkerAlt, FaWhatsapp, FaTelegram } from 'react-icons/fa';
 
@@ -23,7 +23,7 @@ const HelpSupport = () => {
       questions: [
         {
           id: 1,
-          question: 'How do I create an account on KIKI ESTATES?',
+          question: 'How do I create an account on Property Ark?',
           answer: 'Creating an account is simple! Click the "Register" button on the homepage, fill in your details including name, email, and phone number. Verify your email address and you\'re ready to start browsing properties.'
         },
         {
@@ -46,12 +46,12 @@ const HelpSupport = () => {
         {
           id: 4,
           question: 'How does property investment work on your platform?',
-          answer: 'Our investment platform allows you to invest in real estate projects with as little as ₦100,000. You can choose from various projects, track your returns, and manage your portfolio through our dashboard.'
+          answer: 'Our investment platform allows you to invest in real estate projects with as little as â‚¦100,000. You can choose from various projects, track your returns, and manage your portfolio through our dashboard.'
         },
         {
           id: 5,
           question: 'What is the minimum investment amount?',
-          answer: 'The minimum investment varies by project, but typically starts from ₦100,000. Each project clearly displays the minimum investment amount and expected returns.'
+          answer: 'The minimum investment varies by project, but typically starts from â‚¦100,000. Each project clearly displays the minimum investment amount and expected returns.'
         },
         {
           id: 6,
@@ -120,7 +120,7 @@ const HelpSupport = () => {
       icon: FaEnvelope,
       title: 'Email Support',
       description: 'Get detailed help via email',
-      contact: 'support@kikiestate.com',
+      contact: 'support@propertyark.com',
       availability: '24/7 response within 2 hours',
       color: 'bg-blue-100 text-blue-600'
     },
@@ -136,7 +136,7 @@ const HelpSupport = () => {
       icon: FaTelegram,
       title: 'Telegram Support',
       description: 'Get help through Telegram',
-      contact: '@KikiEstateSupport',
+      contact: '@PropertyArkSupport',
       availability: '24/7 instant response',
       color: 'bg-blue-100 text-blue-600'
     }
@@ -195,7 +195,7 @@ const HelpSupport = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Help & Support</h1>
         <p className="text-gray-600">
-          Get the help you need to make the most of KIKI ESTATES
+          Get the help you need to make the most of Property Ark
         </p>
       </div>
 
@@ -443,4 +443,6 @@ const HelpSupport = () => {
 };
 
 export default HelpSupport;
+
+
 

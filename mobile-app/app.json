@@ -1,7 +1,7 @@
-{
+﻿{
   "expo": {
-    "name": "KIKI Real Estate",
-    "slug": "kiki-real-estate",
+    "name": "Property Ark",
+    "slug": "property-ark",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kikirealestate.app"
+      "bundleIdentifier": "com.propertyark.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#f97316"
       },
-      "package": "com.kikirealestate.app",
+      "package": "com.propertyark.app",
       "edgeToEdgeEnabled": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -46,3 +46,4 @@
     }
   }
 }
+

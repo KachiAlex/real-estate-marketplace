@@ -1,5 +1,5 @@
-{
-  "name": "kiki-real-estate-mobile",
+﻿{
+  "name": "property-ark-mobile",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -33,3 +33,4 @@
   },
   "private": true
 }
+
