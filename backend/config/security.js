@@ -10,7 +10,7 @@ const securityConfig = {
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         imgSrc: ["'self'", 'data:', 'https:', 'http:'],
-        connectSrc: ["'self'", 'https://api.cloudinary.com'],
+        connectSrc: ["'self'", 'https://api.cloudinary.com', 'https://api-kzs3jdpe7a-uc.a.run.app'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'", 'https://res.cloudinary.com'],
@@ -28,13 +28,21 @@ const securityConfig = {
         'http://localhost:3000',
         'http://localhost:3001',
         'https://propertyark.com',
-        'https://www.propertyark.com'
+        'https://www.propertyark.com',
+        'https://real-estate-marketplace-37544.web.app',
+        'https://real-estate-marketplace-37544.firebaseapp.com'
       ].filter(Boolean);
 
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      // Allow Firebase hosting domains (web.app and firebaseapp.com)
+      const isFirebaseHosting = origin && (
+        origin.includes('.web.app') || 
+        origin.includes('.firebaseapp.com')
+      );
+
+      if (allowedOrigins.indexOf(origin) !== -1 || isFirebaseHosting || process.env.NODE_ENV === 'development') {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
