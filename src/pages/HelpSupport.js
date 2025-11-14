@@ -46,12 +46,12 @@ const HelpSupport = () => {
         {
           id: 4,
           question: 'How does property investment work on your platform?',
-          answer: 'Our investment platform allows you to invest in real estate projects with as little as â‚¦100,000. You can choose from various projects, track your returns, and manage your portfolio through our dashboard.'
+          answer: 'Our investment platform allows you to invest in real estate projects with as little as ₦100,000. You can choose from various projects, track your returns, and manage your portfolio through our dashboard.'
         },
         {
           id: 5,
           question: 'What is the minimum investment amount?',
-          answer: 'The minimum investment varies by project, but typically starts from â‚¦100,000. Each project clearly displays the minimum investment amount and expected returns.'
+          answer: 'The minimum investment varies by project, but typically starts from ₦100,000. Each project clearly displays the minimum investment amount and expected returns.'
         },
         {
           id: 6,

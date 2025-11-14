@@ -28,7 +28,7 @@ import {
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import BlogSection from '../components/BlogSection';
-import HeroBannerCarousel from '../components/HeroBannerCarousel';
+import StaticHeroBanner from '../components/StaticHeroBanner';
 import SEO from '../components/SEO';
 
 // Mock properties from backend/data/mockProperties.js - transformed for frontend
@@ -424,7 +424,6 @@ const Home = () => {
   const [showMoreAmenities, setShowMoreAmenities] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertiesPerPage] = useState(9);
-  const [displayProperties, setDisplayProperties] = useState([]);
   
   // Real-time filtering
   const filteredProperties = useMemo(() => {
@@ -479,8 +478,25 @@ const Home = () => {
       property.price >= priceRange[0] && property.price <= priceRange[1]
     );
     
-    return filtered;
-  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange]);
+    // Apply sorting
+    let sorted = [...filtered];
+    switch (sortBy) {
+      case 'Price Low to High':
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case 'Price High to Low':
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case 'Newest':
+        sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        break;
+      default:
+        // Most Relevant - keep original order
+        break;
+    }
+    
+    return sorted;
+  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange, sortBy]);
 
   // Enhanced Quick Filters with sublinks
   const quickFilters = {
@@ -546,11 +562,6 @@ const Home = () => {
     setActiveDropdown(null);
   };
 
-  // Initialize filtered properties on component mount
-  useEffect(() => {
-    setDisplayProperties(mockProperties);
-  }, []);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -565,6 +576,11 @@ const Home = () => {
     };
   }, [activeDropdown]);
   
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange]);
+
   // Calculate pagination
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
@@ -689,25 +705,7 @@ const Home = () => {
   
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
-    let sorted = [...(filteredProperties.length > 0 ? filteredProperties : mockProperties)];
-    
-    switch (newSortBy) {
-      case 'Price Low to High':
-        sorted.sort((a, b) => a.price - b.price);
-        break;
-      case 'Price High to Low':
-        sorted.sort((a, b) => b.price - a.price);
-        break;
-      case 'Newest':
-        sorted.sort((a, b) => b.id - a.id);
-        break;
-      default:
-        // Most Relevant - keep original order
-        break;
-    }
-    
-    setDisplayProperties(sorted);
-    toast.success(`Sorted by ${newSortBy.toLowerCase()}`);
+    setCurrentPage(1);
   };
   
   const handlePaginationClick = (pageNumber) => {
@@ -791,9 +789,9 @@ const Home = () => {
         `
       }} />
       
-      {/* Hero Banner Carousel - Full Width */}
+      {/* Static Hero Banner with Search - Full Width */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-16">
-        <HeroBannerCarousel />
+        <StaticHeroBanner />
       </div>
 
       {/* Navigation Menu Bar */}
@@ -1056,9 +1054,9 @@ const Home = () => {
 
             {/* Price Range */}
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Price Range (â‚¦)</label>
+              <label className="block text-sm font-medium mb-2">Price Range (₦)</label>
               <div className="space-y-4">
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 items-stretch">
                   <input
                     type="text"
                     value={priceRange[0].toLocaleString()}
@@ -1083,8 +1081,8 @@ const Home = () => {
                       const clampedValue = Math.max(0, value);
                       setPriceRange([clampedValue, priceRange[1]]);
                     }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Min Price (Any amount)"
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
+                    placeholder="Min Price"
                   />
                   <input
                     type="text"
@@ -1110,8 +1108,8 @@ const Home = () => {
                       const clampedValue = Math.max(value, priceRange[0]);
                       setPriceRange([priceRange[0], clampedValue]);
                     }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Max Price (Any amount)"
+                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
+                    placeholder="Max Price"
                   />
                 </div>
                 
@@ -1155,11 +1153,11 @@ const Home = () => {
                     />
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
-                    <span>â‚¦0</span>
+                    <span>₦0</span>
                     <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded">
-                      â‚¦{priceRange[0].toLocaleString()} - â‚¦{priceRange[1].toLocaleString()}
+                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
                     </span>
-                    <span>â‚¦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
+                    <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
                     Drag the slider handles or type any amount in the input fields above
@@ -1269,26 +1267,29 @@ const Home = () => {
           <div className="flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-700">{displayProperties.length} properties found</p>
-              <div className="flex items-center space-x-2">
-                <FaSort className="text-gray-400" title="Sort properties" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  title="Sort properties by preference"
-                >
-                  <option value="Most Relevant">Most Relevant</option>
-                  <option value="Price Low to High">Price Low to High</option>
-                  <option value="Price High to Low">Price High to Low</option>
-                  <option value="Newest">Newest</option>
-                </select>
-              </div>
+              <p className="text-gray-700">{filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'} found</p>
+              {filteredProperties.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <FaSort className="text-gray-400" title="Sort properties" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    title="Sort properties by preference"
+                  >
+                    <option value="Most Relevant">Most Relevant</option>
+                    <option value="Price Low to High">Price Low to High</option>
+                    <option value="Price High to Low">Price High to Low</option>
+                    <option value="Newest">Newest</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Property Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentProperties.map((property) => (
+            {filteredProperties.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentProperties.map((property) => (
                 <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img
@@ -1321,7 +1322,7 @@ const Home = () => {
                     </div>
                     <div className="absolute bottom-3 left-3">
                       <span className="text-2xl font-bold text-white">
-                        â‚¦{property.price.toLocaleString()}
+                        ₦{property.price.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1360,10 +1361,27 @@ const Home = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="max-w-md mx-auto">
+                  <FaBuilding className="text-gray-300 text-6xl mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No properties found</h3>
+                  <p className="text-gray-500 mb-6">
+                    Try adjusting your filters or search criteria to find more properties.
+                  </p>
+                  <button
+                    onClick={handleResetAllFilters}
+                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {filteredProperties.length > 0 && totalPages > 1 && (
               <div className="flex items-center justify-center mt-8 space-x-2">
                 <button 
                   onClick={() => handlePaginationClick(currentPage - 1)}

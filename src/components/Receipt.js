@@ -13,7 +13,7 @@ const Receipt = ({ transaction, onClose }) => {
   };
 
   const formatCurrency = (amount) => {
-    return `â‚¦${amount?.toLocaleString()}`;
+    return `₦${amount?.toLocaleString()}`;
   };
 
   const generateReceiptNumber = (transactionId) => {
@@ -255,7 +255,7 @@ const Receipt = ({ transaction, onClose }) => {
                 </div>
                 <div class="amount-row">
                   <span>Processing Fee:</span>
-                  <span>â‚¦2,500</span>
+                  <span>₦2,500</span>
                 </div>
                 <div class="amount-row total">
                   <span>Total Amount:</span>
@@ -414,7 +414,7 @@ const Receipt = ({ transaction, onClose }) => {
               </div>
               <div className="flex justify-between">
                 <span>Processing Fee:</span>
-                <span className="font-semibold">â‚¦2,500</span>
+                <span className="font-semibold">₦2,500</span>
               </div>
               <div className="border-t-2 border-gray-300 pt-3 mt-3">
                 <div className="flex justify-between text-xl font-bold text-orange-600">

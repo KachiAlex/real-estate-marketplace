@@ -143,7 +143,7 @@ const MyInquiries = () => {
         responses: [
           {
             id: 1,
-            message: "The monthly maintenance fee is â‚¦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
+            message: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
             date: "2024-01-12T11:45:00Z",
             from: "agent"
           },
@@ -452,7 +452,7 @@ const MyInquiries = () => {
                     </div>
                     <div className="mt-2">
                       <span className="text-xl font-bold text-gray-900">
-                        â‚¦{inquiry.property.price.toLocaleString()}
+                        ₦{inquiry.property.price.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -496,7 +496,7 @@ const MyInquiries = () => {
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - â‚¦{inquiry.property.price.toLocaleString()}
+                        Buy Property - ₦{inquiry.property.price.toLocaleString()}
                       </button>
                       <button 
                         onClick={() => handleScheduleViewing(inquiry.property)}

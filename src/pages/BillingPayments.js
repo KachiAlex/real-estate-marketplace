@@ -346,7 +346,7 @@ const BillingPayments = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Spent</p>
-              <p className="text-2xl font-bold text-gray-900">â‚¦{billingSummary.totalSpent.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.totalSpent.toLocaleString()}</p>
               <p className="text-sm text-green-600">+12.5% this month</p>
             </div>
           </div>
@@ -359,7 +359,7 @@ const BillingPayments = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending Payments</p>
-              <p className="text-2xl font-bold text-gray-900">â‚¦{billingSummary.pendingPayments.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.pendingPayments.toLocaleString()}</p>
               <p className="text-sm text-yellow-600">2 transactions</p>
             </div>
           </div>
@@ -372,7 +372,7 @@ const BillingPayments = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Escrow Balance</p>
-              <p className="text-2xl font-bold text-gray-900">â‚¦{billingSummary.escrowBalance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.escrowBalance.toLocaleString()}</p>
               <p className="text-sm text-blue-600">3 active escrows</p>
             </div>
           </div>
@@ -433,7 +433,7 @@ const BillingPayments = () => {
                           <p className="text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">â‚¦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900">₦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
@@ -459,7 +459,7 @@ const BillingPayments = () => {
                           <p className="text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">â‚¦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900">₦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(escrow.status)}`}>
                             {escrow.status}
                           </span>
@@ -598,9 +598,9 @@ const BillingPayments = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">â‚¦{transaction.amount.toLocaleString()}</div>
+                          <div className="text-sm text-gray-900">₦{transaction.amount.toLocaleString()}</div>
                           {transaction.fees > 0 && (
-                            <div className="text-sm text-gray-500">Fees: â‚¦{transaction.fees.toLocaleString()}</div>
+                            <div className="text-sm text-gray-500">Fees: ₦{transaction.fees.toLocaleString()}</div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -661,7 +661,7 @@ const BillingPayments = () => {
                     
                     <h4 className="font-semibold text-gray-900 mb-2">{transaction.description}</h4>
                     <p className="text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                    <p className="text-lg font-bold text-gray-900 mb-4">â‚¦{transaction.amount.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-gray-900 mb-4">₦{transaction.amount.toLocaleString()}</p>
                     
                     <div className="flex space-x-2">
                       <button 
@@ -710,16 +710,16 @@ const BillingPayments = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Amount to Pay</span>
-                  <span className="text-lg font-bold text-gray-900">â‚¦450,000</span>
+                  <span className="text-lg font-bold text-gray-900">₦450,000</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-gray-600">Processing Fee</span>
-                  <span className="text-gray-900">â‚¦11,250</span>
+                  <span className="text-gray-900">₦11,250</span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-gray-900">Total</span>
-                    <span className="text-lg font-bold text-brand-blue">â‚¦461,250</span>
+                    <span className="text-lg font-bold text-brand-blue">₦461,250</span>
                   </div>
                 </div>
               </div>

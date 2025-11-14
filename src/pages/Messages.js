@@ -87,7 +87,7 @@ const Messages = () => {
           image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop"
         },
         lastMessage: {
-          text: "The maintenance fee is â‚¦150,000 monthly and includes all amenities I mentioned.",
+          text: "The maintenance fee is ₦150,000 monthly and includes all amenities I mentioned.",
           timestamp: "2024-01-12T16:10:00Z",
           sender: "agent",
           isRead: true
@@ -105,7 +105,7 @@ const Messages = () => {
           },
           {
             id: 2,
-            text: "The monthly maintenance fee is â‚¦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
+            text: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
             timestamp: "2024-01-12T11:45:00Z",
             sender: "agent",
             isRead: true

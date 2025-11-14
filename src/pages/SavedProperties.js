@@ -420,7 +420,7 @@ const SavedProperties = () => {
               
               <div className="property-card-content">
                 <div className="property-price">
-                  â‚¦{property.price.toLocaleString()}
+                  ₦{property.price.toLocaleString()}
                   {property.type === 'rent' && <span className="text-sm text-gray-500">/month</span>}
                 </div>
                 <h3 className="property-title">{property.title}</h3>
@@ -458,7 +458,7 @@ const SavedProperties = () => {
                         className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - â‚¦{property.price.toLocaleString()}
+                        Buy Property - ₦{property.price.toLocaleString()}
                       </button>
                     )}
                     
@@ -468,7 +468,7 @@ const SavedProperties = () => {
                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Rent Property - â‚¦{property.price.toLocaleString()}/month
+                        Rent Property - ₦{property.price.toLocaleString()}/month
                       </button>
                     )}
                     

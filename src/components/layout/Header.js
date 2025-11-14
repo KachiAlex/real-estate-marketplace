@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaHeart, FaBell, FaEnvelope } from 'react-icons/fa';
 import NotificationDropdown from '../NotificationDropdown';
@@ -8,10 +8,14 @@ import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
   const { isSearchOpen, openSearch, closeSearch, handleResultClick } = useGlobalSearch();
+  
+  // Hide search bar on home page since it's in the banner
+  const isHomePage = location.pathname === '/';
 
   const handleLogout = () => {
     logout();
@@ -67,25 +71,27 @@ const Header = () => {
             <span className="text-2xl font-bold text-white">Property Ark</span>
           </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search properties, investments, users..."
+          {/* Search Bar - Hidden on home page */}
+          {!isHomePage && (
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search properties, investments, users..."
+                  onClick={openSearch}
+                  readOnly
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                />
+              </div>
+              <button
                 onClick={openSearch}
-                readOnly
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-              />
+                className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Search
+              </button>
             </div>
-            <button
-              onClick={openSearch}
-              className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Search
-            </button>
-          </div>
+          )}
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-4">

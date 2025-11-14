@@ -164,7 +164,7 @@ class PropertyArkAI {
     };
     
     // Extract price
-    const priceMatch = message.match(/(?:â‚¦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i);
+    const priceMatch = message.match(/(?:₦|naira|n)\s*([\d,]+(?:\.\d+)?)\s*(?:m|million|k|thousand)?/i);
     if (priceMatch) {
       let amount = parseFloat(priceMatch[1].replace(/,/g, ''));
       const unit = priceMatch[0].toLowerCase();

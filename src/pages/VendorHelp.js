@@ -25,7 +25,7 @@ const VendorHelp = () => {
     {
       id: 2,
       question: "What are the commission rates for vendors?",
-      answer: "Our commission structure is competitive and varies based on property value. For properties under â‚¦10M, we charge 3% commission. For properties â‚¦10M and above, we charge 2.5% commission. There are no hidden fees."
+      answer: "Our commission structure is competitive and varies based on property value. For properties under ₦10M, we charge 3% commission. For properties ₦10M and above, we charge 2.5% commission. There are no hidden fees."
     },
     {
       id: 3,

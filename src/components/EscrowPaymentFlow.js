@@ -311,16 +311,16 @@ const EscrowPaymentFlow = () => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Property Price:</span>
-                  <span className="font-semibold">â‚¦{property.price?.toLocaleString()}</span>
+                  <span className="font-semibold">₦{property.price?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Escrow Fee (0.5%):</span>
-                  <span className="font-semibold">â‚¦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
+                  <span className="font-semibold">₦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold text-gray-900">Total Amount:</span>
-                    <span className="text-lg font-bold text-green-600">â‚¦{calculateTotal().toLocaleString()}</span>
+                    <span className="text-lg font-bold text-green-600">₦{calculateTotal().toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -428,7 +428,7 @@ const EscrowPaymentFlow = () => {
                       <p><strong>Bank:</strong> GTBank</p>
                       <p><strong>Account Number:</strong> 0123456789</p>
                       <p><strong>Account Name:</strong> Property Ark Escrow</p>
-                      <p><strong>Amount:</strong> â‚¦{calculateTotal().toLocaleString()}</p>
+                      <p><strong>Amount:</strong> ₦{calculateTotal().toLocaleString()}</p>
                     </div>
                   </div>
                 )}
@@ -448,7 +448,7 @@ const EscrowPaymentFlow = () => {
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-900">Total to Pay:</span>
-                  <span className="text-xl font-bold text-green-600">â‚¦{calculateTotal().toLocaleString()}</span>
+                  <span className="text-xl font-bold text-green-600">₦{calculateTotal().toLocaleString()}</span>
                 </div>
               </div>
 
@@ -458,7 +458,7 @@ const EscrowPaymentFlow = () => {
                 className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center disabled:opacity-50"
               >
                 <FaCreditCard className="mr-2" />
-                {loading ? 'Processing...' : `Pay â‚¦${calculateTotal().toLocaleString()}`}
+                {loading ? 'Processing...' : `Pay ₦${calculateTotal().toLocaleString()}`}
               </button>
             </div>
           </div>
@@ -474,7 +474,7 @@ const EscrowPaymentFlow = () => {
               
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
               <p className="text-gray-600 mb-6">
-                Your payment of <strong>â‚¦{calculateTotal().toLocaleString()}</strong> is now held securely in escrow.
+                Your payment of <strong>₦{calculateTotal().toLocaleString()}</strong> is now held securely in escrow.
               </p>
               
               <div className="bg-green-50 p-4 rounded-lg mb-6">
