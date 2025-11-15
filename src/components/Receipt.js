@@ -188,7 +188,7 @@ const Receipt = ({ transaction, onClose }) => {
         <body>
           <div class="receipt-container">
             <div class="receipt-header">
-              <div class="company-logo">  Property Ark</div>
+              <div class="company-logo"> Property Ark</div>
               <div class="receipt-title">Payment Receipt</div>
               <div class="receipt-number">Receipt #${generateReceiptNumber(transaction.id)}</div>
             </div>
@@ -197,7 +197,7 @@ const Receipt = ({ transaction, onClose }) => {
               <div class="status-badge status-${transaction.status}">
                 ${transaction.status === 'completed' ? '✓ Completed' : 
                   transaction.status === 'pending' ? '³ Pending' : 
-                  transaction.status === 'in-progress' ? '”„ In Progress' : transaction.status}
+                  transaction.status === 'in-progress' ? 'In Progress' : transaction.status}
               </div>
               
               <div class="info-grid">
@@ -463,7 +463,7 @@ const Receipt = ({ transaction, onClose }) => {
 
         {/* Footer */}
         <div className="bg-gray-100 border-t px-8 py-6 text-center text-sm text-gray-600">
-          <p className="font-semibold mb-2">Property Ark - Your Trusted Real Estate Partner</p>
+          <p className="font-semibold mb-2">Property Ark- Your Trusted Real Estate Partner</p>
           <p>123 Victoria Island, Lagos, Nigeria | +234 800 123 4567</p>
           <p>Email: support@propertyark.com | Website: www.propertyark.com</p>
           <p className="mt-3 text-xs">

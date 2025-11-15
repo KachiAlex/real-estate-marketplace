@@ -537,7 +537,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>  Property Ark</h1>
+            <h1> Property Ark</h1>
             <h2>INVESTMENT AGREEMENT</h2>
             <p>Agreement ID: ${investment?.id}</p>
           </div>
@@ -585,12 +585,12 @@ const Investment = () => {
 
           <div class="section">
             <h3>5. TERMS & CONDITIONS</h3>
-            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents by Property Ark legal team.</p>
+            <p>This agreement is governed by Nigerian law. Investment funds are held in escrow pending vendor document submission. Release of funds occurs only after verification of original property documents byProperty Arklegal team.</p>
           </div>
 
           <div class="section">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-            <p><strong>Digital Signature:</strong> Electronically signed via Property Ark platform</p>
+            <p><strong>Digital Signature:</strong> Electronically signed viaProperty Arkplatform</p>
           </div>
         </body>
         </html>
@@ -615,7 +615,7 @@ const Investment = () => {
 
           <div class="section">
             <h3>ESCROW FUND PROTECTION</h3>
-            <p>Your investment amount of <strong>₦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed by Property Ark until all conditions are met.</p>
+            <p>Your investment amount of <strong>₦${investment?.amount?.toLocaleString()}</strong> is held in a secure escrow account managed byProperty Arkuntil all conditions are met.</p>
           </div>
 
           <div class="section">

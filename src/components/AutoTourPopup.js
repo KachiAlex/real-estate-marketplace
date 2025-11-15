@@ -39,7 +39,7 @@ const AutoTourPopup = () => {
         selectedVoice = voices[0];
       }
       
-      const welcomeText = "Welcome to Property Ark! I'm your Property Ark AI assistant. I'm so excited to meet you! I'd love to give you a comprehensive tour of our amazing platform. Would you like me to show you around?";
+      const welcomeText = "Welcome toProperty Ark! I'm yourProperty ArkAI assistant. I'm so excited to meet you! I'd love to give you a comprehensive tour of our amazing platform. Would you like me to show you around?";
       
       const utterance = new SpeechSynthesisUtterance(welcomeText);
       utterance.lang = 'en-US';
@@ -94,10 +94,10 @@ const AutoTourPopup = () => {
             {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse text-xl" />}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome to Property Ark! 
+            Welcome toProperty Ark! 
           </h2>
           <p className="text-gray-600">
-            I'm your Property Ark AI assistant! I'm so excited to meet you and show you around our amazing platform.
+            I'm yourProperty ArkAI assistant! I'm so excited to meet you and show you around our amazing platform.
           </p>
         </div>
 
