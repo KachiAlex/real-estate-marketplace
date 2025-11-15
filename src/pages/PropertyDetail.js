@@ -18,6 +18,7 @@ const PropertyDetail = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (properties && id) {
@@ -50,6 +51,17 @@ const PropertyDetail = () => {
       }
     }
   }, [properties, id]);
+
+  // Check if property is favorited
+  useEffect(() => {
+    if (property && user) {
+      const key = `favorites_${user.id}`;
+      const favorites = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+      setIsFavorite(favorites.has(property.id));
+    } else {
+      setIsFavorite(false);
+    }
+  }, [property, user]);
 
   // Get the current image URL based on activeImage index
   const getCurrentImage = () => {
@@ -90,10 +102,28 @@ const PropertyDetail = () => {
   const handleToggleFavorite = async () => {
     if (!user) {
       toast.error('Please login to add favorites');
+      setAuthRedirect(`/property/${id}`);
       navigate('/login');
       return;
     }
-    await toggleFavorite(property.id);
+    
+    if (!property || !property.id) {
+      toast.error('Property information not available');
+      return;
+    }
+    
+    try {
+      const result = await toggleFavorite(property.id);
+      if (result && result.success !== undefined) {
+        setIsFavorite(result.favorited);
+      } else {
+        // Fallback: toggle local state
+        setIsFavorite(!isFavorite);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorite');
+    }
   };
 
   const handleShareProperty = async () => {
@@ -313,9 +343,12 @@ const PropertyDetail = () => {
                   </span>
                   <button
                     onClick={handleToggleFavorite}
-                    className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
+                    className={`bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors ${
+                      isFavorite ? 'text-red-500' : ''
+                    }`}
+                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    <FaHeart />
+                    <FaHeart className={isFavorite ? 'fill-current' : ''} />
                   </button>
                   <button
                     onClick={handleShareProperty}

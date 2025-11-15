@@ -9,14 +9,24 @@ import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
   const { properties, loading, toggleFavorite } = useProperty();
   const { userInvestments, getUserInvestmentSummary } = useInvestment();
   const { getUserMortgages, getPaymentSummary } = useMortgage();
+  const [favorites, setFavorites] = useState(new Set());
 
   // Get recent properties (first 3)
   const recentProperties = properties.slice(0, 3);
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    if (user) {
+      const key = `favorites_${user.id}`;
+      const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+      setFavorites(new Set(savedFavorites));
+    }
+  }, [user]);
 
   const handleViewProperty = (propertyId) => {
     navigate(`/property/${propertyId}`);
@@ -654,15 +664,34 @@ const Dashboard = () => {
                     </button>
                     <button
                       onClick={async () => {
+                        if (!user) {
+                          setAuthRedirect('/dashboard');
+                          toast.error('Please login to save properties to favorites');
+                          navigate('/login');
+                          return;
+                        }
+                        
                         try {
-                          await toggleFavorite(property.id);
+                          const result = await toggleFavorite(property.id);
+                          if (result && result.success) {
+                            const newFavorites = new Set(favorites);
+                            if (result.favorited) {
+                              newFavorites.add(property.id);
+                            } else {
+                              newFavorites.delete(property.id);
+                            }
+                            setFavorites(newFavorites);
+                          }
                         } catch (e) {
                           toast.error('Failed to update favorite');
                         }
                       }}
-                      className="text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all"
+                      className={`text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all ${
+                        favorites.has(property.id) ? 'text-red-500' : ''
+                      }`}
+                      title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                      <FaHeart className="text-sm" />
+                      <FaHeart className={`text-sm ${favorites.has(property.id) ? 'fill-current' : ''}`} />
                     </button>
                 </div>
               </div>
@@ -725,10 +754,35 @@ const Dashboard = () => {
                       <FaShare className="text-white text-sm" />
                     </button>
                     <button
-                      onClick={() => toast.success('Added to favorites!')}
-                      className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
+                      onClick={async () => {
+                        if (!user) {
+                          setAuthRedirect('/dashboard');
+                          toast.error('Please login to save properties to favorites');
+                          navigate('/login');
+                          return;
+                        }
+                        
+                        try {
+                          const result = await toggleFavorite(property.id);
+                          if (result && result.success) {
+                            const newFavorites = new Set(favorites);
+                            if (result.favorited) {
+                              newFavorites.add(property.id);
+                            } else {
+                              newFavorites.delete(property.id);
+                            }
+                            setFavorites(newFavorites);
+                          }
+                        } catch (e) {
+                          toast.error('Failed to update favorite');
+                        }
+                      }}
+                      className={`w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors ${
+                        favorites.has(property.id) ? 'text-red-500' : ''
+                      }`}
+                      title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                      <FaHeart className="text-white text-sm" />
+                      <FaHeart className={`text-white text-sm ${favorites.has(property.id) ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>

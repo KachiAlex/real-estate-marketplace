@@ -417,6 +417,18 @@ const Home = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [priceRange, setPriceRange] = useState([0, 1000000000]);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    if (user) {
+      const key = `favorites_${user.id}`;
+      const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+      setFavorites(new Set(savedFavorites));
+    } else {
+      setFavorites(new Set());
+    }
+  }, [user]);
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [selectedAmenities, setSelectedAmenities] = useState([]);
@@ -574,58 +586,69 @@ const Home = () => {
   const totalPages = Math.ceil(safeFilteredProperties.length / propertiesPerPage);
 
 
-  const handleApplyFilters = () => {
-    let filtered = [...mockProperties];
-    
-    // Apply location filter
-    if (selectedLocation) {
+  const handleApplyFilters = async () => {
+    setIsApplyingFilters(true);
+    try {
+      // Simulate a small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      let filtered = [...mockProperties];
+      
+      // Apply location filter
+      if (selectedLocation) {
+        filtered = filtered.filter(property => 
+          property.location.toLowerCase().includes(selectedLocation.toLowerCase())
+        );
+      }
+      
+      // Apply property status filter
+      if (selectedStatus) {
+        filtered = filtered.filter(property => 
+          property.status === selectedStatus || property.label === selectedStatus
+        );
+      }
+      
+      // Apply property type filter
+      if (selectedType) {
+        filtered = filtered.filter(property => 
+          property.type === selectedType
+        );
+      }
+      
+      // Apply bedrooms filter
+      if (bedrooms) {
+        const bedroomCount = parseInt(bedrooms);
+        filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
+      }
+      
+      // Apply bathrooms filter
+      if (bathrooms) {
+        const bathroomCount = parseInt(bathrooms);
+        filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
+      }
+      
+      // Apply price range filter
       filtered = filtered.filter(property => 
-        property.location.toLowerCase().includes(selectedLocation.toLowerCase())
+        property.price >= priceRange[0] && property.price <= priceRange[1]
       );
+      
+      // Apply search query filter
+      if (searchQuery) {
+        filtered = filtered.filter(property => 
+          property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      setCurrentPage(1);
+      toast.success(`Found ${filtered.length} properties matching your criteria!`);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+      toast.error('Failed to apply filters');
+    } finally {
+      setIsApplyingFilters(false);
     }
-    
-    // Apply property status filter
-    if (selectedStatus) {
-      filtered = filtered.filter(property => 
-        property.status === selectedStatus || property.label === selectedStatus
-      );
-    }
-    
-    // Apply property type filter
-    if (selectedType) {
-      filtered = filtered.filter(property => 
-        property.type === selectedType
-      );
-    }
-    
-    // Apply bedrooms filter
-    if (bedrooms) {
-      const bedroomCount = parseInt(bedrooms);
-      filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
-    }
-    
-    // Apply bathrooms filter
-    if (bathrooms) {
-      const bathroomCount = parseInt(bathrooms);
-      filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
-    }
-    
-    // Apply price range filter
-    filtered = filtered.filter(property => 
-      property.price >= priceRange[0] && property.price <= priceRange[1]
-    );
-    
-    // Apply search query filter
-    if (searchQuery) {
-      filtered = filtered.filter(property => 
-        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    setCurrentPage(1);
-    toast.success(`Found ${filtered.length} properties matching your criteria!`);
   };
 
   // Clear all filters
@@ -649,23 +672,28 @@ const Home = () => {
     navigate('/about');
   };
   
-  const handleToggleFavorite = (propertyId) => {
+  const handleToggleFavorite = async (propertyId) => {
     if (!user) {
       toast.error('Please login to save properties to favorites');
       navigate('/login');
       return;
     }
     
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(propertyId)) {
-      newFavorites.delete(propertyId);
-      toast.success('Removed from favorites');
-    } else {
-      newFavorites.add(propertyId);
-      toast.success('Added to favorites');
+    try {
+      const result = await toggleFavorite(propertyId);
+      if (result && result.success) {
+        const newFavorites = new Set(favorites);
+        if (result.favorited) {
+          newFavorites.add(propertyId);
+        } else {
+          newFavorites.delete(propertyId);
+        }
+        setFavorites(newFavorites);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
     }
-    setFavorites(newFavorites);
-    toggleFavorite(propertyId);
   };
   
   const handleShareProperty = async (property) => {
@@ -1063,9 +1091,20 @@ const Home = () => {
             <div className="space-y-3">
               <button 
                 onClick={handleApplyFilters}
-                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                disabled={isApplyingFilters}
+                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Apply Filters
+                {isApplyingFilters ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Applying Filters...
+                  </>
+                ) : (
+                  'Apply Filters'
+                )}
               </button>
               <button 
                 onClick={handleResetAllFilters}

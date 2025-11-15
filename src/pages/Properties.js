@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 const Properties = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { properties = [], filters = {}, setFilters, fetchProperties, toggleFavorite, saveSearch } = useProperty();
+  const { properties = [], filters = {}, setFilters, fetchProperties, toggleFavorite, saveSearch, loading } = useProperty();
   const { user, setAuthRedirect } = useAuth();
   const safeProperties = useMemo(() => Array.isArray(properties) ? properties : [], [properties]);
   const [showFilters, setShowFilters] = useState(false);
@@ -22,6 +22,18 @@ const Properties = () => {
   const [saveSearchName, setSaveSearchName] = useState('');
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
   const [alertName, setAlertName] = useState('');
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    if (user) {
+      const key = `favorites_${user.id}`;
+      const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+      setFavorites(new Set(savedFavorites));
+    } else {
+      setFavorites(new Set());
+    }
+  }, [user]);
 
   // Real-time search functionality
   const filteredProperties = useMemo(() => {
@@ -151,18 +163,27 @@ const Properties = () => {
     }
   };
 
-  const handleApplyFilters = () => {
-    const next = {
-      ...filters,
-      type: selectedType,
-      status: selectedStatus,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      search: searchQuery
-    };
-    setFilters(next);
-    fetchProperties(next, 1);
-    setCurrentPage(1);
+  const handleApplyFilters = async () => {
+    setIsApplyingFilters(true);
+    try {
+      const next = {
+        ...filters,
+        type: selectedType,
+        status: selectedStatus,
+        minPrice: priceRange.min,
+        maxPrice: priceRange.max,
+        search: searchQuery
+      };
+      setFilters(next);
+      await fetchProperties(next, 1);
+      setCurrentPage(1);
+      toast.success('Filters applied successfully!');
+    } catch (error) {
+      console.error('Error applying filters:', error);
+      toast.error('Failed to apply filters');
+    } finally {
+      setIsApplyingFilters(false);
+    }
   };
 
   // Clear all filters
@@ -228,18 +249,16 @@ const Properties = () => {
     }
     
     try {
-      const newFavorites = new Set(favorites);
-      if (newFavorites.has(propertyId)) {
-        newFavorites.delete(propertyId);
-        toast.success('Removed from favorites');
-      } else {
-        newFavorites.add(propertyId);
-        toast.success('Added to favorites');
+      const result = await toggleFavorite(propertyId);
+      if (result && result.success) {
+        const newFavorites = new Set(favorites);
+        if (result.favorited) {
+          newFavorites.add(propertyId);
+        } else {
+          newFavorites.delete(propertyId);
+        }
+        setFavorites(newFavorites);
       }
-      setFavorites(newFavorites);
-      
-      // Also call the context function
-      await toggleFavorite(propertyId);
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorites');
@@ -494,14 +513,33 @@ const Properties = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             <button 
+              onClick={handleApplyFilters}
+              disabled={isApplyingFilters || loading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isApplyingFilters || loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Applying Filters...
+                </>
+              ) : (
+                'Apply Filters'
+              )}
+            </button>
+            <button 
               onClick={handleClearFilters}
-              className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              disabled={isApplyingFilters || loading}
+              className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Clear All Filters
             </button>
             <button 
               onClick={handleResetFilters}
-              className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={isApplyingFilters || loading}
+              className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Reset
             </button>
