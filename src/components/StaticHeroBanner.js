@@ -36,9 +36,6 @@ const StaticHeroBanner = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
               Find Your Dream Property <span className="text-orange-400">in Nigeria</span>
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Secure real estate transactions with escrow protection, verified listings, and transparent processes
-            </p>
           </div>
 
           {/* Search Bar - Prominent in Banner */}

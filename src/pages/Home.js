@@ -839,6 +839,13 @@ const Home = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Security Message */}
+        <div className="mb-6 text-center">
+          <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+            Secure real estate transactions with escrow protection, verified listings, and transparent processes
+          </p>
+        </div>
+        
         <div className="flex gap-8">
           {/* Filters Sidebar */}
           <div className="w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
