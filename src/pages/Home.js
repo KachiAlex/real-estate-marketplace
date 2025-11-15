@@ -841,44 +841,47 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Security Message - Sales Pitch */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100 shadow-sm">
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12">
-              {/* Escrow Protection */}
-              <div className="flex items-center gap-3 group">
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  <FaShieldAlt className="text-white text-xl" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Escrow Protection</span>
-                  <span className="text-sm font-medium text-gray-800">Secure Transactions</span>
-                </div>
-              </div>
-              
-              {/* Divider */}
-              <div className="hidden md:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
-              
-              {/* Verified Listings */}
-              <div className="flex items-center gap-3 group">
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  <FaCertificate className="text-white text-xl" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Verified Listings</span>
-                  <span className="text-sm font-medium text-gray-800">Trusted Properties</span>
+          <div className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 md:p-8 border border-blue-100 shadow-lg overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-blue-200 rounded-full opacity-10 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-200 rounded-full opacity-10 blur-3xl translate-x-1/2 translate-y-1/2"></div>
+            
+            <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
+              {/* Left Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
+                  <FaShieldAlt className="text-white text-2xl" />
                 </div>
               </div>
               
-              {/* Divider */}
-              <div className="hidden md:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+              {/* Main Text */}
+              <div className="flex-1 text-center md:text-left">
+                <p className="text-lg md:text-xl font-bold text-gray-800 leading-relaxed">
+                  Secure real estate transactions with{' '}
+                  <span className="relative inline-block">
+                    <span className="relative z-10 text-blue-600">escrow protection</span>
+                    <span className="absolute bottom-0 left-0 w-full h-2 bg-blue-200 opacity-40 -z-0"></span>
+                  </span>
+                  ,{' '}
+                  <span className="relative inline-block">
+                    <span className="relative z-10 text-green-600">verified listings</span>
+                    <span className="absolute bottom-0 left-0 w-full h-2 bg-green-200 opacity-40 -z-0"></span>
+                  </span>
+                  , and{' '}
+                  <span className="relative inline-block">
+                    <span className="relative z-10 text-purple-600">transparent processes</span>
+                    <span className="absolute bottom-0 left-0 w-full h-2 bg-purple-200 opacity-40 -z-0"></span>
+                  </span>
+                </p>
+              </div>
               
-              {/* Transparent Processes */}
-              <div className="flex items-center gap-3 group">
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  <FaFileContract className="text-white text-xl" />
+              {/* Right Icons */}
+              <div className="flex-shrink-0 flex gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-110 transition-transform duration-300">
+                  <FaCertificate className="text-white text-lg" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Transparent</span>
-                  <span className="text-sm font-medium text-gray-800">Clear Processes</span>
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-110 transition-transform duration-300">
+                  <FaFileContract className="text-white text-lg" />
                 </div>
               </div>
             </div>
