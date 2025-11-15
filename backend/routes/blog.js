@@ -87,7 +87,11 @@ router.get('/', [
   query('category').optional().isString(),
   query('tag').optional().isString(),
   query('search').optional().isString(),
-  query('featured').optional().isBoolean().withMessage('Featured must be a boolean'),
+  query('featured').optional().customSanitizer(value => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  }).isBoolean().withMessage('Featured must be true or false'),
   query('sort').optional().isIn(['newest', 'oldest', 'popular', 'trending']),
   validate()
 ], async (req, res) => {
