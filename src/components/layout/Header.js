@@ -101,8 +101,6 @@ const Header = () => {
                 alt="Property Ark Logo" 
                 className="h-10 w-auto"
                 style={{ 
-                  mixBlendMode: 'multiply',
-                  filter: 'contrast(1.2) brightness(1.1)',
                   backgroundColor: 'transparent'
                 }}
                 onError={(e) => {

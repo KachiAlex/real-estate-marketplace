@@ -3,13 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Remove white background from logo images */
+/* Logo images - preserve original colors */
 img[src*="logo"] {
   background: transparent !important;
-  mix-blend-mode: multiply;
-  filter: contrast(1.2) brightness(1.1);
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  mix-blend-mode: normal !important;
+  filter: none !important;
 }
 
 @layer base {
