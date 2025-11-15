@@ -1579,7 +1579,20 @@ const Home = () => {
             {/* Company Info */}
             <div className="lg:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center">
+                <img 
+                  src={`${process.env.PUBLIC_URL}/logo.png?v=2.0`} 
+                  alt="Property Ark Logo" 
+                  className="h-10 w-auto"
+                  style={{ 
+                    backgroundColor: 'transparent'
+                  }}
+                  onError={(e) => {
+                    // Fallback to icon if logo image doesn't exist
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                   <FaBuilding className="text-white text-xl" />
                 </div>
                 <span className="text-2xl font-bold">Property Ark</span>
