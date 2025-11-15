@@ -839,11 +839,50 @@ const Home = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Security Message */}
-        <div className="mb-6 text-center">
-          <p className="text-sm font-light text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis max-w-full mx-auto">
-            Secure real estate transactions with escrow protection, verified listings, and transparent processes
-          </p>
+        {/* Security Message - Sales Pitch */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12">
+              {/* Escrow Protection */}
+              <div className="flex items-center gap-3 group">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <FaShieldAlt className="text-white text-xl" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Escrow Protection</span>
+                  <span className="text-sm font-medium text-gray-800">Secure Transactions</span>
+                </div>
+              </div>
+              
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+              
+              {/* Verified Listings */}
+              <div className="flex items-center gap-3 group">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <FaCertificate className="text-white text-xl" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Verified Listings</span>
+                  <span className="text-sm font-medium text-gray-800">Trusted Properties</span>
+                </div>
+              </div>
+              
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+              
+              {/* Transparent Processes */}
+              <div className="flex items-center gap-3 group">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <FaFileContract className="text-white text-xl" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Transparent</span>
+                  <span className="text-sm font-medium text-gray-800">Clear Processes</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="flex gap-8">
