@@ -331,10 +331,10 @@ const EscrowPaymentFlow = () => {
                   Escrow Protection Process
                 </h4>
                 <div className="text-sm text-blue-800 space-y-1">
-                  <p>âœ… Your payment is held securely in escrow (not sent to vendor)</p>
-                  <p>âœ… Funds are only released after your approval</p>
-                  <p>âœ… You can dispute if there are any issues</p>
-                  <p>âœ… Full refund protection until you confirm satisfaction</p>
+                  <p>✓ Your payment is held securely in escrow (not sent to vendor)</p>
+                  <p>✓ Funds are only released after your approval</p>
+                  <p>✓ You can dispute if there are any issues</p>
+                  <p>✓ Full refund protection until you confirm satisfaction</p>
                 </div>
               </div>
               

@@ -152,12 +152,12 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
             I'm your Property Ark AI assistant! I'd love to give you a guided tour of our amazing platform.
           </p>
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">ðŸŽ¤ Voice-Guided Tour Features:</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">Voice-Guided Tour Features:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>â€¢ Completely voice-guided experience</li>
-              <li>â€¢ Navigate with voice commands</li>
-              <li>â€¢ Skip button available anytime</li>
-              <li>â€¢ Natural, conversational guidance</li>
+              <li>• Completely voice-guided experience</li>
+              <li>• Navigate with voice commands</li>
+              <li>• Skip button available anytime</li>
+              <li>• Natural, conversational guidance</li>
             </ul>
           </div>
         </div>

@@ -1198,7 +1198,7 @@ const Home = () => {
                         </span>
                         <span className="flex items-center">
                           <FaRulerCombined className="mr-1" />
-                          {property.sqft || property.details?.sqft || property.area || 0}mÂ²
+                          {property.sqft || property.details?.sqft || property.area || 0}m²
                         </span>
                       </div>
                     </div>
@@ -1524,7 +1524,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More â†’
+                  Learn More →
                 </button>
               </div>
 
@@ -1541,7 +1541,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More â†’
+                  Learn More →
                 </button>
               </div>
 
@@ -1558,7 +1558,7 @@ const Home = () => {
                   onClick={handleLearnMore}
                   className="text-yellow-400 hover:text-yellow-300 font-medium"
                 >
-                  Learn More â†’
+                  Learn More →
                 </button>
               </div>
             </div>

@@ -52,7 +52,7 @@ const Register = () => {
         answer = num1 - num2;
         break;
       case '*':
-        question = `${num1} Ã— ${num2}`;
+        question = `${num1} × ${num2}`;
         answer = num1 * num2;
         break;
     }
@@ -470,7 +470,7 @@ const Register = () => {
                   className="px-3 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl transition-colors"
                   title="Generate new question"
                 >
-                  ðŸ”„
+                  ↻
                 </button>
               </div>
               <input
@@ -727,11 +727,11 @@ const Register = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <h4 className="font-semibold text-blue-900 mb-2">Vendor Benefits:</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
-                    <li>â€¢ List unlimited properties</li>
-                    <li>â€¢ Access to buyer leads</li>
-                    <li>â€¢ Secure escrow payments</li>
-                    <li>â€¢ Professional support</li>
-                    <li>â€¢ Marketing tools</li>
+                    <li>• List unlimited properties</li>
+                    <li>• Access to buyer leads</li>
+                    <li>• Secure escrow payments</li>
+                    <li>• Professional support</li>
+                    <li>• Marketing tools</li>
                   </ul>
                 </div>
               </div>

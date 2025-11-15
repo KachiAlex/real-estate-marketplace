@@ -767,7 +767,7 @@ const AIAssistant = () => {
                     </button>
                     <label className="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
                       <input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} />
-                      ðŸ”Š Female voice
+                      Female voice
                     </label>
                     <span className="text-xs text-gray-400">Powered by AI</span>
                   </div>

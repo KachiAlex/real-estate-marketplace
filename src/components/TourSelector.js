@@ -164,7 +164,7 @@ const TourSelector = ({ onClose }) => {
       <div className="text-center mb-6">
         <div className="flex items-center justify-center space-x-2 mb-2">
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome to Property Ark! ðŸ 
+            Welcome to Property Ark! 
           </h2>
           {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse" />}
         </div>
@@ -233,7 +233,7 @@ const TourSelector = ({ onClose }) => {
 
                 {isCompleted && (
                   <div className="mt-2 text-xs text-green-600 font-medium">
-                    âœ“ Completed
+                    ✓ Completed
                   </div>
                 )}
               </div>
@@ -264,7 +264,7 @@ const TourSelector = ({ onClose }) => {
       {/* Tour Tips */}
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-600">
-          <strong>ðŸ’¡ Tip:</strong> You can take multiple tours and revisit them anytime. 
+          <strong>Tip:</strong> You can take multiple tours and revisit them anytime. 
           Each tour is designed to help you get the most out of our platform.
         </p>
       </div>

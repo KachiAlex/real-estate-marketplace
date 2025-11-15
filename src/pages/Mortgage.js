@@ -576,7 +576,7 @@ const Mortgage = () => {
                     </span>
                     <span className="flex items-center">
                       <FaRuler className="mr-1" />
-                      {property.area} mÂ²
+                      {property.area} m²
                     </span>
                   </div>
                   
@@ -584,7 +584,7 @@ const Mortgage = () => {
                     <p className="text-sm text-gray-600 mb-1">Estimated Monthly Payment</p>
                     <p className="text-xl font-bold text-gray-900">₦{property.monthlyPayment.toLocaleString()}/month</p>
                     <div className="text-xs text-gray-500 mt-1">
-                      {property.downPaymentPercent}% Down Payment â€¢ {property.loanTerm} yrs Loan Term â€¢ {property.interestRate}% Interest Rate
+                      {property.downPaymentPercent}% Down Payment • {property.loanTerm} yrs Loan Term • {property.interestRate}% Interest Rate
                     </div>
                   </div>
                   
@@ -951,7 +951,7 @@ const Mortgage = () => {
                     <p className="text-sm text-gray-600">Uploaded files:</p>
                     <ul className="text-sm text-gray-500">
                       {bankStatements.map((file, index) => (
-                        <li key={index}>â€¢ {file.name}</li>
+                        <li key={index}>• {file.name}</li>
                       ))}
                     </ul>
                   </div>

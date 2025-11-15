@@ -114,7 +114,7 @@ const VendorInspectionRequests = () => {
                 showWebNotification('Inspection accepted', { body: `${r.projectName} on ${r.confirmedDate} ${r.confirmedTime}` });
               }
             } else if (r.status === 'proposed_new_time') {
-              toast('Proposed a new time to buyer', { icon: 'ðŸ“…' });
+              toast('Proposed a new time to buyer', { icon: '✓' });
             } else if (r.status === 'declined') {
               toast.error(`Inspection declined for ${r.projectName}`);
             }
@@ -247,7 +247,7 @@ const VendorInspectionRequests = () => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">Propose New Time</h3>
-              <button onClick={() => setShowProposeModal(false)} className="text-gray-500 hover:text-gray-700">âœ•</button>
+              <button onClick={() => setShowProposeModal(false)} className="text-gray-500 hover:text-gray-700">×</button>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
               <p className="font-semibold">{requestToRespond.projectName}</p>

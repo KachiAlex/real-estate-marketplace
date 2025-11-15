@@ -188,16 +188,16 @@ const Receipt = ({ transaction, onClose }) => {
         <body>
           <div class="receipt-container">
             <div class="receipt-header">
-              <div class="company-logo">ðŸ  Property Ark</div>
+              <div class="company-logo">  Property Ark</div>
               <div class="receipt-title">Payment Receipt</div>
               <div class="receipt-number">Receipt #${generateReceiptNumber(transaction.id)}</div>
             </div>
             
             <div class="receipt-body">
               <div class="status-badge status-${transaction.status}">
-                ${transaction.status === 'completed' ? 'âœ… Completed' : 
-                  transaction.status === 'pending' ? 'â³ Pending' : 
-                  transaction.status === 'in-progress' ? 'ðŸ”„ In Progress' : transaction.status}
+                ${transaction.status === 'completed' ? '✓ Completed' : 
+                  transaction.status === 'pending' ? '³ Pending' : 
+                  transaction.status === 'in-progress' ? '”„ In Progress' : transaction.status}
               </div>
               
               <div class="info-grid">
@@ -264,7 +264,7 @@ const Receipt = ({ transaction, onClose }) => {
               </div>
               
               <div class="escrow-notice">
-                <h4>ðŸ”’ Escrow Protection</h4>
+                <h4>Escrow Protection</h4>
                 <p>Your payment is secured through our escrow service. Funds are held safely until all conditions are met and you approve the release to the vendor.</p>
               </div>
             </div>

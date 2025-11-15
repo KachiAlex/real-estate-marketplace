@@ -440,7 +440,7 @@ const SavedProperties = () => {
                   </div>
                   <div className="flex items-center space-x-1">
                     <FaRuler />
-                    <span>{property.area}mÂ²</span>
+                    <span>{property.area}m²</span>
                   </div>
                 </div>
 

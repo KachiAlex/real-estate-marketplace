@@ -447,7 +447,7 @@ const MyInquiries = () => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <FaRuler />
-                        <span>{inquiry.property.area}mÂ²</span>
+                        <span>{inquiry.property.area}m²</span>
                       </div>
                     </div>
                     <div className="mt-2">

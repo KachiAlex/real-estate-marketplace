@@ -379,7 +379,7 @@ class PropertyArkAI {
         }
       };
     } else {
-      response += "\n\nTo give you the best results, could you tell me:\nâ€¢ Your preferred location\nâ€¢ Budget range\nâ€¢ Property type\nâ€¢ Number of bedrooms";
+      response += "\n\nTo give you the best results, could you tell me:\n• Your preferred location\n• Budget range\n• Property type\n• Number of bedrooms";
     }
     
     return { response, action, entities };
@@ -404,11 +404,11 @@ class PropertyArkAI {
       response += `For ${this.formatPrice(entities.price)}, you can find:\n`;
       
       if (entities.price < 30000000) {
-        response += "â€¢ Studio and 1-bedroom apartments\nâ€¢ Starter homes in developing areas\nâ€¢ Great investment opportunities";
+        response += "• Studio and 1-bedroom apartments\n• Starter homes in developing areas\n• Great investment opportunities";
       } else if (entities.price < 80000000) {
-        response += "â€¢ 2-3 bedroom apartments\nâ€¢ Townhouses and duplexes\nâ€¢ Properties in good neighborhoods";
+        response += "• 2-3 bedroom apartments\n• Townhouses and duplexes\n• Properties in good neighborhoods";
       } else if (entities.price < 150000000) {
-        response += "â€¢ 3-4 bedroom apartments\nâ€¢ Luxury condos\nâ€¢ Houses in prime locations";
+        response += "• 3-4 bedroom apartments\n• Luxury condos\n• Houses in prime locations";
       } else {
         response += "luxury penthouses, villas and mansions, and premium properties in exclusive areas.";
       }
@@ -431,16 +431,16 @@ class PropertyArkAI {
       response += `Great choice! ${entities.location} is a fantastic area with:\n\n`;
       
       const locationInfo = {
-        'lagos': 'â€¢ Victoria Island - Business district\nâ€¢ Lekki - Modern developments\nâ€¢ Ikoyi - Upscale residential\nâ€¢ Surulere - Affordable options',
-        'abuja': 'â€¢ Maitama - Diplomatic area\nâ€¢ Asokoro - Government district\nâ€¢ Wuse 2 - Commercial hub\nâ€¢ Gwarinpa - Family-friendly',
-        'port harcourt': 'â€¢ GRA - Upscale residential\nâ€¢ Trans-Amadi - Industrial area\nâ€¢ Rumuola - Commercial district'
+        'lagos': '• Victoria Island - Business district\n• Lekki - Modern developments\n• Ikoyi - Upscale residential\n• Surulere - Affordable options',
+        'abuja': '• Maitama - Diplomatic area\n• Asokoro - Government district\n• Wuse 2 - Commercial hub\n• Gwarinpa - Family-friendly',
+        'port harcourt': '• GRA - Upscale residential\n• Trans-Amadi - Industrial area\n• Rumuola - Commercial district'
       };
       
       const locationKey = entities.location.toLowerCase();
       if (locationInfo[locationKey]) {
         response += locationInfo[locationKey];
       } else {
-        response += "â€¢ Great property options\nâ€¢ Good amenities and infrastructure\nâ€¢ Growing real estate market";
+        response += "• Great property options\n• Good amenities and infrastructure\n• Growing real estate market";
       }
       
       response += "\n\nWould you like me to show you properties in this area?";

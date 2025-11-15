@@ -537,7 +537,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>ðŸ  Property Ark</h1>
+            <h1>  Property Ark</h1>
             <h2>INVESTMENT AGREEMENT</h2>
             <p>Agreement ID: ${investment?.id}</p>
           </div>
@@ -555,7 +555,7 @@ const Investment = () => {
           <div class="section">
             <h3>2. ESCROW PROTECTION</h3>
             <div class="highlight">
-              <p><strong>ðŸ”’ FUND SECURITY:</strong> Your investment of ₦${investment?.amount?.toLocaleString()} is held in escrow until the vendor provides original property documents and deed as collateral.</p>
+              <p><strong>FUND SECURITY:</strong> Your investment of ₦${investment?.amount?.toLocaleString()} is held in escrow until the vendor provides original property documents and deed as collateral.</p>
             </div>
             <p><strong>Collateral Property:</strong> ${investment?.collateralProperty}</p>
             <p><strong>Document Status:</strong> ${investment?.documentStatus}</p>
@@ -609,7 +609,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>ðŸ”’ ESCROW TERMS & CONDITIONS</h1>
+            <h1>ESCROW TERMS & CONDITIONS</h1>
             <p>Investment Escrow ID: ${investment?.id}</p>
           </div>
 
@@ -629,13 +629,13 @@ const Investment = () => {
           </div>
 
           <div class="warning">
-            <h4>âš ï¸ IMPORTANT PROTECTION NOTICE</h4>
+            <h4> ï¸ IMPORTANT PROTECTION NOTICE</h4>
             <p>Funds will NOT be released to the vendor until:</p>
             <ul>
-              <li>âœ… Original property documents are submitted</li>
-              <li>âœ… Legal verification is completed</li>
-              <li>âœ… Property deed is registered as collateral</li>
-              <li>âœ… All terms and conditions are met</li>
+              <li>✓ Original property documents are submitted</li>
+              <li>✓ Legal verification is completed</li>
+              <li>✓ Property deed is registered as collateral</li>
+              <li>✓ All terms and conditions are met</li>
             </ul>
           </div>
 
@@ -659,7 +659,7 @@ const Investment = () => {
         </head>
         <body>
           <div class="header">
-            <h1>âš ï¸ INVESTMENT RISK DISCLOSURE</h1>
+            <h1> ï¸ INVESTMENT RISK DISCLOSURE</h1>
             <p>Please read carefully before investing</p>
           </div>
 
@@ -935,7 +935,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Complete investment terms and conditions</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF â€¢ 2.3 MB</span>
+                      <span>PDF • 2.3 MB</span>
                     </div>
                   </div>
 
@@ -954,7 +954,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Fund protection and release conditions</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF â€¢ 1.8 MB</span>
+                      <span>PDF • 1.8 MB</span>
                     </div>
                   </div>
 
@@ -973,7 +973,7 @@ const Investment = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">Investment risks and considerations</p>
                     <div className="flex items-center text-xs text-gray-500">
-                      <span>PDF â€¢ 1.2 MB</span>
+                      <span>PDF • 1.2 MB</span>
                     </div>
                   </div>
 
@@ -1223,15 +1223,15 @@ const Investment = () => {
                       <div className="space-y-3">
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Lagos Luxury Towers</div>
-                          <div className="text-sm text-gray-600">Completed 2023 â€¢ ₦450M project</div>
+                          <div className="text-sm text-gray-600">Completed 2023 • ₦450M project</div>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Victoria Gardens</div>
-                          <div className="text-sm text-gray-600">Completed 2022 â€¢ ₦320M project</div>
+                          <div className="text-sm text-gray-600">Completed 2022 • ₦320M project</div>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <div className="font-medium text-gray-900">Ikoyi Heights</div>
-                          <div className="text-sm text-gray-600">Completed 2021 â€¢ ₦280M project</div>
+                          <div className="text-sm text-gray-600">Completed 2021 • ₦280M project</div>
                         </div>
                       </div>
                     </div>
@@ -1588,7 +1588,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                âœ•
+                ✓
               </button>
             </div>
             {/* Project Summary */}
@@ -1812,7 +1812,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                âœ•
+                ✓
               </button>
             </div>
 
@@ -1881,7 +1881,7 @@ const Investment = () => {
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
-                âœ•
+                ✓
               </button>
             </div>
 
