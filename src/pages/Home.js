@@ -437,6 +437,7 @@ const Home = () => {
   const [showMoreAmenities, setShowMoreAmenities] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertiesPerPage] = useState(9);
+  const [selectedVendor, setSelectedVendor] = useState('');
   
   // Real-time filtering
   const filteredProperties = useMemo(() => {
@@ -503,6 +504,17 @@ const Home = () => {
       });
     }
     
+    // Apply vendor filter
+    if (selectedVendor) {
+      filtered = filtered.filter(property => {
+        const vendorName = property?.agent?.name || 
+          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
+        const vendorId = property?.ownerId || property?.owner?.id || '';
+        return vendorName.toLowerCase().includes(selectedVendor.toLowerCase()) ||
+               vendorId.toLowerCase().includes(selectedVendor.toLowerCase());
+      });
+    }
+    
     // Apply sorting
     let sorted = [...filtered];
     switch (sortBy) {
@@ -521,7 +533,7 @@ const Home = () => {
     }
     
     return sorted;
-  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange, sortBy]);
+  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange, sortBy, selectedVendor]);
 
   // All Nigerian States
   const locations = [
@@ -537,6 +549,20 @@ const Home = () => {
     'Swimming Pool', 'Gym', '24/7 Security', 'Air Conditioning', 'Parking Space', 
     'WiFi', 'Furnished', 'Balcony', 'Garden', 'Terrace', 'Home Theater', 'Sauna'
   ];
+  
+  // Get unique vendors from properties
+  const uniqueVendors = useMemo(() => {
+    const vendorMap = new Map();
+    mockProperties.forEach(property => {
+      const vendorName = property?.agent?.name || 
+        (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
+      const vendorId = property?.ownerId || property?.owner?.id || '';
+      if (vendorName && !vendorMap.has(vendorId)) {
+        vendorMap.set(vendorId, vendorName);
+      }
+    });
+    return Array.from(vendorMap.entries()).map(([id, name]) => ({ id, name }));
+  }, []);
 
   const handleAmenityToggle = (amenity) => {
     setSelectedAmenities(prev => 
@@ -559,6 +585,9 @@ const Home = () => {
         break;
       case 'bedrooms':
         setBedrooms('');
+        break;
+      case 'vendor':
+        setSelectedVendor('');
         break;
     }
   };
@@ -846,6 +875,11 @@ const Home = () => {
                     {bedrooms} Bedrooms <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('bedrooms')} />
                   </span>
                 )}
+                {selectedVendor && (
+                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+                    Vendor: {selectedVendor} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('vendor')} />
+                  </span>
+                )}
               </div>
             </div>
 
@@ -891,6 +925,37 @@ const Home = () => {
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Vendor Search */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Search by Vendor</label>
+              <input
+                type="text"
+                value={selectedVendor}
+                onChange={(e) => setSelectedVendor(e.target.value)}
+                placeholder="Enter vendor name..."
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              {uniqueVendors.length > 0 && (
+                <div className="mt-2 max-h-40 overflow-y-auto">
+                  {uniqueVendors
+                    .filter(vendor => 
+                      !selectedVendor || 
+                      vendor.name.toLowerCase().includes(selectedVendor.toLowerCase())
+                    )
+                    .slice(0, 5)
+                    .map(vendor => (
+                      <button
+                        key={vendor.id}
+                        onClick={() => setSelectedVendor(vendor.name)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded transition-colors"
+                      >
+                        {vendor.name}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
 
             {/* Price Range */}

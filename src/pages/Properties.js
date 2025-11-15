@@ -16,6 +16,7 @@ const Properties = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [selectedVendor, setSelectedVendor] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
   const [favorites, setFavorites] = useState(new Set());
@@ -68,8 +69,19 @@ const Properties = () => {
       filtered = filtered.filter(property => property.price <= parseFloat(priceRange.max));
     }
 
+    // Apply vendor filter
+    if (selectedVendor) {
+      filtered = filtered.filter(property => {
+        const vendorName = property?.agent?.name || 
+          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
+        const vendorId = property?.ownerId || property?.owner?.id || '';
+        return vendorName.toLowerCase().includes(selectedVendor.toLowerCase()) ||
+               vendorId.toLowerCase().includes(selectedVendor.toLowerCase());
+      });
+    }
+
     return filtered;
-  }, [safeProperties, searchQuery, selectedType, selectedStatus, priceRange]);
+  }, [safeProperties, searchQuery, selectedType, selectedStatus, priceRange, selectedVendor]);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -80,6 +92,20 @@ const Properties = () => {
       statuses: statuses.length ? statuses : ['for-sale','for-rent','for-lease'],
       locations
     };
+  }, [safeProperties]);
+
+  // Get unique vendors from properties
+  const uniqueVendors = useMemo(() => {
+    const vendorMap = new Map();
+    safeProperties.forEach(property => {
+      const vendorName = property?.agent?.name || 
+        (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
+      const vendorId = property?.ownerId || property?.owner?.id || '';
+      if (vendorName && !vendorMap.has(vendorId)) {
+        vendorMap.set(vendorId, vendorName);
+      }
+    });
+    return Array.from(vendorMap.entries()).map(([id, name]) => ({ id, name }));
   }, [safeProperties]);
 
   // Pagination for filtered properties
@@ -192,6 +218,7 @@ const Properties = () => {
     setSelectedStatus('');
     setPriceRange({ min: '', max: '' });
     setSearchQuery('');
+    setSelectedVendor('');
     setFilters({});
     fetchProperties({}, 1);
     setCurrentPage(1);
@@ -508,6 +535,36 @@ const Properties = () => {
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
+          </div>
+
+          {/* Vendor Search */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search by Vendor</label>
+            <input
+              type="text"
+              value={selectedVendor}
+              onChange={(e) => setSelectedVendor(e.target.value)}
+              placeholder="Enter vendor name..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {uniqueVendors.length > 0 && selectedVendor && (
+              <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow-lg">
+                {uniqueVendors
+                  .filter(vendor => 
+                    vendor.name.toLowerCase().includes(selectedVendor.toLowerCase())
+                  )
+                  .slice(0, 5)
+                  .map(vendor => (
+                    <button
+                      key={vendor.id}
+                      onClick={() => setSelectedVendor(vendor.name)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      {vendor.name}
+                    </button>
+                  ))}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
