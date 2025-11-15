@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 
@@ -23,8 +23,46 @@ const PropertyDetail = () => {
     if (properties && id) {
       const foundProperty = properties.find(p => p.id === id);
       setProperty(foundProperty);
+      // Reset activeImage when property changes
+      setActiveImage(0);
     }
   }, [properties, id]);
+
+  // Get the current image URL based on activeImage index
+  const getCurrentImage = () => {
+    if (!property) return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop';
+    
+    // Check if property has images array
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+      // Ensure activeImage is within bounds
+      const safeIndex = Math.max(0, Math.min(activeImage, property.images.length - 1));
+      const currentImage = property.images[safeIndex];
+      
+      // Handle both string URLs and object with url property
+      if (typeof currentImage === 'string') {
+        return currentImage;
+      } else if (currentImage && currentImage.url) {
+        return currentImage.url;
+      }
+    }
+    
+    // Fallback to property.image if available
+    if (property.image) {
+      return property.image;
+    }
+    
+    return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop';
+  };
+
+  // Get image URL for thumbnails
+  const getImageUrl = (image) => {
+    if (typeof image === 'string') {
+      return image;
+    } else if (image && image.url) {
+      return image.url;
+    }
+    return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=80&h=80&fit=crop';
+  };
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -64,13 +102,47 @@ const PropertyDetail = () => {
     console.log('Contact Owner clicked, property:', property, 'user:', user);
     
     if (!user) {
-      toast.error('Please login to contact property owner');
+      toast.error('Please login to contact property vendor');
       navigate('/login');
       return;
     }
     
-    console.log('Opening inquiry modal for property:', property?.title);
-    setShowInquiryModal(true);
+    // Get vendor's phone number
+    const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
+    
+    if (!vendorPhone) {
+      toast.error('Vendor phone number not available');
+      return;
+    }
+    
+    // Format phone number for WhatsApp
+    // Remove all non-digit characters
+    let formattedPhone = vendorPhone.replace(/\D/g, '');
+    
+    // Handle Nigerian phone numbers (country code: 234)
+    if (formattedPhone.startsWith('234')) {
+      // Already has country code
+      formattedPhone = formattedPhone;
+    } else if (formattedPhone.startsWith('0')) {
+      // Remove leading 0 and add country code
+      formattedPhone = '234' + formattedPhone.substring(1);
+    } else {
+      // Add country code if missing
+      formattedPhone = '234' + formattedPhone;
+    }
+    
+    // Create WhatsApp message
+    const propertyTitle = property?.title || 'Property';
+    const propertyPrice = property?.price ? `₦${property.price.toLocaleString()}` : '';
+    const message = encodeURIComponent(
+      `Hi, I'm interested in your property: ${propertyTitle}${propertyPrice ? ` (${propertyPrice})` : ''}. Could you please provide more information?`
+    );
+    
+    // Open WhatsApp
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    
+    toast.success('Opening WhatsApp...');
   };
 
   const handleSendInquiry = () => {
@@ -80,7 +152,7 @@ const PropertyDetail = () => {
     }
     
     // Simulate sending inquiry
-    toast.success('Inquiry sent successfully! The owner will contact you soon.');
+    toast.success('Inquiry sent successfully! The vendor will contact you soon.');
     setShowInquiryModal(false);
     setInquiryMessage('');
   };
@@ -208,9 +280,10 @@ const PropertyDetail = () => {
             <div className="mb-8">
               <div className="relative">
                 <img
-                  src={property.images?.[activeImage]?.url || property.image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop'}
+                  src={getCurrentImage()}
                   alt={property.title}
                   className="w-full h-96 object-cover rounded-lg"
+                  key={`main-image-${activeImage}`}
                 />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -232,18 +305,24 @@ const PropertyDetail = () => {
               </div>
               
               {/* Thumbnail Images */}
-              {property.images && property.images.length > 1 && (
-                <div className="mt-4 flex space-x-2 overflow-x-auto">
+              {property.images && Array.isArray(property.images) && property.images.length > 1 && (
+                <div className="mt-4 flex space-x-2 overflow-x-auto pb-2">
                   {property.images.map((image, index) => (
                     <button
-                      key={index}
-                      onClick={() => setActiveImage(index)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 ${
-                        activeImage === index ? 'border-blue-500' : 'border-gray-200'
+                      key={`thumb-${index}`}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveImage(index);
+                      }}
+                      className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all ${
+                        activeImage === index 
+                          ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-2' 
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <img
-                        src={image?.url || image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=80&h=80&fit=crop'}
+                        src={getImageUrl(image)}
                         alt={`${property.title} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -334,10 +413,10 @@ const PropertyDetail = () => {
               <div className="space-y-3">
                 <button
                   onClick={handleContactOwner}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
                 >
-                  <FaEnvelope className="mr-2" />
-                  Contact Owner
+                  <FaWhatsapp className="mr-2" />
+                  Contact Vendor
                 </button>
                 <button
                   onClick={handleScheduleViewing}
@@ -355,46 +434,76 @@ const PropertyDetail = () => {
               </div>
             </div>
 
-            {/* Owner Information */}
+            {/* Vendor Information */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Owner</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Vendor</h3>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-3">
                     <span className="text-gray-600 font-semibold">
-                      {property.owner?.firstName?.[0]}{property.owner?.lastName?.[0]}
+                      {property.owner?.firstName?.[0] || property.vendor?.firstName?.[0] || 'V'}
+                      {property.owner?.lastName?.[0] || property.vendor?.lastName?.[0] || 'D'}
                     </span>
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">
-                      {property.owner?.firstName} {property.owner?.lastName}
+                      {property.owner?.firstName || property.vendor?.firstName || 'Vendor'} {property.owner?.lastName || property.vendor?.lastName || ''}
                     </div>
-                    <div className="text-sm text-gray-500">Property Owner</div>
+                    <div className="text-sm text-gray-500">Property Vendor</div>
                   </div>
                 </div>
                 <div className="pt-3 border-t">
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <FaMapMarkerAlt className="mr-2" />
-                    <span>
+                  <div className="flex items-start text-gray-600 mb-3">
+                    <FaMapMarkerAlt className="mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">
                       {(() => {
+                        // Handle string location
                         if (typeof property.location === 'string') {
                           return property.location;
                         }
+                        // Handle object location
                         if (property.location && typeof property.location === 'object') {
-                          const address = property.location.address || '';
-                          const city = property.location.city || '';
-                          const state = property.location.state || '';
-                          const result = [address, city, state].filter(Boolean).join(', ');
-                          return result || 'Location not specified';
+                          const address = property.location.address || property.address || '';
+                          const city = property.location.city || property.city || '';
+                          const state = property.location.state || property.state || '';
+                          const zipCode = property.location.zipCode || property.zipCode || '';
+                          const parts = [address, city, state, zipCode].filter(Boolean);
+                          return parts.length > 0 ? parts.join(', ') : 'Location not specified';
+                        }
+                        // Fallback: try address, city, state as separate properties
+                        if (property.address || property.city || property.state) {
+                          const parts = [property.address, property.city, property.state].filter(Boolean);
+                          return parts.length > 0 ? parts.join(', ') : 'Location not specified';
                         }
                         return 'Location not specified';
                       })()}
                     </span>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <span className="text-sm">Views: {property.views || 0}</span>
+                  
+                  {/* Listing Date */}
+                  {property.createdAt && (
+                    <div className="flex items-center text-gray-600 mb-3 text-sm">
+                      <FaCalendar className="mr-2" />
+                      <span>
+                        Listed: {(() => {
+                          const date = new Date(property.createdAt);
+                          if (isNaN(date.getTime())) {
+                            return property.createdAt;
+                          }
+                          return date.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          });
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-gray-600 text-sm">
+                    <span>Views: {property.views || 0}</span>
                     <span className="mx-2">•</span>
-                    <span className="text-sm">
+                    <span>
                       {property.isVerified ? '✅ Verified' : '⏳ Pending Verification'}
                     </span>
                   </div>
@@ -447,17 +556,31 @@ const PropertyDetail = () => {
                   <span className="text-gray-600">Property ID:</span>
                   <span className="font-medium">{property.id}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Listed:</span>
-                  <span className="font-medium">{property.dateListed}</span>
-                </div>
+                {property.createdAt && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Listed:</span>
+                    <span className="font-medium">
+                      {(() => {
+                        const date = new Date(property.createdAt);
+                        if (isNaN(date.getTime())) {
+                          return property.createdAt || property.dateListed || 'N/A';
+                        }
+                        return date.toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        });
+                      })()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
                   <span className="font-medium text-green-600">Available</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Owner:</span>
-                  <span className="font-medium">{property.ownerName}</span>
+                  <span className="text-gray-600">Vendor:</span>
+                  <span className="font-medium">{property.ownerName || `${property.owner?.firstName || property.vendor?.firstName || ''} ${property.owner?.lastName || property.vendor?.lastName || ''}`.trim() || 'Vendor'}</span>
                 </div>
                 
                 {/* Location link */}
@@ -504,7 +627,7 @@ const PropertyDetail = () => {
             
             <div className="mb-4">
               <p className="text-sm text-gray-600">
-                Send a message to the property owner about <strong>{property.title}</strong>
+                Send a message to the property vendor about <strong>{property.title}</strong>
               </p>
             </div>
 
