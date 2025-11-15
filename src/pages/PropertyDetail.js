@@ -21,10 +21,33 @@ const PropertyDetail = () => {
 
   useEffect(() => {
     if (properties && id) {
-      const foundProperty = properties.find(p => p.id === id);
-      setProperty(foundProperty);
-      // Reset activeImage when property changes
-      setActiveImage(0);
+      const foundProperty = properties.find(p => 
+        p.id === id || 
+        p.propertyId === id || 
+        p.numericId === parseInt(id) ||
+        p.id === `prop_${id}` ||
+        p.id?.toString() === id?.toString()
+      );
+      
+      if (foundProperty) {
+        // Ensure location data is properly set
+        if (foundProperty.location && typeof foundProperty.location === 'string' && foundProperty.location.includes('undefined')) {
+          // If location string has undefined, reconstruct from separate properties
+          const parts = [
+            foundProperty.address,
+            foundProperty.city,
+            foundProperty.state
+          ].filter(part => part && part !== 'undefined' && part !== undefined && part !== null);
+          
+          if (parts.length > 0) {
+            foundProperty.location = parts.join(', ');
+          }
+        }
+        
+        setProperty(foundProperty);
+        // Reset activeImage when property changes
+        setActiveImage(0);
+      }
     }
   }, [properties, id]);
 
@@ -456,24 +479,37 @@ const PropertyDetail = () => {
                     <FaMapMarkerAlt className="mr-2 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">
                       {(() => {
-                        // Handle string location
-                        if (typeof property.location === 'string') {
+                        // First, try to get location from separate address, city, state properties (most reliable)
+                        const address = property.address || '';
+                        const city = property.city || '';
+                        const state = property.state || '';
+                        const zipCode = property.zipCode || '';
+                        
+                        if (address || city || state) {
+                          const parts = [address, city, state, zipCode].filter(part => part && part !== '' && part !== null && part !== undefined && part !== 'undefined');
+                          if (parts.length > 0) {
+                            return parts.join(', ');
+                          }
+                        }
+                        
+                        // Handle object location - check if fields exist and are not undefined
+                        if (property.location && typeof property.location === 'object') {
+                          const objAddress = property.location.address;
+                          const objCity = property.location.city;
+                          const objState = property.location.state;
+                          const objZipCode = property.location.zipCode;
+                          
+                          const parts = [objAddress, objCity, objState, objZipCode].filter(part => part && part !== '' && part !== null && part !== undefined && part !== 'undefined');
+                          if (parts.length > 0) {
+                            return parts.join(', ');
+                          }
+                        }
+                        
+                        // Handle string location (from transformed properties) - but check it doesn't contain "undefined"
+                        if (typeof property.location === 'string' && property.location.trim() !== '' && !property.location.includes('undefined')) {
                           return property.location;
                         }
-                        // Handle object location
-                        if (property.location && typeof property.location === 'object') {
-                          const address = property.location.address || property.address || '';
-                          const city = property.location.city || property.city || '';
-                          const state = property.location.state || property.state || '';
-                          const zipCode = property.location.zipCode || property.zipCode || '';
-                          const parts = [address, city, state, zipCode].filter(Boolean);
-                          return parts.length > 0 ? parts.join(', ') : 'Location not specified';
-                        }
-                        // Fallback: try address, city, state as separate properties
-                        if (property.address || property.city || property.state) {
-                          const parts = [property.address, property.city, property.state].filter(Boolean);
-                          return parts.length > 0 ? parts.join(', ') : 'Location not specified';
-                        }
+                        
                         return 'Location not specified';
                       })()}
                     </span>

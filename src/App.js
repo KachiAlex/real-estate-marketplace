@@ -91,12 +91,12 @@ function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/properties" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <Properties />
-                        </main>
-                      </div>
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <Properties />
+                      </main>
+                    </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/my-inspections" element={
@@ -141,12 +141,12 @@ function App() {
                   } />
                   <Route path="/property/:id" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <PropertyDetail />
-                        </main>
-                      </div>
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <PropertyDetail />
+                      </main>
+                    </div>
                     </ProtectedRoute>
                   } />
                   <Route path="/about" element={<About />} />
@@ -154,12 +154,12 @@ function App() {
                   <Route path="/blog/:slug" element={<BlogDetail />} />
                   <Route path="/search" element={
                     <ProtectedRoute>
-                      <div className="flex w-full">
-                        <Sidebar />
-                        <main className="flex-1 ml-64">
-                          <SearchResults />
-                        </main>
-                      </div>
+                    <div className="flex w-full">
+                      <Sidebar />
+                      <main className="flex-1 ml-64">
+                        <SearchResults />
+                      </main>
+                    </div>
                     </ProtectedRoute>
                   } />
                   
