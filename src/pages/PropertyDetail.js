@@ -121,8 +121,7 @@ const PropertyDetail = () => {
     
     // Handle Nigerian phone numbers (country code: 234)
     if (formattedPhone.startsWith('234')) {
-      // Already has country code
-      formattedPhone = formattedPhone;
+      // Already has country code, no change needed
     } else if (formattedPhone.startsWith('0')) {
       // Remove leading 0 and add country code
       formattedPhone = '234' + formattedPhone.substring(1);
