@@ -97,7 +97,7 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src={`${process.env.PUBLIC_URL}/logo.png`} 
+                src={`${process.env.PUBLIC_URL}/logo.png?v=${Date.now()}`} 
                 alt="Property Ark Logo" 
                 className="h-10 w-auto"
                 style={{ 

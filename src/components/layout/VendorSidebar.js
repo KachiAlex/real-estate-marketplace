@@ -78,7 +78,7 @@ const VendorSidebar = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img 
-              src={`${process.env.PUBLIC_URL}/logo.png`} 
+              src={`${process.env.PUBLIC_URL}/logo.png?v=${Date.now()}`} 
               alt="Property Ark Logo" 
               className="h-8 w-auto"
               style={{ 
