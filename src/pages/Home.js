@@ -846,16 +846,9 @@ const Home = () => {
             <div className="absolute top-0 left-0 w-32 h-32 bg-blue-200 rounded-full opacity-10 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
             <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-200 rounded-full opacity-10 blur-3xl translate-x-1/2 translate-y-1/2"></div>
             
-            <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
-              {/* Left Icon */}
-              <div className="flex-shrink-0">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <FaShieldAlt className="text-white text-2xl" />
-                </div>
-              </div>
-              
+            <div className="relative flex items-center justify-center">
               {/* Main Text */}
-              <div className="flex-1 text-center md:text-left">
+              <div className="text-center">
                 <p className="text-lg md:text-xl font-bold text-gray-800 leading-relaxed">
                   Secure real estate transactions with{' '}
                   <span className="relative inline-block">
@@ -873,16 +866,6 @@ const Home = () => {
                     <span className="absolute bottom-0 left-0 w-full h-2 bg-purple-200 opacity-40 -z-0"></span>
                   </span>
                 </p>
-              </div>
-              
-              {/* Right Icons */}
-              <div className="flex-shrink-0 flex gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-110 transition-transform duration-300">
-                  <FaCertificate className="text-white text-lg" />
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-110 transition-transform duration-300">
-                  <FaFileContract className="text-white text-lg" />
-                </div>
               </div>
             </div>
           </div>
