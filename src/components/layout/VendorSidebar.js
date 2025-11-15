@@ -77,7 +77,22 @@ const VendorSidebar = () => {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-brand-blue to-blue-600 rounded-lg flex items-center justify-center">
+            <img 
+              src="/logo.png" 
+              alt="Property Ark Logo" 
+              className="h-8 w-auto"
+              style={{ 
+                mixBlendMode: 'multiply',
+                filter: 'contrast(1.2) brightness(1.1)',
+                backgroundColor: 'transparent'
+              }}
+              onError={(e) => {
+                // Fallback to icon if logo image doesn't exist
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-8 h-8 bg-gradient-to-r from-brand-blue to-blue-600 rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
               <FaHome className="text-white text-sm" />
             </div>
             {!isCollapsed && (
