@@ -36,7 +36,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "Hello! I'm your Property Ark AI Assistant with a friendly female voice. I understand exactly where you are on our platform and can provide personalized help based on your current page. Whether you're browsing properties, managing listings, or exploring investments, I'm here to guide you every step of the way. I can also give you a guided tour of our platform! How can I assist you today?",
+      message: "Hello! I'm your Property Ark AI Assistant with a friendly female voice. I specialize in helping you with real estate and property-related questions on our platform.\n\nI can help you with:\n• Finding and searching properties\n• Understanding pricing and market trends\n• Financing and mortgage options\n• Legal documents and verification\n• Investment opportunities\n• Escrow and secure transactions\n• Connecting with agents\n• Navigating the platform\n\nI understand exactly where you are on our platform and can provide personalized help based on your current page. How can I assist you with your property needs today?",
       timestamp: new Date()
     }
   ]);
@@ -67,7 +67,8 @@ const AIAssistant = () => {
         { icon: FaHome, text: "Show me luxury properties", action: "show_luxury" },
         { icon: FaUser, text: "Help me register as a buyer", action: "help_register" },
         { icon: FaQuestionCircle, text: "How does the platform work?", action: "explain_platform" },
-        { icon: FaLightbulb, text: "Investment opportunities", action: "show_investments" }
+        { icon: FaLightbulb, text: "Investment opportunities", action: "show_investments" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else if (currentPath.includes('/vendor')) {
       // Vendor dashboard suggestions
@@ -77,7 +78,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Update my vendor profile", action: "update_profile" },
         { icon: FaChartLine, text: "View my performance analytics", action: "view_analytics" },
         { icon: FaQuestionCircle, text: "How to price my property?", action: "pricing_help" },
-        { icon: FaBrain, text: "Tips for better property photos", action: "photo_tips" }
+        { icon: FaBrain, text: "Tips for better property photos", action: "photo_tips" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else if (currentPath.includes('/properties')) {
       // Properties page suggestions
@@ -87,7 +89,8 @@ const AIAssistant = () => {
         { icon: FaHome, text: "Show similar properties", action: "similar_properties" },
         { icon: FaUser, text: "Contact property agent", action: "contact_agent" },
         { icon: FaQuestionCircle, text: "Schedule property viewing", action: "schedule_viewing" },
-        { icon: FaLightbulb, text: "Get property valuation", action: "property_valuation" }
+        { icon: FaLightbulb, text: "Get property valuation", action: "property_valuation" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else if (currentPath.includes('/investment')) {
       // Investment page suggestions
@@ -97,7 +100,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Create investment portfolio", action: "create_portfolio" },
         { icon: FaBell, text: "Investment alerts", action: "investment_alerts" },
         { icon: FaQuestionCircle, text: "Risk assessment", action: "risk_assessment" },
-        { icon: FaBrain, text: "Investment strategies", action: "investment_strategies" }
+        { icon: FaBrain, text: "Investment strategies", action: "investment_strategies" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else if (currentPath.includes('/blog')) {
       // Blog page suggestions
@@ -107,7 +111,8 @@ const AIAssistant = () => {
         { icon: FaHome, text: "Latest property news", action: "latest_news" },
         { icon: FaUser, text: "Share article", action: "share_article" },
         { icon: FaQuestionCircle, text: "Market insights", action: "market_insights" },
-        { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" }
+        { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else if (currentPath.includes('/dashboard')) {
       // User dashboard suggestions
@@ -117,7 +122,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Update my profile", action: "update_profile" },
         { icon: FaSearch, text: "Recent searches", action: "recent_searches" },
         { icon: FaQuestionCircle, text: "Account settings", action: "account_settings" },
-        { icon: FaLightbulb, text: "Personalized recommendations", action: "recommendations" }
+        { icon: FaLightbulb, text: "Personalized recommendations", action: "recommendations" },
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
       ];
     } else {
       // Default suggestions for other pages
@@ -701,6 +707,13 @@ const AIAssistant = () => {
                   </div>
                 )}
 
+                {/* Scope Notice */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
+                  <p className="text-xs text-blue-800 text-center">
+                    <strong>Note:</strong> I specialize in real estate and property-related topics. Ask me about properties, pricing, financing, legal documents, investments, and platform navigation.
+                  </p>
+                </div>
+
                 {/* Quick Suggestions */}
                 {showSuggestions && messages.length === 1 && (
                   <div className="space-y-2">
@@ -742,7 +755,7 @@ const AIAssistant = () => {
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Ask me anything about properties..."
+                      placeholder="Ask about properties, pricing, financing, legal docs..."
                       className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>

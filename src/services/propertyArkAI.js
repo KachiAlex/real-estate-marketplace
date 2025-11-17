@@ -711,6 +711,12 @@ Would you like me to show you your saved properties or help you manage them?`;
     // Use conversation history for better context
     const recentContext = this.context.conversationHistory.slice(-3);
     
+    // Check if question is outside our scope
+    const outOfScopeTopics = this.detectOutOfScope(message);
+    if (outOfScopeTopics.length > 0) {
+      return this.handleOutOfScopeQuery(message, outOfScopeTopics);
+    }
+    
     let response = "I understand you're asking about that topic. ";
     
     // Check if we have relevant context
@@ -721,15 +727,79 @@ Would you like me to show you your saved properties or help you manage them?`;
       }
     }
     
-    response += "I can help you with property searches, market information, financing options, legal guidance, and more. ";
+    response += "I specialize in real estate and property-related topics. I can help you with:\n\n";
+    response += "• Property searches and listings\n";
+    response += "• Market information and pricing\n";
+    response += "• Financing and mortgage options\n";
+    response += "• Legal guidance and documents\n";
+    response += "• Investment opportunities\n";
+    response += "• Escrow and secure transactions\n";
+    response += "• Agent connections\n";
+    response += "• Platform navigation\n\n";
     
     if (entities.location || entities.price || entities.propertyType) {
       response += "Based on what you've mentioned, would you like me to help you find properties that match your criteria?";
     } else {
-      response += "Could you tell me more specifically what you'd like help with?";
+      response += "Could you rephrase your question to focus on real estate or property-related topics? I'm here to help with your property needs!";
     }
     
     return { response, action: null, entities };
+  }
+  
+  // Detect if question is outside our scope
+  detectOutOfScope(message) {
+    const lowerMessage = message.toLowerCase();
+    const outOfScope = [];
+    
+    // General knowledge topics
+    const generalTopics = {
+      'weather': ['weather', 'temperature', 'rain', 'sunny', 'climate'],
+      'news': ['news', 'politics', 'election', 'government', 'current events'],
+      'sports': ['sports', 'football', 'soccer', 'basketball', 'game', 'match'],
+      'entertainment': ['movie', 'music', 'celebrity', 'tv show', 'entertainment'],
+      'cooking': ['recipe', 'cooking', 'food', 'restaurant', 'cuisine'],
+      'health': ['health', 'medical', 'doctor', 'medicine', 'symptoms', 'disease'],
+      'education': ['school', 'university', 'course', 'education', 'learn', 'study'],
+      'technology': ['programming', 'code', 'software', 'app development', 'tech'],
+      'general_questions': ['what is', 'who is', 'when did', 'why does', 'how does']
+    };
+    
+    for (const [topic, keywords] of Object.entries(generalTopics)) {
+      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+        outOfScope.push(topic);
+      }
+    }
+    
+    return outOfScope;
+  }
+  
+  // Handle out-of-scope queries
+  handleOutOfScopeQuery(message, topics) {
+    let response = "I appreciate your question, but I'm specifically designed to help with real estate and property-related topics on Property Ark. ";
+    
+    response += "I can assist you with:\n\n";
+    response += "🏠 Property Search & Listings\n";
+    response += "💰 Pricing & Market Information\n";
+    response += "💳 Financing & Mortgage Options\n";
+    response += "📄 Legal Documents & Verification\n";
+    response += "📈 Investment Opportunities\n";
+    response += "🔒 Escrow & Secure Transactions\n";
+    response += "👥 Agent Connections\n";
+    response += "🧭 Platform Navigation & Features\n\n";
+    
+    response += "For questions outside of real estate, I'd recommend:\n";
+    response += "• General knowledge: Use a general search engine\n";
+    response += "• Technical support: Contact our support team\n";
+    response += "• Account issues: Visit your account settings\n\n";
+    
+    response += "How can I help you with your property needs today?";
+    
+    return { 
+      response, 
+      action: null, 
+      entities: {},
+      outOfScope: true 
+    };
   }
   
   getRandomResponse(type) {
