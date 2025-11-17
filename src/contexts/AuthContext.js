@@ -3,6 +3,8 @@ import { auth } from '../config/firebase';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   updateProfile
@@ -270,6 +272,56 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Handle Google redirect result
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const fbUser = result.user;
+          
+          // Extract name from displayName
+          const nameParts = fbUser.displayName?.split(' ') || [];
+          const firstName = nameParts[0] || 'User';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          // Create user object
+          const googleUser = {
+            id: fbUser.uid,
+            firstName,
+            lastName,
+            email: fbUser.email,
+            role: 'user',
+            roles: ['buyer', 'vendor'],
+            activeRole: 'buyer',
+            avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            provider: 'google'
+          };
+          
+          // Check if this email exists in mock users
+          const existingMockUser = mockUsers.find(u => u.email === fbUser.email);
+          if (existingMockUser) {
+            googleUser.role = existingMockUser.role;
+            googleUser.roles = existingMockUser.roles;
+          }
+          
+          setUser(googleUser);
+          localStorage.setItem('currentUser', JSON.stringify(googleUser));
+          localStorage.setItem('activeRole', googleUser.activeRole);
+          
+          toast.success('Signed in with Google successfully!');
+        }
+      } catch (error) {
+        console.error('Error handling redirect result:', error);
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+          toast.error(error.message || 'Failed to sign in with Google');
+        }
+      }
+    };
+    
+    handleRedirectResult();
+  }, []);
+
   // Initialize Firebase Auth state (no anonymous sign-in)
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
@@ -310,7 +362,36 @@ export const AuthProvider = ({ children }) => {
           return;
         }
         
-        // We have a Firebase user (from Google sign-in)
+        // We have a Firebase user (from Google sign-in via redirect)
+        // Only process if we don't already have a user in localStorage
+        if (!savedUser && fbUser) {
+          const nameParts = fbUser.displayName?.split(' ') || [];
+          const firstName = nameParts[0] || 'User';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          const googleUser = {
+            id: fbUser.uid,
+            firstName,
+            lastName,
+            email: fbUser.email,
+            role: 'user',
+            roles: ['buyer', 'vendor'],
+            activeRole: 'buyer',
+            avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            provider: 'google'
+          };
+          
+          const existingMockUser = mockUsers.find(u => u.email === fbUser.email);
+          if (existingMockUser) {
+            googleUser.role = existingMockUser.role;
+            googleUser.roles = existingMockUser.roles;
+          }
+          
+          setUser(googleUser);
+          localStorage.setItem('currentUser', JSON.stringify(googleUser));
+          localStorage.setItem('activeRole', googleUser.activeRole);
+        }
+        
         setFirebaseAuthReady(true);
         setLoading(false);
       } catch (e) {
@@ -382,7 +463,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google Sign-In function
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (useRedirect = false) => {
     setLoading(true);
     setError(null);
     
@@ -392,8 +473,28 @@ export const AuthProvider = ({ children }) => {
         prompt: 'select_account'
       });
       
-      const result = await signInWithPopup(auth, provider);
-      const fbUser = result.user;
+      let result;
+      let fbUser;
+      
+      if (useRedirect) {
+        // Use redirect method (for mobile or when popup is blocked)
+        await signInWithRedirect(auth, provider);
+        return { success: true, redirecting: true };
+      } else {
+        // Try popup first (default)
+        try {
+          result = await signInWithPopup(auth, provider);
+          fbUser = result.user;
+        } catch (popupError) {
+          // If popup is blocked, fall back to redirect
+          if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+            console.log('Popup blocked, using redirect method...');
+            await signInWithRedirect(auth, provider);
+            return { success: true, redirecting: true };
+          }
+          throw popupError;
+        }
+      }
       
       // Extract name from displayName
       const nameParts = fbUser.displayName?.split(' ') || [];
@@ -455,9 +556,29 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: googleUser, redirectUrl: redirectTo };
     } catch (error) {
       console.error('Google sign-in error:', error);
-      setError(error.message);
-      toast.error(error.message || 'Failed to sign in with Google');
-      return { success: false, error: error.message };
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to sign in with Google';
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with this email. Please sign in with your existing method.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was cancelled.';
+        // Don't show error toast for user cancellation
+        setLoading(false);
+        return { success: false, error: errorMessage, cancelled: true };
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for Google sign-in. Please contact support.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Google sign-in is not enabled. Please contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
