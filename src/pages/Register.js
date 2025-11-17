@@ -2,6 +2,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -29,7 +30,9 @@ const Register = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState(0);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const { register, signInWithGoogle } = useAuth();
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const { register, signInWithGoogle, setUser } = useAuth();
   const navigate = useNavigate();
 
   // Generate captcha question
@@ -138,6 +141,45 @@ const Register = () => {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle role selection
+  const handleRoleSelection = async (selectedRole) => {
+    try {
+      // Update the user's active role locally first
+      const updatedUser = { ...loggedInUser, activeRole: selectedRole };
+      
+      // Update localStorage
+      localStorage.setItem('activeRole', selectedRole);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      // Update AuthContext state
+      setUser(updatedUser);
+      
+      // Show success message
+      toast.success(`Switched to ${selectedRole} dashboard`);
+      
+      // Close the modal
+      setShowRoleSelection(false);
+      
+      // Navigate directly using React Router
+      let dashboardPath;
+      if (selectedRole === 'admin') {
+        dashboardPath = '/admin';
+      } else if (selectedRole === 'vendor') {
+        dashboardPath = '/vendor/dashboard';
+      } else {
+        dashboardPath = '/dashboard';
+      }
+      
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        navigate(dashboardPath);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error in role selection:', error);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -776,7 +818,19 @@ const Register = () => {
                   setLoading(true);
                   const result = await signInWithGoogle();
                   if (result.success) {
-                    navigate(result.redirectUrl || '/dashboard', { replace: true });
+                    // Handle redirect case
+                    if (result.redirecting) {
+                      return; // User will be redirected, no need to navigate
+                    }
+                    // Same logic as regular login
+                    if (result.user && result.user.role === 'admin') {
+                      navigate(result.redirectUrl || '/admin', { replace: true });
+                    } else if (result.user && result.user.roles && result.user.roles.length > 1) {
+                      setLoggedInUser(result.user);
+                      setShowRoleSelection(true);
+                    } else {
+                      navigate(result.redirectUrl || '/dashboard', { replace: true });
+                    }
                   }
                 } catch (error) {
                   console.error('Google sign-in error:', error);
@@ -947,6 +1001,64 @@ const Register = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Selection Modal */}
+      {showRoleSelection && loggedInUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Choose Your Dashboard
+              </h3>
+              <p className="text-gray-600">
+                You have access to multiple account types. Which would you like to use?
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              {loggedInUser.roles.includes('buyer') && (
+                <button
+                  onClick={() => handleRoleSelection('buyer')}
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <FaShoppingCart className="text-blue-600 text-xl" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-gray-900">Buyer Dashboard</h4>
+                      <p className="text-sm text-gray-600">Browse and purchase properties</p>
+                    </div>
+                  </div>
+                </button>
+              )}
+              
+              {loggedInUser.roles.includes('vendor') && (
+                <button
+                  onClick={() => handleRoleSelection('vendor')}
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                      <FaBuilding className="text-green-600 text-xl" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-gray-900">Vendor Dashboard</h4>
+                      <p className="text-sm text-gray-600">Manage and list properties</p>
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500">
+                You can switch between dashboards anytime from the header menu
+              </p>
             </div>
           </div>
         </div>
