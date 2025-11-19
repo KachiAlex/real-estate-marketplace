@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -196,8 +196,8 @@ const Mortgage = () => {
     { type: '5/1 ARM', rate: 11.9, change: 0.05, trend: 'up' }
   ];
 
-  // Mock eligible properties data
-  const eligibleProperties = [
+  // Mock eligible properties data with categories
+  const allEligibleProperties = [
     {
       id: 1,
       title: "Luxury Apartment in Ikoyi",
@@ -211,7 +211,11 @@ const Mortgage = () => {
       monthlyPayment: 364720,
       downPaymentPercent: 20,
       loanTerm: 20,
-      interestRate: 13.5
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: false
     },
     {
       id: 2,
@@ -226,7 +230,11 @@ const Mortgage = () => {
       monthlyPayment: 425000,
       downPaymentPercent: 20,
       loanTerm: 20,
-      interestRate: 13.5
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: false,
+      isNewDevelopment: true,
+      isRecentlyAdded: false
     },
     {
       id: 3,
@@ -241,9 +249,165 @@ const Mortgage = () => {
       monthlyPayment: 490000,
       downPaymentPercent: 20,
       loanTerm: 20,
-      interestRate: 13.5
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: true,
+      isNewDevelopment: false,
+      isRecentlyAdded: false
+    },
+    {
+      id: 4,
+      title: "Commercial Office Space in Ikeja",
+      location: "Ikeja, Lagos",
+      price: 68000000,
+      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop",
+      bedrooms: 0,
+      bathrooms: 2,
+      area: 500,
+      tags: ["Mortgage Ready", "Verified"],
+      monthlyPayment: 640000,
+      downPaymentPercent: 25,
+      loanTerm: 15,
+      interestRate: 13.5,
+      category: "commercial",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: false
+    },
+    {
+      id: 5,
+      title: "Retail Shop in Surulere",
+      location: "Surulere, Lagos",
+      price: 35000000,
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+      bedrooms: 0,
+      bathrooms: 1,
+      area: 200,
+      tags: ["Mortgage Ready", "Verified"],
+      monthlyPayment: 330000,
+      downPaymentPercent: 25,
+      loanTerm: 15,
+      interestRate: 13.5,
+      category: "commercial",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: true
+    },
+    {
+      id: 6,
+      title: "New Development Apartment in Lekki Phase 1",
+      location: "Lekki Phase 1, Lagos",
+      price: 42000000,
+      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
+      bedrooms: 3,
+      bathrooms: 2,
+      area: 220,
+      tags: ["Mortgage Ready", "Verified", "New"],
+      monthlyPayment: 397000,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: false,
+      isNewDevelopment: true,
+      isRecentlyAdded: false
+    },
+    {
+      id: 7,
+      title: "Townhouse in Gwarinpa",
+      location: "Gwarinpa, Abuja",
+      price: 48000000,
+      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
+      bedrooms: 4,
+      bathrooms: 3,
+      area: 280,
+      tags: ["Mortgage Ready", "Verified"],
+      monthlyPayment: 454000,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: false
+    },
+    {
+      id: 8,
+      title: "Warehouse in Apapa",
+      location: "Apapa, Lagos",
+      price: 75000000,
+      image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=300&fit=crop",
+      bedrooms: 0,
+      bathrooms: 2,
+      area: 800,
+      tags: ["Mortgage Ready", "Verified"],
+      monthlyPayment: 710000,
+      downPaymentPercent: 25,
+      loanTerm: 15,
+      interestRate: 13.5,
+      category: "commercial",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: false
+    },
+    {
+      id: 9,
+      title: "New Development Duplex in Banana Island",
+      location: "Banana Island, Lagos",
+      price: 95000000,
+      image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop",
+      bedrooms: 5,
+      bathrooms: 4,
+      area: 450,
+      tags: ["Mortgage Ready", "Verified", "Featured", "New"],
+      monthlyPayment: 900000,
+      downPaymentPercent: 20,
+      loanTerm: 25,
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: true,
+      isNewDevelopment: true,
+      isRecentlyAdded: false
+    },
+    {
+      id: 10,
+      title: "Studio Apartment in Yaba",
+      location: "Yaba, Lagos",
+      price: 28000000,
+      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop",
+      bedrooms: 1,
+      bathrooms: 1,
+      area: 120,
+      tags: ["Mortgage Ready", "Verified"],
+      monthlyPayment: 265000,
+      downPaymentPercent: 20,
+      loanTerm: 20,
+      interestRate: 13.5,
+      category: "residential",
+      isPreApproved: false,
+      isNewDevelopment: false,
+      isRecentlyAdded: true
     }
   ];
+
+  // Filter properties based on active tab
+  const eligibleProperties = useMemo(() => {
+    switch (activeTab) {
+      case 'pre-approved':
+        return allEligibleProperties.filter(p => p.isPreApproved);
+      case 'residential':
+        return allEligibleProperties.filter(p => p.category === 'residential');
+      case 'commercial':
+        return allEligibleProperties.filter(p => p.category === 'commercial');
+      case 'new-developments':
+        return allEligibleProperties.filter(p => p.isNewDevelopment);
+      case 'recently-added':
+        return allEligibleProperties.filter(p => p.isRecentlyAdded);
+      case 'all':
+      default:
+        return allEligibleProperties;
+    }
+  }, [activeTab, allEligibleProperties]);
 
   // Mock lender partners data
   const lenderPartners = [
@@ -445,27 +609,39 @@ const Mortgage = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Mortgage Summary - Eligible Properties</h2>
           
           {/* Tabs */}
-          <div className="flex space-x-6 mb-4">
-            {[
-              { key: 'all', label: 'All Eligible (24)' },
-              { key: 'pre-approved', label: 'Pre-Approved (0)' },
-              { key: 'residential', label: 'Residential (12)' },
-              { key: 'commercial', label: 'Commercial (4)' },
-              { key: 'new-developments', label: 'New Developments (8)' },
-              { key: 'recently-added', label: 'Recently Added (0)' }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`pb-2 border-b-2 font-medium text-sm ${
-                  activeTab === tab.key
-                    ? 'border-brand-blue text-brand-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex space-x-6 mb-4 overflow-x-auto">
+            {(() => {
+              // Calculate counts for each tab
+              const tabCounts = {
+                'all': allEligibleProperties.length,
+                'pre-approved': allEligibleProperties.filter(p => p.isPreApproved).length,
+                'residential': allEligibleProperties.filter(p => p.category === 'residential').length,
+                'commercial': allEligibleProperties.filter(p => p.category === 'commercial').length,
+                'new-developments': allEligibleProperties.filter(p => p.isNewDevelopment).length,
+                'recently-added': allEligibleProperties.filter(p => p.isRecentlyAdded).length
+              };
+              
+              return [
+                { key: 'all', label: 'All Eligible' },
+                { key: 'pre-approved', label: 'Pre-Approved' },
+                { key: 'residential', label: 'Residential' },
+                { key: 'commercial', label: 'Commercial' },
+                { key: 'new-developments', label: 'New Developments' },
+                { key: 'recently-added', label: 'Recently Added' }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`pb-2 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    activeTab === tab.key
+                      ? 'border-brand-blue text-brand-blue'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab.label} ({tabCounts[tab.key]})
+                </button>
+              ));
+            })()}
           </div>
 
           {/* Filter Bar */}
@@ -533,7 +709,7 @@ const Mortgage = () => {
         </div>
 
         <div className="p-6">
-          <p className="text-gray-600 mb-6">Found 24 mortgage-eligible properties</p>
+          <p className="text-gray-600 mb-6">Found {eligibleProperties.length} mortgage-eligible {activeTab === 'all' ? 'properties' : activeTab.replace('-', ' ')}</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {eligibleProperties.map((property) => (
