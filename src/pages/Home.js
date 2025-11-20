@@ -1659,8 +1659,9 @@ const Home = () => {
                 <img 
                   src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
                   alt="PropertyArk Logo" 
-                  className="h-12 w-auto"
+                  className="w-auto"
                   style={{ 
+                    height: '2.5rem',
                     backgroundColor: 'transparent',
                     mixBlendMode: 'normal'
                   }}

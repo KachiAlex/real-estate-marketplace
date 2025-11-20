@@ -80,7 +80,7 @@ const VendorSidebar = () => {
             <img 
               src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
               alt="PropertyArk Logo" 
-              className="h-10 w-auto"
+              className="h-12 w-auto"
               style={{ 
                 backgroundColor: 'transparent',
                 mixBlendMode: 'normal'
