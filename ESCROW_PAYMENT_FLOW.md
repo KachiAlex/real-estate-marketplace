@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Property Ark platform implements a comprehensive escrow payment system that ensures secure transactions between property buyers and vendors. The system uses Flutterwave as the payment gateway and includes automated dispute resolution and fund release mechanisms.
+The PropertyArk platform implements a comprehensive escrow payment system that ensures secure transactions between property buyers and vendors. The system uses Flutterwave as the payment gateway and includes automated dispute resolution and fund release mechanisms.
 
 ## Payment Flow Architecture
 

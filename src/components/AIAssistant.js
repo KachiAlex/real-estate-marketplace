@@ -36,7 +36,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "Hello! I'm your Property Ark AI Assistant with a friendly female voice. I specialize in helping you with real estate and property-related questions on our platform.\n\nI can help you with:\n• Finding and searching properties\n• Understanding pricing and market trends\n• Financing and mortgage options\n• Legal documents and verification\n• Investment opportunities\n• Escrow and secure transactions\n• Connecting with agents\n• Navigating the platform\n\nI understand exactly where you are on our platform and can provide personalized help based on your current page. How can I assist you with your property needs today?",
+      message: "Hello! I'm your PropertyArk AI Assistant with a friendly female voice. I specialize in helping you with real estate and property-related questions on our platform.\n\nI can help you with:\n• Finding and searching properties\n• Understanding pricing and market trends\n• Financing and mortgage options\n• Legal documents and verification\n• Investment opportunities\n• Escrow and secure transactions\n• Connecting with agents\n• Navigating the platform\n\nI understand exactly where you are on our platform and can provide personalized help based on your current page. How can I assist you with your property needs today?",
       timestamp: new Date()
     }
   ]);
@@ -345,7 +345,7 @@ const AIAssistant = () => {
   const simulateAIResponse = (userMessage, action = null) => {
     setIsTyping(true);
     
-    // Set context for Property Ark AI
+    // Set context for PropertyArk AI
     PropertyArkAI.setContext({
       user: user,
       currentPage: window.location.pathname,
@@ -499,7 +499,7 @@ const AIAssistant = () => {
             aiResponse = PropertyArkAI.generateResponse(userMessage);
         }
       } else {
-        // Use advanced Property Ark AI for natural language processing
+        // Use advanced PropertyArk AI for natural language processing
         aiResponse = PropertyArkAI.generateResponse(userMessage);
       }
       
@@ -508,7 +508,7 @@ const AIAssistant = () => {
       speakText(aiResponse.response);
       maintainCapacity(userMessage, aiResponse.response);
       
-      // Handle actions from Property Ark AI
+      // Handle actions from PropertyArk AI
       if (aiResponse.action) {
         setTimeout(() => {
           if (aiResponse.action.type === 'navigate') {
@@ -629,7 +629,7 @@ const AIAssistant = () => {
           <button
             onClick={() => setIsOpen(true)}
             className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group animate-pulse"
-            title="Open Property Ark Assistant"
+            title="Open PropertyArk Assistant"
           >
             <FaRobot className="text-white text-2xl group-hover:scale-110 transition-transform" />
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -651,7 +651,7 @@ const AIAssistant = () => {
                 <FaRobot className="text-sm" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">Property Ark - AI Assistant</h3>
+                <h3 className="font-semibold text-sm">PropertyArk - AI Assistant</h3>
                 <p className="text-xs opacity-80">
                   {isSpeaking ? "🔊 Speaking..." : isListening ? "🎤 Listening..." : "Online • Ready to help"}
                 </p>

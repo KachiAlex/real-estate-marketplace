@@ -1,4 +1,4 @@
-﻿// Advanced Property Ark AI Service - ChatGPT-like capabilities for real estate
+﻿// Advanced PropertyArk AI Service - ChatGPT-like capabilities for real estate
 class PropertyArkAI {
   constructor() {
     this.context = {
@@ -94,9 +94,9 @@ class PropertyArkAI {
     // Response templates for different scenarios
     this.responseTemplates = {
       greeting: [
-        "Hello! I'm Property Ark, your intelligent real estate assistant. How can I help you find your perfect property today?",
-        "Hi there! I'm Property Ark, ready to help you navigate the real estate market. What brings you here today?",
-        "Welcome! I'm Property Ark, your AI-powered property companion. What can I assist you with today?"
+        "Hello! I'm PropertyArk, your intelligent real estate assistant. How can I help you find your perfect property today?",
+        "Hi there! I'm PropertyArk, ready to help you navigate the real estate market. What brings you here today?",
+        "Welcome! I'm PropertyArk, your AI-powered property companion. What can I assist you with today?"
       ],
       
       propertySearch: [
@@ -457,7 +457,7 @@ class PropertyArkAI {
   }
   
   handleHelpRequest(message) {
-    const response = `I'm Property Ark, your intelligent real estate assistant! I can help you with:
+    const response = `I'm PropertyArk, your intelligent real estate assistant! I can help you with:
 
 Property Search
 Find properties by location, price, type
@@ -775,7 +775,7 @@ Would you like me to show you your saved properties or help you manage them?`;
   
   // Handle out-of-scope queries
   handleOutOfScopeQuery(message, topics) {
-    let response = "I appreciate your question, but I'm specifically designed to help with real estate and property-related topics on Property Ark. ";
+    let response = "I appreciate your question, but I'm specifically designed to help with real estate and property-related topics on PropertyArk. ";
     
     response += "I can assist you with:\n\n";
     response += "🏠 Property Search & Listings\n";

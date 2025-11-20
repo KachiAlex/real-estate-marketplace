@@ -97,11 +97,12 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src={`${process.env.PUBLIC_URL}/logo.png?v=2.0`} 
-                alt="Property Ark Logo" 
+                src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+                alt="PropertyArk Logo" 
                 className="h-10 w-auto"
                 style={{ 
-                  backgroundColor: 'transparent'
+                  backgroundColor: 'transparent',
+                  mixBlendMode: 'normal'
                 }}
                 onError={(e) => {
                   // Fallback to icon if logo image doesn't exist
@@ -112,7 +113,7 @@ const Header = () => {
               <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                 <FaHome className="text-white text-xl" />
               </div>
-              <span className="text-2xl font-bold text-white">Property Ark</span>
+              <span className="text-2xl font-bold text-white">PropertyArk</span>
             </Link>
 
             {/* Navigation Menu */}

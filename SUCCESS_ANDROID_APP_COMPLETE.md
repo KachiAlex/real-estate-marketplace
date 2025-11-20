@@ -2,7 +2,7 @@
 
 ## âœ… EVERYTHING IS READY
 
-Your Property Ark Android mobile app is **100% complete** and ready to build!
+Your PropertyArk Android mobile app is **100% complete** and ready to build!
 
 ---
 

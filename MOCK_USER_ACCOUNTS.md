@@ -152,7 +152,7 @@ This document contains all the mock user accounts with their complete details fo
 - **Password**: `admin123`
 - **Phone**: `+234-800-000-0000`
 - **Role**: Admin
-- **Occupation**: System Administrator at Property Ark
+- **Occupation**: System Administrator at PropertyArk
 - **Properties**: None (Admin doesn't own properties)
 - **Bank Details**: First Bank of Nigeria - 0000000000
 - **KYC Status**: Verified

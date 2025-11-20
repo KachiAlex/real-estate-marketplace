@@ -813,7 +813,7 @@ const Mortgage = () => {
           </div>
           
           <p className="text-xs text-gray-500 mt-4 text-center">
-            All properties are verified by Property Ark for mortgage eligibility.
+            All properties are verified by PropertyArk for mortgage eligibility.
           </p>
         </div>
       </div>

@@ -68,7 +68,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">ADMIN PANEL</p>
-            <p className="text-sm font-semibold text-gray-900">Property Ark</p>
+            <p className="text-sm font-semibold text-gray-900">PropertyArk</p>
           </div>
         </div>
       </div>

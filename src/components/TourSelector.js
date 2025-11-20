@@ -12,7 +12,7 @@ const TourSelector = ({ onClose }) => {
 
   // Speak welcome message when component mounts
   useEffect(() => {
-    const welcomeMessage = "Hello there! Welcome toProperty Ark! I'm yourProperty ArkAI assistant. I'm so excited to show you around our platform! I can give you a wonderful guided tour that will help you discover all the amazing features we have. Please choose from the available tours below to get started. I'll be speaking to you throughout the tour, so make sure your speakers are on!";
+    const welcomeMessage = "Hello there! Welcome toPropertyArk! I'm yourPropertyArkAI assistant. I'm so excited to show you around our platform! I can give you a wonderful guided tour that will help you discover all the amazing features we have. Please choose from the available tours below to get started. I'll be speaking to you throughout the tour, so make sure your speakers are on!";
     speakText(welcomeMessage);
   }, []);
 
@@ -164,7 +164,7 @@ const TourSelector = ({ onClose }) => {
       <div className="text-center mb-6">
         <div className="flex items-center justify-center space-x-2 mb-2">
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome toProperty Ark! 
+            Welcome toPropertyArk! 
           </h2>
           {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse" />}
         </div>

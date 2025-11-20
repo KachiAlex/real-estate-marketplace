@@ -38,7 +38,7 @@ const VendorProfile = () => {
       totalSales: 45
     },
     business: {
-      companyName: 'Property Ark',
+      companyName: 'PropertyArk',
       licenseNumber: 'REA-2020-001',
       specialization: 'Luxury Residential & Commercial',
       experience: '10+ years',

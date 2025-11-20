@@ -1,7 +1,7 @@
 ﻿# Global Search Feature
 
 ## Overview
-The Property Ark application now includes a comprehensive global search functionality that allows users to search across properties, investments, and users from anywhere in the application.
+The PropertyArk application now includes a comprehensive global search functionality that allows users to search across properties, investments, and users from anywhere in the application.
 
 ## Features
 
@@ -199,6 +199,6 @@ To test the global search feature:
 
 ## Conclusion
 
-The global search feature provides a powerful and intuitive way for users to find properties, investments, and users across the Property Ark platform. With its clean interface, keyboard shortcuts, and real-time filtering, it significantly enhances the user experience and makes navigation more efficient.
+The global search feature provides a powerful and intuitive way for users to find properties, investments, and users across the PropertyArk platform. With its clean interface, keyboard shortcuts, and real-time filtering, it significantly enhances the user experience and makes navigation more efficient.
 
 

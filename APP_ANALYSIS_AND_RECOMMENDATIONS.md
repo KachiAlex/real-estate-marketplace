@@ -37,7 +37,7 @@ This is a **production-ready, comprehensive real estate marketplace** with excel
 - âœ… **Escrow services** with milestone-based releases
 - âœ… **Property search and filtering**
 - âœ… **Virtual property tours**
-- âœ… **AI assistant integration** (Property Ark)
+- âœ… **AI assistant integration** (PropertyArk)
 - âœ… **Multi-role support** (buyer, vendor, admin)
 
 ### 4. **User Experience** â­â­â­â­

@@ -10,7 +10,7 @@ const TourStartButton = () => {
   // Speak welcome message when component mounts
   useEffect(() => {
     if (shouldShowTourButton()) {
-      const welcomeMessage = "Hi there! I'm your Property Ark AI assistant! I'd love to give you a guided tour of our amazing platform. Click the 'Start Tour' button to begin!";
+      const welcomeMessage = "Hi there! I'm your PropertyArk AI assistant! I'd love to give you a guided tour of our amazing platform. Click the 'Start Tour' button to begin!";
       speakText(welcomeMessage);
     }
   }, []);

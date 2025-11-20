@@ -7,7 +7,7 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
 
   // Speak welcome message when component mounts
   useEffect(() => {
-    const welcomeMessage = "Welcome to Property Ark! I'm your Property Ark AI assistant. I'd love to give you a guided tour of our amazing platform. The tour will be completely voice-guided, so I'll speak to you as we explore each section. You can use voice commands to navigate, and there will always be a skip button if you want to end the tour early. Would you like to start the tour?";
+    const welcomeMessage = "Welcome to PropertyArk! I'm your PropertyArk AI assistant. I'd love to give you a guided tour of our amazing platform. The tour will be completely voice-guided, so I'll speak to you as we explore each section. You can use voice commands to navigate, and there will always be a skip button if you want to end the tour early. Would you like to start the tour?";
     speakText(welcomeMessage);
   }, []);
 
@@ -139,8 +139,8 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
               <FaMicrophone className="text-white text-lg" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Welcome to Property Ark!</h2>
-              <p className="text-sm text-gray-600">Your Property Ark AI Assistant</p>
+              <h2 className="text-xl font-bold text-gray-900">Welcome to PropertyArk!</h2>
+              <p className="text-sm text-gray-600">Your PropertyArk AI Assistant</p>
             </div>
           </div>
           {isSpeaking && <FaVolumeUp className="text-blue-500 animate-pulse" />}
@@ -149,7 +149,7 @@ const TourStartModal = ({ onStartTour, onSkipTour, onClose }) => {
         {/* Content */}
         <div className="mb-6">
           <p className="text-gray-700 mb-4">
-            I'm your Property Ark AI assistant! I'd love to give you a guided tour of our amazing platform.
+            I'm your PropertyArk AI assistant! I'd love to give you a guided tour of our amazing platform.
           </p>
           <div className="bg-blue-50 p-4 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">Voice-Guided Tour Features:</h3>

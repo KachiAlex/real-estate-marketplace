@@ -1,6 +1,6 @@
-﻿# Property Ark Mobile App
+﻿# PropertyArk Mobile App
 
-React Native mobile application for the Property Ark marketplace, built with Expo.
+React Native mobile application for the PropertyArk marketplace, built with Expo.
 
 ## Features
 
@@ -203,6 +203,6 @@ eas build -p android --profile production
 
 ## License
 
-Copyright Â© 2024 Property Ark. All rights reserved.
+Copyright Â© 2024 PropertyArk. All rights reserved.
 
 

@@ -2,7 +2,7 @@
 
 ## ðŸŽ‰ Successfully Built
 
-The Property Ark Android mobile app has been **fully created and configured**. All core features are implemented and working.
+The PropertyArk Android mobile app has been **fully created and configured**. All core features are implemented and working.
 
 ## ðŸ“± What Was Delivered
 

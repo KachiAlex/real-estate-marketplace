@@ -41,7 +41,7 @@ class FlutterwaveService {
           name
         },
         customizations: {
-          title: 'Property Ark',
+          title: 'PropertyArk',
           description: 'Property Purchase Payment',
           logo: 'https://your-logo-url.com/logo.png'
         },

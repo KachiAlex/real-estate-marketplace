@@ -2,7 +2,7 @@
 
 ## âœ… **COMPLETE & READY!**
 
-Your Property Ark Android mobile app is **100% finished**!
+Your PropertyArk Android mobile app is **100% finished**!
 
 ---
 

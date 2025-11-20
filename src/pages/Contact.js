@@ -221,7 +221,7 @@ const Contact = () => {
                     <label htmlFor="privacy" className="text-sm text-gray-600">
                       I agree to the <a href="#" className="text-brand-blue hover:underline">Privacy Policy</a> and 
                       <a href="#" className="text-brand-blue hover:underline"> Terms of Service</a>. 
-                      I consent to being contacted by Property Ark regarding my inquiry.
+                      I consent to being contacted by PropertyArk regarding my inquiry.
                     </label>
                   </div>
                 </div>

@@ -46,8 +46,8 @@ export const TourProvider = ({ children }) => {
       steps: [
         {
           id: 'welcome',
-          title: 'Welcome to Property Ark!',
-          content: 'Hi there! I\'m your Property Ark AI assistant. I\'m so excited to show you around our amazing platform! Let me take you on a comprehensive tour where you\'ll discover all the wonderful features we have to offer.',
+          title: 'Welcome to PropertyArk!',
+          content: 'Hi there! I\'m your PropertyArk AI assistant. I\'m so excited to show you around our amazing platform! Let me take you on a comprehensive tour where you\'ll discover all the wonderful features we have to offer.',
           target: null,
           action: null,
           position: 'center'
@@ -206,8 +206,8 @@ export const TourProvider = ({ children }) => {
       steps: [
         {
           id: 'welcome',
-          title: 'Welcome to Property Ark!',
-          content: 'I\'m your Property Ark AI assistant. Let me show you around our platform and help you get started.',
+          title: 'Welcome to PropertyArk!',
+          content: 'I\'m your PropertyArk AI assistant. Let me show you around our platform and help you get started.',
           target: null,
           action: null,
           position: 'center'

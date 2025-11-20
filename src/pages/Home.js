@@ -1396,7 +1396,7 @@ const Home = () => {
             </div>
             
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Why Choose Property Ark for Secure Real Estate?
+              Why Choose PropertyArk for Secure Real Estate?
             </h2>
             
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
@@ -1570,7 +1570,7 @@ const Home = () => {
               Ready to Invest Securely?
             </h3>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join thousands of smart investors who trust Property Ark for their real estate transactions. 
+              Join thousands of smart investors who trust PropertyArk for their real estate transactions. 
               Start browsing verified properties today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1601,7 +1601,7 @@ const Home = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Property Ark offers exclusive features to enhance your property search. 
+              PropertyArk offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
@@ -1677,11 +1677,12 @@ const Home = () => {
             <div className="lg:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <img 
-                  src={`${process.env.PUBLIC_URL}/logo.png?v=2.0`} 
-                  alt="Property Ark Logo" 
+                  src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+                  alt="PropertyArk Logo" 
                   className="h-10 w-auto"
                   style={{ 
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
+                    mixBlendMode: 'normal'
                   }}
                   onError={(e) => {
                     // Fallback to icon if logo image doesn't exist
@@ -1692,7 +1693,7 @@ const Home = () => {
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                   <FaBuilding className="text-white text-xl" />
                 </div>
-                <span className="text-2xl font-bold">Property Ark</span>
+                <span className="text-2xl font-bold">PropertyArk</span>
               </div>
               <p className="text-gray-400 mb-6">
                 Your trusted partner in finding premium properties across Nigeria. 
@@ -1769,7 +1770,7 @@ const Home = () => {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 text-sm">
-                © 2024 Property Ark. All rights reserved.
+                © 2024 PropertyArk. All rights reserved.
               </p>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>

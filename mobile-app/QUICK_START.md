@@ -1,4 +1,4 @@
-﻿# Quick Start Guide - Property Ark Mobile App
+﻿# Quick Start Guide - PropertyArk Mobile App
 
 ## ðŸš€ Immediate Testing (Recommended)
 

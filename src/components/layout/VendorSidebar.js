@@ -78,11 +78,12 @@ const VendorSidebar = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img 
-              src={`${process.env.PUBLIC_URL}/logo.png?v=2.0`} 
-              alt="Property Ark Logo" 
+              src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+              alt="PropertyArk Logo" 
               className="h-8 w-auto"
               style={{ 
-                backgroundColor: 'transparent'
+                backgroundColor: 'transparent',
+                mixBlendMode: 'normal'
               }}
               onError={(e) => {
                 // Fallback to icon if logo image doesn't exist
@@ -95,7 +96,7 @@ const VendorSidebar = () => {
             </div>
             {!isCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Property Ark</h1>
+                <h1 className="text-lg font-bold text-gray-900">PropertyArk</h1>
                 <p className="text-xs text-gray-500">Vendor Portal</p>
               </div>
             )}

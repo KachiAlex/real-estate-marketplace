@@ -449,7 +449,7 @@ function App() {
                 </ErrorBoundary>
               </div>
               
-                                {/* Property Ark Assistant */}
+                                {/* PropertyArk Assistant */}
                                 <PropertyArkAssistant />
 
                                 {/* Tour Start Button */}

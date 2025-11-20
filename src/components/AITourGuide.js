@@ -21,7 +21,7 @@ const AITourGuide = () => {
   // Auto-navigation steps with dialogue
   const tourDialogue = [
     {
-      message: "Hi there! I'm your Property Ark AI assistant! Welcome to Property Ark!",
+      message: "Hi there! I'm your PropertyArk AI assistant! Welcome to PropertyArk!",
       action: null,
       delay: 3000
     },

@@ -53,7 +53,7 @@ const VendorInspectionRequests = () => {
     const { title, start, end, details, location } = buildCalendar(r);
     if (!start || !end) { toast.error('Invalid date/time'); return; }
     const ics = [
-      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Property Ark//Inspection//EN','BEGIN:VEVENT',
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PropertyArk//Inspection//EN','BEGIN:VEVENT',
       `UID:${r.id}@propertyark`,`DTSTAMP:${formatDateICS(new Date())}`,
       `DTSTART:${formatDateICS(start)}`,`DTEND:${formatDateICS(end)}`,
       `SUMMARY:${title}`,`DESCRIPTION:${details}`,`LOCATION:${location}`,'END:VEVENT','END:VCALENDAR'

@@ -1,8 +1,8 @@
-﻿# Property Ark AI Assistant Tour Feature
+﻿# PropertyArk AI Assistant Tour Feature
 
 ## Overview
 
-The Property Ark AI Assistant now includes a comprehensive guided tour system that allows users to explore the platform step-by-step. The tour feature provides interactive guidance, page navigation, and educational content to help users understand the platform's capabilities.
+The PropertyArk AI Assistant now includes a comprehensive guided tour system that allows users to explore the platform step-by-step. The tour feature provides interactive guidance, page navigation, and educational content to help users understand the platform's capabilities.
 
 ## Features
 
@@ -19,22 +19,22 @@ The Property Ark AI Assistant now includes a comprehensive guided tour system th
 
 ### ðŸŽ¨ User Experience
 - **Responsive Design**: Works on desktop and mobile devices
-- **Voice Integration**: Tours work with Property Ark's voice features
+- **Voice Integration**: Tours work with PropertyArk's voice features
 - **Tour Persistence**: Completed tours are remembered
 - **Skip Option**: Users can skip tours at any time
 
 ### ðŸŽ¤ Voice Activation Features
-- **Audible Instructions**: Property Ark speaks each tour step clearly
+- **Audible Instructions**: PropertyArk speaks each tour step clearly
 - **Voice Commands**: Navigate tours hands-free using voice commands
 - **Female Voice**: Uses a friendly female voice for better user experience
 - **Voice Controls**: Toggle voice on/off and start/stop voice recognition
-- **Real-time Feedback**: Visual indicators show when Property Ark is speaking or listening
+- **Real-time Feedback**: Visual indicators show when PropertyArk is speaking or listening
 
 ## How to Use
 
 ### Starting a Tour
 
-1. **Via Property Ark Assistant**: Click the Property Ark button and select "Take a Guided Tour"
+1. **Via PropertyArk Assistant**: Click the PropertyArk button and select "Take a Guided Tour"
 2. **Tour Selector**: Choose from available tours based on your role
 3. **Direct Navigation**: Tours automatically navigate between pages
 
@@ -107,7 +107,7 @@ Add `data-tour="element-id"` attributes to elements you want to highlight:
 - Property browsing
 - Investment opportunities
 - Dashboard overview
-- Property Ark assistant introduction
+- PropertyArk assistant introduction
 
 ### Vendor Tour
 - Vendor dashboard introduction
@@ -150,7 +150,7 @@ Tours use Tailwind CSS classes and can be customized by modifying:
 
 ## Integration Points
 
-### Property Ark AI Assistant
+### PropertyArk AI Assistant
 - Tour suggestions in quick actions
 - Tour selector modal
 - Voice integration for tour guidance
@@ -239,5 +239,5 @@ Enable debug mode by adding `console.log` statements in tour components to track
 
 ## Conclusion
 
-The Property Ark AI Assistant tour feature provides an engaging and educational way for users to explore the platform. With multiple tour types, interactive navigation, and comprehensive guidance, users can quickly understand and utilize all platform features effectively.
+The PropertyArk AI Assistant tour feature provides an engaging and educational way for users to explore the platform. With multiple tour types, interactive navigation, and comprehensive guidance, users can quickly understand and utilize all platform features effectively.
 

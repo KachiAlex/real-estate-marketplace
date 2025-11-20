@@ -1,6 +1,6 @@
-﻿# Android Build Guide for Property Ark Mobile App
+﻿# Android Build Guide for PropertyArk Mobile App
 
-This guide provides step-by-step instructions for building and deploying the Android version of the Property Ark mobile app.
+This guide provides step-by-step instructions for building and deploying the Android version of the PropertyArk mobile app.
 
 ## Prerequisites
 
@@ -185,7 +185,7 @@ Located in `app.json`:
 ```json
 {
   "expo": {
-    "name": "Property Ark",
+    "name": "PropertyArk",
     "slug": "property-ark",
     "package": "com.propertyark.app",
     "version": "1.0.0"

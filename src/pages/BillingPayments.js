@@ -305,7 +305,7 @@ const BillingPayments = () => {
         phone_number: user?.phone
       },
       customizations: {
-        title: 'Property Ark',
+        title: 'PropertyArk',
         description: description,
         logo: 'https://propertyark.com/logo.png'
       }

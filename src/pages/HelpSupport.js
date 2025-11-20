@@ -23,7 +23,7 @@ const HelpSupport = () => {
       questions: [
         {
           id: 1,
-          question: 'How do I create an account on Property Ark?',
+          question: 'How do I create an account on PropertyArk?',
           answer: 'Creating an account is simple! Click the "Register" button on the homepage, fill in your details including name, email, and phone number. Verify your email address and you\'re ready to start browsing properties.'
         },
         {
@@ -195,7 +195,7 @@ const HelpSupport = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Help & Support</h1>
         <p className="text-gray-600">
-          Get the help you need to make the most of Property Ark
+          Get the help you need to make the most of PropertyArk
         </p>
       </div>
 

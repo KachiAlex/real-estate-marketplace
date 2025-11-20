@@ -2,7 +2,7 @@
 
 ## âœ… MISSION ACCOMPLISHED
 
-The Property Ark Android mobile app has been **fully developed and is production-ready**.
+The PropertyArk Android mobile app has been **fully developed and is production-ready**.
 
 ---
 
@@ -141,7 +141,7 @@ All development work is done. All features are implemented. All documentation is
 
 ## ðŸŽ‰ Congratulations!
 
-You now have a fully functional Android mobile app for the Property Ark marketplace, ready for testing and deployment!
+You now have a fully functional Android mobile app for the PropertyArk marketplace, ready for testing and deployment!
 
 **Status**: âœ… **COMPLETE & READY**
 
