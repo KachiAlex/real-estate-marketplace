@@ -839,36 +839,16 @@ const Home = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Security Message - Sales Pitch */}
-        <div className="mb-8">
-          <div className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 md:p-8 border border-blue-100 shadow-lg overflow-hidden">
-            {/* Decorative background elements */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-blue-200 rounded-full opacity-10 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-200 rounded-full opacity-10 blur-3xl translate-x-1/2 translate-y-1/2"></div>
-            
-            <div className="relative flex items-center justify-center">
-              {/* Main Text */}
-              <div className="text-center">
-                <p className="text-lg md:text-xl font-bold text-gray-800 leading-relaxed">
-                  Secure real estate transactions with{' '}
-                  <span className="relative inline-block">
-                    <span className="relative z-10 text-blue-600">escrow protection</span>
-                    <span className="absolute bottom-0 left-0 w-full h-2 bg-blue-200 opacity-40 -z-0"></span>
-                  </span>
-                  ,{' '}
-                  <span className="relative inline-block">
-                    <span className="relative z-10 text-green-600">verified listings</span>
-                    <span className="absolute bottom-0 left-0 w-full h-2 bg-green-200 opacity-40 -z-0"></span>
-                  </span>
-                  , and{' '}
-                  <span className="relative inline-block">
-                    <span className="relative z-10 text-purple-600">transparent processes</span>
-                    <span className="absolute bottom-0 left-0 w-full h-2 bg-purple-200 opacity-40 -z-0"></span>
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Security Message - Plain Text */}
+        <div className="mb-12 text-center">
+          <p className="text-lg md:text-xl font-bold text-gray-800 leading-relaxed">
+            Secure real estate transactions with{' '}
+            <span className="text-blue-600">escrow protection</span>
+            ,{' '}
+            <span className="text-green-600">verified listings</span>
+            , and{' '}
+            <span className="text-purple-600">transparent processes</span>
+          </p>
         </div>
         
         <div className="flex gap-8">
@@ -1387,7 +1367,7 @@ const Home = () => {
       </div>
 
       {/* Security & Value Proposition Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 rounded-full mb-6">
