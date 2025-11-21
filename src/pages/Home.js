@@ -843,9 +843,9 @@ const Home = () => {
           </p>
         </div>
         
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
+          <div className="w-full lg:w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold">Property Filters</h3>
               <button 
@@ -1200,7 +1200,7 @@ const Home = () => {
           </div>
 
           {/* Property Listings */}
-          <div className="flex-1">
+          <div className="w-full lg:flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-700">{(filteredProperties?.length || 0)} {(filteredProperties?.length || 0) === 1 ? 'property' : 'properties'} found</p>
