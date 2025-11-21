@@ -469,9 +469,9 @@ const Properties = () => {
         </div>
       )}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Sidebar - Filters */}
-        <div className="w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
           
           {/* Search Input */}
@@ -604,7 +604,7 @@ const Properties = () => {
         </div>
 
         {/* Right Content Area */}
-        <div className="flex-1">
+        <div className="w-full lg:flex-1">
           {/* Results Header */}
           <div className="flex items-center justify-between mb-6">
             <div>

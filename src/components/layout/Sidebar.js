@@ -74,14 +74,14 @@ const Sidebar = () => {
       {/* Mobile Backdrop */}
       {isMobileSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black bg-opacity-50 z-[60] lg:hidden transition-opacity"
           onClick={closeMobileSidebar}
         />
       )}
       
       {/* Sidebar */}
       <div className={`
-        w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-50 flex flex-col
+        w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-[70] flex flex-col
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0
         ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -121,14 +121,15 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={closeMobileSidebar}
                 className={`flex items-center space-x-3 px-3 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors ${
                   isActive(item.path)
                     ? 'bg-brand-blue text-white'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <Icon className="text-lg" />
-                <span>{item.label}</span>
+                <Icon className="text-lg flex-shrink-0" />
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}
