@@ -93,7 +93,7 @@ function App() {
                     <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
-                      <main className="flex-1 ml-64">
+                      <main className="flex-1 ml-0 lg:ml-64">
                         <Properties />
                       </main>
                     </div>
@@ -103,7 +103,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <BuyerInspectionRequests />
                         </main>
                       </div>
@@ -113,7 +113,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Investment />
                         </main>
                       </div>
@@ -123,7 +123,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Mortgage />
                         </main>
                       </div>
@@ -133,7 +133,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Mortgages />
                         </main>
                       </div>
@@ -143,7 +143,7 @@ function App() {
                     <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
-                      <main className="flex-1 ml-64">
+                      <main className="flex-1 ml-0 lg:ml-64">
                         <PropertyDetail />
                       </main>
                     </div>
@@ -156,7 +156,7 @@ function App() {
                     <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
-                      <main className="flex-1 ml-64">
+                      <main className="flex-1 ml-0 lg:ml-64">
                         <SearchResults />
                       </main>
                     </div>
@@ -168,7 +168,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Dashboard />
                         </main>
                       </div>
@@ -178,7 +178,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <AddProperty />
                         </main>
                       </div>
@@ -193,7 +193,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Profile />
                         </main>
                       </div>
@@ -203,7 +203,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Escrow />
                         </main>
                       </div>
@@ -213,7 +213,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Investments />
                         </main>
                       </div>
@@ -223,7 +223,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <InvestmentOpportunities />
                         </main>
                       </div>
@@ -233,7 +233,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <InvestorDashboard />
                         </main>
                       </div>
@@ -243,7 +243,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <InvestmentDetail />
                         </main>
                       </div>
@@ -253,7 +253,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <EscrowTransaction />
                         </main>
                       </div>
@@ -263,7 +263,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <EscrowPaymentFlow />
                         </main>
                       </div>
@@ -273,7 +273,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Mortgages />
                         </main>
                       </div>
@@ -283,7 +283,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <SavedProperties />
                         </main>
                       </div>
@@ -293,7 +293,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <MyInquiries />
                         </main>
                       </div>
@@ -303,7 +303,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <PropertyAlerts />
                         </main>
                       </div>
@@ -313,7 +313,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <Messages />
                         </main>
                       </div>
@@ -323,7 +323,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <HelpSupport />
                         </main>
                       </div>
@@ -333,7 +333,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <BillingPayments />
                         </main>
                       </div>
@@ -345,7 +345,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <VendorSidebar />
-                        <main className="flex-1 ml-64">
+                        <main className="flex-1 ml-0 lg:ml-64">
                           <InvestmentCompanyDashboard />
                         </main>
                       </div>

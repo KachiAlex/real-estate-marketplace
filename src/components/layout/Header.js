@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 import { FaHome, FaBars, FaTimes, FaSearch } from 'react-icons/fa';
 import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
@@ -10,6 +11,7 @@ const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { toggleMobileSidebar } = useSidebar();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
@@ -18,6 +20,9 @@ const Header = () => {
   
   // Hide search bar on home page since it's in the banner
   const isHomePage = location.pathname === '/';
+  
+  // Check if user is on a protected route (where sidebar should be visible)
+  const isProtectedRoute = user && !['/', '/login', '/register'].includes(location.pathname);
 
   // Quick Filters with sublinks
   const quickFilters = {
@@ -93,6 +98,17 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 min-h-[4rem]">
           <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
+            {/* Mobile Sidebar Toggle Button (only for authenticated users on protected routes) */}
+            {isProtectedRoute && (
+              <button
+                onClick={toggleMobileSidebar}
+                className="lg:hidden p-2 rounded-lg text-gray-700 hover:text-brand-orange hover:bg-gray-100 transition-colors duration-300 mr-2"
+                aria-label="Toggle sidebar"
+              >
+                <FaBars className="text-xl" />
+              </button>
+            )}
+            
             {/* Logo */}
             <Link to="/" className="flex items-center flex-shrink-0">
               <img 

@@ -12,6 +12,7 @@ export const useSidebar = () => {
 
 export const SidebarProvider = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -25,11 +26,22 @@ export const SidebarProvider = ({ children }) => {
     setIsCollapsed(false);
   };
 
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
+
   const value = {
     isCollapsed,
     toggleSidebar,
     collapseSidebar,
-    expandSidebar
+    expandSidebar,
+    isMobileSidebarOpen,
+    toggleMobileSidebar,
+    closeMobileSidebar
   };
 
   return (

@@ -8,7 +8,7 @@ const VendorLayout = ({ children }) => {
   return (
     <div className="flex w-full">
       <VendorSidebar />
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <main className={`flex-1 transition-all duration-300 ml-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {children}
       </main>
     </div>

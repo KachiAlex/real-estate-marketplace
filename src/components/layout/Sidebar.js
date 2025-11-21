@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 import { 
   FaHome, 
   FaBuilding, 
@@ -15,21 +16,42 @@ import {
   FaQuestionCircle as FaHelp,
   FaFileContract,
   FaCalendar,
-  FaBlog
+  FaBlog,
+  FaTimes
 } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { isMobileSidebarOpen, closeMobileSidebar } = useSidebar();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  // Close mobile sidebar when route changes
+  useEffect(() => {
+    if (user) {
+      closeMobileSidebar();
+    }
+  }, [location.pathname, closeMobileSidebar, user]);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileSidebarOpen && user) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileSidebarOpen, user]);
 
   // Don't render sidebar if user is not authenticated
   if (!user) {
     return null;
   }
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
 
          const menuItems = [
            { path: '/dashboard', label: 'Dashboard', icon: FaHome },
@@ -48,19 +70,44 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40 flex flex-col">
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity"
+          onClick={closeMobileSidebar}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`
+        w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-50 flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        lg:translate-x-0
+        ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
       {/* User Account Section */}
       <div className="p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            <FaUser className="text-gray-500" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3 flex-1">
+            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              <FaUser className="text-gray-500" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{(user?.role || 'buyer').toUpperCase()} ACCOUNT</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {user?.firstName?.toUpperCase() || 'OLUWASEUN'} {user?.lastName?.toUpperCase() || 'ADEYEMI'}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{(user?.role || 'buyer').toUpperCase()} ACCOUNT</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {user?.firstName?.toUpperCase() || 'OLUWASEUN'} {user?.lastName?.toUpperCase() || 'ADEYEMI'}
-            </p>
-          </div>
+          {/* Close button for mobile */}
+          <button
+            onClick={closeMobileSidebar}
+            className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Close sidebar"
+          >
+            <FaTimes className="text-xl" />
+          </button>
         </div>
       </div>
 
@@ -100,6 +147,7 @@ const Sidebar = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 
