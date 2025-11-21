@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -24,17 +24,21 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const { isMobileSidebarOpen, closeMobileSidebar } = useSidebar();
+  const prevPathnameRef = useRef(location.pathname);
 
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  // Close mobile sidebar when route changes
+  // Close mobile sidebar when route changes (but not on initial mount)
   useEffect(() => {
-    if (user) {
+    // Only close if pathname actually changed (not on initial mount)
+    if (prevPathnameRef.current !== location.pathname && user && isMobileSidebarOpen) {
       closeMobileSidebar();
     }
-  }, [location.pathname, closeMobileSidebar, user]);
+    // Update the ref to the current pathname
+    prevPathnameRef.current = location.pathname;
+  }, [location.pathname, user, isMobileSidebarOpen, closeMobileSidebar]);
 
   // Prevent body scroll when mobile sidebar is open
   useEffect(() => {

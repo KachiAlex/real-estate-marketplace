@@ -3,7 +3,7 @@ import { FaPlay, FaUser, FaStore, FaHome, FaCheckCircle, FaClock, FaMicrophone, 
 import { useTour } from '../contexts/TourContext';
 import { useAuth } from '../contexts/AuthContext';
 
-const TourSelector = ({ onClose }) => {
+const TourSelector = ({ onClose, onStartTour }) => {
   const { startTour, availableTours, isTourCompleted } = useTour();
   const { user } = useAuth();
   const [selectedTour, setSelectedTour] = useState(null);
@@ -155,8 +155,14 @@ const TourSelector = ({ onClose }) => {
   };
 
   const handleStartTour = (tourId) => {
-    startTour(tourId);
-    if (onClose) onClose();
+    if (onStartTour) {
+      // Use custom handler if provided (from AI Assistant)
+      onStartTour(tourId);
+    } else {
+      // Default behavior
+      startTour(tourId);
+      if (onClose) onClose();
+    }
   };
 
   return (

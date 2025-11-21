@@ -17,7 +17,6 @@ import VendorLayout from './components/layout/VendorLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import PropertyArkAssistant from './components/PropertyArkAssistant';
 import AITourGuide from './components/AITourGuide';
-import TourStartButton from './components/TourStartButton';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Eagerly load critical pages (shown immediately on load)
@@ -449,11 +448,8 @@ function App() {
                 </ErrorBoundary>
               </div>
               
-                                {/* PropertyArk Assistant */}
+                                {/* PropertyArk Assistant (Kiki) */}
                                 <PropertyArkAssistant />
-
-                                {/* Tour Start Button */}
-                                <TourStartButton />
                                 
                                 {/* AI Tour Guide */}
                                 <AITourGuide />

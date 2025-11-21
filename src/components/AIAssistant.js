@@ -36,7 +36,7 @@ const AIAssistant = () => {
     {
       id: 1,
       type: 'ai',
-      message: "Hello! I'm your PropertyArk AI Assistant with a friendly female voice. I specialize in helping you with real estate and property-related questions on our platform.\n\nI can help you with:\n• Finding and searching properties\n• Understanding pricing and market trends\n• Financing and mortgage options\n• Legal documents and verification\n• Investment opportunities\n• Escrow and secure transactions\n• Connecting with agents\n• Navigating the platform\n\nI understand exactly where you are on our platform and can provide personalized help based on your current page. How can I assist you with your property needs today?",
+      message: "Hello! I'm Kiki, your PropertyArk AI Assistant with a friendly female voice. I specialize in helping you with real estate and property-related questions on our platform.\n\nI can help you with:\n• Finding and searching properties\n• Understanding pricing and market trends\n• Financing and mortgage options\n• Legal documents and verification\n• Investment opportunities\n• Escrow and secure transactions\n• Connecting with agents\n• Navigating the platform\n• Taking you on a guided tour of the platform\n\nI understand exactly where you are on our platform and can provide personalized help based on your current page. How can I assist you with your property needs today?",
       timestamp: new Date()
     }
   ]);
@@ -68,7 +68,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Help me register as a buyer", action: "help_register" },
         { icon: FaQuestionCircle, text: "How does the platform work?", action: "explain_platform" },
         { icon: FaLightbulb, text: "Investment opportunities", action: "show_investments" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else if (currentPath.includes('/vendor')) {
       // Vendor dashboard suggestions
@@ -79,7 +80,8 @@ const AIAssistant = () => {
         { icon: FaChartLine, text: "View my performance analytics", action: "view_analytics" },
         { icon: FaQuestionCircle, text: "How to price my property?", action: "pricing_help" },
         { icon: FaBrain, text: "Tips for better property photos", action: "photo_tips" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else if (currentPath.includes('/properties')) {
       // Properties page suggestions
@@ -90,7 +92,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Contact property agent", action: "contact_agent" },
         { icon: FaQuestionCircle, text: "Schedule property viewing", action: "schedule_viewing" },
         { icon: FaLightbulb, text: "Get property valuation", action: "property_valuation" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else if (currentPath.includes('/investment')) {
       // Investment page suggestions
@@ -101,7 +104,8 @@ const AIAssistant = () => {
         { icon: FaBell, text: "Investment alerts", action: "investment_alerts" },
         { icon: FaQuestionCircle, text: "Risk assessment", action: "risk_assessment" },
         { icon: FaBrain, text: "Investment strategies", action: "investment_strategies" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else if (currentPath.includes('/blog')) {
       // Blog page suggestions
@@ -112,7 +116,8 @@ const AIAssistant = () => {
         { icon: FaUser, text: "Share article", action: "share_article" },
         { icon: FaQuestionCircle, text: "Market insights", action: "market_insights" },
         { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else if (currentPath.includes('/dashboard')) {
       // User dashboard suggestions
@@ -123,7 +128,8 @@ const AIAssistant = () => {
         { icon: FaSearch, text: "Recent searches", action: "recent_searches" },
         { icon: FaQuestionCircle, text: "Account settings", action: "account_settings" },
         { icon: FaLightbulb, text: "Personalized recommendations", action: "recommendations" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" }
+        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
+        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
     } else {
       // Default suggestions for other pages
@@ -499,14 +505,29 @@ const AIAssistant = () => {
             aiResponse = PropertyArkAI.generateResponse(userMessage);
         }
       } else {
-        // Use advanced PropertyArk AI for natural language processing
-        aiResponse = PropertyArkAI.generateResponse(userMessage);
+        // Check if user is asking for a tour
+        const tourKeywords = ['tour', 'guide', 'show me around', 'walkthrough', 'tutorial', 'help me navigate', 'show me how', 'take me on a tour'];
+        const isTourRequest = tourKeywords.some(keyword => 
+          userMessage.toLowerCase().includes(keyword)
+        );
+        
+        if (isTourRequest) {
+          // Show tour selector and respond
+          aiResponse = {
+            response: "I'd love to give you a guided tour! Let me show you the available tours we have. You can choose from a comprehensive tour, new user tour, vendor tour, or buyer tour. Each tour will guide you through the platform step by step with my voice instructions.",
+            action: { type: 'show_tour_selector' }
+          };
+        } else {
+          // Use advanced PropertyArk AI for natural language processing
+          aiResponse = PropertyArkAI.generateResponse(userMessage);
+        }
       }
       
       setIsTyping(false);
-      addMessage(aiResponse.response, 'ai');
-      speakText(aiResponse.response);
-      maintainCapacity(userMessage, aiResponse.response);
+      const responseText = typeof aiResponse === 'string' ? aiResponse : (aiResponse.response || aiResponse);
+      addMessage(responseText, 'ai');
+      speakText(responseText);
+      maintainCapacity(userMessage, responseText);
       
       // Handle actions from PropertyArk AI
       if (aiResponse.action) {
@@ -628,10 +649,21 @@ const AIAssistant = () => {
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={() => setIsOpen(true)}
-            className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group animate-pulse"
-            title="Open PropertyArk Assistant"
+            className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group animate-pulse overflow-hidden"
+            title="Open Kiki - Your AI Assistant"
           >
-            <FaRobot className="text-white text-2xl group-hover:scale-110 transition-transform" />
+            <img 
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kiki&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&hair=longHair&hairColor=black,brown,blonde&facialHair=none&clothes=blazerShirt&eyes=happy&eyebrow=default&mouth=smile&skin=light&accessories=none"
+              alt="Kiki Avatar"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
+              <span className="text-white text-2xl font-bold">K</span>
+            </div>
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
@@ -647,11 +679,22 @@ const AIAssistant = () => {
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-lg flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <FaRobot className="text-sm" />
+              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
+                <img 
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kiki&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&hair=longHair&hairColor=black,brown,blonde&facialHair=none&clothes=blazerShirt&eyes=happy&eyebrow=default&mouth=smile&skin=light&accessories=none"
+                  alt="Kiki Avatar"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
+                  <span className="text-white text-lg font-bold">K</span>
+                </div>
               </div>
               <div>
-                <h3 className="font-semibold text-sm">PropertyArk - AI Assistant</h3>
+                <h3 className="font-semibold text-sm">Kiki - Your AI Assistant</h3>
                 <p className="text-xs opacity-80">
                   {isSpeaking ? "🔊 Speaking..." : isListening ? "🎤 Listening..." : "Online • Ready to help"}
                 </p>
@@ -681,7 +724,23 @@ const AIAssistant = () => {
               {/* Messages */}
               <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
                 {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div key={msg.id} className={`flex items-start space-x-2 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.type === 'ai' && (
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kiki&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&hair=longHair&hairColor=black,brown,blonde&facialHair=none&clothes=blazerShirt&eyes=happy&eyebrow=default&mouth=smile&skin=light&accessories=none"
+                          alt="Kiki Avatar"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
+                          <span className="text-white text-xs font-bold">K</span>
+                        </div>
+                      </div>
+                    )}
                     <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
                       msg.type === 'user' 
                         ? 'bg-blue-500 text-white rounded-br-none' 
@@ -807,7 +866,10 @@ const AIAssistant = () => {
             >
               <FaTimes className="text-gray-600" />
             </button>
-            <TourSelector onClose={() => setShowTourSelector(false)} />
+            <TourSelector 
+              onClose={() => setShowTourSelector(false)} 
+              onStartTour={handleStartSpecificTour}
+            />
           </div>
         </div>
       )}
