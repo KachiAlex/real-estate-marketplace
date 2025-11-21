@@ -494,7 +494,7 @@ const Mortgage = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 pb-8 sm:pb-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Mortgage</h1>
@@ -605,11 +605,11 @@ const Mortgage = () => {
 
       {/* Eligible Properties Section */}
       <div className="bg-white rounded-lg shadow mb-8">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Mortgage Summary - Eligible Properties</h2>
           
           {/* Tabs */}
-          <div className="flex space-x-6 mb-4 overflow-x-auto">
+          <div className="flex space-x-4 sm:space-x-6 mb-4 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
             {(() => {
               // Calculate counts for each tab
               const tabCounts = {
@@ -632,13 +632,15 @@ const Mortgage = () => {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`pb-2 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  className={`pb-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-1 ${
                     activeTab === tab.key
                       ? 'border-brand-blue text-brand-blue'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {tab.label} ({tabCounts[tab.key]})
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                  <span className="ml-1">({tabCounts[tab.key]})</span>
                 </button>
               ));
             })()}
@@ -708,10 +710,10 @@ const Mortgage = () => {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6 pb-8">
           <p className="text-gray-600 mb-6">Found {eligibleProperties.length} mortgage-eligible {activeTab === 'all' ? 'properties' : activeTab.replace('-', ' ')}</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {eligibleProperties.map((property) => (
               <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="relative">
