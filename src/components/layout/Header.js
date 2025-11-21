@@ -98,17 +98,6 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 min-h-[4rem]">
           <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
-            {/* Mobile Sidebar Toggle Button (only for authenticated users on protected routes) */}
-            {isProtectedRoute && (
-              <button
-                onClick={toggleMobileSidebar}
-                className="lg:hidden p-2 rounded-lg text-gray-700 hover:text-brand-orange hover:bg-gray-100 transition-colors duration-300 mr-2"
-                aria-label="Toggle sidebar"
-              >
-                <FaBars className="text-xl" />
-              </button>
-            )}
-            
             {/* Logo */}
             <Link to="/" className="flex items-center flex-shrink-0">
               <img 
@@ -422,13 +411,23 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-300"
-          >
-            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </button>
+          {/* Mobile menu button - Opens sidebar for authenticated users, mobile menu for others */}
+          {isProtectedRoute ? (
+            <button
+              onClick={toggleMobileSidebar}
+              className="lg:hidden p-2 rounded-lg text-gray-700 hover:text-brand-orange hover:bg-gray-100 transition-colors duration-300"
+              aria-label="Toggle sidebar"
+            >
+              <FaBars className="text-xl" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-300"
+            >
+              {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+            </button>
+          )}
         </div>
 
         {/* Mobile Navigation */}
