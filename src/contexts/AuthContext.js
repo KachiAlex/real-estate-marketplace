@@ -597,25 +597,41 @@ export const AuthProvider = ({ children }) => {
         throw new Error('User with this email already exists');
       }
 
+      // Determine roles based on userData
+      const userRoles = userData.roles || ['buyer'];
+      const activeRole = userData.activeRole || 'buyer';
+      
       const newUser = {
         id: Date.now().toString(),
         firstName,
         lastName,
         email,
-        role: 'user',
-        roles: ['buyer'],
-        activeRole: 'buyer',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+        phone: userData.phone || '',
+        role: userRoles.includes('vendor') ? 'vendor' : 'user',
+        roles: userRoles,
+        activeRole: activeRole,
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        // Include vendorData if provided
+        ...(userData.vendorData && { vendorData: userData.vendorData })
       };
 
       // Add to mock users (in real app, this would be saved to database)
       mockUsers.push({ ...newUser, password });
       
+      // Store users list in localStorage for agent service to access
+      try {
+        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        existingUsers.push(newUser);
+        localStorage.setItem('users', JSON.stringify(existingUsers));
+      } catch (e) {
+        console.error('Error storing users list:', e);
+      }
+      
       const { password: _, ...userWithoutPassword } = newUser;
       setUser(userWithoutPassword);
-      setActiveRole('buyer');
+      setActiveRole(activeRole);
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-      localStorage.setItem('activeRole', 'buyer');
+      localStorage.setItem('activeRole', activeRole);
       
       // Handle redirect after registration
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');

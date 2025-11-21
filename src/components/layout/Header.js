@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FaHome, FaBars, FaTimes, FaSearch, FaBell, FaEnvelope } from 'react-icons/fa';
-import NotificationDropdown from '../NotificationDropdown';
+import { FaHome, FaBars, FaTimes, FaSearch } from 'react-icons/fa';
 import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import toast from 'react-hot-toast';
@@ -90,18 +89,18 @@ const Header = () => {
   }, [activeDropdown]);
 
   return (
-    <header className="bg-brand-blue shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
+    <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex justify-between items-center h-16 min-h-[4rem]">
+          <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center flex-shrink-0">
               <img 
-                src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+                src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
                 alt="PropertyArk Logo" 
-                className="w-auto"
+                className="w-auto h-12 sm:h-14 md:h-16"
                 style={{ 
-                  height: '2.5rem',
+                  maxHeight: '4rem',
                   backgroundColor: 'transparent',
                   mixBlendMode: 'normal'
                 }}
@@ -114,17 +113,16 @@ const Header = () => {
               <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                 <FaHome className="text-white text-xl" />
               </div>
-              <span className="text-2xl font-bold text-white">PropertyArk</span>
             </Link>
 
             {/* Navigation Menu */}
-            <nav className="hidden lg:flex items-center space-x-6">
+            <nav className="hidden lg:flex items-center flex-nowrap space-x-2 xl:space-x-4">
               {/* For Sale */}
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'For Sale' ? null : 'For Sale')}
-                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeDropdown === 'For Sale' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeDropdown === 'For Sale' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
                 >
                   <span>For Sale</span>
@@ -162,8 +160,8 @@ const Header = () => {
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'For Rent' ? null : 'For Rent')}
-                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeDropdown === 'For Rent' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeDropdown === 'For Rent' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
                 >
                   <span>For Rent</span>
@@ -201,8 +199,8 @@ const Header = () => {
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
-                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeDropdown === 'Shortlet' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeDropdown === 'Shortlet' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
                 >
                   <span>Shortlet</span>
@@ -239,7 +237,7 @@ const Header = () => {
               {/* Blog */}
               <Link
                 to="/blog"
-                className="px-3 py-2 text-sm font-medium text-white hover:text-orange-300 transition-colors"
+                className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-brand-blue hover:text-brand-orange transition-colors whitespace-nowrap"
               >
                 Blog
               </Link>
@@ -248,11 +246,12 @@ const Header = () => {
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
-                  className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeDropdown === 'Diasporan Services' ? 'text-orange-300' : 'text-white hover:text-orange-300'
+                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeDropdown === 'Diasporan Services' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
                 >
-                  <span>Diasporan Services</span>
+                  <span className="hidden xl:inline">Diasporan Services</span>
+                  <span className="xl:hidden">Diasporan</span>
                   <svg 
                     className={`w-4 h-4 transition-transform ${
                       activeDropdown === 'Diasporan Services' ? 'rotate-180' : ''
@@ -289,7 +288,7 @@ const Header = () => {
 
           {/* Search Bar - Hidden on home page */}
           {!isHomePage && (
-            <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+            <div className="hidden lg:flex items-center flex-1 max-w-md mx-2 xl:mx-4">
               <div className="relative w-full">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -297,12 +296,12 @@ const Header = () => {
                   placeholder="Search properties, investments, users..."
                   onClick={openSearch}
                   readOnly
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer text-sm"
                 />
               </div>
               <button
                 onClick={openSearch}
-                className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
+                className="ml-2 px-3 xl:px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-colors text-xs xl:text-sm whitespace-nowrap"
               >
                 Search
               </button>
@@ -310,25 +309,13 @@ const Header = () => {
           )}
 
           {/* Desktop User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
             {user ? (
               <>
-                {/* Notification Icons */}
-                <div className="flex items-center space-x-3">
-                  <NotificationDropdown />
-                  <Link 
-                    to="/messages"
-                    className="relative cursor-pointer"
-                  >
-                    <FaEnvelope className="text-white text-lg hover:text-brand-orange transition-colors" />
-                    <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">5</span>
-                  </Link>
-                </div>
-                
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 text-white hover:text-brand-orange transition-colors duration-300"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-brand-orange transition-colors duration-300"
                 >
                   <div className="w-8 h-8">
                     {user.photoURL ? (
@@ -402,16 +389,16 @@ const Header = () => {
               </div>
               </>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 xl:space-x-4">
                 <Link
                   to="/login"
-                  className="text-white hover:text-brand-orange transition-colors duration-300 font-medium"
+                  className="text-gray-700 hover:text-brand-orange transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-all duration-300 font-medium"
+                  className="px-3 xl:px-6 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-all duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
                 >
                   Register
                 </Link>

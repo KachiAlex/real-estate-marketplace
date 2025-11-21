@@ -412,12 +412,23 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState(new Set());
+  // Pending filters (what user is selecting)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [priceRange, setPriceRange] = useState([0, 1000000000]);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  
+  // Applied filters (what actually filters the properties)
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [appliedLocation, setAppliedLocation] = useState('');
+  const [appliedType, setAppliedType] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('');
+  const [appliedPriceRange, setAppliedPriceRange] = useState([0, 1000000000]);
+  const [appliedBedrooms, setAppliedBedrooms] = useState('');
+  const [appliedBathrooms, setAppliedBathrooms] = useState('');
+  const [appliedVendor, setAppliedVendor] = useState('');
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -439,7 +450,7 @@ const Home = () => {
   const [propertiesPerPage] = useState(9);
   const [selectedVendor, setSelectedVendor] = useState('');
   
-  // Real-time filtering
+  // Filtering - only applies when user clicks "Apply Filters"
   const filteredProperties = useMemo(() => {
     // Ensure mockProperties is an array
     if (!Array.isArray(mockProperties)) {
@@ -448,9 +459,9 @@ const Home = () => {
     
     let filtered = [...mockProperties];
     
-    // Apply search query
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Apply search query (from applied filters)
+    if (appliedSearchQuery && appliedSearchQuery.trim()) {
+      const query = appliedSearchQuery.toLowerCase();
       filtered = filtered.filter(property => 
         property?.title?.toLowerCase().includes(query) ||
         property?.description?.toLowerCase().includes(query) ||
@@ -459,59 +470,59 @@ const Home = () => {
       );
     }
     
-    // Apply location filter
-    if (selectedLocation) {
+    // Apply location filter (from applied filters)
+    if (appliedLocation) {
       filtered = filtered.filter(property => 
-        property?.location?.toLowerCase().includes(selectedLocation.toLowerCase())
+        property?.location?.toLowerCase().includes(appliedLocation.toLowerCase())
       );
     }
     
-    // Apply property status filter
-    if (selectedStatus) {
+    // Apply property status filter (from applied filters)
+    if (appliedStatus) {
       filtered = filtered.filter(property => 
-        property?.status === selectedStatus || property?.label === selectedStatus
+        property?.status === appliedStatus || property?.label === appliedStatus
       );
     }
     
-    // Apply property type filter
-    if (selectedType) {
+    // Apply property type filter (from applied filters)
+    if (appliedType) {
       filtered = filtered.filter(property => 
-        property?.type === selectedType
+        property?.type === appliedType
       );
     }
     
-    // Apply bedrooms filter
-    if (bedrooms) {
-      const bedroomCount = parseInt(bedrooms);
+    // Apply bedrooms filter (from applied filters)
+    if (appliedBedrooms) {
+      const bedroomCount = parseInt(appliedBedrooms);
       if (!isNaN(bedroomCount)) {
         filtered = filtered.filter(property => (property?.bedrooms || 0) >= bedroomCount);
       }
     }
     
-    // Apply bathrooms filter
-    if (bathrooms) {
-      const bathroomCount = parseInt(bathrooms);
+    // Apply bathrooms filter (from applied filters)
+    if (appliedBathrooms) {
+      const bathroomCount = parseInt(appliedBathrooms);
       if (!isNaN(bathroomCount)) {
         filtered = filtered.filter(property => (property?.bathrooms || 0) >= bathroomCount);
       }
     }
     
-    // Apply price range filter
-    if (Array.isArray(priceRange) && priceRange.length === 2) {
+    // Apply price range filter (from applied filters)
+    if (Array.isArray(appliedPriceRange) && appliedPriceRange.length === 2) {
       filtered = filtered.filter(property => {
         const price = property?.price || 0;
-        return price >= priceRange[0] && price <= priceRange[1];
+        return price >= appliedPriceRange[0] && price <= appliedPriceRange[1];
       });
     }
     
-    // Apply vendor filter
-    if (selectedVendor) {
+    // Apply vendor filter (from applied filters)
+    if (appliedVendor) {
       filtered = filtered.filter(property => {
         const vendorName = property?.agent?.name || 
           (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
         const vendorId = property?.ownerId || property?.owner?.id || '';
-        return vendorName.toLowerCase().includes(selectedVendor.toLowerCase()) ||
-               vendorId.toLowerCase().includes(selectedVendor.toLowerCase());
+        return vendorName.toLowerCase().includes(appliedVendor.toLowerCase()) ||
+               vendorId.toLowerCase().includes(appliedVendor.toLowerCase());
       });
     }
     
@@ -533,7 +544,7 @@ const Home = () => {
     }
     
     return sorted;
-  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange, sortBy, selectedVendor]);
+  }, [appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, sortBy, appliedVendor]);
 
   // All Nigerian States
   const locations = [
@@ -576,36 +587,56 @@ const Home = () => {
     switch(filterType) {
       case 'location':
         setSelectedLocation('');
+        setAppliedLocation('');
         break;
       case 'status':
         setSelectedStatus('');
+        setAppliedStatus('');
         break;
       case 'type':
         setSelectedType('');
+        setAppliedType('');
         break;
       case 'bedrooms':
         setBedrooms('');
+        setAppliedBedrooms('');
         break;
       case 'vendor':
         setSelectedVendor('');
+        setAppliedVendor('');
         break;
     }
   };
 
   const handleResetAllFilters = () => {
+    // Reset pending filters
     setSelectedLocation('');
     setSelectedStatus('');
     setSelectedType('');
     setBedrooms('');
     setBathrooms('');
-    setPriceRange([0, 100000000]);
+    setPriceRange([0, 1000000000]);
     setSearchQuery('');
+    setSelectedVendor('');
+    
+    // Reset applied filters
+    setAppliedLocation('');
+    setAppliedStatus('');
+    setAppliedType('');
+    setAppliedBedrooms('');
+    setAppliedBathrooms('');
+    setAppliedPriceRange([0, 1000000000]);
+    setAppliedSearchQuery('');
+    setAppliedVendor('');
+    
+    setCurrentPage(1);
+    toast.success('All filters cleared');
   };
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when applied filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedLocation, selectedType, selectedStatus, bedrooms, bathrooms, priceRange]);
+  }, [appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, appliedVendor]);
 
   // Calculate pagination
   const safeFilteredProperties = Array.isArray(filteredProperties) ? filteredProperties : [];
@@ -621,57 +652,18 @@ const Home = () => {
       // Simulate a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      let filtered = [...mockProperties];
-      
-      // Apply location filter
-      if (selectedLocation) {
-        filtered = filtered.filter(property => 
-          property.location.toLowerCase().includes(selectedLocation.toLowerCase())
-        );
-      }
-      
-      // Apply property status filter
-      if (selectedStatus) {
-        filtered = filtered.filter(property => 
-          property.status === selectedStatus || property.label === selectedStatus
-        );
-      }
-      
-      // Apply property type filter
-      if (selectedType) {
-        filtered = filtered.filter(property => 
-          property.type === selectedType
-        );
-      }
-      
-      // Apply bedrooms filter
-      if (bedrooms) {
-        const bedroomCount = parseInt(bedrooms);
-        filtered = filtered.filter(property => property.bedrooms >= bedroomCount);
-      }
-      
-      // Apply bathrooms filter
-      if (bathrooms) {
-        const bathroomCount = parseInt(bathrooms);
-        filtered = filtered.filter(property => property.bathrooms >= bathroomCount);
-      }
-      
-      // Apply price range filter
-      filtered = filtered.filter(property => 
-        property.price >= priceRange[0] && property.price <= priceRange[1]
-      );
-      
-      // Apply search query filter
-      if (searchQuery) {
-        filtered = filtered.filter(property => 
-          property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          property.description.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
+      // Copy pending filters to applied filters
+      setAppliedSearchQuery(searchQuery);
+      setAppliedLocation(selectedLocation);
+      setAppliedType(selectedType);
+      setAppliedStatus(selectedStatus);
+      setAppliedBedrooms(bedrooms);
+      setAppliedBathrooms(bathrooms);
+      setAppliedPriceRange([...priceRange]);
+      setAppliedVendor(selectedVendor);
       
       setCurrentPage(1);
-      toast.success(`Found ${filtered.length} properties matching your criteria!`);
+      toast.success('Filters applied successfully!');
     } catch (error) {
       console.error('Error applying filters:', error);
       toast.error('Failed to apply filters');
@@ -864,32 +856,47 @@ const Home = () => {
               </button>
             </div>
 
-            {/* Active Filters */}
+            {/* Active Filters (showing applied filters) */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-2">
-                {selectedLocation && (
+                {appliedLocation && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedLocation} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('location')} />
+                    {appliedLocation} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                      setAppliedLocation('');
+                      setSelectedLocation('');
+                    }} />
                   </span>
                 )}
-                {selectedStatus && (
+                {appliedStatus && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedStatus} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('status')} />
+                    {appliedStatus} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                      setAppliedStatus('');
+                      setSelectedStatus('');
+                    }} />
                   </span>
                 )}
-                {selectedType && (
+                {appliedType && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedType} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('type')} />
+                    {appliedType} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                      setAppliedType('');
+                      setSelectedType('');
+                    }} />
                   </span>
                 )}
-                {bedrooms && (
+                {appliedBedrooms && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {bedrooms} Bedrooms <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('bedrooms')} />
+                    {appliedBedrooms} Bedrooms <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                      setAppliedBedrooms('');
+                      setBedrooms('');
+                    }} />
                   </span>
                 )}
-                {selectedVendor && (
+                {appliedVendor && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    Vendor: {selectedVendor} <FaTimes className="ml-2 cursor-pointer" onClick={() => removeFilter('vendor')} />
+                    Vendor: {appliedVendor} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                      setAppliedVendor('');
+                      setSelectedVendor('');
+                    }} />
                   </span>
                 )}
               </div>
@@ -1655,13 +1662,13 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Company Info */}
             <div className="lg:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
+              <div className="flex items-center mb-4">
                 <img 
-                  src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+                  src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
                   alt="PropertyArk Logo" 
                   className="w-auto"
                   style={{ 
-                    height: '2.5rem',
+                    height: '9rem',
                     backgroundColor: 'transparent',
                     mixBlendMode: 'normal'
                   }}
@@ -1674,7 +1681,6 @@ const Home = () => {
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                   <FaBuilding className="text-white text-xl" />
                 </div>
-                <span className="text-2xl font-bold">PropertyArk</span>
               </div>
               <p className="text-gray-400 mb-6">
                 Your trusted partner in finding premium properties across Nigeria. 

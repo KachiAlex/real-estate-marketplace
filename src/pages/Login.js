@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome } from 'react-icons/fa';
+import { handleEmailPasswordAuth, handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
+import RoleSelectionModal from '../components/auth/RoleSelectionModal';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -62,103 +63,44 @@ const Login = () => {
     setErrors({});
 
     try {
-      console.log('Login: Attempting login with:', { email: formData.email, password: '***' });
-      const result = await login(formData.email, formData.password);
-      console.log('Login: Login result:', result);
-      
-      if (result.success) {
-        console.log('Login: Login successful, checking user roles...');
-        
-        // Check if user is admin - redirect directly to admin dashboard
-        if (result.user && result.user.role === 'admin') {
-          console.log('Login: Admin user detected, redirecting to admin dashboard');
-          const next = result.redirectUrl || '/admin';
-          navigate(next, { replace: true });
-        }
-        // Check if user has multiple roles (but not admin)
-        else if (result.user && result.user.roles && result.user.roles.length > 1) {
-          console.log('Login: User has multiple roles, showing role selection');
-          setLoggedInUser(result.user);
-          setShowRoleSelection(true);
-        } else {
-          // Single role or no roles, proceed normally
-          if (result.redirectUrl) {
-            console.log('Login: Redirecting to:', result.redirectUrl);
-            navigate(result.redirectUrl, { replace: true });
-          } else {
-            console.log('Login: No redirect URL, going to dashboard');
-            navigate('/dashboard', { replace: true });
-          }
-        }
-      } else {
-        console.log('Login: Login failed:', result.message);
-        setErrors({ general: result.message });
+      const result = await handleEmailPasswordAuth(
+        formData.email,
+        formData.password,
+        login,
+        navigate,
+        setLoggedInUser,
+        setShowRoleSelection,
+        null // Don't validate again, already validated above
+      );
+
+      // Handle errors if authentication failed
+      if (!result.success && result.error) {
+        setErrors({ general: result.error });
       }
     } catch (error) {
       console.error('Login: Error during login:', error);
-      setErrors({ general: 'Login failed' });
+      setErrors({ general: error.message || 'Login failed' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle role selection
-  const handleRoleSelection = async (selectedRole) => {
-    try {
-      console.log('Login: Role selection clicked:', selectedRole);
-      
-      // Update the user's active role locally first
-      const updatedUser = { ...loggedInUser, activeRole: selectedRole };
-      
-      // Update localStorage
-      localStorage.setItem('activeRole', selectedRole);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
-      // Update AuthContext state
-      setUser(updatedUser);
-      
-      console.log('Login: Updated user with active role:', updatedUser);
-      
-      // Show success message
-      toast.success(`Switched to ${selectedRole} dashboard`);
-      
-      // Close the modal
-      setShowRoleSelection(false);
-      
-      // Navigate directly using React Router
-      let dashboardPath;
-      if (selectedRole === 'admin') {
-        dashboardPath = '/admin';
-      } else if (selectedRole === 'vendor') {
-        dashboardPath = '/vendor/dashboard';
-      } else {
-        dashboardPath = '/dashboard';
-      }
-      console.log('Login: Navigating to:', dashboardPath);
-      
-      // Use setTimeout to ensure state updates are processed
-      setTimeout(() => {
-        navigate(dashboardPath);
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error in role selection:', error);
-    }
+  // Handle role selection using centralized flow
+  const handleRoleSelectionClick = async (selectedRole) => {
+    await handleRoleSelection(
+      selectedRole,
+      loggedInUser,
+      setUser,
+      switchRole,
+      navigate,
+      setShowRoleSelection
+    );
   };
 
-  // Test function to check localStorage
-  const testLocalStorage = () => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    console.log('Login: localStorage test - Token:', !!token, 'User:', !!user);
-    if (user) {
-      console.log('Login: User data:', JSON.parse(user));
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 sm:px-6 lg:px-8" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+      <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8 group">
@@ -193,15 +135,6 @@ const Login = () => {
                   {errors.general}
                 </div>
               )}
-
-              {/* Test button for debugging */}
-              <button
-                type="button"
-                onClick={testLocalStorage}
-                className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Test localStorage (Check Console)
-              </button>
 
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -322,22 +255,21 @@ const Login = () => {
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button 
               onClick={async () => {
+                setLoading(true);
                 try {
-                  setLoading(true);
-                  const result = await signInWithGoogle();
-                  if (result.success) {
-                    // Same logic as regular login
-                    if (result.user && result.user.role === 'admin') {
-                      navigate(result.redirectUrl || '/admin', { replace: true });
-                    } else if (result.user && result.user.roles && result.user.roles.length > 1) {
-                      setLoggedInUser(result.user);
-                      setShowRoleSelection(true);
-                    } else {
-                      navigate(result.redirectUrl || '/dashboard', { replace: true });
-                    }
+                  const result = await handleGoogleAuth(
+                    signInWithGoogle,
+                    navigate,
+                    setLoggedInUser,
+                    setShowRoleSelection
+                  );
+                  
+                  if (!result.handled && result.error && !result.cancelled) {
+                    setErrors({ general: result.error });
                   }
                 } catch (error) {
                   console.error('Google sign-in error:', error);
+                  setErrors({ general: 'Failed to sign in with Google' });
                 } finally {
                   setLoading(false);
                 }
@@ -367,60 +299,11 @@ const Login = () => {
 
         {/* Role Selection Modal */}
         {showRoleSelection && loggedInUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-md w-full p-8">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Choose Your Dashboard
-                </h3>
-                <p className="text-gray-600">
-                  You have access to multiple account types. Which would you like to use?
-                </p>
-              </div>
-              
-              <div className="space-y-4">
-                {loggedInUser.roles.includes('buyer') && (
-                  <button
-                    onClick={() => handleRoleSelection('buyer')}
-                    className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                        <FaShoppingCart className="text-blue-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900">Buyer Dashboard</h4>
-                        <p className="text-sm text-gray-600">Browse and purchase properties</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-                
-                {loggedInUser.roles.includes('vendor') && (
-                  <button
-                    onClick={() => handleRoleSelection('vendor')}
-                    className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 group"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                        <FaBuilding className="text-green-600 text-xl" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900">Vendor Dashboard</h4>
-                        <p className="text-sm text-gray-600">Manage and list properties</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-              </div>
-              
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500">
-                  You can switch between dashboards anytime from the header menu
-                </p>
-              </div>
-            </div>
-          </div>
+          <RoleSelectionModal
+            user={loggedInUser}
+            onRoleSelect={handleRoleSelectionClick}
+            onClose={() => setShowRoleSelection(false)}
+          />
         )}
       </div>
     </div>

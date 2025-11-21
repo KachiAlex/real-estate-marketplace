@@ -76,12 +76,13 @@ const VendorSidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center">
             <img 
-              src={`${process.env.PUBLIC_URL}/logo.png?v=3.0`} 
+              src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
               alt="PropertyArk Logo" 
-              className="h-12 w-auto"
+              className="w-auto"
               style={{ 
+                height: '9rem',
                 backgroundColor: 'transparent',
                 mixBlendMode: 'normal'
               }}
@@ -95,8 +96,7 @@ const VendorSidebar = () => {
               <FaHome className="text-white text-sm" />
             </div>
             {!isCollapsed && (
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">PropertyArk</h1>
+              <div className="ml-2">
                 <p className="text-xs text-gray-500">Vendor Portal</p>
               </div>
             )}

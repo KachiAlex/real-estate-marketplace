@@ -264,18 +264,32 @@ const PropertyDetail = () => {
     }
   };
 
-  const handleStartEscrow = () => {
-    if (!user) {
-      // Set redirect URL to return to payment flow after login
-      const redirectUrl = `/escrow/create?propertyId=${property.id}&type=purchase`;
-      console.log('PropertyDetail: Setting redirect URL:', redirectUrl);
-      setAuthRedirect(redirectUrl);
-      console.log('PropertyDetail: Redirect URL set, localStorage check:', localStorage.getItem('authRedirectUrl'));
-      toast.error('Please login to start escrow process');
-      navigate('/login');
+  const handleCallVendor = () => {
+    // Get vendor's phone number
+    const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
+    
+    if (!vendorPhone) {
+      toast.error('Vendor phone number not available');
       return;
     }
-    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
+    
+    // Format phone number for tel: link
+    // Remove all non-digit characters
+    let formattedPhone = vendorPhone.replace(/\D/g, '');
+    
+    // Handle Nigerian phone numbers (country code: 234)
+    if (formattedPhone.startsWith('234')) {
+      // Already has country code
+    } else if (formattedPhone.startsWith('0')) {
+      // Remove leading 0 and add country code
+      formattedPhone = '234' + formattedPhone.substring(1);
+    } else {
+      // Assume it's a local number, add country code
+      formattedPhone = '234' + formattedPhone;
+    }
+    
+    // Create tel: link and trigger phone dialer
+    window.location.href = `tel:+${formattedPhone}`;
   };
 
   if (loading) {
@@ -481,10 +495,11 @@ const PropertyDetail = () => {
                   Schedule Viewing
                 </button>
                 <button
-                  onClick={handleStartEscrow}
-                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                  onClick={handleCallVendor}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
-                  Start Escrow Process
+                  <FaPhone className="mr-2" />
+                  Call Vendor
                 </button>
               </div>
             </div>
@@ -603,16 +618,12 @@ const PropertyDetail = () => {
               
               <div className="mt-4 space-y-2">
                 <button
-                  onClick={handleStartEscrow}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
+                  onClick={handleCallVendor}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
-                  <FaShoppingCart className="mr-2" />
-                  {property.status === 'for-sale' ? 'Buy Property' : property.status === 'for-rent' ? 'Rent Property' : 'Lease Property'}
+                  <FaPhone className="mr-2" />
+                  Call Vendor
                 </button>
-                
-                <p className="text-xs text-gray-500 text-center">
-                  Secure transaction protected by escrow service
-                </p>
               </div>
             </div>
 

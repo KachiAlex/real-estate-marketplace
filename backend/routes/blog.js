@@ -92,10 +92,16 @@ router.get('/', [
     if (value === 'false' || value === '0') return false;
     return value;
   }).isBoolean().withMessage('Featured must be true or false'),
-  query('sort').optional().isIn(['newest', 'oldest', 'popular', 'trending']),
+  query('sort').optional().customSanitizer(value => {
+    // Handle sort parameter - remove any MongoDB-style suffixes like :1
+    if (typeof value === 'string') {
+      return value.split(':')[0]; // Take only the part before ':'
+    }
+    return value;
+  }).isIn(['newest', 'oldest', 'popular', 'trending']).withMessage('Sort must be one of: newest, oldest, popular, trending'),
   validate()
 ], async (req, res) => {
-  console.log('📝 Blog route handler called', { path: req.path, query: req.query });
+  console.log('📝 Blog route handler called', { path: req.path, query: req.query, url: req.url });
   try {
     const {
       page = 1,
@@ -197,7 +203,8 @@ router.get('/', [
     console.error('Error fetching blogs:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

@@ -377,7 +377,19 @@ server.listen(PORT, () => {
     console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
     console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
     console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
+    console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
   }
+});
+
+// 404 handler for unmatched routes
+app.use((req, res) => {
+  console.log('❌ Route not found:', req.method, req.path, req.query);
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
 });
 
 module.exports = app; 

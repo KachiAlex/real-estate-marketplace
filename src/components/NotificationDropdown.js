@@ -282,7 +282,7 @@ const NotificationDropdown = () => {
       {/* Notification Bell */}
       <button
         onClick={handleBellClick}
-        className="relative p-2 text-white hover:text-brand-orange transition-colors"
+        className="relative p-2 text-gray-700 hover:text-brand-orange transition-colors"
       >
         <FaBell className="text-xl" />
         {unreadCount > 0 && (
