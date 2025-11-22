@@ -81,7 +81,7 @@ code {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
-}
+  }
 
   /* Brand Button Styles */
   .btn-primary {

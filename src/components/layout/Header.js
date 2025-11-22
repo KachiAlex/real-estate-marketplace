@@ -96,16 +96,16 @@ const Header = () => {
   return (
     <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="flex justify-between items-center h-16 min-h-[4rem]">
+        <div className="flex justify-between items-center h-24 sm:h-28 md:h-32 min-h-[6rem] sm:min-h-[7rem] md:min-h-[8rem]">
           <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
             {/* Logo */}
             <Link to="/" className="flex items-center flex-shrink-0">
               <img 
                 src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
                 alt="PropertyArk Logo" 
-                className="w-auto h-12 sm:h-14 md:h-16"
+                className="w-auto h-24 sm:h-28 md:h-32"
                 style={{ 
-                  maxHeight: '4rem',
+                  maxHeight: '8rem',
                   backgroundColor: 'transparent',
                   mixBlendMode: 'normal'
                 }}

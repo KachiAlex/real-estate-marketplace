@@ -263,58 +263,96 @@ const AITourGuide = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* AI Character */}
-      <div className="relative">
-        {/* Dialogue Bubble */}
-        {showDialogue && (
-          <div className={`absolute bottom-16 right-0 mb-2 transition-all duration-500 ${
-            isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-          }`}>
-            <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-4 max-w-xs">
-              {/* Dialogue Tail */}
-              <div className="absolute bottom-0 right-4 transform translate-y-full">
-                <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
-              </div>
-              
-              {/* Message */}
-              <p className="text-gray-800 text-sm leading-relaxed">
-                {currentMessage}
-              </p>
-              
-              {/* Speaking Indicator */}
-              {isSpeaking && (
-                <div className="flex items-center mt-2 space-x-1">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                </div>
-              )}
+      {/* Dialogue Bubble - Cartoon Style */}
+      {showDialogue && (
+        <div className={`absolute bottom-20 right-0 mb-4 transition-all duration-500 ${
+          isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}>
+          <div className="relative bg-white rounded-3xl shadow-2xl border-4 border-purple-300 p-6 max-w-md lg:max-w-lg w-80 lg:w-96" style={{
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(147, 51, 234, 0.1)',
+            background: 'linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%)'
+          }}>
+            {/* Cartoon-style dialogue tail pointing to character */}
+            <div className="absolute -bottom-4 right-8">
+              <svg width="40" height="30" viewBox="0 0 40 30" className="drop-shadow-lg">
+                <path
+                  d="M 20 0 Q 30 10 35 20 Q 30 25 20 30 Q 10 25 5 20 Q 10 10 20 0 Z"
+                  fill="white"
+                  stroke="#c084fc"
+                  strokeWidth="4"
+                />
+              </svg>
             </div>
+            
+            {/* Kiki Avatar in dialogue */}
+            <div className="flex items-start space-x-4 mb-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-purple-300">
+                <img 
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kiki&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&hair=longHair&hairColor=black,brown,blonde&facialHair=none&clothes=blazerShirt&eyes=happy&eyebrow=default&mouth=smile&skin=light&accessories=none"
+                  alt="Kiki"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
+                  <span className="text-white text-lg font-bold">K</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-purple-600 text-sm mb-1">Kiki</div>
+                {isSpeaking && (
+                  <div className="flex items-center space-x-1 mb-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    <span className="text-xs text-purple-500 ml-1">Speaking...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Message */}
+            <p className="text-gray-800 text-base leading-relaxed font-medium">
+              {currentMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* AI Character Icon */}
+      <div className="relative">
+        <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
+          <img 
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kiki&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&hair=longHair&hairColor=black,brown,blonde&facialHair=none&clothes=blazerShirt&eyes=happy&eyebrow=default&mouth=smile&skin=light&accessories=none"
+            alt="Kiki"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
+            <span className="text-white text-2xl font-bold">K</span>
+          </div>
+        </div>
+        
+        {/* Skip Button */}
+        <button
+          onClick={handleSkipTour}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+          title="Skip Tour"
+        >
+          <FaTimes size={10} />
+        </button>
+        
+        {/* Speaking Indicator */}
+        {isSpeaking && (
+          <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+            <FaVolumeUp className="text-white text-xs" />
           </div>
         )}
-
-        {/* AI Character Icon */}
-        <div className="relative">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
-            <FaRobot className="text-white text-2xl" />
-          </div>
-          
-          {/* Skip Button */}
-          <button
-            onClick={handleSkipTour}
-            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-            title="Skip Tour"
-          >
-            <FaTimes size={10} />
-          </button>
-          
-          {/* Speaking Indicator */}
-          {isSpeaking && (
-            <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-              <FaVolumeUp className="text-white text-xs" />
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

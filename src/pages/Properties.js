@@ -192,17 +192,17 @@ const Properties = () => {
   const handleApplyFilters = async () => {
     setIsApplyingFilters(true);
     try {
-      const next = {
-        ...filters,
-        type: selectedType,
-        status: selectedStatus,
-        minPrice: priceRange.min,
-        maxPrice: priceRange.max,
-        search: searchQuery
-      };
-      setFilters(next);
+    const next = {
+      ...filters,
+      type: selectedType,
+      status: selectedStatus,
+      minPrice: priceRange.min,
+      maxPrice: priceRange.max,
+      search: searchQuery
+    };
+    setFilters(next);
       await fetchProperties(next, 1);
-      setCurrentPage(1);
+    setCurrentPage(1);
       toast.success('Filters applied successfully!');
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -278,13 +278,13 @@ const Properties = () => {
     try {
       const result = await toggleFavorite(propertyId);
       if (result && result.success) {
-        const newFavorites = new Set(favorites);
+      const newFavorites = new Set(favorites);
         if (result.favorited) {
-          newFavorites.add(propertyId);
+        newFavorites.add(propertyId);
         } else {
           newFavorites.delete(propertyId);
-        }
-        setFavorites(newFavorites);
+      }
+      setFavorites(newFavorites);
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
