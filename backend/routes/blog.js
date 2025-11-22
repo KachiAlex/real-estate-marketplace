@@ -87,11 +87,7 @@ router.get('/', [
   query('category').optional().isString(),
   query('tag').optional().isString(),
   query('search').optional().isString(),
-  query('featured').optional().customSanitizer(value => {
-    if (value === 'true' || value === '1') return true;
-    if (value === 'false' || value === '0') return false;
-    return value;
-  }).isBoolean().withMessage('Featured must be true or false'),
+  query('featured').optional().isIn(['true', 'false', '1', '0']).withMessage('Featured must be true or false'),
   query('sort').optional().customSanitizer(value => {
     // Handle sort parameter - remove any MongoDB-style suffixes like :1
     if (typeof value === 'string') {
@@ -103,15 +99,22 @@ router.get('/', [
 ], async (req, res) => {
   console.log('📝 Blog route handler called', { path: req.path, query: req.query, url: req.url });
   try {
+    // Extract and sanitize sort parameter
+    let sortValue = req.query.sort || 'newest';
+    if (typeof sortValue === 'string' && sortValue.includes(':')) {
+      sortValue = sortValue.split(':')[0]; // Remove MongoDB-style suffixes like :1
+    }
+    
     const {
       page = 1,
       limit = 10,
       category,
       tag,
       search,
-      featured,
-      sort = 'newest'
+      featured
     } = req.query;
+    
+    const sort = sortValue;
 
     // Build filter object
     const filters = {

@@ -401,12 +401,6 @@ const Header = () => {
                 >
                   Sign In
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-3 xl:px-6 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600 transition-all duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
-                >
-                  Register
-                </Link>
               </div>
             )}
           </div>
@@ -531,13 +525,6 @@ const Header = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 font-medium text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign Up
                   </Link>
                 </div>
               )}
