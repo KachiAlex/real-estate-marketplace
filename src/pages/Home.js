@@ -685,10 +685,6 @@ const Home = () => {
     toast.success('Filters cleared');
   };
 
-  const handleGetStarted = () => {
-    navigate('/register');
-  };
-
   const handleLearnMore = () => {
     navigate('/about');
   };
@@ -1568,15 +1564,6 @@ const Home = () => {
                 <span>Explore Properties</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
-              
-              {!user && (
-                <button 
-                  onClick={() => navigate('/register')}
-                  className="px-10 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  Create Free Account
-                </button>
-              )}
             </div>
           </div>
         </div>

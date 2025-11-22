@@ -9,16 +9,34 @@ class EmailService {
 
   initializeTransporter() {
     try {
-      // Create transporter based on environment
-      if (process.env.NODE_ENV === 'production') {
-        // Production email service (e.g., SendGrid, AWS SES)
+      // Priority: SendGrid > Custom SMTP > Ethereal (development)
+      
+      // Check if SendGrid API key is configured
+      if (process.env.SENDGRID_API_KEY) {
+        // Use SendGrid SMTP
         this.transporter = nodemailer.createTransport({
-          service: process.env.EMAIL_SERVICE || 'gmail',
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          auth: {
+            user: 'apikey', // SendGrid requires 'apikey' as username
+            pass: process.env.SENDGRID_API_KEY
+          }
+        });
+        console.log('✅ Email service initialized with SendGrid');
+      } else if (process.env.EMAIL_SERVICE && process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+        // Use custom SMTP (Gmail, etc.)
+        this.transporter = nodemailer.createTransport({
+          service: process.env.EMAIL_SERVICE,
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD
           }
         });
+        console.log(`✅ Email service initialized with ${process.env.EMAIL_SERVICE}`);
+      } else if (process.env.NODE_ENV === 'production') {
+        // Production but no email config - log warning
+        console.warn('⚠️  No email service configured for production. Please set SENDGRID_API_KEY or EMAIL_SERVICE, EMAIL_USER, EMAIL_PASSWORD');
       } else {
         // Development - use ethereal email for testing
         this.transporter = nodemailer.createTransport({
@@ -30,9 +48,10 @@ class EmailService {
             pass: process.env.ETHEREAL_PASSWORD || 'ethereal.password'
           }
         });
+        console.log('📧 Email service initialized with Ethereal (development/testing)');
       }
     } catch (error) {
-      console.error('Failed to initialize email transporter:', error);
+      console.error('❌ Failed to initialize email transporter:', error);
     }
   }
 
