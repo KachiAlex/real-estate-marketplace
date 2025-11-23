@@ -156,6 +156,7 @@ const PropertyDetail = () => {
     
     if (!user) {
       toast.error('Please login to contact property vendor');
+      setAuthRedirect(`/property/${id}`);
       navigate('/login');
       return;
     }
@@ -212,6 +213,7 @@ const PropertyDetail = () => {
   const handleScheduleViewing = () => {
     if (!user) {
       toast.error('Please login to schedule a viewing');
+      setAuthRedirect(`/property/${id}`);
       navigate('/login');
       return;
     }

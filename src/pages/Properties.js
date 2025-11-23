@@ -631,19 +631,27 @@ const Properties = () => {
             {currentProperties.length > 0 ? currentProperties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="relative">
-                  <img
-                    src={property.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
-                    alt={property.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div 
+                    onClick={() => handleViewDetails(property.id)}
+                    className="cursor-pointer"
+                  >
+                    <img
+                      src={property.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
+                      alt={property.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
                   {property.tag && (
                     <div className={`absolute top-2 left-2 ${property.tagColor || 'bg-orange-500'} text-white px-2 py-1 rounded text-xs font-medium`}>
                       {property.tag}
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 flex space-x-2">
+                  <div className="absolute top-2 right-2 flex space-x-2 z-10">
                     <button
-                      onClick={() => handleToggleFavorite(property.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(property.id);
+                      }}
                       className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
                       title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
                     >
@@ -663,7 +671,10 @@ const Properties = () => {
                   </div>
                 </div>
 
-                <div className="p-4">
+                <div 
+                  onClick={() => handleViewDetails(property.id)}
+                  className="p-4 cursor-pointer"
+                >
                   <div className="text-2xl font-bold text-gray-900 mb-1">
                     ₦{property.price?.toLocaleString() || '0'}
                   </div>
@@ -686,14 +697,20 @@ const Properties = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <button 
-                      onClick={() => handleViewDetails(property.id)}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(property.id);
+                      }}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center cursor-pointer"
                     >
                       View Details →
-                    </button>
+                    </div>
                     <button 
-                      onClick={() => handleScheduleViewing(property)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleScheduleViewing(property);
+                      }}
                       className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       title={`Schedule a viewing for ${property.title}`}
                     >

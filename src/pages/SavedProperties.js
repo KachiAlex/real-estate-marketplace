@@ -383,19 +383,25 @@ const SavedProperties = () => {
           {filteredAndSortedProperties.map((property) => (
             <div key={property.id} className="property-card">
               <div className="relative">
-                <img
-                  src={property.image}
-                  alt={property.title}
-                  className="property-card-image"
-                />
+                <Link 
+                  to={`/property/${property.id}`}
+                  className="block cursor-pointer"
+                >
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    className="property-card-image"
+                  />
+                </Link>
                 <div className="absolute top-2 left-2">
                   <span className={`tag ${getStatusColor(property.status)}`}>
                     {getStatusLabel(property.status)}
                   </span>
                 </div>
-                <div className="absolute top-2 right-2 flex space-x-2">
+                <div className="absolute top-2 right-2 flex space-x-2 z-10">
                   <button 
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.stopPropagation();
                       const url = `${window.location.origin}/property/${property.id}`;
                       try {
                         if (navigator.share) {
@@ -410,7 +416,10 @@ const SavedProperties = () => {
                     <FaShare className="text-sm" />
                   </button>
                   <button 
-                    onClick={() => handleRemoveFromSaved(property.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFromSaved(property.id);
+                    }}
                     className="text-white bg-red-500 bg-opacity-80 p-1 rounded hover:bg-opacity-100 transition-all"
                   >
                     <FaTrash className="text-sm" />
@@ -418,7 +427,10 @@ const SavedProperties = () => {
                 </div>
               </div>
               
-              <div className="property-card-content">
+              <Link 
+                to={`/property/${property.id}`}
+                className="block property-card-content cursor-pointer"
+              >
                 <div className="property-price">
                   ₦{property.price.toLocaleString()}
                   {property.type === 'rent' && <span className="text-sm text-gray-500">/month</span>}
@@ -443,8 +455,9 @@ const SavedProperties = () => {
                     <span>{property.area}m²</span>
                   </div>
                 </div>
+              </Link>
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200 px-4 pb-4">
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                     <span>Added: {new Date(property.dateAdded).toLocaleDateString()}</span>
                     <span>Agent: {property.agent.name}</span>
@@ -454,7 +467,10 @@ const SavedProperties = () => {
                     {/* Primary action based on property type and status */}
                     {property.type === 'sale' && property.status === 'available' && (
                       <button 
-                        onClick={() => handleBuyProperty(property)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyProperty(property);
+                        }}
                         className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
@@ -464,7 +480,10 @@ const SavedProperties = () => {
                     
                     {property.type === 'rent' && property.status === 'available' && (
                       <button 
-                        onClick={() => handleBuyProperty(property)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyProperty(property);
+                        }}
                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
@@ -486,21 +505,30 @@ const SavedProperties = () => {
                     
                     {/* Secondary actions */}
                     <div className="flex space-x-2">
-                      <Link
-                        to={`/property/${property.id}`}
-                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/property/${property.id}`);
+                        }}
+                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center cursor-pointer"
                       >
                         View Details
-                      </Link>
+                      </div>
                       <button 
-                        onClick={() => handleScheduleViewing(property)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleScheduleViewing(property);
+                        }}
                         className="flex-1 bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors flex items-center justify-center"
                       >
                         <FaCalendar className="mr-1" />
                         Schedule Viewing
                       </button>
                       <button 
-                        onClick={() => handleContactAgent(property)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContactAgent(property);
+                        }}
                         className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
                       >
                         <FaPhone className="mr-1" />

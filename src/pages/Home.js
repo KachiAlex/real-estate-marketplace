@@ -1223,7 +1223,10 @@ const Home = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentProperties.map((property) => (
                 <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative">
+                  <Link 
+                    to={`/property/${property.propertyId || property.id}`}
+                    className="block relative cursor-pointer"
+                  >
                     <img
                       src={property.image}
                       alt={property.title}
@@ -1234,32 +1237,41 @@ const Home = () => {
                         {property.label}
                       </span>
                     </div>
-                    <div className="absolute top-3 right-3 flex space-x-2">
-                      <button 
-                        onClick={() => handleToggleFavorite(property.id)}
-                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
-                        title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                      >
-                        <FaHeart className={`text-sm transition-colors ${
-                          favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'
-                        }`} />
-                      </button>
-                      <button 
-                        onClick={() => handleShareProperty(property)}
-                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
-                        title="Share property"
-                      >
-                        <FaShare className="text-gray-400 text-sm hover:text-blue-500 transition-colors" />
-                      </button>
-                    </div>
                     <div className="absolute bottom-3 left-3">
                       <span className="text-2xl font-bold text-white">
                         ₦{property.price.toLocaleString()}
                       </span>
                     </div>
+                  </Link>
+                  <div className="absolute top-3 right-3 flex space-x-2 z-10">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(property.id);
+                      }}
+                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+                      title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <FaHeart className={`text-sm transition-colors ${
+                        favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'
+                      }`} />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareProperty(property);
+                      }}
+                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+                      title="Share property"
+                    >
+                      <FaShare className="text-gray-400 text-sm hover:text-blue-500 transition-colors" />
+                    </button>
                   </div>
 
-                  <div className="p-4">
+                  <Link 
+                    to={`/property/${property.propertyId || property.id}`}
+                    className="block p-4 cursor-pointer"
+                  >
                     <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
                     <div className="flex items-center text-gray-600 text-sm mb-2">
                       <FaMapMarkerAlt className="mr-1" />
@@ -1282,15 +1294,14 @@ const Home = () => {
                         </span>
                       </div>
                     </div>
-                    <Link
-                      to={`/property/${property.propertyId || property.id}`}
-                      className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                    <div
+                      className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
                       title={`View details for ${property.title}`}
                     >
                       View Details
                       <FaArrowRight className="ml-2 text-sm" />
-                    </Link>
-                  </div>
+                    </div>
+                  </Link>
                 </div>
               ))}
               </div>

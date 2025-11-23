@@ -139,14 +139,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/property/:id" element={
-                    <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
                       <main className="flex-1 ml-0 lg:ml-64">
                         <PropertyDetail />
                       </main>
                     </div>
-                    </ProtectedRoute>
                   } />
                   <Route path="/about" element={<About />} />
                   <Route path="/blog" element={<Blog />} />
