@@ -457,7 +457,7 @@ const SavedProperties = () => {
                 </div>
               </Link>
 
-                <div className="mt-4 pt-4 border-t border-gray-200 px-4 pb-4">
+              <div className="mt-4 pt-4 border-t border-gray-200 px-4 pb-4">
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                     <span>Added: {new Date(property.dateAdded).toLocaleDateString()}</span>
                     <span>Agent: {property.agent.name}</span>
@@ -537,7 +537,6 @@ const SavedProperties = () => {
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
           ))}
         </div>
