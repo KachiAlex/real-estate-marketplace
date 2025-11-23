@@ -44,7 +44,7 @@ const paymentSchema = new mongoose.Schema({
   paymentType: {
     type: String,
     required: [true, 'Payment type is required'],
-    enum: ['property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'refund']
+    enum: ['property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'refund', 'vendor_listing']
   },
   relatedEntity: {
     type: {

@@ -31,6 +31,7 @@ const AdminPropertyVerification = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [error, setError] = useState('');
   const [verificationFee, setVerificationFee] = useState(50000);
+  const [vendorListingFee, setVendorListingFee] = useState(100000);
   const [savingFee, setSavingFee] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -39,7 +40,32 @@ const AdminPropertyVerification = () => {
 
   useEffect(() => {
     loadVerificationRequests();
+    loadAdminSettings();
   }, []);
+
+  const loadAdminSettings = async () => {
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setVerificationFee(data.data.verificationFee || 50000);
+          setVendorListingFee(data.data.vendorListingFee || 100000);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading admin settings:', error);
+    }
+  };
 
   const loadVerificationRequests = async () => {
     try {
@@ -222,13 +248,34 @@ const AdminPropertyVerification = () => {
   const handleSaveVerificationFee = async () => {
     try {
       setSavingFee(true);
-      console.log('Saving verification fee:', verificationFee);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Verification fee updated successfully!');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          verificationFee: parseInt(verificationFee),
+          vendorListingFee: parseInt(vendorListingFee)
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          alert('Settings updated successfully!');
+        } else {
+          throw new Error(data.message || 'Failed to save settings');
+        }
+      } else {
+        throw new Error('Failed to save settings');
+      }
     } catch (error) {
-      console.error('Error saving verification fee:', error);
-      alert('Failed to save verification fee');
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings: ' + error.message);
     } finally {
       setSavingFee(false);
     }
@@ -313,21 +360,21 @@ const AdminPropertyVerification = () => {
         </div>
       </div>
 
-      {/* Verification Settings Card */}
+      {/* Fee Settings Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Verification Settings</h2>
-            <p className="text-sm text-gray-600 mt-1">Configure property verification fee</p>
+            <h2 className="text-xl font-bold text-gray-800">Platform Fee Settings</h2>
+            <p className="text-sm text-gray-600 mt-1">Configure platform fees</p>
           </div>
           <div className="bg-blue-100 rounded-full p-3">
             <FaMoneyBillWave className="text-blue-600 text-xl" />
           </div>
         </div>
-        <div className="flex items-end space-x-4">
-          <div className="flex-1 max-w-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Verification Fee (NGN)
+              Property Verification Fee (NGN)
             </label>
             <input
               type="number"
@@ -337,21 +384,32 @@ const AdminPropertyVerification = () => {
               min={0}
               placeholder="Enter verification fee"
             />
+            <p className="text-xs text-gray-500 mt-1">Charged when vendors request property verification</p>
           </div>
-          <button
-            onClick={handleSaveVerificationFee}
-            disabled={savingFee}
-            className={`px-6 py-3 rounded-lg text-white font-medium transition ${
-              savingFee ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {savingFee ? 'Saving...' : 'Save Fee'}
-          </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Vendor Listing Fee (NGN)
+            </label>
+            <input
+              type="number"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              value={vendorListingFee}
+              onChange={(e) => setVendorListingFee(e.target.value)}
+              min={0}
+              placeholder="Enter vendor listing fee"
+            />
+            <p className="text-xs text-gray-500 mt-1">Charged when vendors register to list properties</p>
+          </div>
         </div>
-        <p className="text-sm text-gray-500 mt-3 flex items-center">
-          <FaInfoCircle className="mr-2" />
-          Vendors will be charged this amount when requesting property verification.
-        </p>
+        <button
+          onClick={handleSaveVerificationFee}
+          disabled={savingFee}
+          className={`w-full md:w-auto px-6 py-3 rounded-lg text-white font-medium transition ${
+            savingFee ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg'
+          }`}
+        >
+          {savingFee ? 'Saving...' : 'Save All Fees'}
+        </button>
       </div>
 
       {/* Search and Filter */}

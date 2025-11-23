@@ -229,6 +229,11 @@ exports.adminValidation = {
       .isInt({ min: 0 })
       .withMessage('Verification fee must be a non-negative integer'),
     
+    body('vendorListingFee')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Vendor listing fee must be a non-negative integer'),
+    
     body('escrowTimeoutDays')
       .optional()
       .isInt({ min: 1, max: 30 })

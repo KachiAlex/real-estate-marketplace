@@ -122,7 +122,7 @@ router.post('/initialize',
   validate([
     body('amount').isNumeric().isFloat({ min: 100 }).withMessage('Amount must be at least â‚¦100'),
     body('paymentMethod').isIn(['flutterwave', 'paystack', 'stripe', 'bank_transfer']).withMessage('Invalid payment method'),
-    body('paymentType').isIn(['property_purchase', 'investment', 'escrow', 'subscription', 'commission']).withMessage('Invalid payment type'),
+    body('paymentType').isIn(['property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'vendor_listing']).withMessage('Invalid payment type'),
     body('relatedEntity.type').isIn(['property', 'investment', 'escrow', 'subscription']).withMessage('Invalid related entity type'),
     body('relatedEntity.id').isMongoId().withMessage('Valid related entity ID is required'),
     body('description').trim().isLength({ min: 5, max: 500 }).withMessage('Description must be between 5 and 500 characters'),

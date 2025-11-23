@@ -7,6 +7,12 @@ const adminSettingsSchema = new mongoose.Schema({
     default: 50000,
     min: [0, 'Verification fee cannot be negative']
   },
+  vendorListingFee: {
+    type: Number,
+    required: true,
+    default: 100000,
+    min: [0, 'Vendor listing fee cannot be negative']
+  },
   escrowTimeoutDays: {
     type: Number,
     required: true,

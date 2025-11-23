@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
 import { handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
+import VendorRegistrationPayment from '../components/VendorRegistrationPayment';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
 
 const Register = () => {
@@ -32,8 +33,10 @@ const Register = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [pendingVendorData, setPendingVendorData] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const { register, signInWithGoogle, setUser } = useAuth();
+  const { register, signInWithGoogle, setUser, registerAsVendor } = useAuth();
   const navigate = useNavigate();
 
   // Generate captcha question
@@ -164,27 +167,55 @@ const Register = () => {
     }
     
     setLoading(true);
+    
+    // If vendor registration, create user account first, then show payment
+    if (formData.userType === 'vendor') {
+      try {
+        // First, register as a regular user (buyer role)
+        const userData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          roles: ['buyer'], // Start as buyer
+          activeRole: 'buyer'
+        };
+        
+        const result = await register(userData);
+        if (result.success) {
+          // Store vendor data for after payment
+          setPendingVendorData({
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            phone: formData.phone,
+            experience: formData.experience,
+            vendorCategory: formData.vendorCategory,
+            agentLocation: formData.agentLocation
+          });
+          setShowPayment(true);
+        } else {
+          setErrors({ general: result.message || 'Registration failed. Please try again.' });
+          generateCaptcha();
+        }
+      } catch (error) {
+        setErrors({ general: error.message || 'Registration failed. Please try again.' });
+        generateCaptcha();
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    
+    // For non-vendor registration, proceed normally
+    setLoading(true);
     try {
       const userData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        roles: [formData.userType], // Set initial role
-        activeRole: formData.userType,
-        // Include vendor data if registering as vendor
-        ...(formData.userType === 'vendor' && {
-          vendorData: {
-            businessName: formData.businessName,
-            businessType: formData.businessType,
-            phone: formData.phone,
-            experience: formData.experience,
-            vendorCategory: formData.vendorCategory,
-            agentLocation: formData.agentLocation,
-            registeredAt: new Date().toISOString(),
-            status: 'active'
-          }
-        })
+        roles: [formData.userType],
+        activeRole: formData.userType
       };
       
       const result = await register(userData);
@@ -209,27 +240,92 @@ const Register = () => {
         });
         generateCaptcha();
         
-        // Check if there's a redirect URL
         if (result.redirectUrl) {
           navigate(result.redirectUrl);
         } else {
-          // Navigate to appropriate dashboard based on user type
-          const dashboardPath = formData.userType === 'vendor' ? '/vendor/dashboard' : '/dashboard';
-          navigate(dashboardPath);
+          navigate('/dashboard');
         }
       } else {
         setErrors({ general: result.message || 'Registration failed. Please try again.' });
-        // Regenerate captcha on failure
         generateCaptcha();
       }
     } catch (error) {
       setErrors({ general: error.message || 'Registration failed. Please try again.' });
-      // Regenerate captcha on error
       generateCaptcha();
     } finally {
       setLoading(false);
     }
   };
+
+  const handlePaymentSuccess = async (paymentData) => {
+    // Complete vendor registration after payment - update user to vendor role
+    setLoading(true);
+    try {
+      // Use registerAsVendor to add vendor role and data
+      const vendorData = {
+        businessName: pendingVendorData.businessName,
+        businessType: pendingVendorData.businessType,
+        phone: pendingVendorData.phone,
+        experience: pendingVendorData.experience,
+        vendorCategory: pendingVendorData.vendorCategory,
+        agentLocation: pendingVendorData.agentLocation,
+        registeredAt: new Date().toISOString(),
+        status: 'active',
+        paymentReference: paymentData?.reference || paymentData?.transactionId
+      };
+      
+      const result = await registerAsVendor(vendorData);
+      if (result.success) {
+        setShowPayment(false);
+        setPendingVendorData(null);
+        // Reset form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          userType: 'buyer',
+          businessName: '',
+          businessType: 'Real Estate Agent',
+          phone: '',
+          experience: '1-2 years',
+          vendorCategory: 'agent',
+          agentLocation: 'Lagos',
+          agreeToTerms: false,
+          agreeToPrivacy: false,
+          captcha: ''
+        });
+        generateCaptcha();
+        
+        // Navigation will happen in registerAsVendor
+      } else {
+        setErrors({ general: result.error || 'Failed to complete vendor registration. Please contact support.' });
+      }
+    } catch (error) {
+      setErrors({ general: error.message || 'Failed to complete vendor registration. Please contact support.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPayment(false);
+    setPendingVendorData(null);
+  };
+
+  // Show payment component if vendor registration and payment is required
+  if (showPayment && pendingVendorData) {
+    return (
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center px-4 sm:px-6 lg:px-8" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+        <VendorRegistrationPayment
+          vendorData={pendingVendorData}
+          onPaymentSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center px-4 sm:px-6 lg:px-8" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>

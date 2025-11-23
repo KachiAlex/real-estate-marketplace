@@ -2,7 +2,9 @@ const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Property = require('../models/Property');
 const User = require('../models/User');
+const AdminSettings = require('../models/AdminSettings');
 const { protect, authorize } = require('../middleware/auth');
+const { adminValidation } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -398,6 +400,82 @@ router.delete('/users/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Admin delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get admin settings
+// @route   GET /api/admin/settings
+// @access  Private (Admin only)
+router.get('/settings', async (req, res) => {
+  try {
+    let settings = await AdminSettings.findOne();
+    
+    // If no settings exist, create default settings
+    if (!settings) {
+      settings = new AdminSettings({
+        verificationFee: 50000,
+        vendorListingFee: 100000,
+        escrowTimeoutDays: 7,
+        platformFee: 0.025
+      });
+      await settings.save();
+    }
+
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Get admin settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Update admin settings
+// @route   PUT /api/admin/settings
+// @access  Private (Admin only)
+router.put('/settings', adminValidation.settings, async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    let settings = await AdminSettings.findOne();
+    
+    // If no settings exist, create new one
+    if (!settings) {
+      settings = new AdminSettings(req.body);
+    } else {
+      // Update existing settings
+      Object.keys(req.body).forEach(key => {
+        if (req.body[key] !== undefined) {
+          settings[key] = req.body[key];
+        }
+      });
+      settings.updatedAt = new Date();
+    }
+
+    await settings.save();
+
+    res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: settings
+    });
+  } catch (error) {
+    console.error('Update admin settings error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

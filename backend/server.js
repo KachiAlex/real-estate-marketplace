@@ -143,6 +143,7 @@ async function initializeAdminSettings() {
     if (!existingSettings) {
       const defaultSettings = new AdminSettings({
         verificationFee: 50000,
+        vendorListingFee: 100000,
         escrowTimeoutDays: 7,
         platformFee: 0.025,
         maxFileSize: 10485760,
