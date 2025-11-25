@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 
@@ -264,6 +264,18 @@ const PropertyDetail = () => {
     } catch (e) {
       toast.error('Failed to create request');
     }
+  };
+
+  const handleProceedToEscrow = () => {
+    if (!user) {
+      toast.error('Please login to proceed with purchase');
+      setAuthRedirect(`/property/${id}`);
+      navigate('/login');
+      return;
+    }
+
+    // Navigate to escrow payment flow
+    navigate(`/escrow/create?propertyId=${property?.id || property?.propertyId || id}&type=purchase`);
   };
 
   const handleCallVendor = () => {
@@ -620,11 +632,11 @@ const PropertyDetail = () => {
               
               <div className="mt-4 space-y-2">
                 <button
-                  onClick={handleCallVendor}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  onClick={handleProceedToEscrow}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center font-semibold shadow-md"
                 >
-                  <FaPhone className="mr-2" />
-                  Call Vendor
+                  <FaLock className="mr-2" />
+                  Proceed to Purchase (Escrow)
                 </button>
               </div>
             </div>

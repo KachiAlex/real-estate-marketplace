@@ -635,11 +635,11 @@ const Properties = () => {
                     onClick={() => handleViewDetails(property.id)}
                     className="cursor-pointer"
                   >
-                    <img
-                      src={property.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
-                      alt={property.title}
-                      className="w-full h-48 object-cover"
-                    />
+                  <img
+                    src={property.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
+                    alt={property.title}
+                    className="w-full h-48 object-cover"
+                  />
                   </div>
                   {property.tag && (
                     <div className={`absolute top-2 left-2 ${property.tagColor || 'bg-orange-500'} text-white px-2 py-1 rounded text-xs font-medium`}>
