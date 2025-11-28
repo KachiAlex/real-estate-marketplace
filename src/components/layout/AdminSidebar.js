@@ -9,7 +9,8 @@ import {
   FaChartBar,
   FaHome,
   FaBlog,
-  FaCheckCircle
+  FaCheckCircle,
+  FaUniversity
 } from 'react-icons/fa';
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -51,6 +52,12 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       label: 'Blog', 
       icon: FaBlog,
       description: 'Manage blog posts and content'
+    },
+    { 
+      id: 'mortgage-banks', 
+      label: 'Mortgage Banks', 
+      icon: FaUniversity,
+      description: 'Verify and manage mortgage banks'
     }
   ];
 

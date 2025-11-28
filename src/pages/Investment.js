@@ -86,6 +86,7 @@ const Investment = () => {
 
   const investmentData = calculateInvestmentData();
 
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [projects, setProjects] = useState([
     {
       id: 1,
@@ -186,6 +187,29 @@ const Investment = () => {
     }
   }, [projects, selectedProject]);
 
+  // Set 'Investment Details' as default active tab when project is selected
+  useEffect(() => {
+    if (selectedProject && activeTab === 'overview') {
+      setActiveTab('investmentdetails');
+    }
+  }, [selectedProject, activeTab]);
+
+  // Load wishlist items when user changes
+  useEffect(() => {
+    if (user) {
+      const wishlistKey = `investment_wishlist_${user.id}`;
+      const existingWishlist = JSON.parse(localStorage.getItem(wishlistKey) || '[]');
+      setWishlistItems(existingWishlist);
+    } else {
+      setWishlistItems([]);
+    }
+  }, [user]);
+
+  // Check if a project is in wishlist
+  const isInWishlist = (projectId) => {
+    return wishlistItems.some(item => item.id === projectId);
+  };
+
   const filteredProjects = projects.filter(project => {
     if (filterType === 'all') return true;
     if (filterType === 'land') return project.type === 'Land';
@@ -210,13 +234,17 @@ const Investment = () => {
     }
     
     // Ensure we have a project to work with
-    const projectToUse = project || projects[0];
+    const projectToUse = project || selectedProject || projects[0];
     if (!projectToUse) {
       toast.error('No investment project available');
       return;
     }
 
-    // Redirect to escrow payment flow for investment
+    // Store project data temporarily for EscrowPaymentFlow to use
+    // This is needed because mock projects aren't in the investment context
+    localStorage.setItem('pendingInvestmentProject', JSON.stringify(projectToUse));
+
+    // Navigate to escrow payment flow for investment
     const redirectUrl = `/escrow/create?investmentId=${projectToUse.id}&type=investment`;
     navigate(redirectUrl);
   };
@@ -327,6 +355,7 @@ const Investment = () => {
         // Remove from wishlist
         const updatedWishlist = existingWishlist.filter(item => item.id !== project.id);
         localStorage.setItem(wishlistKey, JSON.stringify(updatedWishlist));
+        setWishlistItems(updatedWishlist);
         toast.success(`Removed "${project.name}" from your wishlist`);
       } else {
         // Add to wishlist
@@ -337,11 +366,13 @@ const Investment = () => {
           expectedROI: project.expectedROI,
           minInvestment: project.minInvestment,
           lockPeriod: project.lockPeriod,
+          image: project.image,
           addedAt: new Date().toISOString()
         };
         
         existingWishlist.push(wishlistItem);
         localStorage.setItem(wishlistKey, JSON.stringify(existingWishlist));
+        setWishlistItems(existingWishlist);
         toast.success(`Added "${project.name}" to your wishlist!`);
       }
     } catch (error) {
@@ -350,65 +381,48 @@ const Investment = () => {
     }
   };
 
-  const openScheduleModal = (project) => {
-    if (!user) {
-      setAuthRedirect('/investment');
-      toast.error('Please login to schedule a viewing');
-      navigate('/login');
+  const handleConfirmSchedule = async () => {
+    if (!scheduleDate || !scheduleTime) {
+      toast.error('Please select a preferred date and time');
       return;
     }
-    const projectToUse = project || selectedProject || projects[0];
-    if (!projectToUse) {
-      toast.error('No project selected to schedule');
-      return;
-    }
-    setScheduleProject(projectToUse);
-    setScheduleDate('');
-    setScheduleTime('');
-    setScheduleNote('');
-    setShowScheduleModal(true);
-  };
 
-  const submitScheduleRequest = async () => {
-    if (!scheduleProject) {
+    const projectToUse = selectedProject || projects[0];
+    if (!projectToUse) {
       toast.error('No project selected');
       return;
     }
-    if (!scheduleDate || !scheduleTime) {
-      toast.error('Select preferred date and time');
-      return;
-    }
+
+    const viewingRequest = {
+      id: `viewing-${Date.now()}`,
+      projectId: projectToUse.id,
+      projectName: projectToUse.name,
+      projectLocation: projectToUse.location,
+      userId: user.id,
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      status: 'pending_vendor',
+      requestedAt: new Date().toISOString(),
+      preferredDate: scheduleDate,
+      preferredTime: scheduleTime,
+      message: scheduleNote || '',
+      // Map to inspection request fields expected by vendor screen
+      vendor: projectToUse.sponsor?.name || 'Investment Sponsor',
+      vendorId: projectToUse.sponsor?.id || projectToUse.vendorId || 'mock-vendor-id',
+      vendorEmail: projectToUse.sponsor?.email || projectToUse.vendorEmail || user?.email,
+      buyerId: user.id,
+      buyerName: `${user.firstName} ${user.lastName}`,
+      buyerEmail: user.email,
+    };
     try {
-      setIsSubmittingSchedule(true);
-      const request = {
-        id: `VW-${Date.now()}`,
-        projectId: scheduleProject.id,
-        projectName: scheduleProject.name,
-        projectLocation: scheduleProject.location,
-        vendor: scheduleProject.sponsor?.name || 'Investment Sponsor',
-        vendorId: scheduleProject.sponsor?.id || scheduleProject.vendorId || 'mock-vendor-id',
-        vendorEmail: scheduleProject.sponsor?.email || scheduleProject.vendorEmail || user?.email,
-        buyerId: user?.id,
-        buyerName: user ? `${user.firstName} ${user.lastName}` : 'User',
-        buyerEmail: user?.email,
-        preferredDate: scheduleDate,
-        preferredTime: scheduleTime,
-        note: scheduleNote,
-        status: 'pending_vendor', // pending_vendor | accepted | proposed_new_time | declined
-        createdAt: new Date().toISOString(),
-        history: []
-      };
-
-      await createInspectionRequest(request);
-
-      toast.success('Viewing request sent. Vendor will confirm or propose a new time.');
+      await createInspectionRequest(viewingRequest);
       setShowScheduleModal(false);
-      setScheduleProject(null);
+      setScheduleDate('');
+      setScheduleTime('');
+      setScheduleNote('');
+      toast.success('Viewing scheduled! The vendor has been notified.');
     } catch (e) {
-      console.error('Failed to submit viewing request', e);
-      toast.error('Failed to send viewing request');
-    } finally {
-      setIsSubmittingSchedule(false);
+      toast.error('Failed to create request');
     }
   };
 
@@ -773,19 +787,22 @@ const Investment = () => {
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              {[ 'Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs', ...(user?.role === 'vendor' ? ['Inspection Requests'] : [])].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase().replace(' ', ''))}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.toLowerCase().replace(' ', '')
-                      ? 'border-brand-blue text-brand-blue'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {[ 'Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs', ...(user?.role === 'vendor' ? ['Inspection Requests'] : [])].map((tab) => {
+                const tabKey = tab.toLowerCase().replace(/\s+/g, '');
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tabKey)}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === tabKey
+                        ? 'border-brand-blue text-brand-blue'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
@@ -868,23 +885,17 @@ const Investment = () => {
                     <FaCheck />
                     <span>Invest Now</span>
                   </button>
-                  <button
-                    onClick={() => openScheduleModal(selectedProject || projects[0])}
-                    className="btn-outline flex items-center space-x-2"
-                    disabled={!projects.length}
-                    title="Schedule a property viewing"
-                  >
-                    <FaCalendar />
-                    <span>Schedule Viewing</span>
-                  </button>
                   <button 
-                    onClick={() => handleAddToWishlist(selectedProject || projects[0])}
-                    className="btn-outline flex items-center space-x-2"
-                    title="Add this investment to your wishlist"
-                    disabled={!projects.length}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToWishlist(selectedProject || projects[0]);
+                    }}
+                    className={`btn-outline flex items-center space-x-2 ${isInWishlist(selectedProject?.id || projects[0]?.id) ? 'bg-orange-50 border-orange-300 text-orange-700' : ''}`}
+                    title={isInWishlist(selectedProject?.id || projects[0]?.id) ? 'Remove from wishlist' : 'Add this investment to your wishlist'}
+                    disabled={!projects.length || !selectedProject}
                   >
-                    <FaBookmark />
-                    <span>Add to Wishlist</span>
+                    <FaBookmark className={isInWishlist(selectedProject?.id || projects[0]?.id) ? 'fill-current' : ''} />
+                    <span>{isInWishlist(selectedProject?.id || projects[0]?.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -1506,14 +1517,6 @@ const Investment = () => {
                 <FaDollarSign className="text-sm" />
                 <span>Invest Now</span>
               </button>
-              <button
-                onClick={() => openScheduleModal(project)}
-                className="w-full mt-2 btn-outline flex items-center justify-center space-x-2"
-                title="Schedule a property viewing"
-              >
-                <FaCalendar />
-                <span>Schedule Viewing</span>
-              </button>
             </div>
           </div>
         ))}
@@ -1802,69 +1805,56 @@ const Investment = () => {
       )}
 
       {/* Schedule Viewing Modal */}
-      {showScheduleModal && scheduleProject && (
+      {/* Schedule Viewing Modal */}
+      {showScheduleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Schedule Viewing</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Schedule Viewing</h3>
               <button
                 onClick={() => setShowScheduleModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close"
+                className="text-gray-400 hover:text-gray-600"
               >
-                ✓
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-sm">
-              <p className="font-semibold">{scheduleProject.name}</p>
-              <p className="text-gray-600">{scheduleProject.location}</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
                 <input
                   type="date"
                   value={scheduleDate}
                   onChange={(e) => setScheduleDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
                 <input
                   type="time"
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
-                <textarea
-                  value={scheduleNote}
-                  onChange={(e) => setScheduleNote(e.target.value)}
-                  rows="3"
-                  placeholder="Share any availability constraints or questions"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowScheduleModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmSchedule}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Confirm
+                </button>
               </div>
-            </div>
-
-            <div className="flex justify-between mt-6">
-              <button onClick={() => setShowScheduleModal(false)} className="px-5 py-2 border rounded-lg">Cancel</button>
-              <button
-                onClick={submitScheduleRequest}
-                disabled={isSubmittingSchedule || !scheduleDate || !scheduleTime}
-                className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                {isSubmittingSchedule ? 'Sending...' : 'Send Request'}
-              </button>
-            </div>
-
-            <div className="mt-4 text-xs text-gray-600">
-              The vendor will either accept your proposed time or suggest a different date/time.
             </div>
           </div>
         </div>

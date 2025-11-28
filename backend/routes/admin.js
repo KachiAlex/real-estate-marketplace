@@ -3,6 +3,7 @@ const { body, validationResult, query } = require('express-validator');
 const Property = require('../models/Property');
 const User = require('../models/User');
 const AdminSettings = require('../models/AdminSettings');
+const MortgageBank = require('../models/MortgageBank');
 const { protect, authorize } = require('../middleware/auth');
 const { adminValidation } = require('../middleware/validation');
 
@@ -476,6 +477,110 @@ router.put('/settings', adminValidation.settings, async (req, res) => {
     });
   } catch (error) {
     console.error('Update admin settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get all mortgage banks for admin review
+// @route   GET /api/admin/mortgage-banks
+// @access  Private (Admin only)
+router.get('/mortgage-banks', async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    let query = {};
+    if (status) {
+      query.verificationStatus = status;
+    }
+
+    const banks = await MortgageBank.find(query)
+      .populate('userAccount', 'firstName lastName email role isActive')
+      .populate('verifiedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: banks.length,
+      data: banks
+    });
+  } catch (error) {
+    console.error('Admin get mortgage banks error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Verify/reject mortgage bank
+// @route   PUT /api/admin/mortgage-banks/:id/verify
+// @access  Private (Admin only)
+router.put('/mortgage-banks/:id/verify', [
+  body('verificationStatus').isIn(['approved', 'rejected']).withMessage('Verification status must be approved or rejected'),
+  body('verificationNotes').optional().trim().isLength({ max: 1000 }).withMessage('Verification notes cannot exceed 1000 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { verificationStatus, verificationNotes } = req.body;
+    const bank = await MortgageBank.findById(req.params.id).populate('userAccount');
+
+    if (!bank) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mortgage bank not found'
+      });
+    }
+
+    // Update bank verification status
+    bank.verificationStatus = verificationStatus;
+    bank.verifiedBy = req.user.id;
+    bank.verifiedAt = new Date();
+    bank.verificationNotes = verificationNotes || '';
+
+    if (verificationStatus === 'approved') {
+      bank.isActive = true;
+      // Activate the user account
+      if (bank.userAccount) {
+        bank.userAccount.isActive = true;
+        bank.userAccount.isVerified = true;
+        await bank.userAccount.save();
+      }
+    } else {
+      bank.isActive = false;
+      // Deactivate the user account
+      if (bank.userAccount) {
+        bank.userAccount.isActive = false;
+        await bank.userAccount.save();
+      }
+    }
+
+    await bank.save();
+
+    // Log admin action
+    await logAdminAction(req.user.id, 'verify_mortgage_bank', {
+      bankId: bank._id,
+      bankName: bank.name,
+      status: verificationStatus,
+      notes: verificationNotes
+    });
+
+    res.json({
+      success: true,
+      message: `Mortgage bank ${verificationStatus === 'approved' ? 'approved' : 'rejected'} successfully`,
+      data: bank
+    });
+  } catch (error) {
+    console.error('Admin verify mortgage bank error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome } from 'react-icons/fa';
 import { handleEmailPasswordAuth, handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,8 +17,15 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const { login, signInWithGoogle, switchRole, setUser } = useAuth();
+  const { login, signInWithGoogle, switchRole, setUser, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
+
+  // Set redirect URL if provided in query params
+  useEffect(() => {
+    if (redirectUrl) {
+      setAuthRedirect(redirectUrl);
+    }
+  }, [redirectUrl, setAuthRedirect]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

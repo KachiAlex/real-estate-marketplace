@@ -7,6 +7,7 @@ import BlogManagement from '../components/BlogManagement';
 import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
+import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -69,7 +70,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','verification','escrow','disputes','users','blog'].includes(t)) {
+    if (t && ['properties','verification','escrow','disputes','users','blog','mortgage-banks'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -445,6 +446,7 @@ const AdminDashboard = () => {
               {activeTab === 'disputes' && 'Dispute resolution management'}
                              {activeTab === 'users' && 'User account management'}
                {activeTab === 'blog' && 'Blog content management'}
+               {activeTab === 'mortgage-banks' && 'Mortgage bank verification and management'}
              </p>
         </div>
       </div>
@@ -930,6 +932,11 @@ const AdminDashboard = () => {
         {/* Property Verification Tab */}
         {activeTab === 'verification' && (
           <AdminPropertyVerification />
+        )}
+
+        {/* Mortgage Banks Tab */}
+        {activeTab === 'mortgage-banks' && (
+          <AdminMortgageBankVerification />
         )}
 
       </div>

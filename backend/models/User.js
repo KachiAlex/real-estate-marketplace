@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'agent', 'admin'],
+    enum: ['user', 'agent', 'admin', 'mortgage_bank', 'vendor'],
     default: 'user'
   },
   isVerified: {
@@ -98,6 +98,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property'
   }],
+  mortgageBankProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MortgageBank'
+  },
   createdAt: {
     type: Date,
     default: Date.now

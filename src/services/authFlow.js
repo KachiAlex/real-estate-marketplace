@@ -23,6 +23,13 @@ export const handlePostAuth = (result, navigate, setLoggedInUser, setShowRoleSel
     return { handled: true, redirect: next };
   }
 
+  // Check if user is mortgage bank - redirect directly to mortgage bank dashboard
+  if (user && user.role === 'mortgage_bank') {
+    const next = redirectUrl || '/mortgage-bank/dashboard';
+    navigate(next, { replace: true });
+    return { handled: true, redirect: next };
+  }
+
   // Check if user has multiple roles (but not admin) - show role selection
   if (user && user.roles && user.roles.length > 1) {
     if (setLoggedInUser && setShowRoleSelection) {
@@ -81,6 +88,9 @@ export const handleRoleSelection = async (
     switch (selectedRole) {
       case 'admin':
         dashboardPath = '/admin';
+        break;
+      case 'mortgage_bank':
+        dashboardPath = '/mortgage-bank/dashboard';
         break;
       case 'vendor':
         dashboardPath = '/vendor/dashboard';
@@ -191,6 +201,10 @@ export const getDefaultRedirectPath = (user, redirectUrl) => {
 
   if (user.role === 'admin') {
     return '/admin';
+  }
+
+  if (user.role === 'mortgage_bank') {
+    return '/mortgage-bank/dashboard';
   }
 
   if (user.activeRole === 'vendor') {

@@ -54,6 +54,8 @@ const BillingPayments = lazy(() => import('./pages/BillingPayments'));
 const EscrowPaymentFlow = lazy(() => import('./components/EscrowPaymentFlow'));
 const VendorInspectionRequests = lazy(() => import('./pages/VendorInspectionRequests'));
 const BuyerInspectionRequests = lazy(() => import('./pages/BuyerInspectionRequests'));
+const MortgageBankRegister = lazy(() => import('./pages/MortgageBankRegister'));
+const MortgageBankDashboard = lazy(() => import('./pages/MortgageBankDashboard'));
 
 // Lazy load vendor pages
 const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
@@ -88,6 +90,7 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
                   <Route path="/properties" element={
                     <ProtectedRoute>
                     <div className="flex w-full">
@@ -272,6 +275,16 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-0 lg:ml-64">
                           <Mortgages />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgage-bank/dashboard" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-0 lg:ml-64">
+                          <MortgageBankDashboard />
                         </main>
                       </div>
                     </ProtectedRoute>

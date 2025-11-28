@@ -63,7 +63,37 @@ const EscrowPaymentFlow = () => {
             navigate('/properties');
           }
         } else if (investmentId) {
-          const investmentData = getInvestmentById(investmentId);
+          let investmentData = getInvestmentById(investmentId);
+          
+          // If not found in context, check if it's a mock project stored in localStorage
+          if (!investmentData) {
+            try {
+              const storedProject = localStorage.getItem('pendingInvestmentProject');
+              if (storedProject) {
+                const project = JSON.parse(storedProject);
+                // Convert project to investment format if ID matches
+                if (project.id.toString() === investmentId.toString()) {
+                  investmentData = {
+                    id: project.id,
+                    investmentTitle: project.name,
+                    title: project.name,
+                    description: project.description,
+                    location: project.location,
+                    minInvestment: project.minInvestment,
+                    expectedROI: project.expectedROI,
+                    lockPeriod: project.lockPeriod,
+                    image: project.image,
+                    status: project.status || 'active',
+                    type: project.type
+                  };
+                  // Keep it in localStorage for now, will be cleared after successful payment
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing stored project:', error);
+            }
+          }
+          
           if (investmentData) {
             setInvestment(investmentData);
           } else {
@@ -81,13 +111,22 @@ const EscrowPaymentFlow = () => {
     };
 
     loadItem();
+
+    // Cleanup: Remove stored project data when component unmounts
+    return () => {
+      if (investmentId) {
+        localStorage.removeItem('pendingInvestmentProject');
+      }
+    };
   }, [propertyId, investmentId, user, fetchProperty, getInvestmentById, navigate, transactionType, clearAuthRedirect]);
 
+  // Get the current item (property or investment)
+  const item = property || investment;
+  
   const calculateTotal = () => {
-    const item = property || investment;
     if (!item) return 0;
     
-    const price = property ? property.price : investment.minInvestment;
+    const price = property ? property.price : (investment?.minInvestment || 0);
     const escrowFee = Math.round(price * 0.005); // 0.5% escrow fee
     return price + escrowFee;
   };
@@ -116,15 +155,20 @@ const EscrowPaymentFlow = () => {
       setLoading(true);
 
       // Step 1: Create escrow transaction
+      const currentItem = property || investment;
+      const itemPrice = property ? property.price : (investment?.minInvestment || 0);
+      const itemTitle = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
+      const itemId = property ? property.id : investment?.id;
+      
       const escrowData = {
-        propertyId: property.id,
+        [property ? 'propertyId' : 'investmentId']: itemId,
         buyerId: user.id,
         buyerName: `${user.firstName} ${user.lastName}`,
         buyerEmail: user.email,
-        sellerId: property.owner?.id || 'seller-1',
-        sellerName: property.owner ? `${property.owner.firstName} ${property.owner.lastName}` : 'Property Owner',
-        sellerEmail: property.owner?.email || 'owner@example.com',
-        amount: property.price,
+        sellerId: property?.owner?.id || investment?.vendorId || 'seller-1',
+        sellerName: property?.owner ? `${property.owner.firstName} ${property.owner.lastName}` : (investment?.vendor || 'Investment Sponsor'),
+        sellerEmail: property?.owner?.email || investment?.vendorEmail || 'owner@example.com',
+        amount: itemPrice,
         type: transactionType,
         paymentMethod: paymentData.paymentMethod
       };
@@ -137,23 +181,26 @@ const EscrowPaymentFlow = () => {
         success: true,
         data: {
           id: `escrow_${Date.now()}`,
-          propertyId: property.id,
-          propertyTitle: property.title,
+          [property ? 'propertyId' : 'investmentId']: itemId,
+          [property ? 'propertyTitle' : 'investmentTitle']: itemTitle,
           buyerId: user.id,
           buyerName: `${user.firstName} ${user.lastName}`,
           buyerEmail: user.email,
-          amount: property.price,
+          amount: itemPrice,
           currency: 'NGN',
           status: 'pending',
           type: transactionType,
           paymentMethod: paymentData.paymentMethod,
-          escrowFee: Math.round(property.price * 0.005),
+          escrowFee: Math.round(itemPrice * 0.005),
           totalAmount: calculateTotal(),
           createdAt: new Date().toISOString(),
-          milestones: [
-            { name: 'Initial Payment', status: 'pending', amount: Math.round(property.price * 0.1) },
+          milestones: property ? [
+            { name: 'Initial Payment', status: 'pending', amount: Math.round(itemPrice * 0.1) },
             { name: 'Property Inspection', status: 'pending', amount: 0 },
-            { name: 'Final Payment', status: 'pending', amount: Math.round(property.price * 0.9) }
+            { name: 'Final Payment', status: 'pending', amount: Math.round(itemPrice * 0.9) }
+          ] : [
+            { name: 'Investment Payment', status: 'pending', amount: itemPrice },
+            { name: 'Document Verification', status: 'pending', amount: 0 }
           ]
         }
       };
@@ -198,6 +245,11 @@ const EscrowPaymentFlow = () => {
 
       setStep(3);
       toast.success('Payment successful! Funds are now held securely in escrow.');
+      
+      // Clear stored project data after successful payment
+      if (investmentId) {
+        localStorage.removeItem('pendingInvestmentProject');
+      }
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(`Payment failed: ${error.message}`);
@@ -218,16 +270,19 @@ const EscrowPaymentFlow = () => {
     );
   }
 
-  if (!property) {
+  // Check if we have either a property or an investment
+  if (!property && !investment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Not Found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {propertyId ? 'Property Not Found' : 'Investment Not Found'}
+          </h2>
           <button
-            onClick={() => navigate('/properties')}
+            onClick={() => propertyId ? navigate('/properties') : navigate('/investment')}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Back to Properties
+            {propertyId ? 'Back to Properties' : 'Back to Investments'}
           </button>
         </div>
       </div>
@@ -244,11 +299,11 @@ const EscrowPaymentFlow = () => {
             className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
           >
             <FaArrowLeft className="mr-2" />
-            {step === 1 ? 'Back to Property' : 'Previous Step'}
+            {step === 1 ? (property ? 'Back to Property' : 'Back to Investment') : 'Previous Step'}
           </button>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {step === 1 ? 'Review Purchase' : step === 2 ? 'Payment Details' : 'Payment Confirmation'}
+            {step === 1 ? (property ? 'Review Purchase' : 'Review Investment') : step === 2 ? 'Payment Details' : 'Payment Confirmation'}
           </h1>
           
           {/* Progress Steps */}
@@ -268,40 +323,57 @@ const EscrowPaymentFlow = () => {
           </div>
         </div>
 
-        {/* Step 1: Review Purchase */}
+        {/* Step 1: Review Purchase/Investment */}
         {step === 1 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Property Details */}
+            {/* Property/Investment Details */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Property Details</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                {property ? 'Property Details' : 'Investment Details'}
+              </h2>
               
               <div className="flex items-start space-x-4 mb-6">
                 <img
-                  src={property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop'}
-                  alt={property.title}
+                  src={item?.image || item?.images?.[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop'}
+                  alt={item?.title || item?.investmentTitle || item?.name}
                   className="w-32 h-24 object-cover rounded-lg"
                 />
                 <div>
-                  <h3 className="font-semibold text-gray-900">{property.title}</h3>
-                  <p className="text-gray-600">{property.location}</p>
-                  <p className="text-sm text-gray-500 mt-1">{property.description}</p>
+                  <h3 className="font-semibold text-gray-900">
+                    {item?.title || item?.investmentTitle || item?.name}
+                  </h3>
+                  <p className="text-gray-600">{item?.location}</p>
+                  <p className="text-sm text-gray-500 mt-1">{item?.description}</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{property.bedrooms || property.details?.bedrooms || 0}</div>
-                  <div className="text-sm text-gray-500">Bedrooms</div>
+              {property ? (
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{property.bedrooms || property.details?.bedrooms || 0}</div>
+                    <div className="text-sm text-gray-500">Bedrooms</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{property.bathrooms || property.details?.bathrooms || 0}</div>
+                    <div className="text-sm text-gray-500">Bathrooms</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{property.area || property.details?.sqft || 0}</div>
+                    <div className="text-sm text-gray-500">Sq Ft</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{property.bathrooms || property.details?.bathrooms || 0}</div>
-                  <div className="text-sm text-gray-500">Bathrooms</div>
+              ) : investment && (
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{investment.expectedROI || 0}%</div>
+                    <div className="text-sm text-gray-500">Expected ROI</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{investment.lockPeriod || 0}</div>
+                    <div className="text-sm text-gray-500">Lock Period (months)</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{property.area || property.details?.sqft || 0}</div>
-                  <div className="text-sm text-gray-500">Sq Ft</div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Payment Summary */}
@@ -310,12 +382,12 @@ const EscrowPaymentFlow = () => {
               
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Property Price:</span>
-                  <span className="font-semibold">₦{property.price?.toLocaleString()}</span>
+                  <span className="text-gray-600">{property ? 'Property Price:' : 'Investment Amount:'}</span>
+                  <span className="font-semibold">₦{(property ? property.price : (investment?.minInvestment || 0))?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Escrow Fee (0.5%):</span>
-                  <span className="font-semibold">₦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
+                  <span className="font-semibold">₦{Math.round(((property ? property.price : (investment?.minInvestment || 0)) || 0) * 0.005).toLocaleString()}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">

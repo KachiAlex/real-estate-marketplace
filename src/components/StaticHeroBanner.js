@@ -63,12 +63,18 @@ const StaticHeroBanner = () => {
 
           {/* CTA Buttons */}
           {!user && (
-            <div className="flex justify-center items-center">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <button 
                 onClick={() => navigate('/register')}
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 transition-all duration-300 shadow-xl text-lg"
               >
                 Get Started Free
+              </button>
+              <button 
+                onClick={() => navigate('/login?redirect=/mortgage-bank/dashboard')}
+                className="px-8 py-4 bg-orange-500/90 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-orange-400/50 hover:bg-orange-600 transition-all duration-300 shadow-xl text-lg"
+              >
+                Mortgage Bank Login
               </button>
             </div>
           )}

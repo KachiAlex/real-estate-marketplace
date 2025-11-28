@@ -1,9 +1,12 @@
-﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
 
 const Mortgage = () => {
   const { user } = useAuth();
@@ -46,6 +49,32 @@ const Mortgage = () => {
   const [businessMonthlyIncome, setBusinessMonthlyIncome] = useState('');
   const [bankStatements, setBankStatements] = useState([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [banks, setBanks] = useState([]);
+  const [selectedBankId, setSelectedBankId] = useState('');
+
+  // Load approved mortgage banks
+  useEffect(() => {
+    const loadBanks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await axios.get(`${API_BASE_URL}/api/mortgage-banks`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data.success) {
+          setBanks(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Error loading mortgage banks:', error);
+      }
+    };
+
+    if (user) {
+      loadBanks();
+    }
+  }, [user]);
 
   const handleApplyMortgage = (property) => {
     console.log('Apply for Mortgage clicked, property:', property, 'user:', user);
@@ -65,7 +94,7 @@ const Mortgage = () => {
     setBankStatements(files);
   };
 
-  const handleConfirmMortgageApplication = () => {
+  const handleConfirmMortgageApplication = async () => {
     if (!acceptTerms) {
       toast.error('Please accept the terms and conditions');
       return;
@@ -81,7 +110,18 @@ const Mortgage = () => {
       return;
     }
 
-    // Create mortgage application data
+    if (!selectedBankId) {
+      toast.error('Please select a mortgage bank');
+      return;
+    }
+
+    const selectedBank = banks.find(b => b._id === selectedBankId);
+    if (!selectedBank) {
+      toast.error('Selected bank not found');
+      return;
+    }
+
+    // Create mortgage application data (local demo)
     const mortgageApplication = {
       id: `MORT-${Date.now()}`,
       propertyId: selectedProperty.id,
@@ -161,7 +201,35 @@ const Mortgage = () => {
     setBankStatements([]);
     setAcceptTerms(false);
     
-    console.log('Mortgage application created:', mortgageApplication);
+    console.log('Mortgage application created (local demo):', mortgageApplication);
+
+    // Also send to backend mortgage applications API
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      await axios.post(
+        `${API_BASE_URL}/api/mortgages/apply`,
+        {
+          propertyId: selectedProperty.id,
+          mortgageBankId: selectedBankId,
+          requestedAmount: mortgageApplication.requestedAmount,
+          downPayment: mortgageApplication.downPayment,
+          loanTermYears: 25,
+          interestRate: 18.5,
+          employmentDetails: mortgageApplication.employmentDetails,
+          documents: mortgageApplication.bankStatements
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+    } catch (error) {
+      console.error('Error sending mortgage application to backend:', error);
+      // Keep local demo working even if backend fails
+    }
   };
 
   const handleFilterResults = () => {
@@ -196,7 +264,7 @@ const Mortgage = () => {
     { type: '5/1 ARM', rate: 11.9, change: 0.05, trend: 'up' }
   ];
 
-  // Mock eligible properties data with categories
+  // Demo mortgage-ready properties (any property can be financed via mortgage)
   const allEligibleProperties = [
     {
       id: 1,
@@ -1009,6 +1077,29 @@ const Mortgage = () => {
             </div>
 
             <div className="space-y-6">
+              {/* Bank Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Mortgage Bank <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedBankId}
+                  onChange={(e) => setSelectedBankId(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+                >
+                  <option value="">Choose a mortgage bank</option>
+                  {banks.map((bank) => (
+                    <option key={bank._id} value={bank._id}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+                {banks.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    No mortgage banks are currently available. Please try again later.
+                  </p>
+                )}
+              </div>
               {/* Employment Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
