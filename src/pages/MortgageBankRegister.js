@@ -129,7 +129,7 @@ const MortgageBankRegister = () => {
     const newErrors = {};
     
     if (!formData.userAccount.firstName.trim()) newErrors['userAccount.firstName'] = 'First name is required';
-    if (!formData.userAccount.lastName.trim()) newErrors['Last name is required'];
+    if (!formData.userAccount.lastName.trim()) newErrors['userAccount.lastName'] = 'Last name is required';
     if (!formData.userAccount.email.trim()) newErrors['userAccount.email'] = 'Email is required';
     if (!formData.userAccount.password) newErrors['userAccount.password'] = 'Password is required';
     if (formData.userAccount.password.length < 6) newErrors['userAccount.password'] = 'Password must be at least 6 characters';

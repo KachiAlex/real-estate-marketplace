@@ -23,6 +23,17 @@ const Header = () => {
   
   // Check if user is on a protected route (where sidebar should be visible)
   const isProtectedRoute = user && !['/', '/login', '/register'].includes(location.pathname);
+  
+  // Dashboard routes where we show minimal header (just user profile icon)
+  const dashboardRoutes = [
+    '/dashboard', '/properties', '/profile', '/billing', '/saved-properties', 
+    '/inquiries', '/alerts', '/messages', '/my-inspections', '/investment', 
+    '/mortgage', '/escrow', '/search', '/add-property', '/admin',
+    '/vendor/dashboard', '/vendor/properties', '/vendor/inspection-requests',
+    '/vendor/earnings', '/vendor/team', '/vendor/contracts', '/vendor/profile',
+    '/vendor/notifications', '/vendor/help', '/mortgage-bank/dashboard'
+  ];
+  const isDashboardRoute = dashboardRoutes.some(route => location.pathname.startsWith(route));
 
   // Quick Filters with sublinks
   const quickFilters = {
@@ -85,13 +96,123 @@ const Header = () => {
       if (activeDropdown && !event.target.closest('.dropdown-container')) {
         setActiveDropdown(null);
       }
+      // Close user menu when clicking outside
+      if (isUserMenuOpen && !event.target.closest('.user-menu-container')) {
+        setIsUserMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeDropdown]);
+  }, [activeDropdown, isUserMenuOpen]);
+
+  // If on dashboard route, show minimal header with just user profile
+  if (isDashboardRoute) {
+    return (
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="flex justify-end items-center h-14 py-2">
+            {/* User Profile Icon Only */}
+            {user ? (
+              <div className="relative user-menu-container">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="User menu"
+                >
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {user.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={`${user.firstName} ${user.lastName}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span>{user.firstName?.[0]?.toUpperCase() || 'U'}{user.lastName?.[0]?.toUpperCase() || ''}</span>
+                    )}
+                  </div>
+                </button>
+                
+                {/* User Menu Dropdown */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-sm font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                      {(user.roles && user.roles.length > 1) && (
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => switchRole('buyer').then(() => setIsUserMenuOpen(false))}
+                            className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                            disabled={!user?.roles?.includes('buyer')}
+                          >
+                            Buyer
+                          </button>
+                          <button
+                            onClick={handleVendorSwitch}
+                            className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          >
+                            Vendor
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                    >
+                      Profile
+                    </Link>
+                    {user.role === 'admin' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
+                    {user.role === 'mortgage_bank' && (
+                      <Link
+                        to="/mortgage-bank/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      >
+                        Mortgage Bank Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium text-sm"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">

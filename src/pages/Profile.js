@@ -1,18 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || user?.user?.email || '', // Use login email from auth
     phone: user?.phone || '',
-    bio: user?.bio || ''
+    bio: user?.bio || '',
+    avatar: user?.avatar || ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Sync form data and avatar preview when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        email: user?.email || user?.user?.email || '',
+        phone: user?.phone || '',
+        bio: user?.bio || '',
+        avatar: user?.avatar || ''
+      });
+      setAvatarPreview(user?.avatar || null);
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,13 +72,140 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      await updateProfile(formData);
+      // Update profile via backend API if available, otherwise use local update
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await axios.put(
+            `${API_BASE_URL}/api/auth/profile`,
+            {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              phone: formData.phone,
+              avatar: formData.avatar
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          
+          if (response.data.success) {
+            await updateUserProfile({
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              phone: formData.phone,
+              avatar: formData.avatar
+            });
+          }
+        } catch (apiError) {
+          console.error('API update failed, using local update:', apiError);
+          // Fallback to local update
+          await updateUserProfile({
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            avatar: formData.avatar
+          });
+        }
+      } else {
+        // No token, use local update only
+        await updateUserProfile({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          avatar: formData.avatar
+        });
+      }
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       setErrors({ general: error.message });
+      toast.error('Failed to update profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WEBP, or GIF)');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setAvatarPreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+
+    setUploadingAvatar(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const formDataToUpload = new FormData();
+      formDataToUpload.append('avatar', file);
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/upload/avatar`,
+        formDataToUpload,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        const avatarUrl = response.data.data?.url || response.data.data?.secure_url;
+        setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+        await updateUserProfile({ avatar: avatarUrl });
+        toast.success('Profile picture uploaded successfully!');
+      } else {
+        throw new Error(response.data.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload profile picture');
+      setAvatarPreview(user?.avatar || null);
+    } finally {
+      setUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setFormData(prev => ({ ...prev, avatar: '' }));
+      setAvatarPreview(null);
+      await updateUserProfile({ avatar: '' });
+      toast.success('Profile picture removed');
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      toast.error('Failed to remove profile picture');
     }
   };
 
@@ -71,6 +222,92 @@ const Profile = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+              
+              {/* Profile Picture Upload Section */}
+              <div className="mb-8 pb-8 border-b border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-4">Profile Picture</label>
+                <div className="flex items-center space-x-6">
+                  {/* Avatar Display */}
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg bg-gray-100">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FaUser className="text-4xl text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Upload Overlay */}
+                    {!uploadingAvatar && (
+                      <button
+                        type="button"
+                        onClick={handleAvatarSelect}
+                        className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg"
+                        title="Change profile picture"
+                      >
+                        <FaCamera className="text-sm" />
+                      </button>
+                    )}
+                    
+                    {/* Uploading Indicator */}
+                    {uploadingAvatar && (
+                      <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                          <p className="text-xs">Uploading...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Controls */}
+                  <div className="flex-1">
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={handleAvatarSelect}
+                        disabled={uploadingAvatar}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      >
+                        <FaUpload className="text-sm" />
+                        <span>{avatarPreview ? 'Change Picture' : 'Upload Picture'}</span>
+                      </button>
+                      
+                      {avatarPreview && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveAvatar}
+                          disabled={uploadingAvatar}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                          <FaTimes className="text-sm" />
+                          <span>Remove Picture</span>
+                        </button>
+                      )}
+                      
+                      <p className="text-xs text-gray-500">
+                        JPG, PNG, WEBP or GIF. Max size 5MB
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    disabled={uploadingAvatar}
+                  />
+                </div>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {errors.general && (
