@@ -295,14 +295,33 @@ const Login = () => {
             </button>
           </div>
 
-          {/* Sign Up Link */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
-                Sign up here
-              </Link>
-            </p>
+          {/* Sign Up Links */}
+          <div className="mt-8 space-y-3">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                  Sign up here
+                </Link>
+              </p>
+            </div>
+            <div className="text-center pt-2 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">Are you a Mortgage Bank?</p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Link 
+                  to="/mortgage-bank/register" 
+                  className="text-sm font-semibold text-orange-600 hover:text-orange-500 transition-colors px-4 py-2 bg-orange-50 rounded-lg hover:bg-orange-100"
+                >
+                  Register as Mortgage Bank
+                </Link>
+                <Link 
+                  to="/login?redirect=/mortgage-bank/dashboard" 
+                  className="text-sm font-semibold text-orange-600 hover:text-orange-500 transition-colors px-4 py-2 border border-orange-600 rounded-lg hover:bg-orange-50"
+                >
+                  Mortgage Bank Login
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 

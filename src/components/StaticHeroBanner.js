@@ -70,12 +70,20 @@ const StaticHeroBanner = () => {
               >
                 Get Started Free
               </button>
-              <button 
-                onClick={() => navigate('/login?redirect=/mortgage-bank/dashboard')}
-                className="px-8 py-4 bg-orange-500/90 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-orange-400/50 hover:bg-orange-600 transition-all duration-300 shadow-xl text-lg"
-              >
-                Mortgage Bank Login
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={() => navigate('/mortgage-bank/register')}
+                  className="px-8 py-4 bg-orange-500/90 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-orange-400/50 hover:bg-orange-600 transition-all duration-300 shadow-xl text-lg"
+                >
+                  Mortgage Bank Sign Up
+                </button>
+                <button 
+                  onClick={() => navigate('/login?redirect=/mortgage-bank/dashboard')}
+                  className="px-8 py-4 bg-orange-600/80 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-orange-500/50 hover:bg-orange-700 transition-all duration-300 shadow-xl text-lg"
+                >
+                  Mortgage Bank Login
+                </button>
+              </div>
             </div>
           )}
         </div>

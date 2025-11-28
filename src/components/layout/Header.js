@@ -525,8 +525,14 @@ const Header = () => {
                   Sign In
                 </Link>
                 <Link
-                  to="/login?redirect=/mortgage-bank/dashboard"
+                  to="/mortgage-bank/register"
                   className="px-3 xl:px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
+                >
+                  Mortgage Bank Sign Up
+                </Link>
+                <Link
+                  to="/login?redirect=/mortgage-bank/dashboard"
+                  className="px-3 xl:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
                 >
                   Mortgage Bank Login
                 </Link>
@@ -656,8 +662,15 @@ const Header = () => {
                     Sign In
                   </Link>
                   <Link
-                    to="/login?redirect=/mortgage-bank/dashboard"
+                    to="/mortgage-bank/register"
                     className="block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-300 mb-2 text-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Mortgage Bank Sign Up
+                  </Link>
+                  <Link
+                    to="/login?redirect=/mortgage-bank/dashboard"
+                    className="block px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-300 mb-2 text-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Mortgage Bank Login
