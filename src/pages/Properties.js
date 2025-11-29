@@ -12,11 +12,18 @@ const Properties = () => {
   const { user, setAuthRedirect } = useAuth();
   const safeProperties = useMemo(() => Array.isArray(properties) ? properties : [], [properties]);
   const [showFilters, setShowFilters] = useState(false);
+  // Pending filters (what user is selecting)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedVendor, setSelectedVendor] = useState('');
+  // Applied filters (what actually filters the properties)
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [appliedType, setAppliedType] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('');
+  const [appliedPriceRange, setAppliedPriceRange] = useState({ min: '', max: '' });
+  const [appliedVendor, setAppliedVendor] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
   const [favorites, setFavorites] = useState(new Set());
@@ -36,13 +43,13 @@ const Properties = () => {
     }
   }, [user]);
 
-  // Real-time search functionality
+  // Filtered properties using applied filters (only updates when Apply Filters is clicked)
   const filteredProperties = useMemo(() => {
     let filtered = [...safeProperties];
 
     // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (appliedSearchQuery.trim()) {
+      const query = appliedSearchQuery.toLowerCase();
       filtered = filtered.filter(property => 
         property.title?.toLowerCase().includes(query) ||
         property.description?.toLowerCase().includes(query) ||
@@ -52,36 +59,36 @@ const Properties = () => {
     }
 
     // Apply type filter
-    if (selectedType) {
-      filtered = filtered.filter(property => property.type === selectedType);
+    if (appliedType) {
+      filtered = filtered.filter(property => property.type === appliedType);
     }
 
     // Apply status filter
-    if (selectedStatus) {
-      filtered = filtered.filter(property => property.status === selectedStatus || property.listingType === selectedStatus);
+    if (appliedStatus) {
+      filtered = filtered.filter(property => property.status === appliedStatus || property.listingType === appliedStatus);
     }
 
     // Apply price range filter
-    if (priceRange.min) {
-      filtered = filtered.filter(property => property.price >= parseFloat(priceRange.min));
+    if (appliedPriceRange.min) {
+      filtered = filtered.filter(property => property.price >= parseFloat(appliedPriceRange.min));
     }
-    if (priceRange.max) {
-      filtered = filtered.filter(property => property.price <= parseFloat(priceRange.max));
+    if (appliedPriceRange.max) {
+      filtered = filtered.filter(property => property.price <= parseFloat(appliedPriceRange.max));
     }
 
     // Apply vendor filter
-    if (selectedVendor) {
+    if (appliedVendor) {
       filtered = filtered.filter(property => {
         const vendorName = property?.agent?.name || 
           (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
         const vendorId = property?.ownerId || property?.owner?.id || '';
-        return vendorName.toLowerCase().includes(selectedVendor.toLowerCase()) ||
-               vendorId.toLowerCase().includes(selectedVendor.toLowerCase());
+        return vendorName.toLowerCase().includes(appliedVendor.toLowerCase()) ||
+               vendorId.toLowerCase().includes(appliedVendor.toLowerCase());
       });
     }
 
     return filtered;
-  }, [safeProperties, searchQuery, selectedType, selectedStatus, priceRange, selectedVendor]);
+  }, [safeProperties, appliedSearchQuery, appliedType, appliedStatus, appliedPriceRange, appliedVendor]);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -140,11 +147,21 @@ const Properties = () => {
       const maxArea = searchParams.get('maxArea');
       const features = searchParams.get('features');
       
-      // Update local filter states
+      // Update local filter states (pending filters)
       if (location) setSearchQuery(location);
       if (type) setSelectedType(type);
       if (minPrice) setPriceRange(prev => ({ ...prev, min: minPrice }));
       if (maxPrice) setPriceRange(prev => ({ ...prev, max: maxPrice }));
+      
+      // Also update applied filters immediately for URL parameters
+      if (location) setAppliedSearchQuery(location);
+      if (type) setAppliedType(type);
+      if (minPrice || maxPrice) {
+        setAppliedPriceRange({ 
+          min: minPrice || '', 
+          max: maxPrice || '' 
+        });
+      }
       
       // Apply filters to context
       const alertFilters = {
@@ -192,17 +209,24 @@ const Properties = () => {
   const handleApplyFilters = async () => {
     setIsApplyingFilters(true);
     try {
-    const next = {
-      ...filters,
-      type: selectedType,
-      status: selectedStatus,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      search: searchQuery
-    };
-    setFilters(next);
+      // Update applied filters from pending filters
+      setAppliedSearchQuery(searchQuery);
+      setAppliedType(selectedType);
+      setAppliedStatus(selectedStatus);
+      setAppliedPriceRange({ ...priceRange });
+      setAppliedVendor(selectedVendor);
+      
+      const next = {
+        ...filters,
+        type: selectedType,
+        status: selectedStatus,
+        minPrice: priceRange.min,
+        maxPrice: priceRange.max,
+        search: searchQuery
+      };
+      setFilters(next);
       await fetchProperties(next, 1);
-    setCurrentPage(1);
+      setCurrentPage(1);
       toast.success('Filters applied successfully!');
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -219,6 +243,12 @@ const Properties = () => {
     setPriceRange({ min: '', max: '' });
     setSearchQuery('');
     setSelectedVendor('');
+    // Also clear applied filters
+    setAppliedType('');
+    setAppliedStatus('');
+    setAppliedPriceRange({ min: '', max: '' });
+    setAppliedSearchQuery('');
+    setAppliedVendor('');
     setFilters({});
     fetchProperties({}, 1);
     setCurrentPage(1);

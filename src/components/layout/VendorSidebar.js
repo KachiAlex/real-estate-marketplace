@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useVendor } from '../../contexts/VendorContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -25,14 +25,12 @@ const VendorSidebar = () => {
   const { logout, user } = useAuth();
   const { isAgent, isPropertyOwner, documentStatus } = useVendor();
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const [unreadCount, setUnreadCount] = useState(3); // Mock count for now
   
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
     { path: '/vendor/properties', label: 'My Properties', icon: FaBuilding },
     { path: '/vendor/inspection-requests', label: 'Inspection Requests', icon: FaBell },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },
-    { path: '/vendor/team', label: 'Team', icon: FaUsers },
     { path: '/vendor/contracts', label: 'Contracts', icon: FaFileContract }
   ];
 
@@ -74,17 +72,19 @@ const VendorSidebar = () => {
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg h-full fixed left-0 top-0 overflow-y-auto flex flex-col transition-all duration-300 z-50`}>
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
+      <div className="px-4 py-4 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <Link to="/" className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none hover:opacity-80 transition-opacity">
             <img 
               src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
               alt="PropertyArk Logo" 
-              className="w-auto"
+              className="w-auto h-20 sm:h-24 md:h-28"
               style={{ 
-                height: '9rem',
+                maxHeight: '7rem',
                 backgroundColor: 'transparent',
-                mixBlendMode: 'normal'
+                mixBlendMode: 'normal',
+                border: 'none',
+                outline: 'none'
               }}
               onError={(e) => {
                 // Fallback to icon if logo image doesn't exist
@@ -95,12 +95,7 @@ const VendorSidebar = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-brand-blue to-blue-600 rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
               <FaHome className="text-white text-sm" />
             </div>
-            {!isCollapsed && (
-              <div className="ml-2">
-                <p className="text-xs text-gray-500">Vendor Portal</p>
-              </div>
-            )}
-          </div>
+          </Link>
           <button
             onClick={toggleSidebar}
             className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
@@ -109,10 +104,13 @@ const VendorSidebar = () => {
             {isCollapsed ? <FaChevronRight className="h-4 w-4 text-gray-600" /> : <FaChevronLeft className="h-4 w-4 text-gray-600" />}
           </button>
         </div>
+        {!isCollapsed && (
+          <p className="text-xs text-gray-500 ml-1">Vendor Portal</p>
+        )}
       </div>
 
       {/* Navigation Menu */}
-      <nav className="p-4 flex-1">
+      <nav className="px-4 pt-2 pb-4 flex-1">
         {/* Main Menu Section */}
         <div className="mb-8">
           {!isCollapsed && (
@@ -179,31 +177,6 @@ const VendorSidebar = () => {
           <ul className="space-y-1">
             <li>
               <NavLink
-                to="/vendor/notifications"
-                end
-                className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative ${
-                  isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                title={isCollapsed ? 'Notifications' : undefined}
-              >
-                <div className="relative">
-                  <FaBell className="h-4 w-4 flex-shrink-0" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </div>
-                {!isCollapsed && <span>Notifications</span>}
-                {isCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                    Notifications {unreadCount > 0 && `(${unreadCount})`}
-                  </div>
-                )}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
                 to="/vendor/help"
                 end
                 className={({ isActive }) => `flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative ${
@@ -225,8 +198,9 @@ const VendorSidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="mt-auto p-4 border-t border-gray-200 bg-white">
+      <div className="mt-auto border-t border-gray-200 bg-white">
         {/* User Profile Section */}
+        <div className="p-4">
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 bg-gradient-to-r from-brand-blue to-blue-600 rounded-full flex items-center justify-center">
@@ -285,6 +259,7 @@ const VendorSidebar = () => {
             </div>
           )}
         </button>
+        </div>
       </div>
     </div>
   );

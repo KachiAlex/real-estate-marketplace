@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
-import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
+import { useNotifications } from '../contexts/NotificationContext';
+import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle, FaBell } from 'react-icons/fa';
 import PropertyVerification from '../components/PropertyVerification';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
+import NotificationDropdown from '../components/NotificationDropdown';
 import toast from 'react-hot-toast';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
   const { addProperty, deleteProperty } = useProperty();
+  const { unreadCount } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
@@ -258,104 +261,109 @@ const VendorDashboard = () => {
     await deleteProperty(propertyId);
   };
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* No modal; adding happens in dedicated tab now */}
+  const getUserInitials = () => {
+    if (user?.displayName) {
+      return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'V';
+  };
 
-      {/* Welcome Section */}
-      <div className="welcome-section mb-8">
-        <div className="bg-gradient-to-r from-brand-blue to-blue-800 rounded-2xl p-8 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName || 'Vendor'}!</h1>
-              <p className="text-blue-100 text-lg">
-                {isAgent 
-                  ? `Help clients find their dream properties in ${user?.vendorData?.agentLocation || 'your area'}`
-                  : 'Manage your properties and grow your real estate portfolio'
-                }
-              </p>
-              {isAgent && (
-                <div className="mt-2 text-blue-200 text-sm">
-                  📍 Primary Location: {user?.vendorData?.agentLocation || 'Not specified'}
-                </div>
+  return (
+    <div className="p-6">
+      {/* Main Content Area */}
+      <div className="w-full">
+        {/* Header with Profile and Notifications */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {/* Profile Picture */}
+            <div className="w-12 h-12 bg-gradient-to-r from-brand-blue to-blue-600 rounded-full flex items-center justify-center">
+              {user?.photoURL || user?.avatar ? (
+                <img 
+                  src={user.photoURL || user.avatar} 
+                  alt="User avatar" 
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-lg font-medium text-white">{getUserInitials()}</span>
               )}
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">₦{analytics.totalRevenue?.toLocaleString()}</div>
-              <div className="text-blue-100">
-                {isAgent ? 'Commission Earned' : 'Total Revenue'}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Vendor Account'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {isAgent ? 'Real Estate Agent' : 'Property Owner'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Notification Icon */}
+          <div className="relative">
+            <NotificationDropdown />
+          </div>
+        </div>
+
+        {/* Welcome Section */}
+        <div className="mb-8" style={{ marginTop: '0px' }}>
+          <div className="welcome-section">
+            <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.firstName || 'Vendor'}!</h1>
+            <p className="text-blue-100 mb-4">
+              {isAgent 
+                ? `Help clients find their dream properties in ${user?.vendorData?.agentLocation || 'your area'}. Manage your listings, track inquiries, and grow your real estate business.`
+                : 'Manage your properties, track inquiries, schedule viewings, and grow your real estate portfolio. List, edit, and monitor all your property listings in one place.'
+              }
+            </p>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="stats-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{analytics.activeListings || 0}</div>
+                    <div className="text-blue-200 text-sm">{isAgent ? 'Managed Properties' : 'Active Listings'}</div>
+                  </div>
+                  <FaHome className="text-blue-300 text-xl" />
+                </div>
+              </div>
+              
+              <div className="stats-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{analytics.totalViews?.toLocaleString() || 0}</div>
+                    <div className="text-blue-200 text-sm">Total Views</div>
+                  </div>
+                  <FaEye className="text-blue-300 text-xl" />
+                </div>
+              </div>
+              
+              <div className="stats-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{analytics.totalInquiries || 0}</div>
+                    <div className="text-blue-200 text-sm">Inquiries</div>
+                  </div>
+                  <FaEnvelope className="text-blue-300 text-xl" />
+                </div>
+              </div>
+              
+              <div className="stats-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{analytics.conversionRate || 0}%</div>
+                    <div className="text-blue-200 text-sm">Conversion Rate</div>
+                  </div>
+                  <FaChartLine className="text-blue-300 text-xl" />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="stats-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                {isAgent ? 'Managed Properties' : 'Active Listings'}
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.activeListings}</p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <FaHome className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-green-600 text-sm font-medium">
-              {isAgent ? '+3 this month' : '+2 this month'}
-            </span>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Views</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalViews?.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FaEye className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-blue-600 text-sm font-medium">+{analytics.monthlyViews} this month</span>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Inquiries</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalInquiries}</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-full">
-              <FaEnvelope className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-orange-600 text-sm font-medium">+{analytics.monthlyInquiries} this month</span>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.conversionRate}%</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <FaChartLine className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-purple-600 text-sm font-medium">+2.1% from last month</span>
-          </div>
-        </div>
-      </div>
 
       {/* Tab Navigation */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -888,6 +896,7 @@ const VendorDashboard = () => {
           onSuccess={handleVerificationSuccess}
         />
       )}
+      </div>
     </div>
   );
 };

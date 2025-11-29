@@ -91,13 +91,13 @@ const Sidebar = () => {
         lg:translate-x-0
         ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-      {/* Logo Section - Fixed at top */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between">
+      {/* Logo Section - Fixed at top, aligned with header */}
+      <div className="flex-shrink-0 px-4 py-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between mb-2">
           <Link 
             to="/" 
             onClick={closeMobileSidebar}
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none hover:opacity-80 transition-opacity"
           >
             {!logoError ? (
               <img
@@ -107,7 +107,9 @@ const Sidebar = () => {
                 style={{ 
                   maxHeight: '7rem',
                   backgroundColor: 'transparent',
-                  mixBlendMode: 'normal'
+                  mixBlendMode: 'normal',
+                  border: 'none',
+                  outline: 'none'
                 }}
                 onError={() => setLogoError(true)}
               />
@@ -126,10 +128,11 @@ const Sidebar = () => {
             <FaTimes className="text-xl" />
           </button>
         </div>
+        <p className="text-xs text-gray-500 ml-1">Buyer Dashboard</p>
       </div>
 
-      {/* Main Menu - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 pb-4">
+      {/* Main Menu - Scrollable - Aligned with header menu */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
         <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">MAIN MENU</p>
         <nav className="space-y-1.5 sm:space-y-2">
           {menuItems.map((item) => {

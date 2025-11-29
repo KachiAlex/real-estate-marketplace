@@ -143,11 +143,12 @@ class StorageService {
   // Upload user avatar
   async uploadUserAvatar(file, userId) {
     try {
-      // Check if user is authenticated
-      const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-      if (!currentUser || !currentUser.uid) {
-        console.warn('User not authenticated, using fallback avatar');
-        return this.getFallbackAvatar(userId);
+      if (!userId) {
+        console.warn('No userId provided, cannot upload avatar');
+        return {
+          success: false,
+          error: 'User ID is required'
+        };
       }
       
       const timestamp = Date.now();
@@ -183,13 +184,19 @@ class StorageService {
       console.error('Error uploading user avatar:', error);
       
       // Check if it's a permission error
-      if (error.code === 'storage/unauthorized' || error.message.includes('permission')) {
-        console.warn('Storage permission denied, using fallback avatar');
-        return this.getFallbackAvatar(userId);
+      if (error.code === 'storage/unauthorized' || error.message?.includes('permission')) {
+        console.warn('Storage permission denied');
+        return {
+          success: false,
+          error: 'Storage permission denied. Please check Firebase Storage rules.'
+        };
       }
       
-      // For other errors, also use fallback
-      return this.getFallbackAvatar(userId);
+      // Return error instead of fallback
+      return {
+        success: false,
+        error: error.message || 'Failed to upload avatar'
+      };
     }
   }
 

@@ -471,7 +471,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
             {user ? (
               <>
-              <div className="relative">
+              <div className="relative user-menu-container">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 text-gray-700 hover:text-brand-orange transition-colors duration-300"

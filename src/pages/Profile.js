@@ -3,6 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import storageService from '../services/storageService';
+import { db } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth } from '../config/firebase';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
@@ -24,17 +28,38 @@ const Profile = () => {
   const fileInputRef = useRef(null);
 
   // Sync form data and avatar preview when user changes
+  // But don't overwrite if we have a preview that's different (user just uploaded)
   useEffect(() => {
     if (user) {
+      // Check localStorage for a saved avatar (data URL from local upload)
+      let savedAvatar = null;
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUserData.avatar && currentUserData.avatar.startsWith('data:')) {
+          savedAvatar = currentUserData.avatar;
+        }
+      } catch (e) {
+        console.error('Error reading localStorage:', e);
+      }
+      
+      // Prioritize saved local avatar, then user avatar, then empty
+      const avatarToUse = savedAvatar || user?.avatar || '';
+      
+      // Only update avatar if we don't have a preview or if the avatar changed
+      const shouldUpdateAvatar = !avatarPreview || (avatarToUse && avatarToUse !== avatarPreview);
+      
       setFormData({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         email: user?.email || user?.user?.email || '',
         phone: user?.phone || '',
         bio: user?.bio || '',
-        avatar: user?.avatar || ''
+        avatar: avatarToUse
       });
-      setAvatarPreview(user?.avatar || null);
+      
+      if (shouldUpdateAvatar) {
+        setAvatarPreview(avatarToUse || null);
+      }
     }
   }, [user]);
 
@@ -72,6 +97,9 @@ const Profile = () => {
 
     setLoading(true);
     try {
+      // Use avatarPreview if available (from recent upload), otherwise use formData.avatar
+      const avatarToSave = avatarPreview && !avatarPreview.startsWith('data:') ? avatarPreview : (formData.avatar || user?.avatar || '');
+      
       // Update profile via backend API if available, otherwise use local update
       const token = localStorage.getItem('token');
       if (token) {
@@ -82,7 +110,7 @@ const Profile = () => {
               firstName: formData.firstName,
               lastName: formData.lastName,
               phone: formData.phone,
-              avatar: formData.avatar
+              avatar: avatarToSave
             },
             {
               headers: {
@@ -92,12 +120,17 @@ const Profile = () => {
           );
           
           if (response.data.success) {
+            // Use the avatar from the response if available, otherwise use what we sent
+            const updatedAvatar = response.data.user?.avatar || response.data.data?.avatar || avatarToSave;
             await updateUserProfile({
               firstName: formData.firstName,
               lastName: formData.lastName,
               phone: formData.phone,
-              avatar: formData.avatar
+              avatar: updatedAvatar
             });
+            // Update formData and preview to ensure consistency
+            setFormData(prev => ({ ...prev, avatar: updatedAvatar }));
+            setAvatarPreview(updatedAvatar);
           }
         } catch (apiError) {
           console.error('API update failed, using local update:', apiError);
@@ -106,8 +139,11 @@ const Profile = () => {
             firstName: formData.firstName,
             lastName: formData.lastName,
             phone: formData.phone,
-            avatar: formData.avatar
+            avatar: avatarToSave
           });
+          // Update formData and preview
+          setFormData(prev => ({ ...prev, avatar: avatarToSave }));
+          setAvatarPreview(avatarToSave);
         }
       } else {
         // No token, use local update only
@@ -115,8 +151,11 @@ const Profile = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
-          avatar: formData.avatar
+          avatar: avatarToSave
         });
+        // Update formData and preview
+        setFormData(prev => ({ ...prev, avatar: avatarToSave }));
+        setAvatarPreview(avatarToSave);
       }
       
       setSuccess(true);
@@ -151,115 +190,129 @@ const Profile = () => {
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setAvatarPreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
+    // Create preview immediately for better UX and get local data URL
+    const localDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target.result);
+        resolve(event.target.result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
     setUploadingAvatar(true);
 
     try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        toast.error('Please log in to upload a profile picture');
-        setAvatarPreview(user?.avatar || null);
-        setUploadingAvatar(false);
-        return;
+      const currentUser = auth.currentUser || user;
+      const userId = currentUser?.uid || currentUser?.id || user?.id;
+
+      if (!userId) {
+        throw new Error('User not authenticated');
       }
 
-      const formDataToUpload = new FormData();
-      formDataToUpload.append('avatar', file);
+      // Upload to Firebase Storage
+      const uploadResult = await storageService.uploadUserAvatar(file, userId);
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/upload/avatar`,
-        formDataToUpload,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          },
-          timeout: 30000 // 30 second timeout
-        }
-      );
-
-      if (response.data.success) {
-        const avatarUrl = response.data.data?.url || response.data.data?.secure_url;
+      let avatarUrl;
+      
+      if (!uploadResult.success) {
+        // If Firebase Storage fails, use local data URL as fallback
+        console.error('Firebase Storage upload failed:', uploadResult.error);
+        console.log('Using local data URL as fallback');
+        avatarUrl = localDataUrl;
         
-        if (!avatarUrl) {
-          throw new Error('Avatar URL not received from server');
+        // Still try to save to Firestore with local URL
+        try {
+          const userRef = doc(db, 'users', userId);
+          await setDoc(userRef, {
+            avatar: avatarUrl,
+            updatedAt: serverTimestamp(),
+            isLocalAvatar: true // Flag to indicate this is a local URL
+          }, { merge: true });
+          console.log('Saved local avatar to Firestore');
+        } catch (firestoreError) {
+          console.error('Firestore update error:', firestoreError);
         }
-
-        // Update profile via backend API to persist the avatar
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const profileResponse = await axios.put(
-              `${API_BASE_URL}/api/auth/profile`,
-              { avatar: avatarUrl },
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              }
-            );
-            
-            if (profileResponse.data.success && profileResponse.data.user) {
-              // Update local state with the user data from backend
-              await updateUserProfile({ avatar: profileResponse.data.user.avatar || avatarUrl });
-            } else {
-              // Fallback: update local state even if backend update fails
-              await updateUserProfile({ avatar: avatarUrl });
-            }
-          } catch (profileError) {
-            console.error('Profile update error:', profileError);
-            // Still update local state even if backend update fails
-            await updateUserProfile({ avatar: avatarUrl });
-            toast.error('Avatar uploaded but profile update failed. Please try again.');
-            return;
-          }
-        } else {
-          // No token, just update local state
+        
+        // Update local state with local URL
+        // Save to localStorage directly to ensure persistence
+        try {
+          const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          const updatedUser = { ...currentUserData, avatar: avatarUrl };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          console.log('Saved avatar to localStorage:', avatarUrl.substring(0, 50) + '...');
+        } catch (localError) {
+          console.error('Error saving to localStorage:', localError);
+        }
+        
+        // Try to update via updateUserProfile (may fail due to Firestore permissions, but that's ok)
+        try {
           await updateUserProfile({ avatar: avatarUrl });
+        } catch (profileError) {
+          console.warn('updateUserProfile failed (expected due to permissions):', profileError);
+          // Continue anyway - we've saved to localStorage
         }
         
-        // Update form data and preview
         setFormData(prev => ({ ...prev, avatar: avatarUrl }));
         setAvatarPreview(avatarUrl);
-        toast.success('Profile picture uploaded successfully!');
-      } else {
-        throw new Error(response.data.message || 'Upload failed');
+        toast.error('Profile picture saved locally. Cloud upload failed - check Firebase Storage permissions.');
+        return; // Exit early since we're using local fallback
       }
+
+      avatarUrl = uploadResult.url;
+      console.log('Firebase Storage upload successful:', avatarUrl);
+
+      // Save to Firestore
+      try {
+        const userRef = doc(db, 'users', userId);
+        await setDoc(userRef, {
+          avatar: avatarUrl,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreError) {
+        console.error('Firestore update error:', firestoreError);
+        // Continue even if Firestore update fails
+      }
+
+      // Update backend API if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await axios.put(
+            `${API_BASE_URL}/api/auth/profile`,
+            { avatar: avatarUrl },
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+        } catch (apiError) {
+          console.error('Backend API update error:', apiError);
+          // Continue even if backend update fails
+        }
+      }
+
+      // Update local state
+      await updateUserProfile({ avatar: avatarUrl });
+      setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+      setAvatarPreview(avatarUrl);
+      toast.success('Profile picture uploaded successfully!');
     } catch (error) {
       console.error('Avatar upload error:', error);
       
       let errorMessage = 'Failed to upload profile picture';
       
-      if (error.response) {
-        // Server responded with error
-        if (error.response.status === 404) {
-          errorMessage = 'Avatar upload endpoint not found. Please contact support.';
-        } else if (error.response.status === 401) {
-          errorMessage = 'Please log in to upload a profile picture';
-        } else if (error.response.status === 403) {
-          errorMessage = 'You do not have permission to upload avatars';
-        } else if (error.response.status === 413) {
-          errorMessage = 'File is too large. Maximum size is 5MB';
-        } else {
-          errorMessage = error.response.data?.message || `Upload failed (${error.response.status})`;
-        }
-      } else if (error.request) {
-        // Request was made but no response received
-        errorMessage = 'Unable to connect to server. Please check your internet connection.';
-      } else {
-        // Something else happened
-        errorMessage = error.message || 'Failed to upload profile picture';
+      if (error.code === 'storage/unauthorized' || error.message?.includes('permission')) {
+        errorMessage = 'Storage permission denied. Please check your Firebase Storage rules.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       toast.error(errorMessage);
-      // Revert preview to current user avatar
+      
+      // Revert preview on error
       setAvatarPreview(user?.avatar || null);
     } finally {
       setUploadingAvatar(false);

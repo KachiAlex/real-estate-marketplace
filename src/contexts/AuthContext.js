@@ -1,5 +1,5 @@
 ﻿import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
@@ -343,6 +343,35 @@ export const AuthProvider = ({ children }) => {
               setLoading(false);
               return;
             }
+            
+            // Try to load avatar from Firestore if available
+            const userId = userData.uid || userData.id;
+            if (userId) {
+              try {
+                const { db } = await import('../config/firebase');
+                const { doc, getDoc } = await import('firebase/firestore');
+                const userRef = doc(db, 'users', userId);
+                const userSnap = await getDoc(userRef);
+                
+                if (userSnap.exists()) {
+                  const firestoreData = userSnap.data();
+                  // Update avatar from Firestore if it exists and is different
+                  if (firestoreData.avatar && firestoreData.avatar !== userData.avatar) {
+                    userData.avatar = firestoreData.avatar;
+                    // Also update other fields from Firestore if they exist
+                    if (firestoreData.firstName) userData.firstName = firestoreData.firstName;
+                    if (firestoreData.lastName) userData.lastName = firestoreData.lastName;
+                    if (firestoreData.phone) userData.phone = firestoreData.phone;
+                    // Update localStorage with Firestore data
+                    localStorage.setItem('currentUser', JSON.stringify(userData));
+                  }
+                }
+              } catch (firestoreError) {
+                console.error('Error loading from Firestore:', firestoreError);
+                // Continue with localStorage data if Firestore fails
+              }
+            }
+            
             setUser(userData);
             setFirebaseAuthReady(true);
             setLoading(false);
@@ -677,6 +706,22 @@ export const AuthProvider = ({ children }) => {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      // Also save to Firestore if user has a uid/id
+      const userId = user.uid || user.id;
+      if (userId && db) {
+        try {
+          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+          const userRef = doc(db, 'users', userId);
+          await setDoc(userRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (firestoreError) {
+          console.error('Firestore update error:', firestoreError);
+          // Continue even if Firestore update fails
+        }
+      }
       
       toast.success('Profile updated successfully!');
       return { success: true, user: updatedUser };
