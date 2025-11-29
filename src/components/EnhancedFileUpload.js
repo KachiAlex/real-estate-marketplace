@@ -114,7 +114,8 @@ const EnhancedFileUpload = ({
             size: uploadResult.size,
             path: uploadResult.path,
             type: uploadResult.type,
-            isUploaded: true
+            // Treat Firebase uploads as "uploaded" and local fallbacks as non-uploaded
+            isUploaded: !uploadResult.isLocal
           };
 
           setFiles(prev => [...prev, newFile]);
@@ -213,10 +214,27 @@ const EnhancedFileUpload = ({
         path: snapshot.ref.fullPath,
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        isLocal: false
       };
     } catch (error) {
       console.error('Error uploading file:', error);
+
+      // Fallback for documents: use a local object URL so the flow still works in demo mode
+      if (type === 'document') {
+        const localUrl = URL.createObjectURL(file);
+        console.warn('Falling back to local document storage for:', file.name);
+        return {
+          success: true,
+          url: localUrl,
+          path: `local-documents/${fileId}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          isLocal: true
+        };
+      }
+
       return {
         success: false,
         error: error.message

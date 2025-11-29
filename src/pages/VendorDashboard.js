@@ -5,10 +5,11 @@ import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/Property
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import PropertyVerification from '../components/PropertyVerification';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
+import toast from 'react-hot-toast';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
-  const { addProperty } = useProperty();
+  const { addProperty, deleteProperty } = useProperty();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
@@ -54,9 +55,9 @@ const VendorDashboard = () => {
     }
   }, [location.pathname]);
 
-  // Mock data for vendor dashboard
+  // Load vendor-specific properties from localStorage
   useEffect(() => {
-    // Mock properties data
+    // Example demo data (not tied to any vendor) kept only for potential future use
     const base = [
       {
         id: 1,
@@ -108,22 +109,17 @@ const VendorDashboard = () => {
       }
     ];
 
-    // Merge any locally added properties for this vendor (support id or uid keys)
+    // Load only this vendor's properties from localStorage
     try {
-      const idKey = user ? `vendor_properties_${user.id}` : null;
-      const uidKey = user?.uid ? `vendor_properties_${user.uid}` : null;
-      const storedById = idKey ? JSON.parse(localStorage.getItem(idKey) || '[]') : [];
-      const storedByUid = uidKey ? JSON.parse(localStorage.getItem(uidKey) || '[]') : [];
-      const seen = new Set();
-      const mergedStored = [...storedById, ...storedByUid].filter(item => {
-        const key = String(item?.id ?? '') + '|' + String(item?.title ?? '');
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      setProperties([...(base || []), ...(mergedStored || [])]);
+      const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
+      if (!vendorKey) {
+        setProperties([]);
+      } else {
+        const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
+        setProperties(stored || []);
+      }
     } catch (e) {
-      setProperties(base);
+      setProperties([]);
     }
 
     // Mock analytics data
@@ -208,51 +204,22 @@ const VendorDashboard = () => {
   };
 
   const loadProperties = () => {
-    // Mock properties data - in a real app, this would fetch from API
-    setProperties([
-      {
-        id: 1,
-        title: "Luxury Apartment in Victoria Island",
-        price: 85000000,
-        type: "apartment",
-        status: "active",
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 120,
-        location: "Victoria Island, Lagos",
-        image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
-        views: 245,
-        inquiries: 12,
-        favorites: 8,
-        dateListed: "2024-01-15",
-        lastUpdated: "2024-01-20",
-        verificationStatus: 'pending',
-        isVerified: false
-      },
-      {
-        id: 2,
-        title: "Modern Family House in Lekki",
-        price: 125000000,
-        type: "house",
-        status: "active",
-        bedrooms: 4,
-        bathrooms: 3,
-        area: 200,
-        location: "Lekki Phase 1, Lagos",
-        image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-        views: 189,
-        inquiries: 7,
-        favorites: 15,
-        dateListed: "2024-01-10",
-        lastUpdated: "2024-01-18",
-        verificationStatus: 'verified',
-        isVerified: true
+    // Reload only this vendor's properties from localStorage
+    try {
+      const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
+      if (!vendorKey) {
+        setProperties([]);
+        return;
       }
-    ]);
+      const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
+      setProperties(stored || []);
+    } catch {
+      setProperties([]);
+    }
   };
 
   const handleVerificationSuccess = (message) => {
-    alert(message);
+    toast.success(message || 'Verification updated');
     setShowVerificationModal(false);
     setSelectedProperty(null);
     // Refresh properties list
@@ -262,6 +229,33 @@ const VendorDashboard = () => {
   const handleRequestVerification = (property) => {
     setSelectedProperty(property);
     setShowVerificationModal(true);
+  };
+
+  const handleDeleteProperty = async (propertyId) => {
+    if (!user) {
+      toast.error('Please login to manage your properties');
+      navigate('/login');
+      return;
+    }
+
+    const confirmed = window.confirm('Are you sure you want to delete this property?');
+    if (!confirmed) return;
+
+    // Update local vendor cache
+    try {
+      const vendorKey = `vendor_properties_${user.id || user.uid}`;
+      const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
+      const updated = stored.filter((p) => p.id !== propertyId);
+      localStorage.setItem(vendorKey, JSON.stringify(updated));
+    } catch {
+      // ignore localStorage errors
+    }
+
+    // Update in-memory list
+    setProperties((prev) => prev.filter((p) => p.id !== propertyId));
+
+    // Best-effort backend delete
+    await deleteProperty(propertyId);
   };
 
   return (
@@ -370,7 +364,6 @@ const VendorDashboard = () => {
             {[
               { id: 'overview', label: 'Overview', icon: FaChartLine },
               { id: 'properties', label: 'My Properties', icon: FaHome },
-              { id: 'add', label: 'Add Property', icon: FaPlus },
               { id: 'inquiries', label: 'Inquiries', icon: FaEnvelope },
               { id: 'viewings', label: 'Viewing Requests', icon: FaCalendar },
               { id: 'analytics', label: 'Analytics', icon: FaChartLine }
@@ -469,12 +462,13 @@ const VendorDashboard = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button 
+                        <button 
                     onClick={() => {
                       setActiveTab('add');
                       navigate('/vendor/add-property');
                     }}
-                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      title="Add new property"
                   >
                     <div className="p-2 bg-blue-100 rounded-full">
                       <FaPlus className="h-5 w-5 text-blue-600" />
@@ -484,7 +478,10 @@ const VendorDashboard = () => {
                       <p className="text-sm text-gray-500">List a new property</p>
                     </div>
                   </button>
-                  <button className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button
+                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Update existing listings"
+                  >
                     <div className="p-2 bg-green-100 rounded-full">
                       <FaEdit className="h-5 w-5 text-green-600" />
                     </div>
@@ -493,7 +490,10 @@ const VendorDashboard = () => {
                       <p className="text-sm text-gray-500">Edit property details</p>
                     </div>
                   </button>
-                  <button className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button
+                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="View performance analytics"
+                  >
                     <div className="p-2 bg-purple-100 rounded-full">
                       <FaChartLine className="h-5 w-5 text-purple-600" />
                     </div>
@@ -537,10 +537,20 @@ const VendorDashboard = () => {
                         </span>
                       </div>
                       <div className="absolute top-3 right-3 flex space-x-2">
-                        <button className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all">
+                        <button
+                          className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all"
+                          title="Edit property"
+                          aria-label="Edit property"
+                          onClick={() => navigate('/vendor/add-property', { state: { propertyToEdit: property } })}
+                        >
                           <FaEdit className="h-4 w-4 text-gray-600" />
                         </button>
-                        <button className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all">
+                        <button
+                          className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all"
+                          title="Delete property"
+                          aria-label="Delete property"
+                          onClick={() => handleDeleteProperty(property.id)}
+                        >
                           <FaTrash className="h-4 w-4 text-red-600" />
                         </button>
                       </div>
