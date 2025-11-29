@@ -60,7 +60,7 @@ const EnhancedFileUpload = ({
     if (!user || disabled) return;
 
     const fileArray = Array.from(fileList);
-    
+
     // Check if adding these files would exceed maxFiles limit
     if (files.length + fileArray.length > maxFiles) {
       toast.error(`Maximum ${maxFiles} ${type}s allowed`);
@@ -220,14 +220,18 @@ const EnhancedFileUpload = ({
     } catch (error) {
       console.error('Error uploading file:', error);
 
-      // Fallback for documents: use a local object URL so the flow still works in demo mode
-      if (type === 'document') {
+      // Fallback for images, documents, and videos: use a local object URL so the flow still works in demo mode
+      if (type === 'image' || type === 'document' || type === 'video') {
         const localUrl = URL.createObjectURL(file);
-        console.warn('Falling back to local document storage for:', file.name);
+        console.warn(`Falling back to local ${type} storage for:`, file.name);
+        let folder = 'local-files';
+        if (type === 'document') folder = 'local-documents';
+        if (type === 'video') folder = 'local-videos';
+        if (type === 'image') folder = 'local-images';
         return {
           success: true,
           url: localUrl,
-          path: `local-documents/${fileId}`,
+          path: `${folder}/${fileId}`,
           name: file.name,
           size: file.size,
           type: file.type,
