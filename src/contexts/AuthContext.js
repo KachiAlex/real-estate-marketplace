@@ -729,16 +729,9 @@ export const AuthProvider = ({ children }) => {
       
       toast.success(`Switched to ${newRole} dashboard`);
       
-      // Navigate to appropriate dashboard
-      if (newRole === 'vendor') {
-        window.location.href = '/vendor/dashboard';
-      } else if (newRole === 'buyer') {
-        window.location.href = '/dashboard';
-      } else if (newRole === 'admin') {
-        window.location.href = '/admin/dashboard';
-      }
-      
-      return { success: true, role: newRole };
+      // Return success - let the calling component handle navigation
+      // This allows React Router to handle navigation properly
+      return { success: true, role: newRole, shouldNavigate: true };
     } catch (error) {
       console.error('Error switching role:', error);
       toast.error('Failed to switch role');
@@ -790,12 +783,8 @@ export const AuthProvider = ({ children }) => {
       
       toast.success('Successfully registered as vendor!');
       
-      // Navigate to vendor dashboard
-      setTimeout(() => {
-        window.location.href = '/vendor/dashboard';
-      }, 1000);
-      
-      return { success: true, user: updatedUser };
+      // Return success - let the calling component handle navigation
+      return { success: true, user: updatedUser, shouldNavigate: true, navigateTo: '/vendor/dashboard' };
     } catch (error) {
       console.error('Error registering as vendor:', error);
       toast.error('Failed to register as vendor');

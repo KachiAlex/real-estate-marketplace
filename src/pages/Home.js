@@ -695,21 +695,40 @@ const Home = () => {
       navigate('/login');
       return;
     }
-    
+
+    const storageKey = `favorites_${user.id}`;
+    const wasFavorite = favorites.has(propertyId);
+
+    // Optimistic UI update
+    const optimisticFavorites = new Set(favorites);
+    if (wasFavorite) {
+      optimisticFavorites.delete(propertyId);
+      toast.success('Property removed from saved properties');
+    } else {
+      optimisticFavorites.add(propertyId);
+      toast.success('Property added to saved properties');
+    }
+    setFavorites(optimisticFavorites);
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(optimisticFavorites)));
+
     try {
       const result = await toggleFavorite(propertyId);
-      if (result && result.success) {
-        const newFavorites = new Set(favorites);
-        if (result.favorited) {
-          newFavorites.add(propertyId);
-        } else {
-          newFavorites.delete(propertyId);
-        }
-        setFavorites(newFavorites);
+      if (!result || !result.success) {
+        throw new Error('Failed to toggle favorite on server');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast.error('Failed to update favorites');
+
+      // Revert optimistic update on error
+      const revertedFavorites = new Set(optimisticFavorites);
+      if (wasFavorite) {
+        revertedFavorites.add(propertyId);
+      } else {
+        revertedFavorites.delete(propertyId);
+      }
+      setFavorites(revertedFavorites);
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(revertedFavorites)));
+      toast.error('Failed to update saved properties. Please try again.');
     }
   };
   

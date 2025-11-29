@@ -36,7 +36,7 @@ const AdminPropertyVerification = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
   useEffect(() => {
     loadVerificationRequests();
@@ -45,7 +45,7 @@ const AdminPropertyVerification = () => {
 
   const loadAdminSettings = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
@@ -248,7 +248,7 @@ const AdminPropertyVerification = () => {
   const handleSaveVerificationFee = async () => {
     try {
       setSavingFee(true);
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {

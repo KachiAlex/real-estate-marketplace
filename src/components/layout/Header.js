@@ -62,6 +62,8 @@ const Header = () => {
       setIsUserMenuOpen(false);
     } else if (result.success) {
       setIsUserMenuOpen(false);
+      // Navigate using React Router instead of window.location
+      navigate('/vendor/dashboard', { replace: true });
     }
   };
 
@@ -74,6 +76,12 @@ const Header = () => {
     
     if (result.success) {
       setShowVendorRegistrationModal(false);
+      // Navigate to vendor dashboard after registration
+      if (result.navigateTo) {
+        navigate(result.navigateTo, { replace: true });
+      } else {
+        navigate('/vendor/dashboard', { replace: true });
+      }
     }
   };
 
@@ -97,14 +105,18 @@ const Header = () => {
         setActiveDropdown(null);
       }
       // Close user menu when clicking outside
-      if (isUserMenuOpen && !event.target.closest('.user-menu-container')) {
+      // Check both the container and the dropdown menu itself
+      if (isUserMenuOpen && 
+          !event.target.closest('.user-menu-container') && 
+          !event.target.closest('.user-menu-dropdown')) {
         setIsUserMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use click instead of mousedown to allow button clicks to register first
+    document.addEventListener('click', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [activeDropdown, isUserMenuOpen]);
 
@@ -137,21 +149,31 @@ const Header = () => {
                 
                 {/* User Menu Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     <div className="px-4 py-3 border-b border-gray-200">
                       <p className="text-sm font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
                       {(user.roles && user.roles.length > 1) && (
                         <div className="mt-2 grid grid-cols-2 gap-2">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await switchRole('buyer');
+                            setIsUserMenuOpen(false);
+                            if (result.success) {
+                              navigate('/dashboard', { replace: true });
+                            }
+                          }}
+                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          disabled={!user?.roles?.includes('buyer')}
+                        >
+                          Buyer
+                        </button>
                           <button
-                            onClick={() => switchRole('buyer').then(() => setIsUserMenuOpen(false))}
-                            className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                            disabled={!user?.roles?.includes('buyer')}
-                          >
-                            Buyer
-                          </button>
-                          <button
-                            onClick={handleVendorSwitch}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVendorSwitch();
+                            }}
                             className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           >
                             Vendor
@@ -161,14 +183,20 @@ const Header = () => {
                     </div>
                     <Link
                       to="/dashboard"
-                      onClick={() => setIsUserMenuOpen(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsUserMenuOpen(false);
+                      }}
                       className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Dashboard
                     </Link>
                     <Link
                       to="/profile"
-                      onClick={() => setIsUserMenuOpen(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsUserMenuOpen(false);
+                      }}
                       className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Profile
@@ -192,7 +220,10 @@ const Header = () => {
                       </Link>
                     )}
                     <button
-                      onClick={handleLogout}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLogout();
+                      }}
                       className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Sign Out
@@ -461,7 +492,7 @@ const Header = () => {
                 </button>
 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     {/* Active role badge and switcher */}
                     <div className="px-4 pb-2">
                       <div className="flex items-center justify-between">
@@ -472,14 +503,24 @@ const Header = () => {
                       </div>
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <button
-                          onClick={() => switchRole('buyer').then(() => setIsUserMenuOpen(false))}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await switchRole('buyer');
+                            setIsUserMenuOpen(false);
+                            if (result.success) {
+                              navigate('/dashboard', { replace: true });
+                            }
+                          }}
                           className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
                         >
                           Buyer
                         </button>
                         <button
-                          onClick={handleVendorSwitch}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVendorSwitch();
+                          }}
                           className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                         >
                           Vendor
@@ -488,13 +529,21 @@ const Header = () => {
                     </div>
                     <Link
                       to="/profile"
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Profile
                     </Link>
                     <Link
                       to="/dashboard"
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Dashboard
                     </Link>
@@ -507,8 +556,11 @@ const Header = () => {
                       </Link>
                     )}
                     <button
-                      onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLogout();
+                      }}
+                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                     >
                       Sign Out
                     </button>
@@ -523,18 +575,6 @@ const Header = () => {
                   className="text-gray-700 hover:text-brand-orange transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
                 >
                   Sign In
-                </Link>
-                <Link
-                  to="/mortgage-bank/register"
-                  className="px-3 xl:px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
-                >
-                  Mortgage Bank Sign Up
-                </Link>
-                <Link
-                  to="/login?redirect=/mortgage-bank/dashboard"
-                  className="px-3 xl:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
-                >
-                  Mortgage Bank Login
                 </Link>
               </div>
             )}
@@ -632,7 +672,9 @@ const Header = () => {
                   <Link
                     to="/dashboard"
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     Dashboard
                   </Link>
@@ -660,20 +702,6 @@ const Header = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
-                  </Link>
-                  <Link
-                    to="/mortgage-bank/register"
-                    className="block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-300 mb-2 text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mortgage Bank Sign Up
-                  </Link>
-                  <Link
-                    to="/login?redirect=/mortgage-bank/dashboard"
-                    className="block px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-300 mb-2 text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mortgage Bank Login
                   </Link>
                 </div>
               )}

@@ -4,7 +4,7 @@ import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
 const Profile = () => {
   const { user, updateUserProfile } = useAuth();
@@ -162,6 +162,14 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast.error('Please log in to upload a profile picture');
+        setAvatarPreview(user?.avatar || null);
+        setUploadingAvatar(false);
+        return;
+      }
+
       const formDataToUpload = new FormData();
       formDataToUpload.append('avatar', file);
 
@@ -172,21 +180,86 @@ const Profile = () => {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
-          }
+          },
+          timeout: 30000 // 30 second timeout
         }
       );
 
       if (response.data.success) {
         const avatarUrl = response.data.data?.url || response.data.data?.secure_url;
+        
+        if (!avatarUrl) {
+          throw new Error('Avatar URL not received from server');
+        }
+
+        // Update profile via backend API to persist the avatar
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const profileResponse = await axios.put(
+              `${API_BASE_URL}/api/auth/profile`,
+              { avatar: avatarUrl },
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            );
+            
+            if (profileResponse.data.success && profileResponse.data.user) {
+              // Update local state with the user data from backend
+              await updateUserProfile({ avatar: profileResponse.data.user.avatar || avatarUrl });
+            } else {
+              // Fallback: update local state even if backend update fails
+              await updateUserProfile({ avatar: avatarUrl });
+            }
+          } catch (profileError) {
+            console.error('Profile update error:', profileError);
+            // Still update local state even if backend update fails
+            await updateUserProfile({ avatar: avatarUrl });
+            toast.error('Avatar uploaded but profile update failed. Please try again.');
+            return;
+          }
+        } else {
+          // No token, just update local state
+          await updateUserProfile({ avatar: avatarUrl });
+        }
+        
+        // Update form data and preview
         setFormData(prev => ({ ...prev, avatar: avatarUrl }));
-        await updateUserProfile({ avatar: avatarUrl });
+        setAvatarPreview(avatarUrl);
         toast.success('Profile picture uploaded successfully!');
       } else {
         throw new Error(response.data.message || 'Upload failed');
       }
     } catch (error) {
       console.error('Avatar upload error:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload profile picture');
+      
+      let errorMessage = 'Failed to upload profile picture';
+      
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 404) {
+          errorMessage = 'Avatar upload endpoint not found. Please contact support.';
+        } else if (error.response.status === 401) {
+          errorMessage = 'Please log in to upload a profile picture';
+        } else if (error.response.status === 403) {
+          errorMessage = 'You do not have permission to upload avatars';
+        } else if (error.response.status === 413) {
+          errorMessage = 'File is too large. Maximum size is 5MB';
+        } else {
+          errorMessage = error.response.data?.message || `Upload failed (${error.response.status})`;
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      } else {
+        // Something else happened
+        errorMessage = error.message || 'Failed to upload profile picture';
+      }
+      
+      toast.error(errorMessage);
+      // Revert preview to current user avatar
       setAvatarPreview(user?.avatar || null);
     } finally {
       setUploadingAvatar(false);

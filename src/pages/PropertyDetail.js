@@ -111,18 +111,49 @@ const PropertyDetail = () => {
       toast.error('Property information not available');
       return;
     }
-    
+
+    const storageKey = `favorites_${user.id}`;
+    const wasFavorite = isFavorite;
+
+    // Optimistic UI update
+    setIsFavorite(!wasFavorite);
+    try {
+      const existing = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+      if (wasFavorite) {
+        existing.delete(property.id);
+        toast.success('Property removed from saved properties');
+      } else {
+        existing.add(property.id);
+        toast.success('Property added to saved properties');
+      }
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(existing)));
+    } catch {
+      // ignore localStorage errors
+    }
+
     try {
       const result = await toggleFavorite(property.id);
-      if (result && result.success !== undefined) {
-        setIsFavorite(result.favorited);
-      } else {
-        // Fallback: toggle local state
-        setIsFavorite(!isFavorite);
+      if (!result || result.success === undefined) {
+        throw new Error('Failed to toggle favorite on server');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast.error('Failed to update favorite');
+
+      // Revert optimistic UI on error
+      setIsFavorite(wasFavorite);
+      try {
+        const existing = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+        if (wasFavorite) {
+          existing.add(property.id);
+        } else {
+          existing.delete(property.id);
+        }
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(existing)));
+      } catch {
+        // ignore localStorage errors
+      }
+
+      toast.error('Failed to update saved properties. Please try again.');
     }
   };
 

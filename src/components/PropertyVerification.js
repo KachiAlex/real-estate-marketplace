@@ -13,7 +13,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   });
   const [error, setError] = useState('');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
   const verificationFee = 50000; // ₦50,000 default fee
 

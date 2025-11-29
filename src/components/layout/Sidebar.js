@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -25,6 +25,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { isMobileSidebarOpen, closeMobileSidebar } = useSidebar();
   const prevPathnameRef = useRef(location.pathname);
+  const [logoError, setLogoError] = useState(false);
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -90,18 +91,45 @@ const Sidebar = () => {
         lg:translate-x-0
         ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-      {/* Main Menu - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 pb-4 pt-4">
-        {/* Close button for mobile */}
-        <div className="flex justify-end mb-3 lg:hidden">
+      {/* Logo Section - Fixed at top */}
+      <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          <Link 
+            to="/" 
+            onClick={closeMobileSidebar}
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
+            {!logoError ? (
+              <img
+                src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
+                alt="PropertyArk Logo"
+                className="w-auto h-20 sm:h-24 md:h-28"
+                style={{ 
+                  maxHeight: '7rem',
+                  backgroundColor: 'transparent',
+                  mixBlendMode: 'normal'
+                }}
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                PropertyArk
+              </div>
+            )}
+          </Link>
+          {/* Close button for mobile */}
           <button
             onClick={closeMobileSidebar}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
             aria-label="Close sidebar"
           >
             <FaTimes className="text-xl" />
           </button>
         </div>
+      </div>
+
+      {/* Main Menu - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-4 pb-4">
         <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">MAIN MENU</p>
         <nav className="space-y-1.5 sm:space-y-2">
           {menuItems.map((item) => {

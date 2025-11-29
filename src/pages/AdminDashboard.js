@@ -180,7 +180,7 @@ const AdminDashboard = () => {
 
   const handleResolveEscrow = async (escrowId, decision) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const res = await fetch(`${API_BASE_URL}/api/admin/escrow/${escrowId}/resolve`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -240,7 +240,7 @@ const AdminDashboard = () => {
   // Property approval/rejection handlers
   const handlePropertyApprove = async (propertyId, adminNotes) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       console.log('Approving property:', propertyId, 'with notes:', adminNotes);
       
       const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/approve`, {
@@ -270,7 +270,7 @@ const AdminDashboard = () => {
 
   const handlePropertyReject = async (propertyId, rejectionReason, adminNotes) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       console.log('Rejecting property:', propertyId, 'with reason:', rejectionReason);
       
       const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/reject`, {
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
   // Send notification to vendor (simulated)
   const sendNotificationToVendor = async (propertyId, action, message) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       
       // Find the property to get vendor info
       const property = properties.find(p => p.id === propertyId);

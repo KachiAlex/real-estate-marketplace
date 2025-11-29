@@ -30,7 +30,7 @@ const Blog = () => {
         ...filters
       });
 
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const response = await fetch(`${API_BASE_URL}/api/blog?${params}`);
       
       if (!response.ok) {
@@ -65,7 +65,7 @@ const Blog = () => {
 
   const loadFeaturedBlogs = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const response = await fetch(`${API_BASE_URL}/api/blog/featured?limit=3`);
       
       if (!response.ok) {
@@ -96,7 +96,7 @@ const Blog = () => {
 
   const loadCategories = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
       
       if (!response.ok) {
