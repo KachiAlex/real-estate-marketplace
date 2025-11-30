@@ -70,7 +70,7 @@ export const loadGoogleMapsAPI = (apiKey) => {
 };
 
 export const isGoogleMapsLoaded = () => {
-  return isLoaded && window.google && window.google.maps;
+  return !!(isLoaded && window.google && window.google.maps);
 };
 
 export const initializeGoogleMapsServices = () => {

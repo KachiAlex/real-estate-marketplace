@@ -429,7 +429,11 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     });
-    return () => unsub();
+    return () => {
+      if (unsub && typeof unsub === 'function') {
+        unsub();
+      }
+    };
   }, []);
 
   const login = async (email, password) => {

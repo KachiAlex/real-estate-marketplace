@@ -343,11 +343,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404 handler for unmatched routes (must be after all route registrations)
 app.use('*', (req, res) => {
+  console.log('❌ Route not found:', req.method, req.originalUrl, req.query);
   res.status(404).json({
     success: false,
-    message: `Route ${req.originalUrl} not found`
+    message: `Route ${req.originalUrl} not found`,
+    path: req.path,
+    method: req.method
   });
 });
 
@@ -384,15 +387,7 @@ server.listen(PORT, () => {
   }
 });
 
-// 404 handler for unmatched routes
-app.use((req, res) => {
-  console.log('❌ Route not found:', req.method, req.path, req.query);
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.path,
-    method: req.method
-  });
-});
+// Note: 404 handler is already defined above (line 347)
+// This duplicate handler is unreachable code and has been removed
 
 module.exports = app; 

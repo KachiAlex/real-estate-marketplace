@@ -566,7 +566,11 @@ export const PropertyProvider = ({ children }) => {
           owner: {
             firstName: user?.firstName || 'Guest',
             lastName: user?.lastName || 'User'
-          }
+          },
+          // Set verification status for admin approval
+          verificationStatus: 'pending',
+          approvalStatus: 'pending',
+          isVerified: false
         });
         
         toast.success('Property added successfully!');
@@ -607,7 +611,11 @@ export const PropertyProvider = ({ children }) => {
             owner: {
               firstName: user?.firstName || 'Guest',
               lastName: user?.lastName || 'User'
-            }
+            },
+            // Set verification status for admin approval
+            verificationStatus: 'pending',
+            approvalStatus: 'pending',
+            isVerified: false
           };
           const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
           existingProperties.push(localProperty);
@@ -871,6 +879,32 @@ export const PropertyProvider = ({ children }) => {
           
           if (firestoreProps.length > 0) {
             console.log('PropertyContext: Found Firestore properties:', firestoreProps.length);
+            
+            // Ensure all properties have verificationStatus set to 'pending' if missing
+            const propertiesToUpdate = [];
+            firestoreProps.forEach(prop => {
+              if (!prop.verificationStatus && !prop.approvalStatus) {
+                propertiesToUpdate.push(prop.id);
+              }
+            });
+            
+            // Update properties missing verificationStatus in the background
+            if (propertiesToUpdate.length > 0) {
+              console.log('PropertyContext: Updating', propertiesToUpdate.length, 'properties with missing verificationStatus');
+              Promise.all(propertiesToUpdate.map(propId => {
+                const propertyRef = doc(db, 'properties', propId);
+                return updateDoc(propertyRef, {
+                  verificationStatus: 'pending',
+                  approvalStatus: 'pending',
+                  isVerified: false
+                }).catch(err => {
+                  console.warn('PropertyContext: Failed to update property', propId, err);
+                });
+              })).catch(err => {
+                console.warn('PropertyContext: Error updating properties:', err);
+              });
+            }
+            
             // Use Firestore properties as primary source for admin dashboard
             allProperties = firestoreProps;
           }

@@ -1680,21 +1680,24 @@ const Home = () => {
             {/* Company Info */}
             <div className="lg:col-span-1">
               <div className="flex items-center mb-4">
-                <img 
-                  src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
-                  alt="PropertyArk Logo" 
-                  className="w-auto"
-                  style={{ 
-                    height: '9rem',
-                    backgroundColor: 'transparent',
-                    mixBlendMode: 'normal'
-                  }}
-                  onError={(e) => {
-                    // Fallback to icon if logo image doesn't exist
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
+                <div className="bg-white p-1 rounded-md shadow-lg inline-block">
+                  <img 
+                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
+                    alt="PropertyArk Logo" 
+                    className="w-auto"
+                    style={{ 
+                      height: '6rem',
+                      backgroundColor: 'transparent',
+                      mixBlendMode: 'normal',
+                      display: 'block'
+                    }}
+                    onError={(e) => {
+                      // Fallback to icon if logo image doesn't exist
+                      e.target.style.display = 'none';
+                      e.target.parentElement.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                </div>
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                   <FaBuilding className="text-white text-xl" />
                 </div>
@@ -1750,8 +1753,8 @@ const Home = () => {
                 <div className="flex items-start space-x-3">
                   <FaMapMarkerAlt className="text-brand-orange mt-1" />
                   <div>
-                    <p className="text-gray-400">123 Victoria Island</p>
-                    <p className="text-gray-400">Lagos, Nigeria</p>
+                    <p className="text-gray-400">Suite 305, Orago Complex</p>
+                    <p className="text-gray-400">Kam Salem Street, Garki, Abuja</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
