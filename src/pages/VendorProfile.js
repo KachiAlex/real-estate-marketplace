@@ -1,477 +1,688 @@
-﻿import React, { useState, useEffect } from 'react';
-import { 
-  FaUser, 
-  FaEnvelope, 
-  FaPhone, 
-  FaMapMarkerAlt, 
-  FaEdit, 
-  FaSave, 
-  FaTimes,
-  FaCamera,
-  FaBuilding,
-  FaCalendarAlt,
-  FaStar,
-  FaCheck,
-  FaUpload
-} from 'react-icons/fa';
-import AvatarUpload from '../components/AvatarUpload';
-import MemoryInput from '../components/MemoryInput';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import storageService from '../services/storageService';
+import { db } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth } from '../config/firebase';
 
 const VendorProfile = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
-  const { user } = useAuth();
-
-  // Mock vendor profile data
-  const [profileData, setProfileData] = useState({
-    personal: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: user?.email || 'john.doe@propertyark.com', // Use login email from auth
-      phone: '+234 801 234 5678',
-      address: '123 Victoria Island, Lagos',
-      bio: 'Experienced real estate professional with over 10 years in the luxury property market. Specializing in high-end residential and commercial properties across Lagos.',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      joinDate: '2020-03-15',
-      rating: 4.9,
-      totalSales: 45
-    },
-    business: {
-      companyName: 'PropertyArk',
-      licenseNumber: 'REA-2020-001',
-      specialization: 'Luxury Residential & Commercial',
-      experience: '10+ years',
-      languages: ['English', 'Yoruba', 'French'],
-      certifications: ['Real Estate License', 'Property Management', 'Investment Analysis']
-    },
-    social: {
-      website: 'https://propertyark.com',
-      linkedin: 'https://linkedin.com/in/johndoe',
-      twitter: 'https://twitter.com/johndoe',
-      instagram: 'https://instagram.com/johndoe'
-    }
+  const { user, updateUserProfile } = useAuth();
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || user?.user?.email || '',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
+    avatar: user?.avatar || ''
   });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+  const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState(profileData);
-
-  // Load profile data from localStorage on component mount
+  // Sync form data and avatar preview when user changes
   useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem('vendorProfile');
-      if (savedProfile) {
-        const parsedProfile = JSON.parse(savedProfile);
-        setProfileData(parsedProfile);
-        setFormData(parsedProfile);
+    if (user) {
+      let savedAvatar = null;
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUserData.avatar && currentUserData.avatar.startsWith('data:')) {
+          savedAvatar = currentUserData.avatar;
+        }
+      } catch (e) {
+        console.error('Error reading localStorage:', e);
       }
-    } catch (error) {
-      console.error('Error loading profile from localStorage:', error);
+      
+      const avatarToUse = savedAvatar || user?.avatar || '';
+      const shouldUpdateAvatar = !avatarPreview || (avatarToUse && avatarToUse !== avatarPreview);
+      
+      setFormData({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        email: user?.email || user?.user?.email || '',
+        phone: user?.phone || '',
+        bio: user?.bio || '',
+        avatar: avatarToUse
+      });
+      
+      if (shouldUpdateAvatar) {
+        setAvatarPreview(avatarToUse || null);
+      }
     }
-  }, []);
+  }, [user]);
 
-  const handleInputChange = (section, field, value) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
+      [name]: value
     }));
-  };
-
-  const handleSave = () => {
-    setProfileData(formData);
-    setIsEditing(false);
     
-    // Save to localStorage for persistence
-    try {
-      localStorage.setItem('vendorProfile', JSON.stringify(formData));
-    } catch (error) {
-      console.error('Error saving profile to localStorage:', error);
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
-  const handleCancel = () => {
-    setFormData(profileData);
-    setIsEditing(false);
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    return newErrors;
   };
 
-  const tabs = [
-    { id: 'personal', label: 'Personal Info', icon: FaUser },
-    { id: 'business', label: 'Business Info', icon: FaBuilding },
-    { id: 'social', label: 'Social Links', icon: FaStar }
-  ];
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Use avatarPreview if available (from recent upload), otherwise use formData.avatar
+      const avatarToSave = avatarPreview || formData.avatar || user?.avatar || '';
+      
+      const updatedUserData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        bio: formData.bio,
+        avatar: avatarToSave
+      };
+
+      // Try to save to Firestore
+      const fbUser = auth.currentUser;
+      if (fbUser) {
+        try {
+          await setDoc(doc(db, 'users', fbUser.uid), {
+            ...updatedUserData,
+            email: fbUser.email,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          console.log('Profile saved to Firestore including avatar:', avatarToSave ? 'Yes' : 'No');
+        } catch (firestoreError) {
+          console.warn('Failed to save to Firestore:', firestoreError);
+        }
+      }
+
+      // Update local context and localStorage
+      if (updateUserProfile) {
+        await updateUserProfile(updatedUserData);
+      }
+      
+      // Also update localStorage directly to ensure persistence
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const updatedUser = { ...currentUserData, ...updatedUserData };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        console.log('Profile saved to localStorage including avatar');
+      } catch (e) {
+        console.error('Error updating localStorage:', e);
+      }
+      
+      // Update formData and preview to ensure consistency
+      setFormData(prev => ({ ...prev, avatar: avatarToSave }));
+      if (avatarToSave) {
+        setAvatarPreview(avatarToSave);
+      }
+      
+      setSuccess(true);
+      toast.success('Profile updated successfully!');
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WEBP, or GIF)');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    // Create preview immediately for better UX and get local data URL
+    const localDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target.result);
+        resolve(event.target.result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    setUploadingAvatar(true);
+
+    try {
+      const currentUser = auth.currentUser || user;
+      const userId = currentUser?.uid || currentUser?.id || user?.id;
+
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Upload to Firebase Storage
+      const uploadResult = await storageService.uploadUserAvatar(file, userId);
+
+      let avatarUrl;
+      
+      if (!uploadResult.success) {
+        // If Firebase Storage fails, use local data URL as fallback
+        console.error('Firebase Storage upload failed:', uploadResult.error);
+        console.log('Using local data URL as fallback');
+        avatarUrl = localDataUrl;
+        
+        // Still try to save to Firestore with local URL
+        try {
+          const userRef = doc(db, 'users', userId);
+          await setDoc(userRef, {
+            avatar: avatarUrl,
+            updatedAt: serverTimestamp(),
+            isLocalAvatar: true // Flag to indicate this is a local URL
+          }, { merge: true });
+          console.log('Saved local avatar to Firestore');
+        } catch (firestoreError) {
+          console.error('Firestore update error:', firestoreError);
+        }
+        
+        // Update local state with local URL
+        // Save to localStorage directly to ensure persistence
+        try {
+          const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          const updatedUser = { ...currentUserData, avatar: avatarUrl };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          console.log('Saved avatar to localStorage:', avatarUrl.substring(0, 50) + '...');
+        } catch (localError) {
+          console.error('Error saving to localStorage:', localError);
+        }
+        
+        // Try to update via updateUserProfile (may fail due to Firestore permissions, but that's ok)
+        try {
+          await updateUserProfile({ avatar: avatarUrl });
+        } catch (profileError) {
+          console.warn('updateUserProfile failed (expected due to permissions):', profileError);
+          // Continue anyway - we've saved to localStorage
+        }
+        
+        setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+        setAvatarPreview(avatarUrl);
+        toast.error('Profile picture saved locally. Cloud upload failed - check Firebase Storage permissions.');
+        return; // Exit early since we're using local fallback
+      }
+
+      avatarUrl = uploadResult.url;
+      console.log('Firebase Storage upload successful:', avatarUrl);
+
+      // Save to Firestore
+      try {
+        const userRef = doc(db, 'users', userId);
+        await setDoc(userRef, {
+          avatar: avatarUrl,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreError) {
+        console.error('Firestore update error:', firestoreError);
+        // Continue even if Firestore update fails
+      }
+
+      // Update local state
+      await updateUserProfile({ avatar: avatarUrl });
+      setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+      setAvatarPreview(avatarUrl);
+      
+      // Also update localStorage to ensure persistence
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const updatedUser = { ...currentUserData, avatar: avatarUrl };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      } catch (localError) {
+        console.error('Error saving to localStorage:', localError);
+      }
+      
+      toast.success('Profile picture uploaded successfully!');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      
+      let errorMessage = 'Failed to upload profile picture';
+      
+      if (error.code === 'storage/unauthorized' || error.message?.includes('permission')) {
+        errorMessage = 'Storage permission denied. Please check your Firebase Storage rules.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      
+      // Revert preview on error
+      setAvatarPreview(user?.avatar || null);
+    } finally {
+      setUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setAvatarPreview(null);
+      setFormData(prev => ({ ...prev, avatar: '' }));
+      
+      // Clear from Firestore
+      const currentUser = auth.currentUser || user;
+      const userId = currentUser?.uid || currentUser?.id || user?.id;
+      
+      if (userId) {
+        try {
+          const userRef = doc(db, 'users', userId);
+          await setDoc(userRef, {
+            avatar: '',
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (firestoreError) {
+          console.error('Firestore update error:', firestoreError);
+        }
+      }
+      
+      // Also clear from localStorage
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        delete currentUserData.avatar;
+        localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+      } catch (e) {
+        console.error('Error removing avatar from localStorage:', e);
+      }
+      
+      // Update user profile
+      await updateUserProfile({ avatar: '' });
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast.success('Profile picture removed');
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      toast.error('Failed to remove profile picture');
+    }
+  };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-            <p className="text-gray-600">Manage your vendor profile and business information</p>
-          </div>
-          <div className="flex space-x-3">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleCancel}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <FaTimes className="h-4 w-4" />
-                  <span>Cancel</span>
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="flex items-center space-x-2 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <FaSave className="h-4 w-4" />
-                  <span>Save Changes</span>
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FaEdit className="h-4 w-4" />
-                <span>Edit Profile</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Overview */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="flex items-center space-x-6">
-          <AvatarUpload
-            currentAvatar={profileData.personal.avatar ? { url: profileData.personal.avatar } : null}
-            onAvatarChange={(avatarData) => {
-              if (avatarData) {
-                const newAvatarUrl = avatarData.url;
-                setProfileData(prev => ({
-                  ...prev,
-                  personal: { ...prev.personal, avatar: newAvatarUrl }
-                }));
-                setFormData(prev => ({
-                  ...prev,
-                  personal: { ...prev.personal, avatar: newAvatarUrl }
-                }));
-              } else {
-                setProfileData(prev => ({
-                  ...prev,
-                  personal: { ...prev.personal, avatar: null }
-                }));
-                setFormData(prev => ({
-                  ...prev,
-                  personal: { ...prev.personal, avatar: null }
-                }));
-              }
-            }}
-            size="large"
-            disabled={!isEditing}
-            showEditButton={isEditing}
-          />
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {profileData.personal.firstName} {profileData.personal.lastName}
-            </h2>
-            <p className="text-gray-600 mb-2">{profileData.business.companyName}</p>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <div className="flex items-center space-x-1">
-                <FaStar className="h-4 w-4 text-yellow-500" />
-                <span>{profileData.personal.rating}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <FaBuilding className="h-4 w-4" />
-                <span>{profileData.personal.totalSales} Sales</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <FaCalendarAlt className="h-4 w-4" />
-                <span>Joined {new Date(profileData.personal.joinDate).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-brand-blue text-brand-blue'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+          <p className="mt-1 text-gray-600">Manage your account information</p>
         </div>
 
-        <div className="p-6">
-          {/* Personal Info Tab */}
-          {activeTab === 'personal' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.personal.firstName"
-                      value={formData.personal.firstName}
-                      onChange={(val) => handleInputChange('personal', 'firstName', val)}
-                      placeholder="First name"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.personal.firstName}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.personal.lastName"
-                      value={formData.personal.lastName}
-                      onChange={(val) => handleInputChange('personal', 'lastName', val)}
-                      placeholder="Last name"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.personal.lastName}</p>
-                  )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+              
+              {/* Profile Picture */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Profile Picture</label>
+                <div className="flex items-center space-x-6">
+                  <div className="relative">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Profile"
+                        className="h-24 w-24 rounded-full object-cover border-4 border-gray-200"
+                      />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
+                        <FaUser className="h-10 w-10 text-gray-400" />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      disabled={uploadingAvatar}
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <FaCamera className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      disabled={uploadingAvatar}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <FaUpload className="mr-2 h-4 w-4" />
+                      {uploadingAvatar ? 'Uploading...' : 'Change Picture'}
+                    </button>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="flex items-center px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors"
+                      >
+                        <FaTimes className="mr-2 h-4 w-4" />
+                        Remove Picture
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500">JPG, PNG, WEBP or GIF. Max size 5MB</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.firstName ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.lastName ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email <span className="text-gray-400 text-xs">(Locked)</span>
+                    Email <span className="text-gray-400 text-xs">(Cannot be changed)</span>
                   </label>
                   <input
-                      type="email"
-                      value={formData.personal.email}
+                    type="email"
+                    name="email"
+                    value={formData.email}
                     readOnly
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                    />
-                  <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.personal.phone"
-                      value={formData.personal.phone}
-                      onChange={(val) => handleInputChange('personal', 'phone', val)}
-                      placeholder="+234..."
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.personal.phone}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.personal.address"
-                    value={formData.personal.address}
-                    onChange={(val) => handleInputChange('personal', 'address', val)}
-                    placeholder="Address"
                   />
-                ) : (
-                  <p className="text-gray-900">{profileData.personal.address}</p>
-                )}
-              </div>
+                  <p className="mt-1 text-xs text-gray-500">Your email is locked to your login credentials</p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.personal.bio"
-                    value={formData.personal.bio}
-                    onChange={(val) => handleInputChange('personal', 'bio', val)}
-                    multiline
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
                     rows={4}
-                    placeholder="Tell us about yourself"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Tell us about yourself..."
                   />
-                ) : (
-                  <p className="text-gray-900">{profileData.personal.bio}</p>
-                )}
-              </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
             </div>
-          )}
+          </div>
 
-          {/* Business Info Tab */}
-          {activeTab === 'business' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            {/* Account Info */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.business.companyName"
-                      value={formData.business.companyName}
-                      onChange={(val) => handleInputChange('business', 'companyName', val)}
-                      placeholder="Company name"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.business.companyName}</p>
-                  )}
+                  <span className="text-sm text-gray-500">Member Since</span>
+                  <p className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.business.licenseNumber"
-                      value={formData.business.licenseNumber}
-                      onChange={(val) => handleInputChange('business', 'licenseNumber', val)}
-                      placeholder="License number"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.business.licenseNumber}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.business.specialization"
-                      value={formData.business.specialization}
-                      onChange={(val) => handleInputChange('business', 'specialization', val)}
-                      placeholder="Specialization"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.business.specialization}</p>
-                  )}
+                  <span className="text-sm text-gray-500">Account Status</span>
+                  <p className="font-medium text-green-600">Active</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
-                  {isEditing ? (
-                    <MemoryInput
-                      fieldKey="vendor.business.experience"
-                      value={formData.business.experience}
-                      onChange={(val) => handleInputChange('business', 'experience', val)}
-                      placeholder="Experience"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profileData.business.experience}</p>
-                  )}
+                  <span className="text-sm text-gray-500">User ID</span>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-bold text-blue-600 text-lg tracking-wider">{user?.userCode || 'PAK-XXXXXX'}</p>
+                    <button
+                      onClick={async (e) => {
+                        const button = e.currentTarget;
+                        const originalText = button.textContent;
+                        try {
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          await navigator.clipboard.writeText(textToCopy);
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        } catch (err) {
+                          // Fallback for older browsers
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          const textArea = document.createElement('textarea');
+                          textArea.value = textToCopy;
+                          textArea.style.position = 'fixed';
+                          textArea.style.opacity = '0';
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          document.execCommand('copy');
+                          document.body.removeChild(textArea);
+                          
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        }
+                      }}
+                      className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.business.languages"
-                    value={formData.business.languages.join(', ')}
-                    onChange={(val) => handleInputChange('business', 'languages', val.split(', '))}
-                    placeholder="English, Yoruba, French"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profileData.business.languages.join(', ')}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.business.certifications"
-                    value={formData.business.certifications.join(', ')}
-                    onChange={(val) => handleInputChange('business', 'certifications', val.split(', '))}
-                    placeholder="Real Estate License, Property Management"
-                  />
-                ) : (
-                  <div className="space-y-2">
-                    {profileData.business.certifications.map((cert, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <FaCheck className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-900">{cert}</span>
-                      </div>
-                    ))}
+                {/* Vendor ID - only shown if user is a vendor */}
+                {user?.vendorCode && (
+                  <div>
+                    <span className="text-sm text-gray-500">Vendor ID</span>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono font-bold text-green-600 text-lg tracking-wider">{user.vendorCode}</p>
+                      <button
+                        onClick={async (e) => {
+                          const button = e.currentTarget;
+                          const originalText = button.textContent;
+                          try {
+                            const textToCopy = user.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            await navigator.clipboard.writeText(textToCopy);
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          } catch (err) {
+                            // Fallback for older browsers
+                            const textToCopy = user.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            const textArea = document.createElement('textarea');
+                            textArea.value = textToCopy;
+                            textArea.style.position = 'fixed';
+                            textArea.style.opacity = '0';
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          }
+                        }}
+                        className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Share this with buyers to find your properties</p>
                   </div>
                 )}
               </div>
             </div>
-          )}
 
-          {/* Social Links Tab */}
-          {activeTab === 'social' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.social.website"
-                    value={formData.social.website}
-                    onChange={(val) => handleInputChange('social', 'website', val)}
-                    placeholder="https://yourwebsite.com"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profileData.social.website}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.social.linkedin"
-                    value={formData.social.linkedin}
-                    onChange={(val) => handleInputChange('social', 'linkedin', val)}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profileData.social.linkedin}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.social.twitter"
-                    value={formData.social.twitter}
-                    onChange={(val) => handleInputChange('social', 'twitter', val)}
-                    placeholder="https://twitter.com/yourhandle"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profileData.social.twitter}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
-                {isEditing ? (
-                  <MemoryInput
-                    fieldKey="vendor.social.instagram"
-                    value={formData.social.instagram}
-                    onChange={(val) => handleInputChange('social', 'instagram', val)}
-                    placeholder="https://instagram.com/yourhandle"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profileData.social.instagram}</p>
-                )}
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                  Change Password
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                  Notification Settings
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                  Privacy Settings
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
+                  Delete Account
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -479,6 +690,3 @@ const VendorProfile = () => {
 };
 
 export default VendorProfile;
-
-
-

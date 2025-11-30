@@ -546,8 +546,162 @@ const Profile = () => {
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">User ID</span>
-                  <p className="font-medium text-gray-600">{user?.id}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-bold text-blue-600 text-lg tracking-wider">{user?.userCode || 'PAK-XXXXXX'}</p>
+                    <button
+                      onClick={async (e) => {
+                        const button = e.currentTarget;
+                        const originalText = button.textContent;
+                        try {
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          await navigator.clipboard.writeText(textToCopy);
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        } catch (err) {
+                          // Fallback for older browsers
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          const textArea = document.createElement('textarea');
+                          textArea.value = textToCopy;
+                          textArea.style.position = 'fixed';
+                          textArea.style.opacity = '0';
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          document.execCommand('copy');
+                          document.body.removeChild(textArea);
+                          
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        }
+                      }}
+                      className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
+                {/* Vendor ID - only shown if user is a vendor */}
+                {user?.vendorCode && user?.roles?.includes('vendor') && (
+                  <div>
+                    <span className="text-sm text-gray-500">Vendor ID</span>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono font-bold text-green-600 text-lg tracking-wider">{user.vendorCode}</p>
+                      <button
+                        onClick={async (e) => {
+                          const button = e.currentTarget;
+                          const originalText = button.textContent;
+                          try {
+                            const textToCopy = user.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            await navigator.clipboard.writeText(textToCopy);
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          } catch (err) {
+                            // Fallback for older browsers
+                            const textToCopy = user.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            const textArea = document.createElement('textarea');
+                            textArea.value = textToCopy;
+                            textArea.style.position = 'fixed';
+                            textArea.style.opacity = '0';
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          }
+                        }}
+                        className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Share this with buyers to find your properties</p>
+                  </div>
+                )}
               </div>
             </div>
 

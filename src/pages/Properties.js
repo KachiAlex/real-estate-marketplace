@@ -76,15 +76,62 @@ const Properties = () => {
       filtered = filtered.filter(property => property.price <= parseFloat(appliedPriceRange.max));
     }
 
-    // Apply vendor filter
+    // Apply vendor filter (supports name, email, vendorCode like VND-XXXXXX, and vendorId)
     if (appliedVendor) {
+      const searchTerm = appliedVendor.toLowerCase().trim();
+      console.log('Properties: Filtering by vendor search term:', searchTerm);
       filtered = filtered.filter(property => {
-        const vendorName = property?.agent?.name || 
-          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
-        const vendorId = property?.ownerId || property?.owner?.id || '';
-        return vendorName.toLowerCase().includes(appliedVendor.toLowerCase()) ||
-               vendorId.toLowerCase().includes(appliedVendor.toLowerCase());
+        // Try multiple vendor identification fields
+        const vendorName = (property?.vendorName || property?.agent?.name || 
+          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '') ||
+          (property?.owner?.name || '')).toLowerCase();
+        const vendorId = (property?.vendorId || property?.ownerId || property?.owner?.id || '').toLowerCase();
+        const vendorCode = (property?.vendorCode || property?.owner?.vendorCode || '').toLowerCase();
+        const vendorEmail = (property?.vendorEmail || property?.ownerEmail || property?.owner?.email || '').toLowerCase();
+        
+        // Handle vendorCode search (e.g., "VND-E88234" or "E88234" or "e88234")
+        let vendorCodeMatches = false;
+        if (vendorCode) {
+          // Normalize both the property's vendorCode and search term for comparison
+          const normalizedVendorCode = vendorCode.toLowerCase().trim();
+          const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+          
+          // Remove VND- prefix from both if present
+          const codePart = normalizedVendorCode.replace(/^vnd-/, '');
+          const searchPart = normalizedSearchTerm.replace(/^vnd-/, '');
+          
+          // Match if:
+          // 1. Full vendorCode matches (with or without VND- prefix)
+          // 2. Just the code part matches (e.g., "E88234" matches "VND-E88234")
+          // 3. Partial match within the code
+          vendorCodeMatches = normalizedVendorCode === normalizedSearchTerm || 
+                              codePart === searchPart ||
+                              codePart.includes(searchPart) ||
+                              normalizedVendorCode.includes(normalizedSearchTerm);
+        }
+        
+        const matches = vendorName.includes(searchTerm) ||
+               vendorId.includes(searchTerm) ||
+               vendorCodeMatches ||
+               vendorEmail.includes(searchTerm);
+        
+        if (matches) {
+          console.log('Properties: Match found - Property:', property.title, 
+            'vendorCode:', property?.vendorCode || property?.owner?.vendorCode || 'MISSING', 
+            'vendorName:', property?.vendorName || vendorName || 'MISSING',
+            'vendorEmail:', vendorEmail || 'MISSING',
+            'ownerId:', property?.ownerId || property?.owner?.id || 'MISSING',
+            'searchTerm:', searchTerm);
+        } else if (appliedVendor.toLowerCase().includes('vnd-')) {
+          // Log why vendorCode search failed
+          console.log('Properties: VendorCode search failed - Property:', property.title,
+            'vendorCode:', property?.vendorCode || property?.owner?.vendorCode || 'UNDEFINED',
+            'searchTerm:', searchTerm);
+        }
+        
+        return matches;
       });
+      console.log('Properties: Filtered to', filtered.length, 'properties for vendor search:', searchTerm);
     }
 
     return filtered;
@@ -108,11 +155,12 @@ const Properties = () => {
       const vendorName = property?.agent?.name || 
         (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
       const vendorId = property?.ownerId || property?.owner?.id || '';
+      const vendorCode = property?.vendorCode || property?.owner?.vendorCode || '';
       if (vendorName && !vendorMap.has(vendorId)) {
-        vendorMap.set(vendorId, vendorName);
+        vendorMap.set(vendorId, { name: vendorName, code: vendorCode });
       }
     });
-    return Array.from(vendorMap.entries()).map(([id, name]) => ({ id, name }));
+    return Array.from(vendorMap.entries()).map(([id, data]) => ({ id, name: data.name, code: data.code }));
   }, [safeProperties]);
 
   // Pagination for filtered properties
@@ -122,8 +170,11 @@ const Properties = () => {
   const currentProperties = filteredProperties.slice(startIndex, endIndex);
 
   useEffect(() => {
-    // Properties are loaded automatically by the context
-  }, []);
+    // Fetch all properties (Firestore + localStorage + mock) on mount
+    fetchProperties({}).catch(err => {
+      console.warn('Error fetching properties on mount:', err);
+    });
+  }, [fetchProperties]);
 
   // Handle URL parameters from property alerts
   useEffect(() => {
@@ -593,23 +644,27 @@ const Properties = () => {
               type="text"
               value={selectedVendor}
               onChange={(e) => setSelectedVendor(e.target.value)}
-              placeholder="Enter vendor name..."
+              placeholder="Name, email, or Vendor ID (VND-XXXXX)..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {uniqueVendors.length > 0 && selectedVendor && (
               <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow-lg">
                 {uniqueVendors
                   .filter(vendor => 
-                    vendor.name.toLowerCase().includes(selectedVendor.toLowerCase())
+                    vendor.name.toLowerCase().includes(selectedVendor.toLowerCase()) ||
+                    (vendor.code && vendor.code.toLowerCase().includes(selectedVendor.toLowerCase()))
                   )
                   .slice(0, 5)
-                  .map(vendor => (
+                  .map((vendor, index) => (
                     <button
-                      key={vendor.id}
-                      onClick={() => setSelectedVendor(vendor.name)}
+                      key={vendor.code || vendor.name || `vendor-${index}`}
+                      onClick={() => setSelectedVendor(vendor.code || vendor.name)}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded transition-colors"
                     >
-                      {vendor.name}
+                      <span>{vendor.name || 'Unknown Vendor'}</span>
+                      {vendor.code && (
+                        <span className="ml-2 text-xs text-blue-600 font-mono">({vendor.code})</span>
+                      )}
                     </button>
                   ))}
               </div>

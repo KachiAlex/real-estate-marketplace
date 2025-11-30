@@ -212,7 +212,10 @@ const AdminDashboard = () => {
     if (success) {
       setVerificationNotes('');
       setSelectedProperty(null);
-      loadAdminData();
+      // Refresh properties list after a short delay to ensure Firestore update is complete
+      setTimeout(() => {
+        loadAdminData();
+      }, 1000);
     }
   };
 
@@ -240,60 +243,49 @@ const AdminDashboard = () => {
   // Property approval/rejection handlers
   const handlePropertyApprove = async (propertyId, adminNotes) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       console.log('Approving property:', propertyId, 'with notes:', adminNotes);
       
-      const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/approve`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminNotes })
-      });
+      // Use verifyProperty from PropertyContext which handles Firestore directly
+      const success = await verifyProperty(propertyId, 'approved', adminNotes);
       
-      console.log('Approval response status:', response.status);
-      const data = await response.json();
-      console.log('Approval response data:', data);
-      
-      if (response.ok) {
-        alert('Property approved successfully!');
-        // Refresh properties list
-        loadAdminData();
+      if (success) {
+        // Refresh properties list after a short delay to ensure Firestore update is complete
+        setTimeout(() => {
+          loadAdminData();
+        }, 500);
         // Send notification to vendor (simulated)
         await sendNotificationToVendor(propertyId, 'approved', adminNotes);
       } else {
-        throw new Error(data.error || `HTTP ${response.status}: Failed to approve property`);
+        throw new Error('Failed to approve property');
       }
     } catch (error) {
       console.error('Error approving property:', error);
+      alert('Error approving property: ' + error.message);
       throw error;
     }
   };
 
   const handlePropertyReject = async (propertyId, rejectionReason, adminNotes) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       console.log('Rejecting property:', propertyId, 'with reason:', rejectionReason);
       
-      const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/reject`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejectionReason, adminNotes })
-      });
+      // Use verifyProperty from PropertyContext which handles Firestore directly
+      const notes = rejectionReason ? `${rejectionReason}. ${adminNotes || ''}`.trim() : adminNotes;
+      const success = await verifyProperty(propertyId, 'rejected', notes);
       
-      console.log('Rejection response status:', response.status);
-      const data = await response.json();
-      console.log('Rejection response data:', data);
-      
-      if (response.ok) {
-        alert('Property rejected successfully!');
-        // Refresh properties list
-        loadAdminData();
+      if (success) {
+        // Refresh properties list after a short delay to ensure Firestore update is complete
+        setTimeout(() => {
+          loadAdminData();
+        }, 500);
         // Send notification to vendor
         await sendNotificationToVendor(propertyId, 'rejected', rejectionReason);
       } else {
-        throw new Error(data.error || `HTTP ${response.status}: Failed to reject property`);
+        throw new Error('Failed to reject property');
       }
     } catch (error) {
       console.error('Error rejecting property:', error);
+      alert('Error rejecting property: ' + error.message);
       throw error;
     }
   };
@@ -554,8 +546,11 @@ const AdminDashboard = () => {
         {/* Properties Table */}
         {activeTab === 'properties' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900">Properties</h2>
+            <span className="text-sm text-gray-500">
+              Showing {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+            </span>
           </div>
           
           {error && (
@@ -589,7 +584,15 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {properties.map((property) => (
+                {properties.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                      <p className="text-lg font-medium">No properties found</p>
+                      <p className="text-sm mt-2">Try adjusting your filters or check if properties exist in Firestore.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  properties.map((property) => (
                   <tr key={property.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -704,7 +707,8 @@ const AdminDashboard = () => {
                       )}
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>

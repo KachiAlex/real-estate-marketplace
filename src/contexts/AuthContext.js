@@ -7,9 +7,31 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
-  updateProfile
+  updateProfile,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import toast from 'react-hot-toast';
+
+// Generate unique user code (e.g., "PAK-A3X7K2") - PAK = PropertyArk
+const generateUserCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars: 0,O,1,I
+  let code = 'PAK-';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
+// Generate unique vendor code (e.g., "VND-A3X7K2")
+const generateVendorCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars: 0,O,1,I
+  let code = 'VND-';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
 
 // Mock users for authentication - includes all vendor accounts from documentation
 const mockUsers = [
@@ -22,6 +44,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-ADY001',
+    vendorCode: 'VND-ADY001',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -32,6 +56,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-CHN002',
+    vendorCode: 'VND-CHN002',
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -42,6 +68,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-EMA003',
+    vendorCode: 'VND-EMA003',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -52,6 +80,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-FAI004',
+    vendorCode: 'VND-FAI004',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -62,6 +92,8 @@ const mockUsers = [
     password: 'password123',
     role: 'vendor',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-OLA005',
+    vendorCode: 'VND-OLA005',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -72,6 +104,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-BLO006',
+    vendorCode: 'VND-BLO006',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -82,6 +116,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-IBM007',
+    vendorCode: 'VND-IBM007',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -92,6 +128,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-GRE008',
+    vendorCode: 'VND-GRE008',
     avatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -102,6 +140,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-KEA009',
+    vendorCode: 'VND-KEA009',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -112,6 +152,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-TUO010',
+    vendorCode: 'VND-TUO010',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -120,6 +162,8 @@ const mockUsers = [
     lastName: 'Akoma',
     email: 'onyedika.akoma@gmail.com',
     password: 'dikaoliver2660',
+    userCode: 'PAK-ONA011',
+    vendorCode: 'VND-ONA011',
     role: 'user',
     roles: ['buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
@@ -133,6 +177,8 @@ const mockUsers = [
     password: 'agent123',
     role: 'vendor',
     roles: ['vendor'],
+    userCode: 'PAK-EMO101',
+    vendorCode: 'VND-EMO101',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -143,6 +189,8 @@ const mockUsers = [
     password: 'agent123',
     role: 'vendor',
     roles: ['vendor'],
+    userCode: 'PAK-FAI102',
+    vendorCode: 'VND-FAI102',
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -153,6 +201,8 @@ const mockUsers = [
     password: 'agent123',
     role: 'vendor',
     roles: ['vendor'],
+    userCode: 'PAK-CHN103',
+    vendorCode: 'VND-CHN103',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -163,6 +213,8 @@ const mockUsers = [
     password: 'owner123',
     role: 'vendor',
     roles: ['vendor'],
+    userCode: 'PAK-AIM201',
+    vendorCode: 'VND-AIM201',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
   },
   // Admin Account
@@ -174,6 +226,8 @@ const mockUsers = [
     password: 'admin123',
     role: 'admin',
     roles: ['admin', 'buyer', 'vendor'],
+    userCode: 'PAK-ADM001',
+    vendorCode: 'VND-ADMIN1',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   // Legacy test accounts
@@ -185,6 +239,8 @@ const mockUsers = [
     password: 'password123',
     role: 'user',
     roles: ['buyer', 'vendor'],
+    userCode: 'PAK-JOD001',
+    vendorCode: 'VND-JOD001',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
   },
   {
@@ -194,6 +250,8 @@ const mockUsers = [
     email: 'admin@example.com',
     password: 'admin123',
     role: 'admin',
+    userCode: 'PAK-ADM002',
+    vendorCode: 'VND-ADMIN2',
     roles: ['admin', 'buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   }
@@ -236,7 +294,7 @@ export const AuthProvider = ({ children }) => {
     
     if (savedUser) {
       try {
-        const userData = JSON.parse(savedUser);
+        let userData = JSON.parse(savedUser);
         // Clear guest users - they should not be loaded
         if (isGuestUser(userData)) {
           console.log('Removing guest user from localStorage');
@@ -244,6 +302,21 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('activeRole');
           setUser(null);
         } else {
+          // Ensure userCode and vendorCode exist for existing users
+          let needsUpdate = false;
+          if (!userData.userCode) {
+            userData.userCode = generateUserCode();
+            needsUpdate = true;
+          }
+          if (!userData.vendorCode) {
+            userData.vendorCode = generateVendorCode();
+            needsUpdate = true;
+          }
+          // Save updated user data back to localStorage
+          if (needsUpdate) {
+            console.log('AuthContext: Generated missing codes for user:', userData.userCode, userData.vendorCode);
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+          }
           setUser(userData);
         }
       } catch (error) {
@@ -332,7 +405,7 @@ export const AuthProvider = ({ children }) => {
         if (savedUser) {
           // User already logged in via mock authentication
           try {
-            const userData = JSON.parse(savedUser);
+            let userData = JSON.parse(savedUser);
             // Clear guest users - they should not be loaded
             if (isGuestUser(userData)) {
               console.log('Removing guest user from localStorage');
@@ -342,6 +415,20 @@ export const AuthProvider = ({ children }) => {
               setFirebaseAuthReady(true);
               setLoading(false);
               return;
+            }
+            
+            // Ensure userCode and vendorCode exist
+            let needsUpdate = false;
+            if (!userData.userCode) {
+              userData.userCode = generateUserCode();
+              needsUpdate = true;
+            }
+            if (!userData.vendorCode) {
+              userData.vendorCode = generateVendorCode();
+              needsUpdate = true;
+            }
+            if (needsUpdate) {
+              localStorage.setItem('currentUser', JSON.stringify(userData));
             }
             
             // Try to load avatar from Firestore if available
@@ -448,10 +535,86 @@ export const AuthProvider = ({ children }) => {
       }
 
       const { password: _, ...userWithoutPassword } = foundUser;
-      console.log('AuthContext: Login successful for user:', userWithoutPassword);
-      console.log('AuthContext: User role:', userWithoutPassword.role);
-      setUser(userWithoutPassword);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      console.log('AuthContext [v2]: Login successful for user:', userWithoutPassword);
+      console.log('AuthContext [v2]: User role:', userWithoutPassword.role);
+      
+      // IMPORTANT: Also sign into Firebase Auth to enable Firestore access
+      let firebaseUid = userWithoutPassword.id;
+      console.log('AuthContext [v2]: Will now attempt Firebase Auth sign-in...');
+      try {
+        console.log('AuthContext [v2]: Signing into Firebase Auth with email:', email);
+        
+        // Try to sign in with Firebase Auth
+        try {
+          console.log('AuthContext [v2]: Attempting signInWithEmailAndPassword...');
+          const firebaseCredential = await signInWithEmailAndPassword(auth, email, password);
+          firebaseUid = firebaseCredential.user.uid;
+          console.log('AuthContext [v2]: Firebase Auth sign-in successful, uid:', firebaseUid);
+        } catch (signInError) {
+          console.log('AuthContext [v2]: Sign-in error code:', signInError.code, signInError.message);
+          // If user doesn't exist in Firebase, create the account
+          if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+            console.log('AuthContext [v2]: Firebase user not found, creating account...');
+            try {
+              const firebaseCredential = await createUserWithEmailAndPassword(auth, email, password);
+              firebaseUid = firebaseCredential.user.uid;
+              
+              // Update the profile with display name
+              await updateProfile(firebaseCredential.user, {
+                displayName: `${userWithoutPassword.firstName} ${userWithoutPassword.lastName}`
+              });
+              
+              console.log('AuthContext [v2]: Firebase account created, uid:', firebaseUid);
+              
+              // Save user data to Firestore
+              try {
+                const { doc, setDoc } = await import('firebase/firestore');
+                await setDoc(doc(db, 'users', firebaseUid), {
+                  email: email,
+                  firstName: userWithoutPassword.firstName,
+                  lastName: userWithoutPassword.lastName,
+                  role: userWithoutPassword.role,
+                  roles: userWithoutPassword.roles || [userWithoutPassword.role],
+                  createdAt: new Date().toISOString()
+                }, { merge: true });
+                console.log('AuthContext [v2]: User data saved to Firestore');
+              } catch (firestoreError) {
+                console.warn('AuthContext [v2]: Failed to save user to Firestore:', firestoreError);
+              }
+            } catch (createError) {
+              console.error('AuthContext [v2]: Failed to create Firebase account:', createError);
+              // Continue with mock auth even if Firebase auth fails
+            }
+          } else {
+            console.warn('AuthContext [v2]: Firebase sign-in error:', signInError.code, signInError.message);
+            // Continue with mock auth even if Firebase auth fails
+          }
+        }
+      } catch (firebaseError) {
+        console.error('AuthContext [v2]: Firebase Auth outer error:', firebaseError);
+        // Non-fatal - continue with mock authentication
+      }
+      
+      console.log('AuthContext [v2]: Final Firebase UID:', firebaseUid);
+      console.log('AuthContext [v2]: auth.currentUser:', auth.currentUser ? 'set' : 'null');
+      
+      // Ensure user has userCode and vendorCode (generate if missing)
+      const userCodeToUse = userWithoutPassword.userCode || generateUserCode();
+      const vendorCodeToUse = userWithoutPassword.vendorCode || generateVendorCode();
+      
+      // Update user object with Firebase UID and ensure codes exist
+      const finalUser = {
+        ...userWithoutPassword,
+        uid: firebaseUid, // Add Firebase UID
+        id: userWithoutPassword.id, // Keep original ID for compatibility
+        userCode: userCodeToUse,
+        vendorCode: vendorCodeToUse
+      };
+      
+      console.log('AuthContext [v2]: User codes - userCode:', userCodeToUse, 'vendorCode:', vendorCodeToUse);
+      
+      setUser(finalUser);
+      localStorage.setItem('currentUser', JSON.stringify(finalUser));
       
       // Handle redirect after login
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
@@ -480,12 +643,12 @@ export const AuthProvider = ({ children }) => {
         if (token) {
           const { db } = await import('../config/firebase');
           const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
-          await setDoc(doc(db, 'userFcmTokens', userWithoutPassword.id), { tokens: arrayUnion(token) }, { merge: true });
+          await setDoc(doc(db, 'userFcmTokens', finalUser.uid || finalUser.id), { tokens: arrayUnion(token) }, { merge: true });
         }
       } catch (e) {
         console.warn('FCM registration skipped or failed:', e?.message || e);
       }
-      return { success: true, user: userWithoutPassword, redirectUrl: redirectTo };
+      return { success: true, user: finalUser, redirectUrl: redirectTo };
     } catch (error) {
       setError(error.message);
       toast.error(error.message);
@@ -624,7 +787,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { firstName, lastName, email, password } = userData;
       
-      // Check if user already exists
+      // Check if user already exists in mock users
       const existingUser = mockUsers.find(u => u.email === email);
       if (existingUser) {
         throw new Error('User with this email already exists');
@@ -634,8 +797,63 @@ export const AuthProvider = ({ children }) => {
       const userRoles = userData.roles || ['buyer'];
       const activeRole = userData.activeRole || 'buyer';
       
+      // Generate unique codes for the user
+      const userCode = generateUserCode();
+      const vendorCode = generateVendorCode();
+      console.log('AuthContext: Generated userCode:', userCode, 'vendorCode:', vendorCode);
+      
+      // IMPORTANT: Create Firebase account first
+      let firebaseUid = Date.now().toString();
+      try {
+        console.log('AuthContext: Creating Firebase account for:', email);
+        const firebaseCredential = await createUserWithEmailAndPassword(auth, email, password);
+        firebaseUid = firebaseCredential.user.uid;
+        
+        // Update the profile with display name
+        await updateProfile(firebaseCredential.user, {
+          displayName: `${firstName} ${lastName}`
+        });
+        
+        console.log('AuthContext: Firebase account created, uid:', firebaseUid);
+        
+        // Save user data to Firestore
+        try {
+          const { doc, setDoc } = await import('firebase/firestore');
+          await setDoc(doc(db, 'users', firebaseUid), {
+            email: email,
+            firstName: firstName,
+            lastName: lastName,
+            phone: userData.phone || '',
+            role: userRoles.includes('vendor') ? 'vendor' : 'user',
+            roles: userRoles,
+            userCode: userCode,
+            vendorCode: vendorCode,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+          console.log('AuthContext: User data saved to Firestore with userCode:', userCode, 'vendorCode:', vendorCode);
+        } catch (firestoreError) {
+          console.warn('AuthContext: Failed to save user to Firestore:', firestoreError);
+        }
+      } catch (firebaseError) {
+        if (firebaseError.code === 'auth/email-already-in-use') {
+          // Try to sign in instead
+          try {
+            const firebaseCredential = await signInWithEmailAndPassword(auth, email, password);
+            firebaseUid = firebaseCredential.user.uid;
+            console.log('AuthContext: Signed into existing Firebase account, uid:', firebaseUid);
+          } catch (signInError) {
+            console.warn('AuthContext: Firebase account exists but password mismatch:', signInError);
+            throw new Error('An account with this email already exists with a different password');
+          }
+        } else {
+          console.warn('AuthContext: Firebase registration error:', firebaseError);
+          // Continue with local-only registration
+        }
+      }
+      
       const newUser = {
-        id: Date.now().toString(),
+        id: firebaseUid, // Use Firebase UID as primary ID
+        uid: firebaseUid,
         firstName,
         lastName,
         email,
@@ -643,6 +861,8 @@ export const AuthProvider = ({ children }) => {
         role: userRoles.includes('vendor') ? 'vendor' : 'user',
         roles: userRoles,
         activeRole: activeRole,
+        userCode: userCode, // Unique user ID for profile
+        vendorCode: vendorCode, // Unique vendor ID for property search
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         // Include vendorData if provided
         ...(userData.vendorData && { vendorData: userData.vendorData })
@@ -811,18 +1031,38 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
+      // Generate vendorCode if user doesn't have one
+      const newVendorCode = user.vendorCode || generateVendorCode();
+      console.log('AuthContext: Vendor code for registration:', newVendorCode);
+      
       // Update user with vendor role and data
       const updatedRoles = user.roles ? [...user.roles, 'vendor'] : ['buyer', 'vendor'];
       const updatedUser = {
         ...user,
         roles: updatedRoles,
         activeRole: 'vendor',
+        vendorCode: newVendorCode,
         vendorData: {
           ...vendorData,
+          vendorCode: newVendorCode,
           registeredAt: new Date().toISOString(),
           status: 'active'
         }
       };
+      
+      // Update in Firestore if user has a Firebase UID
+      if (user.uid || user.id) {
+        try {
+          const { doc, setDoc } = await import('firebase/firestore');
+          await setDoc(doc(db, 'users', user.uid || user.id), {
+            vendorCode: newVendorCode,
+            roles: updatedRoles
+          }, { merge: true });
+          console.log('AuthContext: Updated vendorCode in Firestore');
+        } catch (firestoreError) {
+          console.warn('AuthContext: Failed to update vendorCode in Firestore:', firestoreError);
+        }
+      }
       
       // Update state and localStorage
       setUser(updatedUser);
@@ -830,7 +1070,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       localStorage.setItem('activeRole', 'vendor');
       
-      toast.success('Successfully registered as vendor!');
+      toast.success(`Successfully registered as vendor! Your Vendor ID: ${newVendorCode}`);
       
       // Return success - let the calling component handle navigation
       return { success: true, user: updatedUser, shouldNavigate: true, navigateTo: '/vendor/dashboard' };

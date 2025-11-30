@@ -34,6 +34,10 @@ const Header = () => {
     '/vendor/notifications', '/vendor/help', '/mortgage-bank/dashboard'
   ];
   const isDashboardRoute = dashboardRoutes.some(route => location.pathname.startsWith(route));
+  
+  // Detect if we're in vendor context to route profile correctly
+  const isVendorContext = location.pathname.startsWith('/vendor');
+  const profilePath = isVendorContext ? '/vendor/profile' : '/profile';
 
   // Quick Filters with sublinks
   const quickFilters = {
@@ -182,7 +186,7 @@ const Header = () => {
                       )}
                     </div>
                     <Link
-                      to="/dashboard"
+                      to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsUserMenuOpen(false);
@@ -192,7 +196,7 @@ const Header = () => {
                       Dashboard
                     </Link>
                     <Link
-                      to="/profile"
+                      to={profilePath}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsUserMenuOpen(false);
@@ -528,7 +532,7 @@ const Header = () => {
                       </div>
                     </div>
                     <Link
-                      to="/profile"
+                      to={profilePath}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsUserMenuOpen(false);
@@ -538,7 +542,7 @@ const Header = () => {
                       Profile
                     </Link>
                     <Link
-                      to="/dashboard"
+                      to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsUserMenuOpen(false);
@@ -663,14 +667,14 @@ const Header = () => {
                     </span>
                   </div>
                   <Link
-                    to="/profile"
+                    to={profilePath}
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Profile
                   </Link>
                   <Link
-                    to="/dashboard"
+                    to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
                     onClick={() => {
                       setIsMobileMenuOpen(false);

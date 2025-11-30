@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useProperty, LISTING_TYPES, PROPERTY_TYPES } from '../contexts/PropertyContext';
+import { useProperty } from '../contexts/PropertyContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaUsers, FaPlus, FaEdit, FaTrash, FaImage, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTag, FaPhone, FaCheck, FaTimes, FaExclamationTriangle, FaBell } from 'react-icons/fa';
+import { db, auth } from '../config/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaPlus, FaEdit, FaTrash, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaPhone, FaCheck, FaTimes, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 import PropertyVerification from '../components/PropertyVerification';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
 import NotificationDropdown from '../components/NotificationDropdown';
 import toast from 'react-hot-toast';
 
 const VendorDashboard = () => {
-  const { user } = useAuth();
-  const { addProperty, deleteProperty } = useProperty();
-  const { unreadCount } = useNotifications();
+  const { user, firebaseAuthReady } = useAuth();
+  const { deleteProperty } = useProperty();
+  useNotifications(); // Keep for side effects
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
@@ -36,6 +38,7 @@ const VendorDashboard = () => {
   const isAgent = user?.vendorData?.vendorCategory === 'agent';
   const isPropertyOwner = user?.vendorData?.vendorCategory === 'property_owner';
   const [properties, setProperties] = useState([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [analytics, setAnalytics] = useState({});
   const [inquiries, setInquiries] = useState([]);
   const [viewingRequests, setViewingRequests] = useState([]);
@@ -58,87 +61,270 @@ const VendorDashboard = () => {
     }
   }, [location.pathname]);
 
-  // Load vendor-specific properties from localStorage
-  useEffect(() => {
-    // Example demo data (not tied to any vendor) kept only for potential future use
-    const base = [
-      {
-        id: 1,
-        title: "Luxury Apartment in Victoria Island",
-        price: 75000000,
-        location: "Victoria Island, Lagos",
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 210,
-        image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-        status: "active",
-        views: 1247,
-        inquiries: 23,
-        favorites: 45,
-        dateListed: "2024-01-15",
-        lastUpdated: "2024-01-20"
-      },
-      {
-        id: 2,
-        title: "Modern Family House in Lekki",
-        price: 120000000,
-        location: "Lekki Phase 1, Lagos",
-        bedrooms: 4,
-        bathrooms: 3,
-        area: 350,
-        image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-        status: "pending",
-        views: 892,
-        inquiries: 15,
-        favorites: 32,
-        dateListed: "2024-01-10",
-        lastUpdated: "2024-01-18"
-      },
-      {
-        id: 3,
-        title: "Executive Duplex in Abuja",
-        price: 180000000,
-        location: "Maitama, Abuja",
-        bedrooms: 5,
-        bathrooms: 4,
-        area: 450,
-        image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&h=300&fit=crop",
-        status: "sold",
-        views: 2156,
-        inquiries: 67,
-        favorites: 89,
-        dateListed: "2023-12-01",
-        lastUpdated: "2024-01-05"
-      }
-    ];
-
-    // Load only this vendor's properties from localStorage
-    try {
-      const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
-      if (!vendorKey) {
-        setProperties([]);
-      } else {
-        const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
-        setProperties(stored || []);
-      }
-    } catch (e) {
+  // Fetch vendor's properties from Firestore and localStorage fallback
+  const fetchVendorProperties = useCallback(async () => {
+    if (!user) {
       setProperties([]);
+      setPropertiesLoading(false);
+      return;
     }
 
-    // Mock analytics data
-    setAnalytics({
-      totalProperties: 12,
-      activeListings: 8,
-      soldProperties: 4,
-      totalViews: 15420,
-      totalInquiries: 156,
-      totalRevenue: 450000000,
-      averagePrice: 37500000,
-      conversionRate: 12.5,
-      monthlyViews: 3240,
-      monthlyInquiries: 34
-    });
+    setPropertiesLoading(true);
+    
+    try {
+      const fbUser = auth.currentUser;
+      const userId = fbUser?.uid || user?.id || user?.uid;
+      const userEmail = fbUser?.email || user?.email;
+      
+      console.log('VendorDashboard: Fetching properties for user:', { userId, userEmail });
+      
+      if (!userId && !userEmail) {
+        console.log('VendorDashboard: No user ID or email found');
+        setProperties([]);
+        setPropertiesLoading(false);
+        return;
+      }
 
+      // Fetch properties from Firestore where ownerId or ownerEmail matches
+      const propertiesRef = collection(db, 'properties');
+      let allProps = [];
+      let firestoreError = null;
+
+      // Try to fetch by ownerId first
+      if (userId) {
+        try {
+          const ownerIdQuery = query(propertiesRef, where('ownerId', '==', userId));
+          const ownerIdSnap = await getDocs(ownerIdQuery);
+          const ownerIdProps = ownerIdSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            source: 'firestore',
+            createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || new Date()
+          }));
+          console.log('VendorDashboard: Found', ownerIdProps.length, 'properties by ownerId in Firestore');
+          allProps = [...ownerIdProps];
+        } catch (err) {
+          console.warn('VendorDashboard: Error fetching by ownerId:', err);
+          firestoreError = err;
+        }
+      }
+
+      // Also fetch by ownerEmail if available
+      if (userEmail) {
+        try {
+          const emailQuery = query(propertiesRef, where('ownerEmail', '==', userEmail));
+          const emailSnap = await getDocs(emailQuery);
+          const emailProps = emailSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            source: 'firestore',
+            createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || new Date()
+          }));
+          console.log('VendorDashboard: Found', emailProps.length, 'properties by ownerEmail in Firestore');
+          
+          // Merge and deduplicate (in case same property is found by both queries)
+          emailProps.forEach(prop => {
+            if (!allProps.find(p => p.id === prop.id)) {
+              allProps.push(prop);
+            }
+          });
+        } catch (err) {
+          console.warn('VendorDashboard: Error fetching by ownerEmail:', err);
+          firestoreError = err;
+        }
+      }
+
+      // FALLBACK: Also check localStorage for properties saved locally (when Firestore fails)
+      try {
+        const localProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+        const userLocalProps = localProperties.filter(prop => {
+          const matchesId = prop.ownerId === userId || prop.ownerId === user?.id;
+          const matchesEmail = prop.ownerEmail === userEmail;
+          return matchesId || matchesEmail;
+        });
+        
+        if (userLocalProps.length > 0) {
+          console.log('VendorDashboard: Found', userLocalProps.length, 'properties in localStorage');
+          
+          // Add localStorage properties that aren't already in allProps
+          userLocalProps.forEach(prop => {
+            if (!allProps.find(p => p.id === prop.id)) {
+              allProps.push({
+                ...prop,
+                source: 'localStorage',
+                createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('VendorDashboard: Error reading localStorage:', err);
+      }
+
+      // Show warning if Firestore failed but we have local data
+      if (firestoreError && allProps.length > 0) {
+        console.warn('VendorDashboard: Using localStorage fallback due to Firestore error');
+      }
+
+      // Sort by createdAt descending
+      allProps.sort((a, b) => {
+        const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt || 0);
+        const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      console.log('VendorDashboard: Total properties found:', allProps.length);
+
+      // Normalize property data for display
+      const normalizedProps = allProps.map(property => {
+        const details = property.details || {};
+        const images = property.images || [];
+        const primaryImage = images.find(img => img.isPrimary)?.url || 
+                           (typeof images[0] === 'string' ? images[0] : images[0]?.url) ||
+                           'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop';
+        
+        // Determine display status based on approval and listing type
+        let displayStatus = 'pending';
+        if (property.approvalStatus === 'approved' || property.verificationStatus === 'approved') {
+          displayStatus = 'active';
+        } else if (property.approvalStatus === 'rejected' || property.verificationStatus === 'rejected') {
+          displayStatus = 'rejected';
+        } else if (property.approvalStatus === 'pending' || property.verificationStatus === 'pending') {
+          displayStatus = 'pending';
+        }
+
+        return {
+          ...property,
+          image: primaryImage,
+          bedrooms: property.bedrooms || details.bedrooms || 0,
+          bathrooms: property.bathrooms || details.bathrooms || 0,
+          area: property.area || details.sqft || 0,
+          location: typeof property.location === 'object' 
+            ? `${property.location.address || ''}, ${property.location.city || ''}, ${property.location.state || ''}`.replace(/^, |, $/g, '')
+            : property.location || 'Location not specified',
+          status: displayStatus,
+          views: property.views || 0,
+          inquiries: property.inquiriesCount || 0,
+          favorites: property.favoritesCount || 0,
+          dateListed: property.createdAt instanceof Date 
+            ? property.createdAt.toISOString().split('T')[0]
+            : (typeof property.createdAt === 'string' ? property.createdAt.split('T')[0] : 'Unknown'),
+          lastUpdated: property.updatedAt?.toDate?.()?.toISOString?.()?.split('T')[0] ||
+                      (typeof property.updatedAt === 'string' ? property.updatedAt.split('T')[0] : null)
+        };
+      });
+
+      console.log('VendorDashboard: Total properties loaded:', normalizedProps.length);
+      setProperties(normalizedProps);
+
+      // Update analytics based on actual properties
+      const activeCount = normalizedProps.filter(p => p.status === 'active').length;
+      const pendingCount = normalizedProps.filter(p => p.status === 'pending').length;
+      const totalViews = normalizedProps.reduce((sum, p) => sum + (p.views || 0), 0);
+      const totalInquiries = normalizedProps.reduce((sum, p) => sum + (p.inquiries || 0), 0);
+
+      setAnalytics({
+        totalProperties: normalizedProps.length,
+        activeListings: activeCount,
+        pendingListings: pendingCount,
+        soldProperties: normalizedProps.filter(p => p.status === 'sold').length,
+        totalViews: totalViews,
+        totalInquiries: totalInquiries,
+        totalRevenue: 0,
+        averagePrice: normalizedProps.length > 0 
+          ? normalizedProps.reduce((sum, p) => sum + (p.price || 0), 0) / normalizedProps.length 
+          : 0,
+        conversionRate: totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : 0,
+        monthlyViews: 0,
+        monthlyInquiries: 0
+      });
+
+    } catch (error) {
+      console.error('VendorDashboard: Error fetching properties:', error);
+      toast.error('Failed to load properties');
+      setProperties([]);
+    } finally {
+      setPropertiesLoading(false);
+    }
+  }, [user]);
+
+  // Load vendor's properties when user or auth state changes
+  useEffect(() => {
+    if (firebaseAuthReady) {
+      fetchVendorProperties();
+    }
+  }, [firebaseAuthReady, fetchVendorProperties]);
+
+  // Sync localStorage properties to Firestore (runs once when component mounts and auth is ready)
+  useEffect(() => {
+    const syncLocalPropertiesToFirestore = async () => {
+      if (!firebaseAuthReady || !auth.currentUser) return;
+      
+      try {
+        const localProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+        const fbUser = auth.currentUser;
+        
+        // Find properties that belong to this user and haven't been synced to Firestore
+        const unsyncedProps = localProperties.filter(prop => {
+          const belongsToUser = prop.ownerId === fbUser.uid || prop.ownerEmail === fbUser.email;
+          const notSynced = !prop.savedToFirestore && prop.id?.startsWith('local-');
+          return belongsToUser && notSynced;
+        });
+        
+        if (unsyncedProps.length === 0) return;
+        
+        console.log('VendorDashboard: Found', unsyncedProps.length, 'unsynced properties to sync to Firestore');
+        
+        for (const prop of unsyncedProps) {
+          try {
+            // Check if property already exists in Firestore (by checking if we can find it)
+            const propertiesRef = collection(db, 'properties');
+            
+            // Remove local-only fields before syncing
+            const { id: localId, savedToFirestore, source, ...propertyData } = prop;
+            
+            const firestoreDoc = await addDoc(propertiesRef, {
+              ...propertyData,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              ownerId: fbUser.uid,
+              ownerEmail: fbUser.email,
+              syncedFromLocal: true,
+              originalLocalId: localId
+            });
+            
+            console.log('VendorDashboard: Synced property', localId, 'to Firestore as', firestoreDoc.id);
+            
+            // Update localStorage to mark as synced
+            const updatedLocal = localProperties.map(p => 
+              p.id === localId 
+                ? { ...p, savedToFirestore: true, firestoreId: firestoreDoc.id }
+                : p
+            );
+            localStorage.setItem('mockProperties', JSON.stringify(updatedLocal));
+            
+            toast.success(`Property "${prop.title}" has been synced to cloud storage`);
+          } catch (syncError) {
+            console.error('VendorDashboard: Failed to sync property:', prop.id, syncError);
+          }
+        }
+        
+        // Refresh the properties list after syncing
+        if (unsyncedProps.length > 0) {
+          fetchVendorProperties();
+        }
+      } catch (error) {
+        console.error('VendorDashboard: Error during property sync:', error);
+      }
+    };
+    
+    // Run sync after a short delay to ensure everything is loaded
+    const syncTimeout = setTimeout(syncLocalPropertiesToFirestore, 2000);
+    return () => clearTimeout(syncTimeout);
+  }, [firebaseAuthReady, fetchVendorProperties]);
+
+  // Load mock inquiries and viewing requests
+  useEffect(() => {
     // Mock inquiries data
     setInquiries([
       {
@@ -170,7 +356,6 @@ const VendorDashboard = () => {
     // Load viewing requests created by buyers from localStorage
     try {
       const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
-      // Optional: filter to requests for this vendor's properties if you have mapping
       setViewingRequests(stored);
     } catch (e) {
       setViewingRequests([]);
@@ -206,27 +391,12 @@ const VendorDashboard = () => {
     }
   };
 
-  const loadProperties = () => {
-    // Reload only this vendor's properties from localStorage
-    try {
-      const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
-      if (!vendorKey) {
-        setProperties([]);
-        return;
-      }
-      const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
-      setProperties(stored || []);
-    } catch {
-      setProperties([]);
-    }
-  };
-
   const handleVerificationSuccess = (message) => {
     toast.success(message || 'Verification updated');
     setShowVerificationModal(false);
     setSelectedProperty(null);
-    // Refresh properties list
-    loadProperties();
+    // Refresh properties list from Firestore
+    fetchVendorProperties();
   };
 
   const handleRequestVerification = (property) => {
@@ -244,21 +414,14 @@ const VendorDashboard = () => {
     const confirmed = window.confirm('Are you sure you want to delete this property?');
     if (!confirmed) return;
 
-    // Update local vendor cache
-    try {
-      const vendorKey = `vendor_properties_${user.id || user.uid}`;
-      const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
-      const updated = stored.filter((p) => p.id !== propertyId);
-      localStorage.setItem(vendorKey, JSON.stringify(updated));
-    } catch {
-      // ignore localStorage errors
-    }
-
-    // Update in-memory list
+    // Optimistic update - remove from local state immediately
     setProperties((prev) => prev.filter((p) => p.id !== propertyId));
 
-    // Best-effort backend delete
+    // Delete from backend
     await deleteProperty(propertyId);
+    
+    // Refresh list from Firestore to ensure consistency
+    await fetchVendorProperties();
   };
 
   const getUserInitials = () => {
@@ -319,6 +482,31 @@ const VendorDashboard = () => {
                 : 'Manage your properties, track inquiries, schedule viewings, and grow your real estate portfolio. List, edit, and monitor all your property listings in one place.'
               }
             </p>
+
+            {/* Vendor ID Card */}
+            {user?.vendorCode && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4 border border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-200 text-sm">Your Vendor ID (share with prospects)</p>
+                    <p className="text-2xl font-mono font-bold text-white tracking-wider">{user.vendorCode}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(user.vendorCode);
+                      toast.success('Vendor ID copied to clipboard!');
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <FaCheck className="text-sm" />
+                    Copy
+                  </button>
+                </div>
+                <p className="text-blue-200 text-xs mt-2">
+                  Buyers can search for your properties using this ID in the Properties tab.
+                </p>
+              </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -520,16 +708,56 @@ const VendorDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">My Properties</h3>
-                <button 
-                  onClick={() => navigate('/vendor/add-property')}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <FaPlus className="h-4 w-4" />
-                  <span>Add Property</span>
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button 
+                    onClick={fetchVendorProperties}
+                    className="btn-secondary flex items-center space-x-2"
+                    disabled={propertiesLoading}
+                  >
+                    {propertiesLoading ? (
+                      <FaSpinner className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>Refresh</span>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => navigate('/vendor/add-property')}
+                    className="btn-primary flex items-center space-x-2"
+                  >
+                    <FaPlus className="h-4 w-4" />
+                    <span>Add Property</span>
+                  </button>
+                </div>
               </div>
 
+              {/* Loading State */}
+              {propertiesLoading && (
+                <div className="flex items-center justify-center py-12">
+                  <FaSpinner className="h-8 w-8 text-blue-600 animate-spin" />
+                  <span className="ml-3 text-gray-600">Loading your properties...</span>
+                </div>
+              )}
 
+              {/* No Properties State */}
+              {!propertiesLoading && properties.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <FaHome className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-4 text-lg font-medium text-gray-900">No properties yet</h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Get started by adding your first property listing.
+                  </p>
+                  <button 
+                    onClick={() => navigate('/vendor/add-property')}
+                    className="mt-4 btn-primary inline-flex items-center space-x-2"
+                  >
+                    <FaPlus className="h-4 w-4" />
+                    <span>Add Your First Property</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Properties Grid */}
+              {!propertiesLoading && properties.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {properties.map((property) => (
                   <div key={property.id} className="property-card">
@@ -539,10 +767,15 @@ const VendorDashboard = () => {
                         alt={property.title}
                         className="w-full h-48 object-cover rounded-t-lg"
                       />
-                      <div className="absolute top-3 left-3">
+                      <div className="absolute top-3 left-3 flex flex-col space-y-1">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
                           {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
                         </span>
+                        {property.source === 'localStorage' && !property.savedToFirestore && (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="This property is stored locally and may be lost if you clear browser data">
+                            ⚠️ Local Only
+                          </span>
+                        )}
                       </div>
                       <div className="absolute top-3 right-3 flex space-x-2">
                         <button
@@ -660,6 +893,7 @@ const VendorDashboard = () => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { db, auth } from '../config/firebase';
-import { doc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -239,9 +239,8 @@ export const PropertyProvider = ({ children }) => {
 
   // Load properties on mount
   useEffect(() => {
-    const loadProperties = () => {
+    // Transform and set mock properties initially (so UI isn't empty)
       try {
-        // Use mock data directly for now (since backend is not deployed to production)
         const propertiesData = mockProperties.map(property => {
           const details = property.details || {};
           return {
@@ -263,13 +262,13 @@ export const PropertyProvider = ({ children }) => {
           };
         });
         setProperties(propertiesData);
-        console.log('Loaded mock properties:', propertiesData.length);
+      console.log('Loaded mock properties initially:', propertiesData.length);
       } catch (error) {
-        console.error('Error loading properties:', error);
+      console.error('Error loading mock properties:', error);
       }
-    };
     
-    loadProperties();
+    // Note: fetchProperties() will be called by components that need all properties
+    // This just sets the initial mock properties so UI isn't empty
   }, []);
 
   // Fetch properties with filters
@@ -280,29 +279,396 @@ export const PropertyProvider = ({ children }) => {
     try {
       let data = [...mockProperties]; // Default to mock data
       
-      // Try Firestore if authentication is ready
-      if (firebaseAuthReady && auth.currentUser) {
+      // Try Firestore (public read is allowed, so we can fetch even without auth)
         try {
+        console.log('PropertyContext: Attempting to fetch properties from Firestore...');
       const propertiesRef = collection(db, 'properties');
       const constraints = [];
 
+        // Build query constraints
       if (newFilters.type) constraints.push(where('type', '==', newFilters.type));
       if (newFilters.status) constraints.push(where('listingType', '==', newFilters.status));
       if (newFilters.city) constraints.push(where('location.city', '==', newFilters.city));
-      constraints.push(orderBy('createdAt', 'desc'));
-      if (newFilters.limit) constraints.push(limit(Number(newFilters.limit)));
+        
+        // Try with orderBy first, but fallback if index is missing
+        let snap;
+        let firestoreProps = [];
+        try {
+          const constraintsWithOrder = [...constraints, orderBy('createdAt', 'desc')];
+          if (newFilters.limit) constraintsWithOrder.push(limit(Number(newFilters.limit)));
+          const q = query(propertiesRef, ...constraintsWithOrder);
+          snap = await getDocs(q);
+        } catch (orderByError) {
+          // If orderBy fails (missing index), fetch without ordering
+          console.warn('PropertyContext: orderBy failed, fetching all properties without ordering:', orderByError);
+          const constraintsNoOrder = [...constraints];
+          if (newFilters.limit) constraintsNoOrder.push(limit(Number(newFilters.limit)));
+          const q = constraintsNoOrder.length > 0 ? query(propertiesRef, ...constraintsNoOrder) : query(propertiesRef);
+          snap = await getDocs(q);
+        }
+        
+        firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      const q = query(propertiesRef, ...constraints);
-      const snap = await getDocs(q);
-      const firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Enrich properties with vendorCode if missing
+          // Try to fetch vendorCode from users collection for properties that don't have it
+          // NOTE: Attempt enrichment if user is authenticated (either via auth.currentUser or user context)
+          const isAuthenticated = auth.currentUser || (user && user.id);
+          if (firestoreProps.length > 0 && isAuthenticated) {
+            try {
+              // query, where, getDocs, collection already imported at top
+              console.log('PropertyContext: Enriching', firestoreProps.length, 'properties with vendorCode (authenticated user)...');
+              
+              // First, get all unique ownerIds that need enrichment
+              const ownerIdsToLookup = new Set();
+              firestoreProps.forEach(prop => {
+                const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
+                if (!hasAllVendorFields && prop.ownerId) {
+                  ownerIdsToLookup.add(prop.ownerId);
+                }
+              });
+              
+              console.log('PropertyContext: Need to lookup vendor info for', ownerIdsToLookup.size, 'owners');
+              
+              // Fetch all user documents at once (batch lookup)
+              const userCodeMap = new Map(); // ownerId -> { vendorCode, vendorName, vendorEmail }
+              const emailToVendorCodeMap = new Map(); // email -> { vendorCode, vendorName, vendorEmail }
+              
+              if (ownerIdsToLookup.size > 0) {
+                // Get unique owner emails for properties that need enrichment
+                const ownerEmails = [...new Set(firestoreProps
+                  .filter(p => {
+                    const hasAllVendorFields = p.vendorCode && p.vendorName && p.vendorEmail && p.vendorId;
+                    return !hasAllVendorFields && p.ownerEmail;
+                  })
+                  .map(p => p.ownerEmail.toLowerCase()))];
+                
+                console.log('PropertyContext: Also checking', ownerEmails.length, 'owner emails for vendorCode');
+                
+                // Look up users by ownerId
+                await Promise.all(Array.from(ownerIdsToLookup).map(async (ownerId) => {
+                  try {
+                    const userRef = doc(db, 'users', ownerId);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                      const userData = userSnap.data();
+                      const vendorName = userData.firstName && userData.lastName 
+                        ? `${userData.firstName} ${userData.lastName}`.trim() 
+                        : userData.displayName || '';
+                      const vendorInfo = {
+                        vendorCode: userData.vendorCode || '',
+                        vendorName: vendorName,
+                        vendorEmail: userData.email || ''
+                      };
+                      
+                      if (userData.vendorCode) {
+                        userCodeMap.set(ownerId, vendorInfo);
+                        if (userData.email) {
+                          emailToVendorCodeMap.set(userData.email.toLowerCase(), vendorInfo);
+                        }
+                        console.log('PropertyContext: Found vendor info for owner', ownerId, vendorInfo);
+                      }
+                    }
+                  } catch (err) {
+                    console.warn('PropertyContext: Could not fetch user', ownerId, err);
+                  }
+                }));
+                
+                // Also try to look up users by email (fallback if ownerId doesn't match)
+                if (ownerEmails.length > 0) {
+                  try {
+                    const usersRef = collection(db, 'users');
+                    await Promise.all(ownerEmails.map(async (email) => {
+                      try {
+                        const emailQuery = query(usersRef, where('email', '==', email));
+                        const emailSnap = await getDocs(emailQuery);
+                        if (!emailSnap.empty) {
+                          const userData = emailSnap.docs[0].data();
+                          const vendorName = userData.firstName && userData.lastName 
+                            ? `${userData.firstName} ${userData.lastName}`.trim() 
+                            : userData.displayName || '';
+                          const vendorInfo = {
+                            vendorCode: userData.vendorCode || '',
+                            vendorName: vendorName,
+                            vendorEmail: userData.email || email
+                          };
+                          if (userData.vendorCode) {
+                            emailToVendorCodeMap.set(email.toLowerCase(), vendorInfo);
+                            console.log('PropertyContext: Found vendor info by email', email, vendorInfo);
+                          }
+                        }
+                      } catch (err) {
+                        console.warn('PropertyContext: Could not query user by email', email, err);
+                      }
+                    }));
+                  } catch (err) {
+                    console.warn('PropertyContext: Error querying users by email:', err);
+                  }
+                }
+              }
+              
+              // Now enrich properties with vendorCode and vendor details
+              const enrichedProps = firestoreProps.map((prop) => {
+                // Check if property already has all vendor fields
+                const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
+                if (hasAllVendorFields) {
+                  // Ensure owner object also has vendor info
+                  if (prop.owner && !prop.owner.vendorCode) {
+                    prop.owner.vendorCode = prop.vendorCode;
+                    if (!prop.owner.name) {
+                      prop.owner.name = prop.vendorName;
+                    }
+                    if (!prop.owner.email) {
+                      prop.owner.email = prop.vendorEmail;
+                    }
+                  }
+                  return prop;
+                }
+                
+                let vendorCode = prop.vendorCode || null;
+                let vendorName = prop.vendorName || (prop.owner?.name || (prop.owner ? `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim() : ''));
+                let vendorEmail = prop.vendorEmail || prop.ownerEmail || prop.owner?.email || '';
+                let vendorId = prop.vendorId || prop.ownerId || prop.owner?.id || '';
+                
+                // Try ownerId first to get vendor info
+                let vendorInfo = null;
+                if (prop.ownerId && userCodeMap.has(prop.ownerId)) {
+                  vendorInfo = userCodeMap.get(prop.ownerId);
+                }
+                // Fallback to email lookup
+                else if (prop.ownerEmail && emailToVendorCodeMap.has(prop.ownerEmail.toLowerCase())) {
+                  vendorInfo = emailToVendorCodeMap.get(prop.ownerEmail.toLowerCase());
+                }
+                
+                // Use vendor info from lookup if available
+                if (vendorInfo) {
+                  // Only use vendorCode if it's actually set (not empty string)
+                  if (!vendorCode && vendorInfo.vendorCode && vendorInfo.vendorCode.trim() !== '') {
+                    vendorCode = vendorInfo.vendorCode.trim();
+                  }
+                  if (!vendorName && vendorInfo.vendorName && vendorInfo.vendorName.trim() !== '') {
+                    vendorName = vendorInfo.vendorName.trim();
+                  }
+                  if (!vendorEmail && vendorInfo.vendorEmail && vendorInfo.vendorEmail.trim() !== '') {
+                    vendorEmail = vendorInfo.vendorEmail.trim();
+                  }
+                }
+                
+                // Also check if property already has vendorCode in owner object
+                if (!vendorCode && prop.owner?.vendorCode && prop.owner.vendorCode.trim() !== '') {
+                  vendorCode = prop.owner.vendorCode.trim();
+                }
+                
+                // Get vendor name from existing property data if still not available
+                if (!vendorName && prop.owner) {
+                  if (prop.owner.firstName || prop.owner.lastName) {
+                    vendorName = `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim();
+                  } else if (prop.owner.name) {
+                    vendorName = prop.owner.name;
+                  }
+                }
+                
+                // Enrich property with vendor information
+                // Always enrich if we have any vendor info OR if property is missing vendor fields
+                if (vendorCode || vendorName || vendorEmail || !hasAllVendorFields) {
+                  if (vendorCode && vendorCode.trim() !== '') {
+                    prop.vendorCode = vendorCode.trim();
+                  }
+                  if (vendorName) {
+                    prop.vendorName = vendorName;
+                  }
+                  if (vendorEmail) {
+                    prop.vendorEmail = vendorEmail;
+                  }
+                  if (vendorId) {
+                    prop.vendorId = vendorId;
+                  }
+                  
+                  // Also update owner object
+                  if (!prop.owner) {
+                    prop.owner = {};
+                  }
+                  if (vendorCode && !prop.owner.vendorCode) {
+                    prop.owner.vendorCode = vendorCode;
+                  }
+                  if (vendorName && !prop.owner.name) {
+                    prop.owner.name = vendorName;
+                    if (!prop.owner.firstName) {
+                      prop.owner.firstName = vendorName.split(' ')[0];
+                    }
+                    if (!prop.owner.lastName && vendorName.split(' ').length > 1) {
+                      prop.owner.lastName = vendorName.split(' ').slice(1).join(' ');
+                    }
+                  }
+                  if (vendorEmail && !prop.owner.email) {
+                    prop.owner.email = vendorEmail;
+                  }
+                  if (vendorId && !prop.owner.id) {
+                    prop.owner.id = vendorId;
+                  }
+                  
+                  // Only log as "enriched" if we actually set vendorCode
+                  if (prop.vendorCode && prop.vendorCode.trim() !== '') {
+                    console.log('PropertyContext: ✓ Enriched property', prop.id, 'with vendorCode:', prop.vendorCode, {
+                      vendorName: prop.vendorName || 'N/A',
+                      vendorEmail: prop.vendorEmail || 'N/A'
+                    });
+                  } else {
+                    console.log('PropertyContext: ⚠ Enriched property', prop.id, 'with vendor info but NO vendorCode:', {
+                      vendorName: prop.vendorName || 'N/A',
+                      vendorEmail: prop.vendorEmail || 'N/A',
+                      ownerId: prop.ownerId || 'N/A',
+                      ownerEmail: prop.ownerEmail || 'N/A'
+                    });
+                  }
+                } else {
+                  console.warn('PropertyContext: Could not enrich property', prop.id, 'ownerId:', prop.ownerId, 'ownerEmail:', prop.ownerEmail);
+                }
+                
+                return prop;
+              });
+              
+              firestoreProps = enrichedProps;
+              console.log('PropertyContext: Firestore enrichment complete. Properties with vendorCode:', 
+                enrichedProps.filter(p => p.vendorCode).length);
+            } catch (err) {
+              console.warn('PropertyContext: Error enriching properties with vendorCode (non-blocking):', err);
+              // Continue with unenriched properties - they'll still be merged
+            }
+          } else if (firestoreProps.length > 0) {
+            console.log('PropertyContext: Skipping Firestore enrichment - not authenticated via Firebase Auth.');
+          }
+          
+          // ALWAYS try fallback enrichment using user context if user exists
+          // This runs regardless of whether Firestore enrichment ran or succeeded
+          if (firestoreProps.length > 0 && user && (user.id || user.email)) {
+            console.log('PropertyContext: Running fallback enrichment using user context for user:', user.id || user.email, 'vendorCode:', user.vendorCode || 'NOT SET');
+            let enrichedCount = 0;
+            firestoreProps = firestoreProps.map(prop => {
+              // Check if property belongs to current user (by ID or email)
+              const userIdMatches = prop.ownerId === user.id || prop.ownerId === user.uid;
+              const emailMatches = prop.ownerEmail?.toLowerCase() === user.email?.toLowerCase() ||
+                                   prop.owner?.email?.toLowerCase() === user.email?.toLowerCase() ||
+                                   prop.vendorEmail?.toLowerCase() === user.email?.toLowerCase();
+              const belongsToUser = userIdMatches || emailMatches;
+              
+              // Log for debugging
+              if (emailMatches && (!prop.vendorCode || prop.vendorCode === '')) {
+                console.log('PropertyContext: Found property owned by user email:', prop.id, 'ownerEmail:', prop.ownerEmail, 'user email:', user.email, 'user vendorCode:', user.vendorCode);
+              }
+              
+              // If property belongs to user and is missing vendorCode, enrich it
+              if (belongsToUser && (!prop.vendorCode || prop.vendorCode === '')) {
+                if (user.vendorCode) {
+                  prop.vendorCode = user.vendorCode;
+                  prop.vendorName = prop.vendorName || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}`.trim() : user.displayName || prop.vendorName || '');
+                  prop.vendorEmail = prop.vendorEmail || user.email || prop.ownerEmail || '';
+                  prop.vendorId = prop.vendorId || user.id || user.uid || prop.ownerId || '';
+                  
+                  if (!prop.owner) prop.owner = {};
+                  prop.owner.vendorCode = user.vendorCode;
+                  prop.owner.name = prop.vendorName;
+                  prop.owner.email = prop.vendorEmail;
+                  if (!prop.owner.firstName && user.firstName) prop.owner.firstName = user.firstName;
+                  if (!prop.owner.lastName && user.lastName) prop.owner.lastName = user.lastName;
+                  
+                  enrichedCount++;
+                  console.log('PropertyContext: Fallback enriched property', prop.id, 'with user context vendorCode:', user.vendorCode, 'ownerEmail:', prop.ownerEmail);
+                } else {
+                  console.warn('PropertyContext: Property belongs to user but user has no vendorCode. Property:', prop.id, 'User:', user.id || user.email);
+                }
+              }
+              return prop;
+            });
+            console.log('PropertyContext: Fallback enrichment complete. Enriched', enrichedCount, 'properties with user context.');
+          }
 
-          // Use Firestore data if available, otherwise fallback to mock
+          // MERGE Firestore properties with mock properties (don't replace!)
+          // This ensures all properties are available for filtering
           if (firestoreProps.length > 0) {
-            data = firestoreProps;
+            console.log('PropertyContext: Found', firestoreProps.length, 'properties in Firestore');
+            console.log('PropertyContext: Starting with', data.length, 'mock properties');
+            
+            // Add Firestore properties that don't already exist in mock properties
+            let addedFromFirestore = 0;
+            let skippedDuplicates = 0;
+            firestoreProps.forEach(fsProp => {
+              const existsInMock = data.find(p => p.id === fsProp.id);
+              if (!existsInMock) {
+                data.push({
+                  ...fsProp,
+                  source: 'firestore'
+                });
+                addedFromFirestore++;
+              } else {
+                skippedDuplicates++;
+                // Update mock property with Firestore data (Firestore is source of truth)
+                const mockIndex = data.findIndex(p => p.id === fsProp.id);
+                if (mockIndex !== -1) {
+                  data[mockIndex] = {
+                    ...fsProp,
+                    source: 'firestore'
+                  };
+                }
+              }
+            });
+            console.log('PropertyContext: Added', addedFromFirestore, 'from Firestore, updated', skippedDuplicates, 'existing, total:', data.length);
+          } else {
+            console.log('PropertyContext: No Firestore properties found, using mock data only');
+          }
+          
+        // Also check localStorage for properties saved locally (check regardless of Firestore success)
+        try {
+          const localStorageData = localStorage.getItem('mockProperties');
+          if (localStorageData) {
+            const localProperties = JSON.parse(localStorageData);
+            console.log('PropertyContext: Found', localProperties.length, 'properties in localStorage');
+            
+            if (localProperties.length > 0) {
+              let addedFromLocal = 0;
+              localProperties.forEach(localProp => {
+                const exists = data.find(p => p.id === localProp.id);
+                if (!exists) {
+                  data.push({
+                    ...localProp,
+                    source: 'localStorage'
+                  });
+                  addedFromLocal++;
+                }
+              });
+              if (addedFromLocal > 0) {
+                console.log('PropertyContext: Added', addedFromLocal, 'properties from localStorage, total:', data.length);
+              }
+            }
+          }
+        } catch (localErr) {
+          console.warn('PropertyContext: Error reading localStorage properties:', localErr);
           }
         } catch (firestoreError) {
-          console.warn('Firestore fetch failed, using mock data:', firestoreError);
-          // Continue with mock data
+        console.warn('PropertyContext: Firestore fetch failed (non-blocking, will use mock + localStorage):', firestoreError.message || firestoreError);
+        // Continue with mock data and check localStorage even if Firestore failed
+        try {
+          const localStorageData = localStorage.getItem('mockProperties');
+          if (localStorageData) {
+            const localProperties = JSON.parse(localStorageData);
+            if (localProperties.length > 0) {
+              let addedFromLocal = 0;
+              localProperties.forEach(localProp => {
+                const exists = data.find(p => p.id === localProp.id);
+                if (!exists) {
+                  data.push({
+                    ...localProp,
+                    source: 'localStorage'
+                  });
+                  addedFromLocal++;
+                }
+              });
+              if (addedFromLocal > 0) {
+                console.log('PropertyContext: Added', addedFromLocal, 'properties from localStorage after Firestore error, total:', data.length);
+              }
+            }
+          }
+        } catch (localErr) {
+          console.warn('PropertyContext: Error reading localStorage properties:', localErr);
         }
       }
 
@@ -360,14 +726,67 @@ export const PropertyProvider = ({ children }) => {
       }
       else if (newFilters.verified === 'false') data = data.filter(p => p.isVerified === false);
 
+      console.log('PropertyContext: Final merged data before filtering:', data.length, 'properties');
+      console.log('PropertyContext: Data sources breakdown:', {
+        mock: data.filter(p => !p.source || p.source === 'mock').length,
+        firestore: data.filter(p => p.source === 'firestore').length,
+        localStorage: data.filter(p => p.source === 'localStorage').length
+      });
+
+      // Helper function to convert Firestore Timestamps to Date objects or strings
+      const normalizeTimestamp = (timestamp) => {
+        if (!timestamp) return null;
+        // Firestore Timestamp object has seconds and nanoseconds properties
+        if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp && 'nanoseconds' in timestamp) {
+          return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+        }
+        // If it has toDate method (Firestore Timestamp)
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          return timestamp.toDate();
+        }
+        // If it's already a Date object
+        if (timestamp instanceof Date) {
+          return timestamp;
+        }
+        // If it's a string, try to parse it
+        if (typeof timestamp === 'string') {
+          const date = new Date(timestamp);
+          return isNaN(date.getTime()) ? null : date;
+        }
+        return null;
+      };
+
       const propertiesData = data.map(property => {
         const details = property.details || {};
+        
+        // Normalize location to a string
+        let locationString = 'Location not specified';
+        if (typeof property.location === 'string') {
+          locationString = property.location;
+        } else if (property.location && typeof property.location === 'object') {
+          const address = property.location.address || '';
+          const city = property.location.city || '';
+          const state = property.location.state || '';
+          const parts = [address, city, state].filter(Boolean);
+          locationString = parts.length > 0 ? parts.join(', ') : 'Location not specified';
+        }
+        
+        // Normalize all timestamp fields
+        const normalizedCreatedAt = normalizeTimestamp(property.createdAt);
+        const normalizedUpdatedAt = normalizeTimestamp(property.updatedAt);
+        const normalizedListedDate = normalizeTimestamp(property.listedDate || property.datePosted);
+        
         return {
           ...property,
           bedrooms: property.bedrooms || details.bedrooms || 0,
           bathrooms: property.bathrooms || details.bathrooms || 0,
           area: property.area || details.sqft || 0,
           parking: property.parking || details.parking || 'N/A',
+          location: locationString, // Ensure location is always a string
+          createdAt: normalizedCreatedAt, // Ensure createdAt is a Date object or null
+          updatedAt: normalizedUpdatedAt, // Ensure updatedAt is a Date object or null
+          listedDate: normalizedListedDate || normalizedCreatedAt, // Fallback to createdAt if listedDate doesn't exist
+          datePosted: normalizedListedDate || normalizedCreatedAt, // Alias for compatibility
           details: {
             bedrooms: details.bedrooms || property.bedrooms || 0,
             bathrooms: details.bathrooms || property.bathrooms || 0,
@@ -429,14 +848,60 @@ export const PropertyProvider = ({ children }) => {
           filteredProperties = filteredProperties.filter(p => p.isVerified === false);
         }
 
+        // Helper function to convert Firestore Timestamps to Date objects or strings
+        const normalizeTimestamp = (timestamp) => {
+          if (!timestamp) return null;
+          // Firestore Timestamp object has seconds and nanoseconds properties
+          if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp && 'nanoseconds' in timestamp) {
+            return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+          }
+          // If it has toDate method (Firestore Timestamp)
+          if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate();
+          }
+          // If it's already a Date object
+          if (timestamp instanceof Date) {
+            return timestamp;
+          }
+          // If it's a string, try to parse it
+          if (typeof timestamp === 'string') {
+            const date = new Date(timestamp);
+            return isNaN(date.getTime()) ? null : date;
+          }
+          return null;
+        };
+
         const propertiesData = filteredProperties.map(property => {
           const details = property.details || {};
+          
+          // Normalize location to a string
+          let locationString = 'Location not specified';
+          if (typeof property.location === 'string') {
+            locationString = property.location;
+          } else if (property.location && typeof property.location === 'object') {
+            const address = property.location.address || '';
+            const city = property.location.city || '';
+            const state = property.location.state || '';
+            const parts = [address, city, state].filter(Boolean);
+            locationString = parts.length > 0 ? parts.join(', ') : 'Location not specified';
+          }
+          
+          // Normalize all timestamp fields
+          const normalizedCreatedAt = normalizeTimestamp(property.createdAt);
+          const normalizedUpdatedAt = normalizeTimestamp(property.updatedAt);
+          const normalizedListedDate = normalizeTimestamp(property.listedDate || property.datePosted);
+          
           return {
             ...property,
             bedrooms: property.bedrooms || details.bedrooms || 0,
             bathrooms: property.bathrooms || details.bathrooms || 0,
             area: property.area || details.sqft || 0,
             parking: property.parking || details.parking || 'N/A',
+            location: locationString, // Ensure location is always a string
+            createdAt: normalizedCreatedAt, // Ensure createdAt is a Date object or null
+            updatedAt: normalizedUpdatedAt, // Ensure updatedAt is a Date object or null
+            listedDate: normalizedListedDate || normalizedCreatedAt, // Fallback to createdAt if listedDate doesn't exist
+            datePosted: normalizedListedDate || normalizedCreatedAt, // Alias for compatibility
             details: {
               bedrooms: details.bedrooms || property.bedrooms || 0,
               bathrooms: details.bathrooms || property.bathrooms || 0,
@@ -548,36 +1013,90 @@ export const PropertyProvider = ({ children }) => {
       try {
         // Ensure Firebase auth is ready before attempting Firestore operations
         if (!firebaseAuthReady) {
-          throw new Error('Firebase authentication not ready. Please wait a moment and try again.');
+          console.warn('PropertyContext: Firebase auth not ready, will use localStorage fallback');
+          throw new Error('Firebase authentication not ready');
         }
 
         // Use Firestore directly for cloud-based storage
         const fbUser = auth.currentUser;
         if (!fbUser) {
+          console.warn('PropertyContext: No Firebase currentUser, will use localStorage fallback');
           throw new Error('No authenticated Firebase user found');
         }
 
-        const propertyRef = await addDoc(collection(db, 'properties'), {
+        console.log('PropertyContext: Saving property to Firestore for user:', fbUser.uid, fbUser.email);
+        console.log('PropertyContext: User vendorCode:', user?.vendorCode);
+
+        // Get vendor information
+        const vendorFirstName = user?.firstName || user?.displayName?.split(' ')[0] || 'Guest';
+        const vendorLastName = user?.lastName || user?.displayName?.split(' ')[1] || 'User';
+        const vendorFullName = `${vendorFirstName} ${vendorLastName}`.trim();
+        const vendorEmail = fbUser.email || user?.email || 'anonymous@example.com';
+        const vendorCode = user?.vendorCode || '';
+        const vendorId = fbUser.uid;
+
+        const propertyData = {
           ...apiPayload,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          ownerId: fbUser.uid,
-          ownerEmail: fbUser.email || user?.email || 'anonymous@example.com',
+          // Vendor identification fields (indexed for search)
+          ownerId: vendorId,
+          ownerEmail: vendorEmail,
+          vendorCode: vendorCode,
+          vendorName: vendorFullName, // Full vendor name for search
+          vendorEmail: vendorEmail, // Duplicate for explicit vendor search
+          vendorId: vendorId, // Duplicate for explicit vendor search
+          // Owner object (legacy support)
           owner: {
-            firstName: user?.firstName || 'Guest',
-            lastName: user?.lastName || 'User'
+            id: vendorId,
+            firstName: vendorFirstName,
+            lastName: vendorLastName,
+            email: vendorEmail,
+            vendorCode: vendorCode,
+            name: vendorFullName // Full name in owner object too
           },
           // Set verification status for admin approval
           verificationStatus: 'pending',
           approvalStatus: 'pending',
           isVerified: false
-        });
+        };
+
+        const propertyRef = await addDoc(collection(db, 'properties'), propertyData);
         
-        toast.success('Property added successfully!');
+        console.log('PropertyContext: Property saved to Firestore with ID:', propertyRef.id);
+        
+        // Also save to localStorage as backup (in case Firestore read fails later)
+        try {
+          const localBackup = {
+            id: propertyRef.id,
+            ...apiPayload,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            ownerId: vendorId,
+            ownerEmail: vendorEmail,
+            vendorCode: vendorCode,
+            vendorName: vendorFullName,
+            vendorEmail: vendorEmail,
+            vendorId: vendorId,
+            owner: propertyData.owner,
+            verificationStatus: 'pending',
+            approvalStatus: 'pending',
+            isVerified: false,
+            savedToFirestore: true
+          };
+          const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+          existingProperties.push(localBackup);
+          localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+          console.log('PropertyContext: Also saved backup to localStorage');
+        } catch (localErr) {
+          console.warn('PropertyContext: Failed to save localStorage backup:', localErr);
+        }
+        
+        toast.success('Property added successfully! It will appear after admin approval.');
         await fetchProperties(filters);
-        return { success: true, id: propertyRef.id };
+        return { success: true, id: propertyRef.id, savedTo: 'firestore' };
       } catch (firestoreError) {
-        console.error('Firestore error:', firestoreError);
+        console.error('PropertyContext: Firestore error:', firestoreError);
         
         // Check if it's a permission error
         if (firestoreError.code === 'permission-denied') {
@@ -596,33 +1115,58 @@ export const PropertyProvider = ({ children }) => {
           if (data?.success) {
             toast.success('Property added successfully!');
             await fetchProperties(filters);
-            return { success: true, id: data.data?.id };
+            return { success: true, id: data.data?.id, savedTo: 'api' };
           }
           throw new Error('Backend create failed');
-        } catch (_) {
+        } catch (apiError) {
+          console.warn('PropertyContext: API fallback failed:', apiError);
+          
+          // Final fallback to localStorage - use AuthContext user info
+          const fbUser = auth.currentUser;
+          const userId = fbUser?.uid || user?.uid || user?.id || `temp-${Date.now()}`;
+          const userEmail = fbUser?.email || user?.email || 'unknown@example.com';
+          const vendorFirstName = user?.firstName || user?.displayName?.split(' ')[0] || 'Guest';
+          const vendorLastName = user?.lastName || user?.displayName?.split(' ')[1] || 'User';
+          const vendorFullName = `${vendorFirstName} ${vendorLastName}`.trim();
+          const vendorCode = user?.vendorCode || '';
           const mockId = `local-${Date.now()}`;
+          
+          console.log('PropertyContext: Saving to localStorage with user info:', { userId, userEmail, vendorCode });
+          
           const localProperty = {
             id: mockId,
             ...apiPayload,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            ownerId: user?.id || 'anonymous',
-            ownerEmail: user?.email || 'anonymous@example.com',
+            ownerId: userId,
+            ownerEmail: userEmail,
+            vendorCode: vendorCode,
+            vendorName: vendorFullName,
+            vendorEmail: userEmail,
+            vendorId: userId,
             owner: {
-              firstName: user?.firstName || 'Guest',
-              lastName: user?.lastName || 'User'
+              id: userId,
+              firstName: vendorFirstName,
+              lastName: vendorLastName,
+              email: userEmail,
+              vendorCode: vendorCode,
+              name: vendorFullName
             },
             // Set verification status for admin approval
             verificationStatus: 'pending',
             approvalStatus: 'pending',
-            isVerified: false
+            isVerified: false,
+            savedToFirestore: false
           };
           const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
           existingProperties.push(localProperty);
           localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
-          toast.success('Property added (local cache)');
+          
+          console.log('PropertyContext: Property saved to localStorage with ID:', mockId);
+          console.log('PropertyContext: Property owner info:', { ownerId: userId, ownerEmail: userEmail });
+          toast.success('Property saved locally. It will sync when connection is restored.');
           await fetchProperties(filters);
-          return { success: true, id: mockId };
+          return { success: true, id: mockId, savedTo: 'localStorage' };
         }
       }
     } catch (error) {
@@ -867,18 +1411,249 @@ export const PropertyProvider = ({ children }) => {
       console.log('PropertyContext: API failed, trying Firestore...', error);
       
       // Try to fetch from Firestore as fallback
+      // IMPORTANT: Start with mock data (7 properties)
+      console.log('PropertyContext Admin: mockProperties array length:', mockProperties.length);
+      console.log('PropertyContext Admin: mockProperties IDs:', mockProperties.map(p => p.id));
       let allProperties = [...mockProperties]; // Start with mock data
+      console.log('PropertyContext Admin: Starting with', allProperties.length, 'mock properties');
       
       if (firebaseAuthReady) {
         try {
           console.log('PropertyContext: Fetching from Firestore...');
           const propertiesRef = collection(db, 'properties');
-          const q = query(propertiesRef, orderBy('createdAt', 'desc'));
-          const snap = await getDocs(q);
-          const firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          
+          // Try with orderBy first, but fallback to simple query if index is missing
+          let snap;
+          try {
+            const q = query(propertiesRef, orderBy('createdAt', 'desc'));
+            snap = await getDocs(q);
+          } catch (orderByError) {
+            // If orderBy fails (missing index), fetch all properties without ordering
+            console.warn('PropertyContext: orderBy failed, fetching all properties without ordering:', orderByError);
+            snap = await getDocs(propertiesRef);
+          }
+          
+          let firestoreProps = snap.docs.map(d => {
+            const data = d.data();
+            return { 
+              id: d.id, 
+              ...data,
+              // Ensure createdAt exists for sorting
+              createdAt: data.createdAt || data.createdAt?.toDate?.() || new Date()
+            };
+          });
+          
+          // Enrich properties with vendorCode if missing (same logic as fetchProperties)
+          try {
+            console.log('PropertyContext Admin: Enriching', firestoreProps.length, 'properties with vendorCode...');
+            
+            const ownerIdsToLookup = new Set();
+            firestoreProps.forEach(prop => {
+              const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
+              if (!hasAllVendorFields && prop.ownerId) {
+                ownerIdsToLookup.add(prop.ownerId);
+              }
+            });
+            
+            const ownerEmails = [...new Set(firestoreProps
+              .filter(p => {
+                const hasAllVendorFields = p.vendorCode && p.vendorName && p.vendorEmail && p.vendorId;
+                return !hasAllVendorFields && p.ownerEmail;
+              })
+              .map(p => p.ownerEmail.toLowerCase()))];
+            
+            console.log('PropertyContext Admin: Need to lookup vendorCode for', ownerIdsToLookup.size, 'owners by ID and', ownerEmails.length, 'by email');
+            
+            const userCodeMap = new Map(); // ownerId -> { vendorCode, vendorName, vendorEmail }
+            const emailToVendorCodeMap = new Map(); // email -> { vendorCode, vendorName, vendorEmail }
+            
+            if (ownerIdsToLookup.size > 0) {
+              await Promise.all(Array.from(ownerIdsToLookup).map(async (ownerId) => {
+                try {
+                  const userRef = doc(db, 'users', ownerId);
+                  const userSnap = await getDoc(userRef);
+                  if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    const vendorName = userData.firstName && userData.lastName 
+                      ? `${userData.firstName} ${userData.lastName}`.trim() 
+                      : userData.displayName || '';
+                    const vendorInfo = {
+                      vendorCode: userData.vendorCode || '',
+                      vendorName: vendorName,
+                      vendorEmail: userData.email || ''
+                    };
+                    
+                    if (userData.vendorCode) {
+                      userCodeMap.set(ownerId, vendorInfo);
+                      if (userData.email) {
+                        emailToVendorCodeMap.set(userData.email.toLowerCase(), vendorInfo);
+                      }
+                      console.log('PropertyContext Admin: Found vendor info for owner', ownerId, vendorInfo);
+                    }
+                  }
+                } catch (err) {
+                  console.warn('PropertyContext Admin: Could not fetch user', ownerId, err);
+                }
+              }));
+            }
+            
+            if (ownerEmails.length > 0) {
+              try {
+                const usersRef = collection(db, 'users');
+                await Promise.all(ownerEmails.map(async (email) => {
+                  try {
+                    const emailQuery = query(usersRef, where('email', '==', email));
+                    const emailSnap = await getDocs(emailQuery);
+                    if (!emailSnap.empty) {
+                      const userData = emailSnap.docs[0].data();
+                      const vendorName = userData.firstName && userData.lastName 
+                        ? `${userData.firstName} ${userData.lastName}`.trim() 
+                        : userData.displayName || '';
+                      const vendorInfo = {
+                        vendorCode: userData.vendorCode || '',
+                        vendorName: vendorName,
+                        vendorEmail: userData.email || email
+                      };
+                      if (userData.vendorCode) {
+                        emailToVendorCodeMap.set(email.toLowerCase(), vendorInfo);
+                        console.log('PropertyContext Admin: Found vendor info by email', email, vendorInfo);
+                      }
+                    }
+                  } catch (err) {
+                    console.warn('PropertyContext Admin: Could not query user by email', email, err);
+                  }
+                }));
+              } catch (err) {
+                console.warn('PropertyContext Admin: Error querying users by email:', err);
+              }
+            }
+            
+            firestoreProps = firestoreProps.map((prop) => {
+              // Check if property already has all vendor fields
+              const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
+              if (hasAllVendorFields) {
+                // Ensure owner object also has vendor info
+                if (prop.owner && !prop.owner.vendorCode) {
+                  prop.owner.vendorCode = prop.vendorCode;
+                  if (!prop.owner.name) {
+                    prop.owner.name = prop.vendorName;
+                  }
+                  if (!prop.owner.email) {
+                    prop.owner.email = prop.vendorEmail;
+                  }
+                }
+                return prop;
+              }
+              
+              let vendorCode = prop.vendorCode || null;
+              let vendorName = prop.vendorName || (prop.owner?.name || (prop.owner ? `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim() : ''));
+              let vendorEmail = prop.vendorEmail || prop.ownerEmail || prop.owner?.email || '';
+              let vendorId = prop.vendorId || prop.ownerId || prop.owner?.id || '';
+              
+              // Try ownerId first to get vendor info
+              let vendorInfo = null;
+              if (prop.ownerId && userCodeMap.has(prop.ownerId)) {
+                vendorInfo = userCodeMap.get(prop.ownerId);
+              }
+              // Fallback to email lookup
+              else if (prop.ownerEmail && emailToVendorCodeMap.has(prop.ownerEmail.toLowerCase())) {
+                vendorInfo = emailToVendorCodeMap.get(prop.ownerEmail.toLowerCase());
+              }
+              
+              // Use vendor info from lookup if available
+              if (vendorInfo) {
+                if (!vendorCode && vendorInfo.vendorCode) {
+                  vendorCode = vendorInfo.vendorCode;
+                }
+                if (!vendorName && vendorInfo.vendorName) {
+                  vendorName = vendorInfo.vendorName;
+                }
+                if (!vendorEmail && vendorInfo.vendorEmail) {
+                  vendorEmail = vendorInfo.vendorEmail;
+                }
+              }
+              
+              // Get vendor name from existing property data if still not available
+              if (!vendorName && prop.owner) {
+                if (prop.owner.firstName || prop.owner.lastName) {
+                  vendorName = `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim();
+                } else if (prop.owner.name) {
+                  vendorName = prop.owner.name;
+                }
+              }
+              
+              // Enrich property with vendor information
+              if (vendorCode || !hasAllVendorFields) {
+                if (vendorCode) {
+                  prop.vendorCode = vendorCode;
+                }
+                if (vendorName) {
+                  prop.vendorName = vendorName;
+                }
+                if (vendorEmail) {
+                  prop.vendorEmail = vendorEmail;
+                }
+                if (vendorId) {
+                  prop.vendorId = vendorId;
+                }
+                
+                // Also update owner object
+                if (!prop.owner) {
+                  prop.owner = {};
+                }
+                if (vendorCode && !prop.owner.vendorCode) {
+                  prop.owner.vendorCode = vendorCode;
+                }
+                if (vendorName && !prop.owner.name) {
+                  prop.owner.name = vendorName;
+                  if (!prop.owner.firstName) {
+                    prop.owner.firstName = vendorName.split(' ')[0];
+                  }
+                  if (!prop.owner.lastName && vendorName.split(' ').length > 1) {
+                    prop.owner.lastName = vendorName.split(' ').slice(1).join(' ');
+                  }
+                }
+                if (vendorEmail && !prop.owner.email) {
+                  prop.owner.email = vendorEmail;
+                }
+                if (vendorId && !prop.owner.id) {
+                  prop.owner.id = vendorId;
+                }
+                
+                console.log('PropertyContext Admin: Enriched property', prop.id, 'with vendor info:', {
+                  vendorCode: prop.vendorCode || 'N/A',
+                  vendorName: prop.vendorName || 'N/A',
+                  vendorEmail: prop.vendorEmail || 'N/A'
+                });
+              } else {
+                console.warn('PropertyContext Admin: Could not find vendorCode for property', prop.id);
+              }
+              return prop;
+            });
+            
+            console.log('PropertyContext Admin: Enrichment complete. Properties with vendorCode:', 
+              firestoreProps.filter(p => p.vendorCode).length);
+          } catch (err) {
+            console.error('PropertyContext Admin: Error enriching properties with vendorCode:', err);
+          }
+          
+          // Sort by createdAt if available (client-side)
+          firestoreProps.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return dateB - dateA; // Descending order
+          });
+          
+          console.log('PropertyContext: Found', firestoreProps.length, 'properties in Firestore');
           
           if (firestoreProps.length > 0) {
-            console.log('PropertyContext: Found Firestore properties:', firestoreProps.length);
+            console.log('PropertyContext: Firestore property owners:', firestoreProps.map(p => ({
+              id: p.id,
+              title: p.title,
+              ownerEmail: p.ownerEmail,
+              ownerId: p.ownerId,
+              owner: p.owner
+            })));
             
             // Ensure all properties have verificationStatus set to 'pending' if missing
             const propertiesToUpdate = [];
@@ -888,8 +1663,8 @@ export const PropertyProvider = ({ children }) => {
               }
             });
             
-            // Update properties missing verificationStatus in the background
-            if (propertiesToUpdate.length > 0) {
+            // Update properties missing verificationStatus in the background (only if user is admin)
+            if (propertiesToUpdate.length > 0 && user?.role === 'admin') {
               console.log('PropertyContext: Updating', propertiesToUpdate.length, 'properties with missing verificationStatus');
               Promise.all(propertiesToUpdate.map(propId => {
                 const propertyRef = doc(db, 'properties', propId);
@@ -905,19 +1680,84 @@ export const PropertyProvider = ({ children }) => {
               });
             }
             
-            // Use Firestore properties as primary source for admin dashboard
-            allProperties = firestoreProps;
+            // MERGE Firestore properties with mock properties (don't replace!)
+            // Add Firestore properties that don't already exist in allProperties
+            console.log('PropertyContext Admin: Before merge, allProperties has', allProperties.length, 'items');
+            console.log('PropertyContext Admin: Firestore has', firestoreProps.length, 'properties to merge');
+            let addedFromFirestore = 0;
+            let skippedDuplicates = 0;
+            firestoreProps.forEach(fsProp => {
+              const existsInMock = allProperties.find(p => p.id === fsProp.id);
+              if (!existsInMock) {
+                allProperties.push({
+                  ...fsProp,
+                  source: 'firestore'
+                });
+                addedFromFirestore++;
+          } else {
+                skippedDuplicates++;
+                console.log('PropertyContext Admin: Skipped duplicate ID:', fsProp.id, 'title:', fsProp.title);
+              }
+            });
+            console.log('PropertyContext Admin: Added', addedFromFirestore, 'from Firestore, skipped', skippedDuplicates, 'duplicates');
+            console.log('PropertyContext Admin: Total after merging Firestore:', allProperties.length);
+          } else {
+            console.log('PropertyContext: No Firestore properties found, keeping mock data');
           }
         } catch (firestoreError) {
-          console.warn('PropertyContext: Firestore fetch failed, using mock data:', firestoreError);
+          console.error('PropertyContext: Firestore fetch failed:', firestoreError);
+          console.warn('PropertyContext: Using mock data as fallback');
         }
+      }
+      
+      // IMPORTANT: Also check localStorage for properties saved locally (when Firestore was unavailable)
+      console.log('PropertyContext Admin: Checking localStorage for additional properties...');
+      try {
+        const localStorageData = localStorage.getItem('mockProperties');
+        console.log('PropertyContext Admin: Raw localStorage mockProperties:', localStorageData ? 'exists' : 'null/empty');
+        
+        const localProperties = JSON.parse(localStorageData || '[]');
+        console.log('PropertyContext Admin: Parsed localStorage properties count:', localProperties.length);
+        
+        if (localProperties.length > 0) {
+          console.log('PropertyContext Admin: localStorage properties:', localProperties.map(p => ({
+            id: p.id,
+            title: p.title,
+            ownerEmail: p.ownerEmail
+          })));
+          
+          // Add localStorage properties that aren't already in allProperties
+          let addedCount = 0;
+          localProperties.forEach(prop => {
+            const existsInAll = allProperties.find(p => p.id === prop.id);
+            if (!existsInAll) {
+              allProperties.push({
+                ...prop,
+                source: 'localStorage',
+                createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
+              });
+              addedCount++;
+            }
+          });
+          
+          console.log('PropertyContext Admin: Added', addedCount, 'new properties from localStorage');
+          console.log('PropertyContext Admin: Total after merging:', allProperties.length);
+        } else {
+          console.log('PropertyContext Admin: No properties in localStorage');
+        }
+      } catch (localErr) {
+        console.error('PropertyContext Admin: Error reading localStorage:', localErr);
       }
       
       // Apply filters
       let filteredProperties = [...allProperties];
       
+      console.log('PropertyContext: Total properties before filtering:', allProperties.length);
+      console.log('PropertyContext: Filter status:', status, 'verificationStatus:', verificationStatus);
+      
       if (status) {
         filteredProperties = filteredProperties.filter(p => p.status === status);
+        console.log('PropertyContext: After status filter:', filteredProperties.length);
       }
       
       if (verificationStatus) {
@@ -925,7 +1765,16 @@ export const PropertyProvider = ({ children }) => {
           const approvalStatus = p.approvalStatus || p.verificationStatus || 'pending';
           return approvalStatus === verificationStatus;
         });
+        console.log('PropertyContext: After verificationStatus filter:', filteredProperties.length);
       }
+      
+      console.log('PropertyContext: Final filtered properties:', filteredProperties.length);
+      console.log('PropertyContext: Property details:', filteredProperties.map(p => ({
+        id: p.id,
+        title: p.title,
+        ownerEmail: p.ownerEmail,
+        verificationStatus: p.verificationStatus || p.approvalStatus || 'pending'
+      })));
       
       // Normalize property data for consistent display
       const normalizedProperties = filteredProperties.map(property => {
@@ -975,41 +1824,75 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [firebaseAuthReady]);
+  }, [firebaseAuthReady, user]);
 
   const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`/api/admin/properties/${propertyId}/verify`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          verificationStatus,
-          verificationNotes
-        })
-      });
+      // Try Firestore first if authentication is ready
+      if (firebaseAuthReady && auth.currentUser) {
+        try {
+          const propertyRef = doc(db, 'properties', propertyId);
+          await updateDoc(propertyRef, {
+            verificationStatus: verificationStatus,
+            approvalStatus: verificationStatus, // Also set approvalStatus for compatibility
+            verificationNotes: verificationNotes || '',
+            isVerified: verificationStatus === 'approved',
+            verifiedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          
+          toast.success(`Property ${verificationStatus} successfully`);
+          // Don't await here to avoid circular dependency - let component refresh
+          return true;
+        } catch (firestoreError) {
+          console.error('Firestore verification error:', firestoreError);
+          
+          // Check if it's a permission error
+          if (firestoreError.code === 'permission-denied') {
+            throw new Error('Permission denied. Please ensure you have admin privileges.');
+          }
+          
+          // For other errors, try API fallback
+          throw firestoreError;
+        }
+      }
       
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success(`Property ${verificationStatus} successfully`);
-        return true;
-      } else {
-        throw new Error(data.message || 'Failed to verify property');
+      // Fallback to API if Firestore not available
+      try {
+        const response = await fetch(`/api/admin/properties/${propertyId}/verify`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            verificationStatus,
+            verificationNotes
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          toast.success(`Property ${verificationStatus} successfully`);
+          return true;
+        } else {
+          throw new Error(data.message || 'Failed to verify property');
+        }
+      } catch (apiError) {
+        throw new Error('Failed to verify property via API: ' + apiError.message);
       }
     } catch (error) {
       setError('Failed to verify property');
       console.error('Error verifying property:', error);
-      toast.error('Failed to verify property');
+      toast.error(error.message || 'Failed to verify property');
       return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [firebaseAuthReady]);
 
   const value = {
     properties,
