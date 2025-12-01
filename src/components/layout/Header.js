@@ -127,8 +127,16 @@ const Header = () => {
   // If on dashboard route, show minimal header with just user profile
   if (isDashboardRoute) {
     return (
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+      <>
+        {/* Skip to content link for accessibility */}
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Skip to main content
+        </a>
+        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex justify-end items-center h-14 py-2">
             {/* User Profile Icon Only */}
             {user ? (
@@ -246,12 +254,21 @@ const Header = () => {
           </div>
         </div>
       </header>
+      </>
     );
   }
 
   return (
-    <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+    <>
+      {/* Skip to content link for accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
+      <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-16 md:h-20 py-2">
           <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
             {/* Logo */}
@@ -362,6 +379,8 @@ const Header = () => {
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
+                  aria-label="Shortlet locations"
+                  aria-expanded={activeDropdown === 'Shortlet'}
                   className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeDropdown === 'Shortlet' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
@@ -380,14 +399,30 @@ const Header = () => {
                 </button>
                 
                 {activeDropdown === 'Shortlet' && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
+                  <div 
+                    className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48"
+                    role="menu"
+                    aria-label="Shortlet locations"
+                  >
                     <div className="py-2">
-                      {quickFilters['Shortlet'].map((location) => (
+                      {quickFilters['Shortlet'].map((location, index) => (
                         <Link
                           key={location}
                           to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
                           onClick={() => setActiveDropdown(null)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700 focus:outline-none focus:bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                          role="menuitem"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              window.location.href = `/properties?location=${encodeURIComponent(location)}&status=Shortlet`;
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                            }
+                          }}
                         >
                           {location}
                         </Link>
@@ -409,6 +444,8 @@ const Header = () => {
               <div className="relative dropdown-container">
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
+                  aria-label="Diasporan Services"
+                  aria-expanded={activeDropdown === 'Diasporan Services'}
                   className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeDropdown === 'Diasporan Services' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
@@ -780,6 +817,7 @@ const Header = () => {
         />
       )}
     </header>
+    </>
   );
 };
 

@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaVideo, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaMapMarkerAlt, FaWhatsapp, FaTelegram } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const HelpSupport = () => {
   const { user } = useAuth();
@@ -185,7 +186,7 @@ const HelpSupport = () => {
     e.preventDefault();
     // Handle contact form submission
     console.log('Contact form submitted:', contactForm);
-    alert('Your message has been sent! We\'ll get back to you within 2 hours.');
+    toast.success('Your message has been sent! We\'ll get back to you within 2 hours.');
     setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
   };
 

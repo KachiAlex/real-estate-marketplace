@@ -87,28 +87,30 @@ const InvestmentOpportunities = () => {
       
       switch (sortBy) {
         case 'expectedROI':
-          aValue = a.expectedROI;
-          bValue = b.expectedROI;
+          aValue = parseFloat(a.expectedROI) || 0;
+          bValue = parseFloat(b.expectedROI) || 0;
           break;
         case 'targetAmount':
-          aValue = a.targetAmount;
-          bValue = b.targetAmount;
+          aValue = parseFloat(a.targetAmount) || 0;
+          bValue = parseFloat(b.targetAmount) || 0;
           break;
         case 'investmentDuration':
-          aValue = a.investmentDuration;
-          bValue = b.investmentDuration;
+          aValue = parseInt(a.investmentDuration) || 0;
+          bValue = parseInt(b.investmentDuration) || 0;
           break;
         case 'createdAt':
         default:
-          aValue = new Date(a.createdAt?.toDate?.() || a.createdAt);
-          bValue = new Date(b.createdAt?.toDate?.() || b.createdAt);
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : (a.createdAt ? new Date(a.createdAt) : new Date(0));
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : (b.createdAt ? new Date(b.createdAt) : new Date(0));
+          aValue = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+          bValue = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
           break;
       }
 
       if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 

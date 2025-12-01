@@ -4,6 +4,8 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaBell, FaCalendar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const Properties = () => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const Properties = () => {
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
   const [alertName, setAlertName] = useState('');
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('mostRecent'); // mostRecent, priceLow, priceHigh, mostPopular
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -134,8 +137,49 @@ const Properties = () => {
       console.log('Properties: Filtered to', filtered.length, 'properties for vendor search:', searchTerm);
     }
 
-    return filtered;
-  }, [safeProperties, appliedSearchQuery, appliedType, appliedStatus, appliedPriceRange, appliedVendor]);
+    // Apply sorting
+    let sorted = [...filtered];
+    switch (sortBy) {
+      case 'priceLow':
+        sorted.sort((a, b) => {
+          const priceA = parseFloat(a?.price || 0);
+          const priceB = parseFloat(b?.price || 0);
+          return priceA - priceB;
+        });
+        break;
+      case 'priceHigh':
+        sorted.sort((a, b) => {
+          const priceA = parseFloat(a?.price || 0);
+          const priceB = parseFloat(b?.price || 0);
+          return priceB - priceA;
+        });
+        break;
+      case 'mostRecent':
+        sorted.sort((a, b) => {
+          const dateA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA; // Newest first
+        });
+        break;
+      case 'mostPopular':
+        sorted.sort((a, b) => {
+          const viewsA = parseInt(a?.views || 0);
+          const viewsB = parseInt(b?.views || 0);
+          const favoritesA = parseInt(a?.favorites || 0);
+          const favoritesB = parseInt(b?.favorites || 0);
+          // Combine views and favorites for popularity score
+          const scoreA = viewsA + (favoritesA * 2);
+          const scoreB = viewsB + (favoritesB * 2);
+          return scoreB - scoreA;
+        });
+        break;
+      default:
+        // Keep original order
+        break;
+    }
+
+    return sorted;
+  }, [safeProperties, appliedSearchQuery, appliedType, appliedStatus, appliedPriceRange, appliedVendor, sortBy]);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -722,17 +766,23 @@ const Properties = () => {
                 )}
               </p>
             </div>
-            <select className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
-              <option>Sort by: Most Recent</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Most Popular</option>
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="mostRecent">Sort by: Most Recent</option>
+              <option value="priceLow">Price: Low to High</option>
+              <option value="priceHigh">Price: High to Low</option>
+              <option value="mostPopular">Most Popular</option>
             </select>
           </div>
 
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentProperties.length > 0 ? currentProperties.map((property) => (
+            {loading ? (
+              <PropertyCardSkeleton count={12} />
+            ) : currentProperties.length > 0 ? currentProperties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="relative">
                   <div 
@@ -844,6 +894,7 @@ const Properties = () => {
                 <button 
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
+                  aria-label="Previous page"
                   className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ‹
@@ -892,6 +943,7 @@ const Properties = () => {
                 <button 
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
+                  aria-label="Next page"
                   className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ›

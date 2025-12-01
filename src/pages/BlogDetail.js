@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -95,7 +96,7 @@ const BlogDetail = () => {
     e.preventDefault();
     
     if (!user) {
-      alert('Please login to comment');
+      toast.error('Please login to comment');
       return;
     }
 

@@ -408,7 +408,7 @@ const transformPropertyForFrontend = (prop) => {
 const mockProperties = backendMockProperties.map(transformPropertyForFrontend);
 
 const Home = () => {
-  const { properties, toggleFavorite } = useProperty();
+  const { properties = [], fetchProperties, toggleFavorite } = useProperty();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState(new Set());
@@ -429,6 +429,13 @@ const Home = () => {
   const [appliedBedrooms, setAppliedBedrooms] = useState('');
   const [appliedBathrooms, setAppliedBathrooms] = useState('');
   const [appliedVendor, setAppliedVendor] = useState('');
+
+  // Fetch properties on mount
+  useEffect(() => {
+    fetchProperties({}).catch(err => {
+      console.warn('Error fetching properties on mount:', err);
+    });
+  }, [fetchProperties]);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -452,12 +459,25 @@ const Home = () => {
   
   // Filtering - only applies when user clicks "Apply Filters"
   const filteredProperties = useMemo(() => {
-    // Ensure mockProperties is an array
-    if (!Array.isArray(mockProperties)) {
-      return [];
+    // Merge properties from context with mock properties
+    // Properties from context (Firestore + localStorage) take precedence
+    const allPropertiesMap = new Map();
+    
+    // First add mock properties
+    if (Array.isArray(mockProperties)) {
+      mockProperties.forEach(prop => {
+        allPropertiesMap.set(prop.id, prop);
+      });
     }
     
-    let filtered = [...mockProperties];
+    // Then add/override with properties from context
+    if (Array.isArray(properties)) {
+      properties.forEach(prop => {
+        allPropertiesMap.set(prop.id, prop);
+      });
+    }
+    
+    let filtered = Array.from(allPropertiesMap.values());
     
     // Apply search query (from applied filters)
     if (appliedSearchQuery && appliedSearchQuery.trim()) {
@@ -515,14 +535,35 @@ const Home = () => {
       });
     }
     
-    // Apply vendor filter (from applied filters)
+    // Apply vendor filter (from applied filters) - supports name, email, vendorCode like VND-XXXXXX, and vendorId
     if (appliedVendor) {
+      const searchTerm = appliedVendor.toLowerCase().trim();
       filtered = filtered.filter(property => {
-        const vendorName = property?.agent?.name || 
-          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
-        const vendorId = property?.ownerId || property?.owner?.id || '';
-        return vendorName.toLowerCase().includes(appliedVendor.toLowerCase()) ||
-               vendorId.toLowerCase().includes(appliedVendor.toLowerCase());
+        // Try multiple vendor identification fields
+        const vendorName = (property?.vendorName || property?.agent?.name || 
+          (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '') ||
+          (property?.owner?.name || '')).toLowerCase();
+        const vendorId = (property?.vendorId || property?.ownerId || property?.owner?.id || '').toLowerCase();
+        const vendorCode = (property?.vendorCode || property?.owner?.vendorCode || '').toLowerCase();
+        const vendorEmail = (property?.vendorEmail || property?.ownerEmail || property?.owner?.email || '').toLowerCase();
+        
+        // Handle vendorCode search (e.g., "VND-E88234" or "E88234")
+        let vendorCodeMatches = false;
+        if (vendorCode) {
+          const normalizedVendorCode = vendorCode.toLowerCase().trim();
+          const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+          const codePart = normalizedVendorCode.replace(/^vnd-/, '');
+          const searchPart = normalizedSearchTerm.replace(/^vnd-/, '');
+          vendorCodeMatches = normalizedVendorCode === normalizedSearchTerm || 
+                              codePart === searchPart ||
+                              codePart.includes(searchPart) ||
+                              normalizedVendorCode.includes(normalizedSearchTerm);
+        }
+        
+        return vendorName.includes(searchTerm) ||
+               vendorId.includes(searchTerm) ||
+               vendorCodeMatches ||
+               vendorEmail.includes(searchTerm);
       });
     }
     
@@ -530,13 +571,27 @@ const Home = () => {
     let sorted = [...filtered];
     switch (sortBy) {
       case 'Price Low to High':
-        sorted.sort((a, b) => (a?.price || 0) - (b?.price || 0));
+        sorted.sort((a, b) => {
+          const priceA = parseFloat(a?.price) || 0;
+          const priceB = parseFloat(b?.price) || 0;
+          return priceA - priceB;
+        });
         break;
       case 'Price High to Low':
-        sorted.sort((a, b) => (b?.price || 0) - (a?.price || 0));
+        sorted.sort((a, b) => {
+          const priceA = parseFloat(a?.price) || 0;
+          const priceB = parseFloat(b?.price) || 0;
+          return priceB - priceA;
+        });
         break;
       case 'Newest':
-        sorted.sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0));
+        sorted.sort((a, b) => {
+          const dateA = a?.createdAt ? new Date(a.createdAt) : new Date(0);
+          const dateB = b?.createdAt ? new Date(b.createdAt) : new Date(0);
+          const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+          const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+          return timeB - timeA; // Newest first
+        });
         break;
       default:
         // Most Relevant - keep original order
@@ -544,7 +599,7 @@ const Home = () => {
     }
     
     return sorted;
-  }, [appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, sortBy, appliedVendor]);
+  }, [properties, appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, sortBy, appliedVendor]);
 
   // All Nigerian States
   const locations = [
@@ -561,19 +616,38 @@ const Home = () => {
     'WiFi', 'Furnished', 'Balcony', 'Garden', 'Terrace', 'Home Theater', 'Sauna'
   ];
   
-  // Get unique vendors from properties
+  // Get unique vendors from all properties (merged from context and mock)
   const uniqueVendors = useMemo(() => {
     const vendorMap = new Map();
-    mockProperties.forEach(property => {
-      const vendorName = property?.agent?.name || 
-        (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '');
-      const vendorId = property?.ownerId || property?.owner?.id || '';
+    
+    // Merge properties from context with mock properties
+    const allPropertiesMap = new Map();
+    if (Array.isArray(mockProperties)) {
+      mockProperties.forEach(prop => {
+        allPropertiesMap.set(prop.id, prop);
+      });
+    }
+    if (Array.isArray(properties)) {
+      properties.forEach(prop => {
+        allPropertiesMap.set(prop.id, prop);
+      });
+    }
+    
+    const allProperties = Array.from(allPropertiesMap.values());
+    
+    allProperties.forEach(property => {
+      const vendorName = property?.vendorName || property?.agent?.name || 
+        (property?.owner ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() : '') ||
+        (property?.owner?.name || '');
+      const vendorId = property?.vendorId || property?.ownerId || property?.owner?.id || '';
+      const vendorCode = property?.vendorCode || property?.owner?.vendorCode || '';
+      
       if (vendorName && !vendorMap.has(vendorId)) {
-        vendorMap.set(vendorId, vendorName);
+        vendorMap.set(vendorId, { name: vendorName, code: vendorCode });
       }
     });
-    return Array.from(vendorMap.entries()).map(([id, name]) => ({ id, name }));
-  }, []);
+    return Array.from(vendorMap.entries()).map(([id, data]) => ({ id, name: data.name, code: data.code }));
+  }, [properties]);
 
   const handleAmenityToggle = (amenity) => {
     setSelectedAmenities(prev => 
@@ -1282,6 +1356,7 @@ const Home = () => {
                       }}
                       className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
                       title="Share property"
+                      aria-label="Share property"
                     >
                       <FaShare className="text-gray-400 text-sm hover:text-blue-500 transition-colors" />
                     </button>

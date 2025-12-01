@@ -313,7 +313,7 @@ const BillingPayments = () => {
 
     // In a real implementation, you would use Flutterwave's SDK
     console.log('Flutterwave payment data:', paymentData);
-    alert('Redirecting to Flutterwave payment gateway...');
+    toast.loading('Redirecting to Flutterwave payment gateway...', { duration: 2000 });
   };
 
   const handleViewTransaction = (transaction) => {

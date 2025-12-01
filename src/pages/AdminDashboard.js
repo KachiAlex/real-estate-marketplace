@@ -8,6 +8,9 @@ import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
+import TableSkeleton from '../components/TableSkeleton';
+import Breadcrumbs from '../components/Breadcrumbs';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -260,7 +263,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error approving property:', error);
-      alert('Error approving property: ' + error.message);
+      toast.error('Error approving property: ' + error.message);
       throw error;
     }
   };
@@ -285,7 +288,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error rejecting property:', error);
-      alert('Error rejecting property: ' + error.message);
+      toast.error('Error rejecting property: ' + error.message);
       throw error;
     }
   };
@@ -338,14 +341,14 @@ const AdminDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert('User suspended successfully');
+        toast.success('User suspended successfully');
         loadAdminData();
       } else {
-        alert('Failed to suspend user: ' + data.message);
+        toast.error('Failed to suspend user: ' + data.message);
       }
     } catch (error) {
       console.error('Error suspending user:', error);
-      alert('Error suspending user');
+      toast.error('Error suspending user');
     }
   };
 
@@ -360,14 +363,14 @@ const AdminDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert('User activated successfully');
+        toast.success('User activated successfully');
         loadAdminData();
       } else {
-        alert('Failed to activate user: ' + data.message);
+        toast.error('Failed to activate user: ' + data.message);
       }
     } catch (error) {
       console.error('Error activating user:', error);
-      alert('Error activating user');
+      toast.error('Error activating user');
     }
   };
 
@@ -382,14 +385,14 @@ const AdminDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert('User deleted successfully');
+        toast.success('User deleted successfully');
         loadAdminData();
       } else {
-        alert('Failed to delete user: ' + data.message);
+        toast.error('Failed to delete user: ' + data.message);
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Error deleting user');
+      toast.error('Error deleting user');
     }
   };
 
@@ -403,6 +406,13 @@ const AdminDashboard = () => {
       </div>
     );
   }
+
+  // Get breadcrumb items based on active tab
+  const breadcrumbItems = [
+    { label: 'Home', path: '/' },
+    { label: 'Admin Dashboard', path: '/admin' },
+    ...(activeTab !== 'properties' ? [{ label: activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' '), path: `#` }] : [])
+  ];
 
   if (loading) {
     return (
@@ -425,6 +435,11 @@ const AdminDashboard = () => {
       
       {/* Main Content */}
       <div className="flex-1 ml-64">
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <Breadcrumbs items={breadcrumbItems} />
+      </div>
+      
       {/* Header */}
       <div className="bg-white shadow">
           <div className="px-6 py-6">
@@ -559,32 +574,37 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Property
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vendor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Listed
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Approval Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {properties.length === 0 ? (
+          {loading ? (
+            <div className="p-6">
+              <TableSkeleton rows={10} columns={6} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Property
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Vendor
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Listed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Approval Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {properties.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                       <p className="text-lg font-medium">No properties found</p>
@@ -709,9 +729,10 @@ const AdminDashboard = () => {
                   </tr>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
         )}
 

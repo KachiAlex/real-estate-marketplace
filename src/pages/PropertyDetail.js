@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -358,8 +359,13 @@ const PropertyDetail = () => {
 
   if (!property) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <Breadcrumbs items={[
+            { label: 'Home', path: '/' },
+            { label: 'Properties', path: '/properties' },
+            { label: 'Property Not Found', path: '#' }
+          ]} />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Property Not Found</h2>
           <p className="text-gray-600">The property you're looking for doesn't exist.</p>
           <Link to="/properties" className="mt-4 inline-block text-blue-600 hover:text-blue-500">
@@ -370,19 +376,20 @@ const PropertyDetail = () => {
     );
   }
 
+  // Breadcrumb items for property detail
+  const breadcrumbItems = [
+    { label: 'Home', path: '/' },
+    { label: 'Properties', path: '/properties' },
+    { label: property?.title || 'Property Details', path: `#` }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <nav className="mb-8">
-          <ol className="flex items-center space-x-2 text-sm text-gray-500">
-            <li><Link to="/" className="hover:text-gray-700">Home</Link></li>
-            <li>/</li>
-            <li><Link to="/properties" className="hover:text-gray-700">Properties</Link></li>
-            <li>/</li>
-            <li className="text-gray-900">{property.title}</li>
-          </ol>
-        </nav>
+        <div className="mb-8">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}

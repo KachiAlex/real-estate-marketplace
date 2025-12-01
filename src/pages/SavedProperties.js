@@ -232,13 +232,23 @@ const SavedProperties = () => {
     .sort((a, b) => {
       switch (sortBy) {
         case 'priceHigh':
-          return b.price - a.price;
+          const priceA = parseFloat(a.price) || 0;
+          const priceB = parseFloat(b.price) || 0;
+          return priceB - priceA;
         case 'priceLow':
-          return a.price - b.price;
+          const priceALow = parseFloat(a.price) || 0;
+          const priceBLow = parseFloat(b.price) || 0;
+          return priceALow - priceBLow;
         case 'dateAdded':
-          return new Date(b.dateAdded) - new Date(a.dateAdded);
+          const dateA = a.dateAdded ? new Date(a.dateAdded) : new Date(0);
+          const dateB = b.dateAdded ? new Date(b.dateAdded) : new Date(0);
+          const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+          const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+          return timeB - timeA; // Newest first
         case 'bedrooms':
-          return b.bedrooms - a.bedrooms;
+          const bedroomsA = parseInt(a.bedrooms) || 0;
+          const bedroomsB = parseInt(b.bedrooms) || 0;
+          return bedroomsB - bedroomsA;
         default:
           return 0;
       }

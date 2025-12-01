@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaChartLine, FaDollarSign, FaBuilding, FaPercentage, FaEye } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const InvestorDashboard = () => {
   const { user } = useAuth();
@@ -64,14 +65,14 @@ const InvestorDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert('Investment successful!');
+        toast.success('Investment successful!');
         fetchData(); // Refresh data
       } else {
-        alert(data.message || 'Investment failed');
+        toast.error(data.message || 'Investment failed');
       }
     } catch (error) {
       console.error('Error making investment:', error);
-      alert('Investment failed');
+      toast.error('Investment failed');
     }
   };
 

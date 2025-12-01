@@ -6,10 +6,7 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading, setAuthRedirect } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute: Loading:', loading, 'User:', user);
-
   if (loading) {
-    console.log('ProtectedRoute: Still loading, showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -21,7 +18,6 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    console.log('ProtectedRoute: No user found, saving intended path and redirecting to login');
     try {
       // Remember where the user wanted to go
       setAuthRedirect(location.pathname + location.search);
@@ -29,7 +25,6 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  console.log('ProtectedRoute: User authenticated, rendering children');
   return children;
 };
 

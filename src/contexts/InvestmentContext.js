@@ -434,36 +434,40 @@ export const InvestmentProvider = ({ children }) => {
 
       switch (sortBy) {
         case 'expectedReturn':
-          aValue = a.expectedReturn;
-          bValue = b.expectedReturn;
+          aValue = parseFloat(a.expectedReturn) || 0;
+          bValue = parseFloat(b.expectedReturn) || 0;
           break;
         case 'minimumInvestment':
-          aValue = a.minimumInvestment;
-          bValue = b.minimumInvestment;
+          aValue = parseFloat(a.minimumInvestment) || 0;
+          bValue = parseFloat(b.minimumInvestment) || 0;
           break;
         case 'duration':
-          aValue = a.duration;
-          bValue = b.duration;
+          aValue = parseInt(a.duration) || 0;
+          bValue = parseInt(b.duration) || 0;
           break;
         case 'progressPercentage':
-          aValue = (a.raisedAmount / a.totalAmount) * 100;
-          bValue = (b.raisedAmount / b.totalAmount) * 100;
+          const totalA = parseFloat(a.totalAmount) || 1;
+          const totalB = parseFloat(b.totalAmount) || 1;
+          aValue = ((parseFloat(a.raisedAmount) || 0) / totalA) * 100;
+          bValue = ((parseFloat(b.raisedAmount) || 0) / totalB) * 100;
           break;
         case 'investors':
-          aValue = a.investors;
-          bValue = b.investors;
+          aValue = parseInt(a.investors) || 0;
+          bValue = parseInt(b.investors) || 0;
           break;
         case 'createdAt':
         default:
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
+          const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          aValue = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+          bValue = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
           break;
       }
 
       if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
   };

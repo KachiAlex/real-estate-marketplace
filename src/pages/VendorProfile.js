@@ -338,8 +338,8 @@ const VendorProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
+      {/* Header */}
+      <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
           <p className="mt-1 text-gray-600">Manage your account information</p>
         </div>
@@ -364,19 +364,19 @@ const VendorProfile = () => {
                     ) : (
                       <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
                         <FaUser className="h-10 w-10 text-gray-400" />
-                      </div>
+          </div>
                     )}
-                    <button
+                <button
                       type="button"
                       onClick={handleAvatarClick}
                       disabled={uploadingAvatar}
                       className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
                       <FaCamera className="h-3 w-3" />
-                    </button>
+                </button>
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <button
+                <button
                       type="button"
                       onClick={handleAvatarClick}
                       disabled={uploadingAvatar}
@@ -384,19 +384,19 @@ const VendorProfile = () => {
                     >
                       <FaUpload className="mr-2 h-4 w-4" />
                       {uploadingAvatar ? 'Uploading...' : 'Change Picture'}
-                    </button>
+                </button>
                     {avatarPreview && (
-                      <button
+              <button
                         type="button"
                         onClick={handleRemoveAvatar}
                         className="flex items-center px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors"
-                      >
+              >
                         <FaTimes className="mr-2 h-4 w-4" />
                         Remove Picture
-                      </button>
-                    )}
+              </button>
+            )}
                     <p className="text-xs text-gray-500">JPG, PNG, WEBP or GIF. Max size 5MB</p>
-                  </div>
+          </div>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -404,13 +404,13 @@ const VendorProfile = () => {
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                </div>
-              </div>
+        </div>
+      </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                     <input
                       type="text"
                       name="firstName"
@@ -421,9 +421,9 @@ const VendorProfile = () => {
                       }`}
                     />
                     {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                     <input
                       type="text"
                       name="lastName"
@@ -434,25 +434,25 @@ const VendorProfile = () => {
                       }`}
                     />
                     {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
-                  </div>
                 </div>
+              </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email <span className="text-gray-400 text-xs">(Cannot be changed)</span>
                   </label>
                   <input
-                    type="email"
+                      type="email"
                     name="email"
                     value={formData.email}
                     readOnly
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                  />
+                    />
                   <p className="mt-1 text-xs text-gray-500">Your email is locked to your login credentials</p>
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                   <input
                     type="tel"
@@ -462,10 +462,10 @@ const VendorProfile = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="(555) 123-4567"
                   />
-                </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                   <textarea
                     name="bio"
                     value={formData.bio}
@@ -474,7 +474,7 @@ const VendorProfile = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Tell us about yourself..."
                   />
-                </div>
+            </div>
 
                 <div className="flex justify-end">
                   <button
@@ -486,8 +486,8 @@ const VendorProfile = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
+                </div>
+              </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
@@ -578,8 +578,8 @@ const VendorProfile = () => {
                     >
                       Copy
                     </button>
-                  </div>
                 </div>
+              </div>
                 {/* Vendor ID - only shown if user is a vendor */}
                 {user?.vendorCode && (
                   <div>
@@ -657,7 +657,7 @@ const VendorProfile = () => {
                       >
                         Copy
                       </button>
-                    </div>
+                      </div>
                     <p className="text-xs text-gray-500 mt-1">Share this with buyers to find your properties</p>
                   </div>
                 )}
@@ -681,8 +681,8 @@ const VendorProfile = () => {
                   Delete Account
                 </button>
               </div>
+              </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

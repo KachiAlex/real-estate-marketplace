@@ -95,7 +95,7 @@ function App() {
                     <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
-                      <main className="flex-1 ml-0 lg:ml-64">
+                      <main id="main-content" className="flex-1 ml-0 lg:ml-64" role="main">
                         <Properties />
                       </main>
                     </div>
@@ -168,7 +168,7 @@ function App() {
                     <ProtectedRoute>
                       <div className="flex w-full">
                         <Sidebar />
-                        <main className="flex-1 ml-0 lg:ml-64">
+                        <main id="main-content" className="flex-1 ml-0 lg:ml-64" role="main">
                           <Dashboard />
                         </main>
                       </div>

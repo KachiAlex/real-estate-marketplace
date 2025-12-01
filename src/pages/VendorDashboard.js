@@ -9,6 +9,8 @@ import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSi
 import PropertyVerification from '../components/PropertyVerification';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
 import NotificationDropdown from '../components/NotificationDropdown';
+import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
+import Breadcrumbs from '../components/Breadcrumbs';
 import toast from 'react-hot-toast';
 
 const VendorDashboard = () => {
@@ -223,7 +225,7 @@ const VendorDashboard = () => {
       const totalViews = normalizedProps.reduce((sum, p) => sum + (p.views || 0), 0);
       const totalInquiries = normalizedProps.reduce((sum, p) => sum + (p.inquiries || 0), 0);
 
-      setAnalytics({
+    setAnalytics({
         totalProperties: normalizedProps.length,
         activeListings: activeCount,
         pendingListings: pendingCount,
@@ -411,7 +413,8 @@ const VendorDashboard = () => {
       return;
     }
 
-    const confirmed = window.confirm('Are you sure you want to delete this property?');
+    // Use toast for confirmation with a custom action
+    const confirmed = window.confirm('Are you sure you want to delete this property? This action cannot be undone.');
     if (!confirmed) return;
 
     // Optimistic update - remove from local state immediately
@@ -720,21 +723,20 @@ const VendorDashboard = () => {
                       <span>Refresh</span>
                     )}
                   </button>
-                  <button 
-                    onClick={() => navigate('/vendor/add-property')}
-                    className="btn-primary flex items-center space-x-2"
-                  >
-                    <FaPlus className="h-4 w-4" />
-                    <span>Add Property</span>
-                  </button>
+                <button 
+                  onClick={() => navigate('/vendor/add-property')}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <FaPlus className="h-4 w-4" />
+                  <span>Add Property</span>
+                </button>
                 </div>
               </div>
 
               {/* Loading State */}
               {propertiesLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <FaSpinner className="h-8 w-8 text-blue-600 animate-spin" />
-                  <span className="ml-3 text-gray-600">Loading your properties...</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <PropertyCardSkeleton count={6} />
                 </div>
               )}
 

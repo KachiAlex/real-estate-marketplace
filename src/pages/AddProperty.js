@@ -13,6 +13,7 @@ import AddressMemory from '../components/AddressMemory';
 import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 import MemoryInput from '../components/MemoryInput';
 import storageService from '../services/storageService';
+import { useAutoSave } from '../hooks/useAutoSave';
 import toast from 'react-hot-toast';
 
 const AddProperty = () => {
@@ -85,6 +86,63 @@ const AddProperty = () => {
   const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'];
   const propertyStatuses = ['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment'];
   const commonAmenities = ['Parking', 'Garden', 'Balcony', 'Pool', 'Gym', 'Security', 'Air Conditioning', 'Heating', 'Hardwood Floors', 'Fireplace', 'Walk-in Closet', 'Patio', 'High-Speed Internet'];
+
+  // Auto-save configuration
+  const storageKey = `addPropertyForm_${user?.id || 'guest'}`;
+  const { clearSavedData } = useAutoSave(storageKey, {}, 2000);
+
+  // Load saved form data on mount (if not editing a property)
+  useEffect(() => {
+    const propertyToEdit = location.state?.propertyToEdit;
+    
+    // If editing, don't load saved data
+    if (propertyToEdit) {
+      return;
+    }
+    
+    // Load auto-saved data
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only load if we have meaningful data (at least title or address)
+        if (parsed.title || parsed.location?.address) {
+          setFormData(prev => ({
+            ...prev,
+            ...parsed,
+            // Preserve empty arrays for files (don't restore them)
+            images: prev.images,
+            videos: prev.videos,
+            documentation: prev.documentation
+          }));
+          toast.success('Draft restored from previous session', { duration: 3000 });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved form data:', error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  // Auto-save form data (excludes large files like images) whenever formData changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const dataToSave = {
+        ...formData,
+        // Exclude large arrays/files from auto-save
+        images: [],
+        videos: [],
+        documentation: []
+      };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error('Error auto-saving form data:', error);
+      }
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, storageKey]);
 
   // Check document status on component mount
   useEffect(() => {
@@ -440,6 +498,9 @@ const AddProperty = () => {
           }
         } catch (_) {}
 
+        // Clear auto-saved data after successful submission
+        clearSavedData();
+        
         // Navigate to Vendor "My Properties" so the new listing is visible immediately
         if (location.pathname.includes('/vendor/')) {
           navigate('/vendor/properties');
