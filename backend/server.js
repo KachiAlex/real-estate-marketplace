@@ -196,6 +196,7 @@ app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/blog', require('./routes/blog'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 // API Routes
 // Health check

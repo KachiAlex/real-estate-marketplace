@@ -200,6 +200,9 @@ describe('AddProperty', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('address-memory')).toBeInTheDocument();
+    // AddressMemory is rendered multiple times in the form
+    const addressMemoryComponents = screen.getAllByTestId('address-memory');
+    expect(addressMemoryComponents.length).toBeGreaterThan(0);
+    expect(addressMemoryComponents[0]).toBeInTheDocument();
   });
 });

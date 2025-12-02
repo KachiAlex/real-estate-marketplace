@@ -7,6 +7,27 @@ import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import toast from 'react-hot-toast';
 
+// Ensure Sign In button is always visible - browser extension resistant
+const SignInLink = ({ to, className, children, ...props }) => {
+  return (
+    <Link
+      to={to}
+      className={className}
+      style={{ 
+        display: 'inline-block',
+        visibility: 'visible',
+        opacity: 1,
+        pointerEvents: 'auto',
+        position: 'relative',
+        zIndex: 10
+      }}
+      {...props}
+    >
+      {children}
+    </Link>
+  );
+};
+
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const location = useLocation();
@@ -101,6 +122,22 @@ const Header = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [openSearch]);
+
+  // Ensure Sign In button is always visible (browser extension resistant)
+  useEffect(() => {
+    if (!user) {
+      // Force visibility of Sign In links after component mounts
+      const signInLinks = document.querySelectorAll('a[href="/login"], a[href*="/login"], .sign-in-link');
+      signInLinks.forEach(link => {
+        if (link instanceof HTMLElement) {
+          link.style.setProperty('display', 'inline-block', 'important');
+          link.style.setProperty('visibility', 'visible', 'important');
+          link.style.setProperty('opacity', '1', 'important');
+          link.style.setProperty('pointer-events', 'auto', 'important');
+        }
+      });
+    }
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -244,12 +281,13 @@ const Header = () => {
                 )}
               </div>
             ) : (
-              <Link
+              <SignInLink
                 to="/login"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium text-sm"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium text-sm sign-in-link"
+                aria-label="Sign in to your account"
               >
                 Sign In
-              </Link>
+              </SignInLink>
             )}
           </div>
         </div>
@@ -611,12 +649,13 @@ const Header = () => {
               </>
             ) : (
               <div className="flex items-center space-x-2 xl:space-x-4">
-                <Link
+                <SignInLink
                   to="/login"
-                  className="text-gray-700 hover:text-brand-orange transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap"
+                  className="text-gray-700 hover:text-brand-orange transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap sign-in-link"
+                  aria-label="Sign in to your account"
                 >
                   Sign In
-                </Link>
+                </SignInLink>
               </div>
             )}
           </div>
@@ -737,13 +776,14 @@ const Header = () => {
                 </div>
               ) : (
                 <div className="pt-4 border-t border-gray-200">
-                  <Link
+                  <SignInLink
                     to="/login"
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2 sign-in-link"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Sign in to your account"
                   >
                     Sign In
-                  </Link>
+                  </SignInLink>
                 </div>
               )}
             </nav>

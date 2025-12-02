@@ -10,6 +10,8 @@ import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 import TableSkeleton from '../components/TableSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
+import AdminListingsStatusChart from '../components/AdminListingsStatusChart';
+import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -522,6 +524,19 @@ const AdminDashboard = () => {
         </div>
         )}
 
+        {/* Property status distribution chart (properties tab only) */}
+        {activeTab === 'properties' && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Listings by Approval Status</h2>
+            <AdminListingsStatusChart
+              total={stats.total}
+              pending={stats.pending}
+              approved={stats.approved}
+              rejected={stats.rejected}
+            />
+          </div>
+        )}
+
         {/* Filters (properties tab only) */}
         {activeTab === 'properties' && (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -579,32 +594,32 @@ const AdminDashboard = () => {
               <TableSkeleton rows={10} columns={6} />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Property
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Vendor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Listed
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Approval Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {properties.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Property
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vendor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Listed
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Approval Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {properties.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                       <p className="text-lg font-medium">No properties found</p>
@@ -729,16 +744,27 @@ const AdminDashboard = () => {
                   </tr>
                   ))
                 )}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
+          </div>
           )}
         </div>
         )}
 
         {/* Escrow Tab */}
         {activeTab === 'escrow' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
+              <p className="mt-1 text-sm text-gray-500">Monitor all escrow transactions and resolve disputes.</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-md font-semibold text-gray-900 mb-4">Escrow Volume Over Time</h3>
+              <AdminEscrowVolumeChart escrows={escrows} />
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
             </div>
@@ -774,6 +800,7 @@ const AdminDashboard = () => {
               </table>
             </div>
           </div>
+        </div>
         )}
 
         {/* Disputes Tab */}

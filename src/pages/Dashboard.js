@@ -123,48 +123,65 @@ const Dashboard = () => {
     setViewingMessage('');
   };
 
-  // Real data for stats - calculate from actual data
-  const calculateDashboardStats = () => {
-    // Get escrow transactions from localStorage
-    const escrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
-    const userEscrowTransactions = escrowTransactions.filter(t => t.buyerId === user?.id);
-    
-    // Get viewing requests from localStorage
-    const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
-    const userViewingRequests = viewingRequests.filter(v => v.userId === user?.id);
-    
-    // Get investment escrows from localStorage
-    const investmentEscrows = JSON.parse(localStorage.getItem('investmentEscrows') || '[]');
-    const userInvestmentEscrows = investmentEscrows.filter(i => i.investorId === user?.id);
-    
-    // Calculate total invested from escrow transactions
-    const totalInvested = userEscrowTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    
-    // Calculate total invested from investment escrows
-    const totalInvestmentAmount = userInvestmentEscrows.reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    return {
-      totalProperties: properties.length || 0,
-      savedProperties: user?.savedProperties?.length || 5,
-      activeInquiries: user?.inquiries?.length || 3,
-      scheduledViewings: userViewingRequests.filter(v => v.status === 'pending' || v.status === 'confirmed').length,
-      totalInvested: totalInvested + totalInvestmentAmount,
-      activeInvestments: userInvestmentEscrows.filter(i => i.status === 'pending_documents' || i.status === 'active').length,
-      escrowTransactions: userEscrowTransactions.length,
-      monthlyBudget: user?.monthlyBudget || 5000000,
-      // Additional stats
-      completedViewings: userViewingRequests.filter(v => v.status === 'completed').length,
-      pendingPayments: userEscrowTransactions.filter(t => t.status === 'pending' || t.status === 'in-progress').length,
-      totalEarnings: user?.totalEarnings || 0
-    };
-  };
+  const [dashboardStats, setDashboardStats] = useState({
+    totalProperties: 0,
+    savedProperties: 0,
+    activeInquiries: 0,
+    scheduledViewings: 0,
+    totalInvested: 0,
+    activeInvestments: 0,
+    escrowTransactions: 0,
+    monthlyBudget: 0,
+    completedViewings: 0,
+    pendingPayments: 0,
+    totalEarnings: 0
+  });
 
-  const dashboardStats = calculateDashboardStats();
-
-  // Recalculate stats when user or properties change
+  // Load dashboard stats from backend
   useEffect(() => {
-    // This will trigger a re-render when dependencies change
-  }, [user, properties]);
+    const fetchDashboardStats = async () => {
+      if (!user) return;
+
+      try {
+        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+        const token = localStorage.getItem('token');
+
+        const res = await fetch(`${apiBaseUrl}/dashboard/user`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          console.warn('Dashboard: Failed to load backend stats, falling back to client-side stats');
+          return;
+        }
+
+        const backend = data.data || {};
+        const investmentSummary = backend.investments || {};
+        const escrowSummary = backend.escrow || {};
+
+        setDashboardStats(prev => ({
+          ...prev,
+          totalProperties: backend.totalProperties ?? properties.length ?? 0,
+          savedProperties: backend.savedProperties ?? (user?.favorites?.length || 0),
+          // Keep activeInquiries/scheduled/completedViewings based on existing local logic (until inquiries are API-backed)
+          totalInvested: investmentSummary.totalInvested || 0,
+          activeInvestments: investmentSummary.activeInvestments || 0,
+          escrowTransactions: escrowSummary.count || 0,
+          pendingPayments: escrowSummary.pendingPayments || 0,
+          monthlyBudget: user?.monthlyBudget || 5000000,
+          totalEarnings: user?.totalEarnings || 0
+        }));
+      } catch (error) {
+        console.warn('Dashboard: Error fetching backend stats', error);
+      }
+    };
+
+    fetchDashboardStats();
+  }, [user, properties.length]);
 
   // Mock data for recent properties (fallback if no properties loaded)
   const mockProperties = [

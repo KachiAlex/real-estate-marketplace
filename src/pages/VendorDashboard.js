@@ -11,6 +11,8 @@ import VendorInspectionRequests from '../components/VendorInspectionRequests';
 import NotificationDropdown from '../components/NotificationDropdown';
 import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
+import VendorViewsChart from '../components/VendorViewsChart';
+import VendorConversionChart from '../components/VendorConversionChart';
 import toast from 'react-hot-toast';
 
 const VendorDashboard = () => {
@@ -41,7 +43,19 @@ const VendorDashboard = () => {
   const isPropertyOwner = user?.vendorData?.vendorCategory === 'property_owner';
   const [properties, setProperties] = useState([]);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
-  const [analytics, setAnalytics] = useState({});
+  const [analytics, setAnalytics] = useState({
+    totalProperties: 0,
+    activeListings: 0,
+    pendingListings: 0,
+    soldProperties: 0,
+    totalViews: 0,
+    totalInquiries: 0,
+    totalRevenue: 0,
+    averagePrice: 0,
+    conversionRate: 0,
+    monthlyViews: 0,
+    monthlyInquiries: 0
+  });
   const [inquiries, setInquiries] = useState([]);
   const [viewingRequests, setViewingRequests] = useState([]);
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -219,28 +233,6 @@ const VendorDashboard = () => {
       console.log('VendorDashboard: Total properties loaded:', normalizedProps.length);
       setProperties(normalizedProps);
 
-      // Update analytics based on actual properties
-      const activeCount = normalizedProps.filter(p => p.status === 'active').length;
-      const pendingCount = normalizedProps.filter(p => p.status === 'pending').length;
-      const totalViews = normalizedProps.reduce((sum, p) => sum + (p.views || 0), 0);
-      const totalInquiries = normalizedProps.reduce((sum, p) => sum + (p.inquiries || 0), 0);
-
-    setAnalytics({
-        totalProperties: normalizedProps.length,
-        activeListings: activeCount,
-        pendingListings: pendingCount,
-        soldProperties: normalizedProps.filter(p => p.status === 'sold').length,
-        totalViews: totalViews,
-        totalInquiries: totalInquiries,
-        totalRevenue: 0,
-        averagePrice: normalizedProps.length > 0 
-          ? normalizedProps.reduce((sum, p) => sum + (p.price || 0), 0) / normalizedProps.length 
-          : 0,
-        conversionRate: totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : 0,
-        monthlyViews: 0,
-        monthlyInquiries: 0
-      });
-
     } catch (error) {
       console.error('VendorDashboard: Error fetching properties:', error);
       toast.error('Failed to load properties');
@@ -256,6 +248,48 @@ const VendorDashboard = () => {
       fetchVendorProperties();
     }
   }, [firebaseAuthReady, fetchVendorProperties]);
+
+  // Load vendor analytics summary from backend
+  useEffect(() => {
+    const fetchVendorAnalytics = async () => {
+      if (!user) return;
+
+      try {
+        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+        const token = localStorage.getItem('token');
+
+        const res = await fetch(`${apiBaseUrl}/dashboard/vendor`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          console.warn('VendorDashboard: Failed to load backend analytics summary');
+          return;
+        }
+
+        const summary = data.data || {};
+        setAnalytics(prev => ({
+          ...prev,
+          totalProperties: summary.totalProperties ?? prev.totalProperties,
+          activeListings: summary.activeListings ?? prev.activeListings,
+          pendingListings: summary.pendingListings ?? prev.pendingListings,
+          soldProperties: summary.soldProperties ?? prev.soldProperties,
+          totalViews: summary.totalViews ?? prev.totalViews,
+          totalInquiries: summary.totalInquiries ?? prev.totalInquiries,
+          totalRevenue: summary.totalRevenue ?? prev.totalRevenue,
+          conversionRate: summary.conversionRate ?? prev.conversionRate
+        }));
+      } catch (error) {
+        console.warn('VendorDashboard: Error fetching backend analytics summary', error);
+      }
+    };
+
+    fetchVendorAnalytics();
+  }, [user]);
 
   // Sync localStorage properties to Firestore (runs once when component mounts and auth is ready)
   useEffect(() => {
@@ -1027,17 +1061,13 @@ const VendorDashboard = () => {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-900 mb-4">Views Over Time</h4>
-                  <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                    <p className="text-gray-500">Chart visualization would go here</p>
-                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-4">Views by Property</h4>
+                  <VendorViewsChart properties={properties} />
                 </div>
                 
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-900 mb-4">Inquiry Conversion</h4>
-                  <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                    <p className="text-gray-500">Chart visualization would go here</p>
-                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-4">Inquiry Conversion by Property</h4>
+                  <VendorConversionChart properties={properties} />
                 </div>
               </div>
 

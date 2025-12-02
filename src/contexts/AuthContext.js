@@ -288,53 +288,91 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing session and redirect URL on load
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    const savedRedirectUrl = localStorage.getItem('authRedirectUrl');
-    const savedActiveRole = localStorage.getItem('activeRole');
-    
-    if (savedUser) {
+    // Validate and clean up localStorage on app load
+    const validateAndCleanUser = () => {
       try {
-        let userData = JSON.parse(savedUser);
+        const savedUser = localStorage.getItem('currentUser');
+        if (!savedUser) {
+          setUser(null);
+          return;
+        }
+
+        let userData;
+        try {
+          userData = JSON.parse(savedUser);
+        } catch (parseError) {
+          console.error('Invalid user data in localStorage, clearing:', parseError);
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('activeRole');
+          setUser(null);
+          return;
+        }
+
+        // Validate user data structure
+        if (!userData || typeof userData !== 'object') {
+          console.error('Invalid user data structure, clearing');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('activeRole');
+          setUser(null);
+          return;
+        }
+
         // Clear guest users - they should not be loaded
         if (isGuestUser(userData)) {
           console.log('Removing guest user from localStorage');
           localStorage.removeItem('currentUser');
           localStorage.removeItem('activeRole');
           setUser(null);
-        } else {
-          // Ensure userCode and vendorCode exist for existing users
-          let needsUpdate = false;
-          if (!userData.userCode) {
-            userData.userCode = generateUserCode();
-            needsUpdate = true;
-          }
-          if (!userData.vendorCode) {
-            userData.vendorCode = generateVendorCode();
-            needsUpdate = true;
-          }
-          // Save updated user data back to localStorage
-          if (needsUpdate) {
-            console.log('AuthContext: Generated missing codes for user:', userData.userCode, userData.vendorCode);
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-          }
-          setUser(userData);
+          return;
         }
+
+        // Validate required fields
+        if (!userData.id && !userData.email) {
+          console.error('User data missing required fields, clearing');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('activeRole');
+          setUser(null);
+          return;
+        }
+
+        // Ensure userCode and vendorCode exist for existing users
+        let needsUpdate = false;
+        if (!userData.userCode) {
+          userData.userCode = generateUserCode();
+          needsUpdate = true;
+        }
+        if (!userData.vendorCode) {
+          userData.vendorCode = generateVendorCode();
+          needsUpdate = true;
+        }
+        // Save updated user data back to localStorage
+        if (needsUpdate) {
+          console.log('AuthContext: Generated missing codes for user:', userData.userCode, userData.vendorCode);
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+        }
+        setUser(userData);
       } catch (error) {
-        console.error('Error parsing saved user:', error);
+        console.error('Error validating user data:', error);
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('activeRole');
         setUser(null);
       }
-    }
-    
+    };
+
+    validateAndCleanUser();
+
+    const savedRedirectUrl = localStorage.getItem('authRedirectUrl');
     if (savedRedirectUrl) {
       setRedirectUrl(savedRedirectUrl);
     }
     
+    const savedActiveRole = localStorage.getItem('activeRole');
+    const savedUser = localStorage.getItem('currentUser');
     // Only set activeRole if we have a valid (non-guest) user
     if (savedActiveRole && savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        if (!isGuestUser(userData)) {
+        if (!isGuestUser(userData) && userData.id) {
           setActiveRole(savedActiveRole);
         }
       } catch (error) {
