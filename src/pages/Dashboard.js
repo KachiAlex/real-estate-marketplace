@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -27,6 +27,81 @@ const Dashboard = () => {
       setFavorites(new Set(savedFavorites));
     }
   }, [user]);
+
+  // Function to refresh dashboard stats
+  const refreshDashboardStats = useCallback(() => {
+    if (!user) return;
+
+    // Get saved properties count from localStorage (includes mock data)
+    const key = `favorites_${user.id}`;
+    const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+    const savedCount = savedFavorites.length;
+
+    // Get scheduled viewings from localStorage
+    const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const userViewingRequests = viewingRequests.filter(req => 
+      req.userId === user.id || req.buyerId === user.id
+    );
+    const scheduledViewings = userViewingRequests.filter(req => 
+      req.status === 'pending' || 
+      req.status === 'pending_vendor_confirmation' || 
+      req.status === 'accepted' ||
+      req.status === 'confirmed'
+    ).length;
+    const completedViewings = userViewingRequests.filter(req => 
+      req.status === 'completed' || req.status === 'viewed'
+    ).length;
+
+    // Get active inquiries from localStorage (if exists)
+    const inquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+    const userInquiries = inquiries.filter(inq => 
+      inq.userId === user.id || inq.buyerId === user.id
+    );
+    const activeInquiries = userInquiries.filter(inq => 
+      inq.status === 'new' || inq.status === 'pending' || inq.status === 'contacted'
+    ).length;
+
+    // Get escrow transactions from localStorage
+    const escrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+    const userEscrowTransactions = escrowTransactions.filter(t => 
+      t.buyerId === user.id || t.sellerId === user.id
+    );
+    const escrowCount = userEscrowTransactions.length;
+    const pendingPayments = userEscrowTransactions.filter(t => 
+      t.status === 'pending' || t.status === 'funded'
+    ).length;
+
+    // Get investment data from InvestmentContext
+    const investmentSummary = getUserInvestmentSummary();
+    const totalInvested = investmentSummary.totalInvested || 0;
+    const activeInvestments = investmentSummary.activeInvestments || 0;
+    const totalEarnings = investmentSummary.totalDividends || 0;
+
+    // Get total properties count
+    const totalProperties = properties.length || 0;
+
+    setDashboardStats(prev => ({
+      ...prev,
+      totalProperties,
+      savedProperties: savedCount,
+      activeInquiries,
+      scheduledViewings,
+      completedViewings,
+      totalInvested,
+      activeInvestments,
+      escrowTransactions: escrowCount,
+      pendingPayments,
+      totalEarnings,
+      monthlyBudget: user?.monthlyBudget || 5000000
+    }));
+  }, [user, properties.length, getUserInvestmentSummary]);
+
+  // Update saved properties count from localStorage (includes mock data)
+  useEffect(() => {
+    if (user) {
+      refreshDashboardStats();
+    }
+  }, [user, favorites, refreshDashboardStats]);
 
   const handleViewProperty = (propertyId) => {
     navigate(`/property/${propertyId}`);
@@ -91,6 +166,7 @@ const Dashboard = () => {
       propertyTitle: selectedProperty.title,
       propertyLocation: selectedProperty.location,
       userId: user.id,
+      buyerId: user.id,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
       status: 'pending_vendor_confirmation',
@@ -115,6 +191,9 @@ const Dashboard = () => {
     
     toast.success(`Viewing request sent for "${selectedProperty.title}"! The vendor will confirm or suggest an alternative time.`);
     
+    // Refresh dashboard stats immediately
+    refreshDashboardStats();
+    
     // Reset modal
     setShowScheduleModal(false);
     setSelectedProperty(null);
@@ -137,51 +216,124 @@ const Dashboard = () => {
     totalEarnings: 0
   });
 
-  // Load dashboard stats from backend
+  // Load dashboard stats from all sources (localStorage, contexts, backend)
   useEffect(() => {
-    const fetchDashboardStats = async () => {
+    const loadDashboardStats = () => {
       if (!user) return;
 
-      try {
-        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
-        const token = localStorage.getItem('token');
+      // Get saved properties count from localStorage (includes mock data)
+      const key = `favorites_${user.id}`;
+      const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+      const savedCount = savedFavorites.length;
 
-        const res = await fetch(`${apiBaseUrl}/dashboard/user`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
+      // Get scheduled viewings from localStorage
+      const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const userViewingRequests = viewingRequests.filter(req => 
+        req.userId === user.id || req.buyerId === user.id
+      );
+      const scheduledViewings = userViewingRequests.filter(req => 
+        req.status === 'pending' || 
+        req.status === 'pending_vendor_confirmation' || 
+        req.status === 'accepted' ||
+        req.status === 'confirmed'
+      ).length;
+      const completedViewings = userViewingRequests.filter(req => 
+        req.status === 'completed' || req.status === 'viewed'
+      ).length;
+
+      // Get active inquiries from localStorage (if exists)
+      const inquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+      const userInquiries = inquiries.filter(inq => 
+        inq.userId === user.id || inq.buyerId === user.id
+      );
+      const activeInquiries = userInquiries.filter(inq => 
+        inq.status === 'new' || inq.status === 'pending' || inq.status === 'contacted'
+      ).length;
+
+      // Get escrow transactions from localStorage
+      const escrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+      const userEscrowTransactions = escrowTransactions.filter(t => 
+        t.buyerId === user.id || t.sellerId === user.id
+      );
+      const escrowCount = userEscrowTransactions.length;
+      const pendingPayments = userEscrowTransactions.filter(t => 
+        t.status === 'pending' || t.status === 'funded'
+      ).length;
+
+      // Get investment data from InvestmentContext
+      const investmentSummary = getUserInvestmentSummary();
+      const totalInvested = investmentSummary.totalInvested || 0;
+      const activeInvestments = investmentSummary.activeInvestments || 0;
+      const totalEarnings = investmentSummary.totalDividends || 0;
+
+      // Get mortgage data from MortgageContext
+      const mortgageSummary = getPaymentSummary();
+      const mortgagePayments = mortgageSummary.totalMonthlyPayments || 0;
+
+      // Get total properties count
+      const totalProperties = properties.length || 0;
+
+      // Try to get additional data from backend API
+      const fetchBackendStats = async () => {
+        try {
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          const token = localStorage.getItem('token');
+
+          const res = await fetch(`${apiBaseUrl}/dashboard/user`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const backend = data.data || {};
+            const backendInvestmentSummary = backend.investments || {};
+            const backendEscrowSummary = backend.escrow || {};
+
+            // Merge backend data with local data (prefer local for real-time updates)
+            setDashboardStats(prev => ({
+              ...prev,
+              totalProperties: backend.totalProperties ?? totalProperties,
+              savedProperties: savedCount,
+              activeInquiries: activeInquiries || backend.activeInquiries || 0,
+              scheduledViewings: scheduledViewings || backend.scheduledViewings || 0,
+              completedViewings: completedViewings || backend.completedViewings || 0,
+              totalInvested: totalInvested || backendInvestmentSummary.totalInvested || 0,
+              activeInvestments: activeInvestments || backendInvestmentSummary.activeInvestments || 0,
+              escrowTransactions: escrowCount || backendEscrowSummary.count || 0,
+              pendingPayments: pendingPayments || backendEscrowSummary.pendingPayments || 0,
+              monthlyBudget: user?.monthlyBudget || 5000000,
+              totalEarnings: totalEarnings || user?.totalEarnings || 0
+            }));
+            return;
           }
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          console.warn('Dashboard: Failed to load backend stats, falling back to client-side stats');
-          return;
+        } catch (error) {
+          console.warn('Dashboard: Error fetching backend stats', error);
         }
 
-        const backend = data.data || {};
-        const investmentSummary = backend.investments || {};
-        const escrowSummary = backend.escrow || {};
-
-        setDashboardStats(prev => ({
-          ...prev,
-          totalProperties: backend.totalProperties ?? properties.length ?? 0,
-          savedProperties: backend.savedProperties ?? (user?.favorites?.length || 0),
-          // Keep activeInquiries/scheduled/completedViewings based on existing local logic (until inquiries are API-backed)
-          totalInvested: investmentSummary.totalInvested || 0,
-          activeInvestments: investmentSummary.activeInvestments || 0,
-          escrowTransactions: escrowSummary.count || 0,
-          pendingPayments: escrowSummary.pendingPayments || 0,
+        // Fallback to local data only
+        setDashboardStats({
+          totalProperties,
+          savedProperties: savedCount,
+          activeInquiries,
+          scheduledViewings,
+          completedViewings,
+          totalInvested,
+          activeInvestments,
+          escrowTransactions: escrowCount,
           monthlyBudget: user?.monthlyBudget || 5000000,
-          totalEarnings: user?.totalEarnings || 0
-        }));
-      } catch (error) {
-        console.warn('Dashboard: Error fetching backend stats', error);
-      }
+          pendingPayments,
+          totalEarnings
+        });
+      };
+
+      fetchBackendStats();
     };
 
-    fetchDashboardStats();
-  }, [user, properties.length]);
+    loadDashboardStats();
+  }, [user, properties.length, userInvestments, getUserInvestmentSummary, getPaymentSummary]);
 
   // Mock data for recent properties (fallback if no properties loaded)
   const mockProperties = [
@@ -680,7 +832,8 @@ const Dashboard = () => {
                       <FaShare className="text-sm" />
                     </button>
                     <button
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         if (!user) {
                           setAuthRedirect('/dashboard');
                           toast.error('Please login to save properties to favorites');
@@ -694,10 +847,15 @@ const Dashboard = () => {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
                               newFavorites.add(property.id);
+                              toast.success('Property added to saved properties');
                             } else {
                               newFavorites.delete(property.id);
+                              toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
+                            
+                            // Refresh dashboard stats
+                            refreshDashboardStats();
                           }
                         } catch (e) {
                           toast.error('Failed to update favorite');
@@ -708,7 +866,7 @@ const Dashboard = () => {
                       }`}
                       title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                      <FaHeart className={`text-sm ${favorites.has(property.id) ? 'fill-current' : ''}`} />
+                      <FaHeart className={`text-sm transition-all ${favorites.has(property.id) ? 'fill-current text-red-500' : ''}`} />
                     </button>
                 </div>
               </div>
@@ -794,21 +952,30 @@ const Dashboard = () => {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
                               newFavorites.add(property.id);
+                              toast.success('Property added to saved properties');
                             } else {
                               newFavorites.delete(property.id);
+                              toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
+                            
+                            // Refresh dashboard stats
+                            refreshDashboardStats();
                           }
                         } catch (e) {
                           toast.error('Failed to update favorite');
                         }
                       }}
-                      className={`w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors ${
-                        favorites.has(property.id) ? 'text-red-500' : ''
+                      className={`w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all ${
+                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-80' : ''
                       }`}
                       title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                      <FaHeart className={`text-white text-sm ${favorites.has(property.id) ? 'fill-current' : ''}`} />
+                      <FaHeart className={`text-sm transition-all ${
+                        favorites.has(property.id) 
+                          ? 'fill-current text-white' 
+                          : 'text-white'
+                      }`} />
                     </button>
                   </div>
                 </div>
