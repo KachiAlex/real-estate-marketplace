@@ -282,21 +282,21 @@ router.put('/password', protect, [
 // @desc    Request password reset (forgot password)
 // @route   POST /api/auth/forgot-password
 // @access  Public
-router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
-], async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      // For security, return success even for validation errors
+    // Manual email validation to avoid middleware errors
+    const { email } = req.body;
+    
+    if (!email || typeof email !== 'string') {
       return res.json({
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.'
       });
     }
 
-    const { email } = req.body;
-    if (!email || typeof email !== 'string') {
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
       return res.json({
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.'

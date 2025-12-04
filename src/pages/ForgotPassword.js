@@ -58,8 +58,8 @@ const ForgotPassword = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12 overflow-y-auto">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 my-auto">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
               <FaEnvelope className="h-8 w-8 text-green-600" />
@@ -85,8 +85,8 @@ const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12 overflow-y-auto">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 my-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
           <p className="text-gray-600">
