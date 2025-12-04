@@ -413,6 +413,18 @@ app.get('/api/agents', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  // Special handling for forgot-password route - always return success for security
+  if (req.path === '/api/auth/forgot-password' || req.originalUrl === '/api/auth/forgot-password') {
+    console.error('Forgot password error (caught by global handler):', err.message);
+    if (!res.headersSent) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+    return;
+  }
+  
   errorLogger(err, req);
   
   if (err.name === 'ValidationError') {

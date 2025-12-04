@@ -288,17 +288,35 @@ router.post('/forgot-password', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
+      // For security, return success even for validation errors
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
       });
     }
 
     const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Find user
-    const user = await userService.findByEmail(normalizedEmail);
+    // Find user with error handling
+    let user;
+    try {
+      user = await userService.findByEmail(normalizedEmail);
+    } catch (dbError) {
+      console.error('Database error in forgot-password:', dbError);
+      // Return success for security
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
     
     // For security, always return success message (don't reveal if email exists)
     if (!user) {
@@ -308,15 +326,32 @@ router.post('/forgot-password', [
       });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    // Generate reset token with error handling
+    let resetToken, resetTokenHash;
+    try {
+      resetToken = crypto.randomBytes(32).toString('hex');
+      resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    } catch (cryptoError) {
+      console.error('Crypto error in forgot-password:', cryptoError);
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
 
-    // Save token and expiry (1 hour)
-    await userService.updateUser(user.id, {
-      resetPasswordToken: resetTokenHash,
-      resetPasswordExpires: Date.now() + 60 * 60 * 1000
-    });
+    // Save token and expiry (1 hour) with error handling
+    try {
+      await userService.updateUser(user.id, {
+        resetPasswordToken: resetTokenHash,
+        resetPasswordExpires: Date.now() + 60 * 60 * 1000
+      });
+    } catch (updateError) {
+      console.error('Error updating user with reset token:', updateError);
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
 
     // Create reset URL
     const frontendUrl = process.env.FRONTEND_URL || 'https://real-estate-marketplace-37544.web.app';
@@ -339,22 +374,32 @@ router.post('/forgot-password', [
     const text = `You requested a password reset for your PropertyArk account.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`;
 
     // Send email (don't fail request if email fails)
-    const emailResult = await emailService.sendEmail(normalizedEmail, subject, html, text);
-    if (!emailResult.success) {
-      console.error('Email sending failed:', emailResult.error);
+    try {
+      const emailResult = await emailService.sendEmail(normalizedEmail, subject, html, text);
+      if (!emailResult.success) {
+        console.error('Email sending failed:', emailResult.error);
+      }
+    } catch (emailError) {
+      console.error('Email service error:', emailError);
+      // Continue - still return success
     }
 
-    res.json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
-    });
+    // Always return success for security
+    if (!res.headersSent) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
   } catch (error) {
     console.error('Forgot password error:', error);
     // Always return success for security
-    res.json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
-    });
+    if (!res.headersSent) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
   }
 });
 
