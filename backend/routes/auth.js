@@ -279,5 +279,142 @@ router.put('/password', protect, [
   }
 });
 
+// @desc    Request password reset (forgot password)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Find user
+    const user = await userService.findByEmail(normalizedEmail);
+    
+    // For security, always return success message (don't reveal if email exists)
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Save token and expiry (1 hour)
+    await userService.updateUser(user.id, {
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: Date.now() + 60 * 60 * 1000
+    });
+
+    // Create reset URL
+    const frontendUrl = process.env.FRONTEND_URL || 'https://real-estate-marketplace-37544.web.app';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    // Send email
+    const subject = 'Password Reset Request - PropertyArk';
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Password Reset Request</h2>
+        <p>You requested a password reset for your PropertyArk account.</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0;">Reset Password</a>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #2563eb;">${resetUrl}</p>
+        <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+        <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+    const text = `You requested a password reset for your PropertyArk account.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`;
+
+    // Send email (don't fail request if email fails)
+    const emailResult = await emailService.sendEmail(normalizedEmail, subject, html, text);
+    if (!emailResult.success) {
+      console.error('Email sending failed:', emailResult.error);
+    }
+
+    res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    // Always return success for security
+    res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  }
+});
+
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password
+// @access  Public
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { token, email, password } = req.body;
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user by reset token
+    const user = await userService.findByResetToken(resetTokenHash);
+    
+    // Verify user exists, email matches, and token is valid
+    if (!user || user.email.toLowerCase() !== email.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link. Please request a new one.'
+      });
+    }
+
+    // Check if token is expired
+    if (!user.resetPasswordExpires || user.resetPasswordExpires <= Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset link has expired. Please request a new one.'
+      });
+    }
+
+    // Update password and clear reset fields
+    await userService.updateUser(user.id, {
+      password: password,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    });
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully. You can now log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
 
 module.exports = router;
