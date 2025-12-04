@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  // Skip MongoDB connection if URI is not provided
+  if (!process.env.MONGODB_URI) {
+    console.warn('⚠️ MONGODB_URI not set - skipping MongoDB connection');
+    return null;
+  }
+
   try {
     const options = {
       useNewUrlParser: true,
@@ -30,13 +36,9 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
-    
-    // Only exit in production, in development use mock data
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    } else {
-      console.warn('⚠️ Running in development mode with mock data');
-    }
+    console.warn('⚠️ Some features requiring MongoDB may not work. Firestore is used for auth.');
+    // Don't exit - allow server to start with Firestore-only mode
+    return null;
   }
 };
 

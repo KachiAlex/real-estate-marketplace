@@ -566,13 +566,64 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const foundUser = mockUsers.find(u => u.email === email && u.password === password);
+      let userWithoutPassword = null;
+      let backendUser = null;
       
-      if (!foundUser) {
-        throw new Error('Invalid email or password');
+      // Step 1: Try backend API first (for real users registered via API)
+      try {
+        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+        const response = await fetch(`${apiBaseUrl}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          // Backend authentication successful
+          backendUser = {
+            id: data.user.id,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            email: data.user.email,
+            role: data.user.role || 'user',
+            roles: [data.user.role || 'user'],
+            avatar: data.user.avatar,
+            token: data.token
+          };
+          
+          // Store token for API calls
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
+          
+          console.log('AuthContext: Backend API login successful for user:', backendUser.email);
+          userWithoutPassword = backendUser;
+        } else {
+          // Backend returned error, try mock users as fallback
+          console.log('AuthContext: Backend API login failed, trying mock users...');
+        }
+      } catch (apiError) {
+        // API call failed (network error, etc.), try mock users as fallback
+        console.warn('AuthContext: Backend API error, falling back to mock users:', apiError.message);
+      }
+      
+      // Step 2: Fallback to mock users if backend didn't work
+      if (!userWithoutPassword) {
+        const foundUser = mockUsers.find(u => u.email === email && u.password === password);
+        
+        if (!foundUser) {
+          throw new Error('Invalid email or password');
+        }
+
+        const { password: _, ...mockUserWithoutPassword } = foundUser;
+        userWithoutPassword = mockUserWithoutPassword;
+        console.log('AuthContext: Mock user login successful for user:', userWithoutPassword.email);
       }
 
-      const { password: _, ...userWithoutPassword } = foundUser;
       console.log('AuthContext [v2]: Login successful for user:', userWithoutPassword);
       console.log('AuthContext [v2]: User role:', userWithoutPassword.role);
       
@@ -825,10 +876,69 @@ export const AuthProvider = ({ children }) => {
     try {
       const { firstName, lastName, email, password } = userData;
       
-      // Check if user already exists in mock users
-      const existingUser = mockUsers.find(u => u.email === email);
-      if (existingUser) {
-        throw new Error('User with this email already exists');
+      // Step 1: Try backend API first (for real user registration)
+      let backendUser = null;
+      try {
+        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+        const response = await fetch(`${apiBaseUrl}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            email,
+            password,
+            phone: userData.phone || ''
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          // Backend registration successful
+          backendUser = {
+            id: data.user.id,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            email: data.user.email,
+            role: data.user.role || 'user',
+            roles: [data.user.role || 'user'],
+            avatar: data.user.avatar,
+            token: data.token
+          };
+          
+          // Store token for API calls
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
+          
+          console.log('AuthContext: Backend API registration successful for user:', backendUser.email);
+        } else {
+          // Backend returned error
+          const errorMsg = data.message || 'Registration failed';
+          if (data.message && data.message.includes('already exists')) {
+            throw new Error('User with this email already exists');
+          }
+          throw new Error(errorMsg);
+        }
+      } catch (apiError) {
+        // If it's a known error (like user exists), throw it
+        if (apiError.message && apiError.message.includes('already exists')) {
+          throw apiError;
+        }
+        // Otherwise, log and continue with Firebase/local registration as fallback
+        console.warn('AuthContext: Backend API registration failed, using Firebase/local fallback:', apiError.message);
+      }
+      
+      // Step 2: Fallback to Firebase/local registration if backend didn't work
+      if (!backendUser) {
+        // Check if user already exists in mock users
+        const existingUser = mockUsers.find(u => u.email === email);
+        if (existingUser) {
+          throw new Error('User with this email already exists');
+        }
       }
 
       // Determine roles based on userData
@@ -889,7 +999,8 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      const newUser = {
+      // Use backend user if available, otherwise create local user
+      const newUser = backendUser || {
         id: firebaseUid, // Use Firebase UID as primary ID
         uid: firebaseUid,
         firstName,
@@ -901,13 +1012,15 @@ export const AuthProvider = ({ children }) => {
         activeRole: activeRole,
         userCode: userCode, // Unique user ID for profile
         vendorCode: vendorCode, // Unique vendor ID for property search
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        avatar: backendUser?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         // Include vendorData if provided
         ...(userData.vendorData && { vendorData: userData.vendorData })
       };
 
-      // Add to mock users (in real app, this would be saved to database)
-      mockUsers.push({ ...newUser, password });
+      // Only add to mock users if backend registration didn't work (fallback)
+      if (!backendUser) {
+        mockUsers.push({ ...newUser, password });
+      }
       
       // Store users list in localStorage for agent service to access
       try {
@@ -946,8 +1059,11 @@ export const AuthProvider = ({ children }) => {
     try {
       setUser(null);
       setActiveRole('buyer');
+      // Clear all authentication-related localStorage
       localStorage.removeItem('currentUser');
       localStorage.removeItem('activeRole');
+      localStorage.removeItem('token'); // Clear backend API token
+      localStorage.removeItem('authRedirectUrl');
       // Sign out from Firebase if signed in
       if (auth.currentUser) {
         await firebaseSignOut(auth);

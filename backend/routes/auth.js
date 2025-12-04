@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
+const userService = require('../services/userService');
 const { protect } = require('../middleware/auth');
 const emailService = require('../services/emailService');
 
@@ -38,7 +38,7 @@ router.post('/register', [
     const { firstName, lastName, email, password, phone } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userService.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -47,7 +47,7 @@ router.post('/register', [
     }
 
     // Create user
-    const user = await User.create({
+    const user = await userService.createUser({
       firstName,
       lastName,
       email,
@@ -56,14 +56,14 @@ router.post('/register', [
     });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -99,9 +99,9 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
+    // Check if user exists (with password)
+    const user = await userService.findByEmail(email);
+    if (!user || !user.password) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -109,7 +109,7 @@ router.post('/login', [
     }
 
     // Check if password matches
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await userService.comparePassword(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -118,18 +118,19 @@ router.post('/login', [
     }
 
     // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    await userService.updateUser(user.id, {
+      lastLogin: new Date()
+    });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -151,7 +152,15 @@ router.post('/login', [
 // @access  Private
 router.get('/me', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await userService.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    // Remove password from response
+    delete user.password;
     res.json({
       success: true,
       user
@@ -185,7 +194,7 @@ router.put('/profile', protect, [
 
     const { firstName, lastName, phone, avatar } = req.body;
 
-    const user = await User.findById(req.user.id);
+    const user = await userService.findById(req.user.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -193,18 +202,19 @@ router.put('/profile', protect, [
       });
     }
 
-    // Update fields
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (phone) user.phone = phone;
-    if (avatar) user.avatar = avatar;
+    // Prepare updates
+    const updates = {};
+    if (firstName) updates.firstName = firstName;
+    if (lastName) updates.lastName = lastName;
+    if (phone) updates.phone = phone;
+    if (avatar) updates.avatar = avatar;
 
-    await user.save();
+    const updatedUser = await userService.updateUser(req.user.id, updates);
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      user
+      user: updatedUser
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -234,8 +244,8 @@ router.put('/password', protect, [
 
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user.id).select('+password');
-    if (!user) {
+    const user = await userService.findById(req.user.id);
+    if (!user || !user.password) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -243,7 +253,7 @@ router.put('/password', protect, [
     }
 
     // Check current password
-    const isMatch = await user.comparePassword(currentPassword);
+    const isMatch = await userService.comparePassword(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({
         success: false,
@@ -252,8 +262,9 @@ router.put('/password', protect, [
     }
 
     // Update password
-    user.password = newPassword;
-    await user.save();
+    await userService.updateUser(req.user.id, {
+      password: newPassword
+    });
 
     res.json({
       success: true,
@@ -268,122 +279,5 @@ router.put('/password', protect, [
   }
 });
 
-// @desc    Request password reset (forgot password)
-// @route   POST /api/auth/forgot-password
-// @access  Public
-router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    // For security, do not reveal whether the email exists
-    if (!user) {
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-    }
-
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-    // Set token and expiry (1 hour)
-    user.resetPasswordToken = resetTokenHash;
-    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
-    await user.save();
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-
-    // Send email (use template if available, fallback to simple email)
-    const subject = 'Password Reset Request';
-    const text = `You requested a password reset for your PropertyArk account.\n\n` +
-      `Please click the link below to reset your password:\n\n${resetUrl}\n\n` +
-      `If you did not request this, please ignore this email.`;
-    const html = `<p>You requested a password reset for your PropertyArk account.</p>
-      <p>Please click the button below to reset your password:</p>
-      <p><a href="${resetUrl}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;">Reset Password</a></p>
-      <p>Or copy and paste this link into your browser:</p>
-      <p><a href="${resetUrl}">${resetUrl}</a></p>
-      <p>If you did not request this, you can safely ignore this email.</p>`;
-
-    await emailService.sendEmail(email, subject, html, text);
-
-    res.json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
-    });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
-// @desc    Reset password with token
-// @route   POST /api/auth/reset-password
-// @access  Public
-router.post('/reset-password', [
-  body('token').notEmpty().withMessage('Reset token is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-
-    const { token, email, password } = req.body;
-    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
-    // Find user by email and token, ensure token is not expired
-    const user = await User.findOne({
-      email,
-      resetPasswordToken: resetTokenHash,
-      resetPasswordExpires: { $gt: Date.now() }
-    }).select('+password');
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Reset link is invalid or has expired. Please request a new one.'
-      });
-    }
-
-    // Update password and clear reset fields
-    user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'Password has been reset successfully. You can now log in with your new password.'
-    });
-  } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
 
 module.exports = router;

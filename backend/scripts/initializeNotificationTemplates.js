@@ -327,30 +327,60 @@ const defaultTemplates = [
 
 async function initializeNotificationTemplates() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/realestate', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // Check if MongoDB URI is set
+    if (!process.env.MONGODB_URI) {
+      console.warn('⚠️ MONGODB_URI not set - skipping notification templates initialization');
+      return;
+    }
 
-    console.log('Connected to MongoDB');
+    // Check if MongoDB is already connected
+    const isConnected = mongoose.connection.readyState === 1; // 1 = connected
+    
+    if (!isConnected) {
+      // Try to connect if not already connected
+      try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          serverSelectionTimeoutMS: 5000,
+        });
+        console.log('✅ Connected to MongoDB for notification templates');
+      } catch (connectError) {
+        console.warn('⚠️ Could not connect to MongoDB - skipping notification templates initialization:', connectError.message);
+        return; // Don't crash - just skip initialization
+      }
+    }
 
     for (const templateData of defaultTemplates) {
-      const existingTemplate = await NotificationTemplate.findOne({ type: templateData.type });
-      
-      if (!existingTemplate) {
-        const template = new NotificationTemplate(templateData);
-        await template.save();
-        console.log(`✅ Created notification template: ${templateData.name}`);
-      } else {
-        console.log(`⚠️  Template already exists: ${templateData.name}`);
+      try {
+        const existingTemplate = await NotificationTemplate.findOne({ type: templateData.type });
+        
+        if (!existingTemplate) {
+          const template = new NotificationTemplate(templateData);
+          await template.save();
+          console.log(`✅ Created notification template: ${templateData.name}`);
+        } else {
+          console.log(`⚠️  Template already exists: ${templateData.name}`);
+        }
+      } catch (templateError) {
+        console.warn(`⚠️  Error processing template ${templateData.name}:`, templateError.message);
+        // Continue with next template instead of failing completely
       }
     }
 
     console.log('✅ Notification templates initialization completed');
-    process.exit(0);
+    
+    // Only exit if this script is run directly (not when imported)
+    if (require.main === module) {
+      process.exit(0);
+    }
   } catch (error) {
-    console.error('❌ Error initializing notification templates:', error);
-    process.exit(1);
+    console.error('❌ Error initializing notification templates:', error.message);
+    // Only exit if this script is run directly (not when imported)
+    if (require.main === module) {
+      process.exit(1);
+    }
+    // Otherwise, just return - don't crash the server
   }
 }
 

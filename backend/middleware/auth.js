@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const userService = require('../services/userService');
 
 // Protect routes - verify token
 exports.protect = async (req, res, next) => {
@@ -24,7 +24,7 @@ exports.protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from token
-      const user = await User.findById(decoded.id).select('-password');
+      const user = await userService.findById(decoded.id);
       
       if (!user) {
         return res.status(401).json({
@@ -33,6 +33,8 @@ exports.protect = async (req, res, next) => {
         });
       }
 
+      // Remove password from user object
+      delete user.password;
       req.user = user;
       next();
     } catch (error) {
@@ -74,7 +76,10 @@ exports.optionalAuth = async (req, res, next) => {
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select('-password');
+        const user = await userService.findById(decoded.id);
+        if (user) {
+          delete user.password;
+        }
         req.user = user;
       } catch (error) {
         // Token is invalid, but we don't fail the request

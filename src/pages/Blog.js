@@ -30,7 +30,11 @@ const Blog = () => {
         ...filters
       });
 
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      // Remove trailing /api if present to avoid double /api/api/
+      if (API_BASE_URL.endsWith('/api')) {
+        API_BASE_URL = API_BASE_URL.slice(0, -4);
+      }
       const response = await fetch(`${API_BASE_URL}/api/blog?${params}`);
       
       if (!response.ok) {
@@ -65,7 +69,11 @@ const Blog = () => {
 
   const loadFeaturedBlogs = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      // Remove trailing /api if present to avoid double /api/api/
+      if (API_BASE_URL.endsWith('/api')) {
+        API_BASE_URL = API_BASE_URL.slice(0, -4);
+      }
       const response = await fetch(`${API_BASE_URL}/api/blog/featured?limit=3`);
       
       if (!response.ok) {
@@ -96,7 +104,11 @@ const Blog = () => {
 
   const loadCategories = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      // Remove trailing /api if present to avoid double /api/api/
+      if (API_BASE_URL.endsWith('/api')) {
+        API_BASE_URL = API_BASE_URL.slice(0, -4);
+      }
       const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
       
       if (!response.ok) {

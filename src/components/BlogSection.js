@@ -15,7 +15,11 @@ const BlogSection = () => {
     try {
       setLoading(true);
       
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+      // Remove trailing /api if present to avoid double /api/api/
+      if (API_BASE_URL.endsWith('/api')) {
+        API_BASE_URL = API_BASE_URL.slice(0, -4);
+      }
       
       try {
         // Fetch featured blogs

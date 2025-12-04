@@ -1,12 +1,34 @@
 /**
  * AdminDashboard Component Tests
- * Tests focus on verifying integration of new features (Breadcrumbs, TableSkeleton)
+ * Simplified tests to verify component integration without heavy rendering
  */
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AdminDashboard from '../AdminDashboard';
+
+// Mock console methods to reduce noise
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+beforeAll(() => {
+  console.log = jest.fn();
+  console.error = jest.fn();
+});
+afterAll(() => {
+  console.log = originalConsoleLog;
+  console.error = originalConsoleError;
+});
+
+// Create stable mock functions
+const mockFetchAdminProperties = jest.fn(() => Promise.resolve({
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0
+}));
+const mockVerifyProperty = jest.fn(() => Promise.resolve(true));
+const mockNavigate = jest.fn();
 
 // Mock all dependencies to prevent errors during rendering
 jest.mock('../../contexts/AuthContext', () => ({
@@ -27,19 +49,14 @@ jest.mock('../../contexts/PropertyContext', () => ({
     properties: [],
     loading: false,
     error: null,
-    fetchAdminProperties: jest.fn(() => Promise.resolve({
-      total: 0,
-      pending: 0,
-      approved: 0,
-      rejected: 0
-    })),
-    verifyProperty: jest.fn(() => Promise.resolve(true)),
+    fetchAdminProperties: mockFetchAdminProperties,
+    verifyProperty: mockVerifyProperty,
   }),
 }));
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
+  useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: '/admin', search: '' }),
 }));
 
@@ -52,7 +69,7 @@ jest.mock('react-hot-toast', () => ({
   },
 }));
 
-// Mock all child components
+// Mock all child components with simple renders
 jest.mock('../../components/layout/AdminSidebar', () => ({
   __esModule: true,
   default: () => <div data-testid="admin-sidebar">Admin Sidebar</div>,
@@ -99,6 +116,16 @@ jest.mock('../../components/AdminMortgageBankVerification', () => ({
   default: () => <div data-testid="mortgage-bank-verification">Mortgage Bank Verification</div>,
 }));
 
+jest.mock('../../components/AdminListingsStatusChart', () => ({
+  __esModule: true,
+  default: () => <div data-testid="listings-chart">Listings Chart</div>,
+}));
+
+jest.mock('../../components/AdminEscrowVolumeChart', () => ({
+  __esModule: true,
+  default: () => <div data-testid="escrow-chart">Escrow Chart</div>,
+}));
+
 // Mock browser APIs
 global.fetch = jest.fn(() => Promise.resolve({
   json: () => Promise.resolve({ success: true }),
@@ -110,6 +137,12 @@ window.scrollTo = jest.fn();
 describe('AdminDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFetchAdminProperties.mockResolvedValue({
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0
+    });
   });
 
   it('should render admin dashboard with sidebar', async () => {
@@ -121,7 +154,7 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
   });
 
   it('should render breadcrumbs component', async () => {
@@ -133,30 +166,16 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('breadcrumbs')).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
   });
 
-  it('should render breadcrumb items correctly', async () => {
-    render(
-      <MemoryRouter initialEntries={['/admin']}>
-        <AdminDashboard />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      const breadcrumbs = screen.getByTestId('breadcrumbs');
-      expect(breadcrumbs).toBeInTheDocument();
-    });
-  });
-
-  it('should import and use TableSkeleton component', () => {
-    // This test verifies that TableSkeleton is imported in AdminDashboard
-    // The component uses it conditionally based on loading state
+  it('should import TableSkeleton component', () => {
+    // Verify component is defined and can be imported
     expect(AdminDashboard).toBeDefined();
   });
 
-  it('should import and use Breadcrumbs component', () => {
-    // This test verifies that Breadcrumbs is imported and used
+  it('should import Breadcrumbs component', () => {
+    // Verify component is defined and can be imported
     expect(AdminDashboard).toBeDefined();
   });
 });

@@ -23,6 +23,10 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 5000;
 
+console.log('🚀 Starting server...');
+console.log(`📌 Port: ${PORT}`);
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
 // Initialize Firestore (Firebase)
 try {
   initializeFirestore();
@@ -35,19 +39,45 @@ try {
 }
 
 // Database connection (MongoDB - for other models that still use it)
-connectDB().then(async () => {
-  // Initialize admin settings
-  await initializeAdminSettings();
-  // Initialize notification templates
-  const initializeNotificationTemplates = require('./scripts/initializeNotificationTemplates');
-  await initializeNotificationTemplates();
-  // Initialize notification service with Socket.IO
-  notificationService.initializeSocketIO(io);
-  // Verify email service connection
-  const emailStatus = await emailService.verifyConnection();
-  infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
-}).catch((error) => {
-  errorLogger(error, null, { context: 'Database initialization' });
+// Make MongoDB connection optional - server can run with Firestore only
+// Run this asynchronously - don't block server startup
+setImmediate(() => {
+  connectDB().then(async (conn) => {
+    if (conn) {
+      // Initialize admin settings only if MongoDB is connected
+      await initializeAdminSettings();
+      // Initialize notification templates
+      try {
+        const initializeNotificationTemplates = require('./scripts/initializeNotificationTemplates');
+        await initializeNotificationTemplates();
+      } catch (templateError) {
+        console.warn('⚠️ Notification templates initialization failed (non-fatal):', templateError.message);
+      }
+    } else {
+      console.warn('⚠️ MongoDB not connected - skipping MongoDB-dependent initializations');
+    }
+    // Initialize notification service with Socket.IO (works without MongoDB)
+    try {
+      notificationService.initializeSocketIO(io);
+    } catch (ioError) {
+      console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
+    }
+    // Verify email service connection
+    try {
+      const emailStatus = await emailService.verifyConnection();
+      infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
+    } catch (emailError) {
+      console.warn('⚠️ Email service verification failed:', emailError.message);
+    }
+  }).catch((error) => {
+    console.warn('⚠️ Database initialization error (non-fatal):', error.message);
+    // Initialize notification service even if MongoDB fails
+    try {
+      notificationService.initializeSocketIO(io);
+    } catch (ioError) {
+      console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
+    }
+  });
 });
 
 // Import models
@@ -113,13 +143,18 @@ io.on('connection', (socket) => {
 // app.use(limiter);
 
 // Validate required environment variables
-const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
+const requiredEnvVars = ['JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
   console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
   console.error('⚠️ Server will not start in production without these variables');
   process.exit(1);
+}
+
+// Warn if MongoDB URI is missing (but don't fail - Firestore is used for auth)
+if (!process.env.MONGODB_URI && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ MONGODB_URI not set - some features may not work (Firestore is used for auth)');
 }
 
 // Warn about missing payment keys
@@ -139,6 +174,13 @@ const mockProperties = require('./data/mockProperties');
 // Initialize admin settings if they don't exist
 async function initializeAdminSettings() {
   try {
+    // Check if MongoDB is connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('⚠️ MongoDB not connected - skipping admin settings initialization');
+      return;
+    }
+
     const existingSettings = await AdminSettings.findOne();
     if (!existingSettings) {
       const defaultSettings = new AdminSettings({
@@ -162,7 +204,8 @@ async function initializeAdminSettings() {
       console.log('✅ Admin settings initialized');
     }
   } catch (error) {
-    console.error('❌ Failed to initialize admin settings:', error);
+    console.warn('⚠️ Failed to initialize admin settings (non-fatal):', error.message);
+    // Don't throw - allow server to continue
   }
 }
 
@@ -183,20 +226,84 @@ const mockEscrowTransactions = [
   }
 ];
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/properties', require('./routes/properties'));
-app.use('/api/investments', require('./routes/investments'));
-app.use('/api/mortgages', require('./routes/mortgages'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/escrow', require('./routes/escrow'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
-app.use('/api/upload', require('./routes/upload'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/blog', require('./routes/blog'));
-app.use('/api/dashboard', require('./routes/dashboard'));
+// Routes - wrap in try-catch to prevent crashes if a route file has errors
+try {
+  app.use('/api/auth', require('./routes/auth'));
+} catch (error) {
+  console.error('Failed to load auth routes:', error.message);
+}
+
+try {
+  app.use('/api/users', require('./routes/users'));
+} catch (error) {
+  console.error('Failed to load users routes:', error.message);
+}
+
+try {
+  app.use('/api/properties', require('./routes/properties'));
+} catch (error) {
+  console.error('Failed to load properties routes:', error.message);
+}
+
+try {
+  app.use('/api/investments', require('./routes/investments'));
+} catch (error) {
+  console.error('Failed to load investments routes:', error.message);
+}
+
+try {
+  app.use('/api/mortgages', require('./routes/mortgages'));
+} catch (error) {
+  console.error('Failed to load mortgages routes:', error.message);
+}
+
+try {
+  app.use('/api/payments', require('./routes/payments'));
+} catch (error) {
+  console.error('Failed to load payments routes:', error.message);
+}
+
+try {
+  app.use('/api/escrow', require('./routes/escrow'));
+} catch (error) {
+  console.error('Failed to load escrow routes:', error.message);
+}
+
+try {
+  app.use('/api/admin', require('./routes/admin'));
+} catch (error) {
+  console.error('Failed to load admin routes:', error.message);
+}
+
+try {
+  app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
+} catch (error) {
+  console.error('Failed to load mortgage-banks routes:', error.message);
+}
+
+try {
+  app.use('/api/upload', require('./routes/upload'));
+} catch (error) {
+  console.error('Failed to load upload routes:', error.message);
+}
+
+try {
+  app.use('/api/notifications', require('./routes/notifications'));
+} catch (error) {
+  console.error('Failed to load notifications routes:', error.message);
+}
+
+try {
+  app.use('/api/blog', require('./routes/blog'));
+} catch (error) {
+  console.error('Failed to load blog routes:', error.message);
+}
+
+try {
+  app.use('/api/dashboard', require('./routes/dashboard'));
+} catch (error) {
+  console.error('Failed to load dashboard routes:', error.message);
+}
 
 // API Routes
 // Health check
@@ -339,7 +446,7 @@ app.use((err, req, res, next) => {
   
   res.status(err.statusCode || 500).json({ 
     success: false,
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Server error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
@@ -358,35 +465,59 @@ app.use('*', (req, res) => {
 // Global error handlers to prevent crashes
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-  errorLogger(err, null, { context: 'Unhandled Promise Rejection' });
+  try {
+    errorLogger(err, null, { context: 'Unhandled Promise Rejection' });
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+  }
 });
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  errorLogger(err, null, { context: 'Uncaught Exception' });
+  try {
+    errorLogger(err, null, { context: 'Uncaught Exception' });
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+  }
   // Don't exit in production - let the process manager handle it
   if (process.env.NODE_ENV !== 'production') {
     process.exit(1);
   }
 });
 
-server.listen(PORT, () => {
-  infoLogger(`Server running on port ${PORT}`, { 
-    environment: process.env.NODE_ENV,
-    port: PORT 
+// Start server - ensure it always starts even if some initializations fail
+console.log('📡 Setting up server listener...');
+try {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server listening on port ${PORT}`);
+    try {
+      infoLogger(`Server running on port ${PORT}`, { 
+        environment: process.env.NODE_ENV,
+        port: PORT 
+      });
+    } catch (logError) {
+      console.log(`Server running on port ${PORT} (logger unavailable)`);
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
+      console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
+      console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
+      console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
+      console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
+      console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
+      console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
+    }
   });
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
-    console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
-    console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
-    console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
-    console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
-    console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
-    console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
-  }
-});
+  server.on('error', (error) => {
+    console.error('❌ Server error:', error);
+  });
+} catch (error) {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
+}
 
 // Note: 404 handler is already defined above (line 347)
 // This duplicate handler is unreachable code and has been removed
