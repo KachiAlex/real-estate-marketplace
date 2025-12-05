@@ -547,7 +547,11 @@ const VendorDashboard = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/vendor/properties')}
+                title="View your properties"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{analytics.activeListings || 0}</div>
@@ -557,7 +561,14 @@ const VendorDashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => {
+                  setActiveTab('analytics');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="View analytics"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{analytics.totalViews?.toLocaleString() || 0}</div>
@@ -567,7 +578,14 @@ const VendorDashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => {
+                  setActiveTab('inquiries');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="View inquiries"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{analytics.totalInquiries || 0}</div>
@@ -577,7 +595,14 @@ const VendorDashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => {
+                  setActiveTab('analytics');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="View analytics"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{analytics.conversionRate || 0}%</div>

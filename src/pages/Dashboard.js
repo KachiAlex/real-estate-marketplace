@@ -428,7 +428,11 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/saved-properties')}
+                title="View saved properties"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.savedProperties}</div>
@@ -438,7 +442,11 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/my-inquiries')}
+                title="View active inquiries"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.activeInquiries}</div>
@@ -450,8 +458,8 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/scheduled-viewings')}
-                title="View all scheduled viewings"
+                onClick={() => navigate('/my-inspections')}
+                title="View scheduled viewings"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -462,7 +470,11 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/billing')}
+                title="View billing and payments"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.totalInvested > 0 ? `₦${(dashboardStats.totalInvested / 1000000).toFixed(1)}M` : '₦0'}</div>
@@ -475,7 +487,11 @@ const Dashboard = () => {
 
             {/* Additional Analytics Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/investment')}
+                title="View active investments"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.activeInvestments}</div>
@@ -485,7 +501,11 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/billing')}
+                title="View escrow transactions"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">{dashboardStats.escrowTransactions}</div>
@@ -495,7 +515,11 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="stats-card">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/billing')}
+                title="View billing and payments"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-white">₦{(dashboardStats.monthlyBudget / 1000000).toFixed(1)}M</div>

@@ -4,7 +4,10 @@ const MortgageApplication = require('../models/MortgageApplication');
 const Mortgage = require('../models/Mortgage');
 const MortgageBank = require('../models/MortgageBank');
 const Property = require('../models/Property');
+const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
+const emailService = require('../services/emailService');
+const { errorLogger, infoLogger } = require('../config/logger');
 
 const router = express.Router();
 
@@ -78,6 +81,66 @@ router.post(
         employmentDetails,
         documents: documents || []
       });
+
+      // Populate application for email
+      const populatedApplication = await MortgageApplication.findById(application._id)
+        .populate('property', 'title location price city state')
+        .populate('buyer', 'firstName lastName email');
+
+      // Send email notification to bank (Fix 9)
+      try {
+        if (bank.userAccount) {
+          const bankUser = await User.findById(bank.userAccount).select('firstName lastName email');
+          if (bankUser && bankUser.email) {
+            // Send email asynchronously (don't block response)
+            emailService.sendNewMortgageApplicationEmail(
+              populatedApplication,
+              bankUser,
+              populatedApplication.property,
+              populatedApplication.buyer
+            ).catch(err => {
+              errorLogger(err, null, { context: 'Mortgage application email to bank', applicationId: application._id });
+            });
+            
+            infoLogger('Mortgage application email sent to bank', {
+              applicationId: application._id,
+              bankId: bank._id,
+              bankEmail: bankUser.email
+            });
+          }
+        } else {
+          // Fallback: send to bank's contact email if no user account
+          const bankEmailUser = {
+            firstName: bank.contactPerson?.firstName || bank.name || 'Bank',
+            lastName: bank.contactPerson?.lastName || 'Representative',
+            email: bank.contactPerson?.email || bank.email
+          };
+          
+          if (bankEmailUser.email) {
+            emailService.sendNewMortgageApplicationEmail(
+              populatedApplication,
+              bankEmailUser,
+              populatedApplication.property,
+              populatedApplication.buyer
+            ).catch(err => {
+              errorLogger(err, null, { context: 'Mortgage application email to bank (fallback)', applicationId: application._id });
+            });
+          }
+        }
+      } catch (emailError) {
+        // Log error but don't fail the request
+        errorLogger(emailError, null, { context: 'Mortgage application email notification', applicationId: application._id });
+      }
+
+      // Update bank statistics
+      try {
+        await MortgageBank.findByIdAndUpdate(bank._id, {
+          $inc: { 'statistics.totalApplications': 1 }
+        });
+      } catch (statsError) {
+        // Log but don't fail
+        console.error('Error updating bank statistics:', statsError);
+      }
 
       return res.status(201).json({
         success: true,
@@ -202,7 +265,11 @@ router.put(
         });
       }
 
-      const app = await MortgageApplication.findById(req.params.id);
+      const app = await MortgageApplication.findById(req.params.id)
+        .populate('property', 'title location price city state')
+        .populate('buyer', 'firstName lastName email')
+        .populate('mortgageBank', 'name');
+      
       if (!app) {
         return res.status(404).json({ success: false, message: 'Mortgage application not found' });
       }
@@ -211,7 +278,7 @@ router.put(
       if (req.user.role === 'mortgage_bank') {
         if (
           !req.user.mortgageBankProfile ||
-          app.mortgageBank.toString() !== req.user.mortgageBankProfile.toString()
+          app.mortgageBank._id.toString() !== req.user.mortgageBankProfile.toString()
         ) {
           return res.status(403).json({
             success: false,
@@ -221,6 +288,7 @@ router.put(
       }
 
       const { decision, notes, conditions, loanTerms } = req.body;
+      const oldStatus = app.status;
 
       app.status =
         decision === 'approved' ? 'approved' : decision === 'rejected' ? 'rejected' : 'needs_more_info';
@@ -234,6 +302,65 @@ router.put(
       };
 
       await app.save();
+
+      // Send email notification to buyer if status changed (Fix 10)
+      if (oldStatus !== app.status && app.buyer && app.buyer.email) {
+        try {
+          emailService.sendMortgageApplicationStatusEmail(
+            app,
+            app.buyer,
+            app.property,
+            decision,
+            notes || ''
+          ).catch(err => {
+            errorLogger(err, null, { 
+              context: 'Mortgage application status email to buyer', 
+              applicationId: app._id 
+            });
+          });
+
+          infoLogger('Mortgage status email sent to buyer', {
+            applicationId: app._id,
+            buyerId: app.buyer._id,
+            buyerEmail: app.buyer.email,
+            newStatus: app.status
+          });
+        } catch (emailError) {
+          // Log error but don't fail the request
+          errorLogger(emailError, null, { 
+            context: 'Mortgage application status email notification', 
+            applicationId: app._id 
+          });
+        }
+      }
+
+      // Update bank statistics based on status change
+      try {
+        const bank = await MortgageBank.findById(app.mortgageBank._id);
+        if (bank && oldStatus !== app.status) {
+          const incOps = {};
+          
+          // Decrease old status count
+          if (oldStatus === 'approved') {
+            incOps['statistics.approvedApplications'] = -1;
+          } else if (oldStatus === 'rejected') {
+            incOps['statistics.rejectedApplications'] = -1;
+          }
+          
+          // Increase new status count
+          if (app.status === 'approved') {
+            incOps['statistics.approvedApplications'] = (incOps['statistics.approvedApplications'] || 0) + 1;
+          } else if (app.status === 'rejected') {
+            incOps['statistics.rejectedApplications'] = (incOps['statistics.rejectedApplications'] || 0) + 1;
+          }
+
+          if (Object.keys(incOps).length > 0) {
+            await MortgageBank.findByIdAndUpdate(bank._id, { $inc: incOps });
+          }
+        }
+      } catch (statsError) {
+        console.error('Error updating bank statistics:', statsError);
+      }
 
       return res.json({
         success: true,
