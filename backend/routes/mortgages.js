@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const MortgageApplication = require('../models/MortgageApplication');
+const Mortgage = require('../models/Mortgage');
 const MortgageBank = require('../models/MortgageBank');
 const Property = require('../models/Property');
 const { protect, authorize } = require('../middleware/auth');
@@ -248,6 +249,226 @@ router.put(
     }
   }
 );
+
+// @desc    Activate approved mortgage application (convert to active mortgage)
+// @route   POST /api/mortgages/:id/activate
+// @access  Private (buyer, mortgage_bank, admin)
+router.post(
+  '/:id/activate',
+  protect,
+  async (req, res) => {
+    try {
+      const application = await MortgageApplication.findById(req.params.id)
+        .populate('property', 'title price location')
+        .populate('buyer', 'firstName lastName email')
+        .populate('mortgageBank', 'name');
+
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mortgage application not found'
+        });
+      }
+
+      // Check if application is approved
+      if (application.status !== 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'Only approved applications can be activated'
+        });
+      }
+
+      // Check if mortgage already exists for this application
+      const existingMortgage = await Mortgage.findOne({ application: application._id });
+      if (existingMortgage) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mortgage already activated for this application',
+          data: existingMortgage
+        });
+      }
+
+      // Check authorization
+      const isBuyer = application.buyer._id.toString() === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+      const isBank =
+        req.user.role === 'mortgage_bank' &&
+        req.user.mortgageBankProfile &&
+        application.mortgageBank._id.toString() === req.user.mortgageBankProfile.toString();
+
+      if (!isBuyer && !isAdmin && !isBank) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to activate this mortgage'
+        });
+      }
+
+      // Use approved loan terms from bank review if available, otherwise use application values
+      const loanTerms = application.bankReview?.loanTerms || {};
+      const loanAmount = loanTerms.approvedAmount || application.requestedAmount;
+      const interestRate = loanTerms.interestRate || application.interestRate;
+      const loanTermYears = loanTerms.loanTermYears || application.loanTermYears;
+      const monthlyPayment = loanTerms.monthlyPayment || application.estimatedMonthlyPayment;
+      const downPayment = application.downPayment;
+
+      // Calculate payment schedule details
+      const totalPayments = loanTermYears * 12;
+      
+      // Calculate next payment date (one month from activation date)
+      const startDate = new Date();
+      const nextPaymentDate = new Date(startDate);
+      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      // Set to same day of month, or last day if that day doesn't exist
+      const dayOfMonth = startDate.getDate();
+      const lastDayOfNextMonth = new Date(nextPaymentDate.getFullYear(), nextPaymentDate.getMonth() + 1, 0).getDate();
+      nextPaymentDate.setDate(Math.min(dayOfMonth, lastDayOfNextMonth));
+
+      // Create active mortgage
+      const mortgage = await Mortgage.create({
+        application: application._id,
+        property: application.property._id,
+        buyer: application.buyer._id,
+        mortgageBank: application.mortgageBank._id,
+        productId: application.productId,
+        loanAmount: loanAmount,
+        downPayment: downPayment,
+        loanTermYears: loanTermYears,
+        interestRate: interestRate,
+        monthlyPayment: Math.round(monthlyPayment),
+        startDate: startDate,
+        nextPaymentDate: nextPaymentDate,
+        totalPayments: totalPayments,
+        paymentsMade: 0,
+        paymentsRemaining: totalPayments,
+        remainingBalance: loanAmount,
+        totalPaid: 0,
+        documents: application.documents || [],
+        status: 'active'
+      });
+
+      // Update bank statistics
+      await MortgageBank.findByIdAndUpdate(application.mortgageBank._id, {
+        $inc: { 
+          'statistics.activeMortgages': 1,
+          'statistics.approvedApplications': -1
+        }
+      });
+
+      // Return created mortgage with populated fields
+      const populatedMortgage = await Mortgage.findById(mortgage._id)
+        .populate('property', 'title price location')
+        .populate('buyer', 'firstName lastName email')
+        .populate('mortgageBank', 'name');
+
+      return res.status(201).json({
+        success: true,
+        message: 'Mortgage activated successfully',
+        data: populatedMortgage
+      });
+    } catch (error) {
+      console.error('Error activating mortgage:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Server error activating mortgage',
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      });
+    }
+  }
+);
+
+// @desc    Get active mortgages (buyer sees own, bank sees assigned, admin sees all)
+// @route   GET /api/mortgages/active
+// @access  Private
+router.get('/active', protect, async (req, res) => {
+  try {
+    const { status } = req.query;
+    const query = {};
+
+    // Filter by status if provided (default to 'active')
+    query.status = status || 'active';
+
+    if (req.user.role === 'admin') {
+      // Admins see all mortgages
+    } else if (req.user.role === 'mortgage_bank') {
+      if (!req.user.mortgageBankProfile) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mortgage bank profile not linked to this user'
+        });
+      }
+      query.mortgageBank = req.user.mortgageBankProfile;
+    } else {
+      // Buyers see their own mortgages
+      query.buyer = req.user.id;
+    }
+
+    const mortgages = await Mortgage.find(query)
+      .populate('property', 'title price location images city state')
+      .populate('buyer', 'firstName lastName email')
+      .populate('mortgageBank', 'name')
+      .populate('application', 'status bankReview')
+      .sort({ createdAt: -1 }); // Most recent first
+
+    return res.json({
+      success: true,
+      count: mortgages.length,
+      data: mortgages
+    });
+  } catch (error) {
+    console.error('Error fetching active mortgages:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching active mortgages',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+    });
+  }
+});
+
+// @desc    Get single active mortgage
+// @route   GET /api/mortgages/active/:id
+// @access  Private (buyer owns, bank owns, or admin)
+router.get('/active/:id', protect, async (req, res) => {
+  try {
+    const mortgage = await Mortgage.findById(req.params.id)
+      .populate('property', 'title price location images city state')
+      .populate('buyer', 'firstName lastName email phone')
+      .populate('mortgageBank', 'name email phone address')
+      .populate('application', 'status bankReview documents employmentDetails');
+
+    if (!mortgage) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mortgage not found'
+      });
+    }
+
+    const isBuyer = mortgage.buyer._id.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const isBank =
+      req.user.role === 'mortgage_bank' &&
+      req.user.mortgageBankProfile &&
+      mortgage.mortgageBank._id.toString() === req.user.mortgageBankProfile.toString();
+
+    if (!isBuyer && !isAdmin && !isBank) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this mortgage'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: mortgage
+    });
+  } catch (error) {
+    console.error('Error fetching active mortgage:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching mortgage',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+    });
+  }
+});
 
 module.exports = router;
 

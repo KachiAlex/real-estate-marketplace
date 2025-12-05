@@ -183,10 +183,24 @@ const HomeSections = () => {
                       )}
                     </div>
                     
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2">
-                      <span>Contact Agent</span>
-                      <FaArrowRight />
-                    </button>
+                    {agent.phone ? (
+                      <a
+                        href={`tel:${agent.phone}`}
+                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2 no-underline"
+                      >
+                        <FaPhone className="mr-1" />
+                        <span>Contact Agent</span>
+                      </a>
+                    ) : (
+                      <button 
+                        disabled
+                        className="w-full bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed transition-colors duration-300 flex items-center justify-center space-x-2"
+                        title="Phone number not available"
+                      >
+                        <FaPhone className="mr-1" />
+                        <span>Contact Agent</span>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

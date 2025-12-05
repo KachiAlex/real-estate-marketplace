@@ -70,7 +70,7 @@ const Header = () => {
     'Waterfront': [],
     'Luxury': [],
     'Blog': [],
-    'Diasporan Services': ['Legal Services', 'Account & Book Keeping', 'Business Office for consultation']
+    'Professional Services': ['Legal Services', 'Account & Book Keeping', 'Business Office for consultation']
   };
 
   const handleLogout = () => {
@@ -207,11 +207,10 @@ const Header = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            const result = await switchRole('buyer');
                             setIsUserMenuOpen(false);
-                            if (result.success) {
-                              navigate('/dashboard', { replace: true });
-                            }
+                            const result = await switchRole('buyer');
+                            // Always navigate to buyer dashboard when clicked
+                            navigate('/dashboard', { replace: true });
                           }}
                           className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
@@ -219,9 +218,17 @@ const Header = () => {
                           Buyer
                         </button>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              handleVendorSwitch();
+                              setIsUserMenuOpen(false);
+                              const result = await switchRole('vendor');
+                              if (result.requiresVendorRegistration) {
+                                // Show vendor registration modal
+                                setShowVendorRegistrationModal(true);
+                              } else if (result.success || isVendor()) {
+                                // Navigate to vendor dashboard if switch successful or already vendor
+                                navigate('/vendor/dashboard', { replace: true });
+                              }
                             }}
                             className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           >
@@ -478,21 +485,21 @@ const Header = () => {
                 Blog
               </Link>
 
-              {/* Diasporan Services */}
+              {/* Professional Services */}
               <div className="relative dropdown-container">
                 <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'Diasporan Services' ? null : 'Diasporan Services')}
-                  aria-label="Diasporan Services"
-                  aria-expanded={activeDropdown === 'Diasporan Services'}
+                  onClick={() => setActiveDropdown(activeDropdown === 'Professional Services' ? null : 'Professional Services')}
+                  aria-label="Professional Services"
+                  aria-expanded={activeDropdown === 'Professional Services'}
                   className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeDropdown === 'Diasporan Services' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
+                    activeDropdown === 'Professional Services' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
                   }`}
                 >
-                  <span className="hidden xl:inline">Diasporan Services</span>
-                  <span className="xl:hidden">Diasporan</span>
+                  <span className="hidden xl:inline">Professional Services</span>
+                  <span className="xl:hidden">Services</span>
                   <svg 
                     className={`w-4 h-4 transition-transform ${
-                      activeDropdown === 'Diasporan Services' ? 'rotate-180' : ''
+                      activeDropdown === 'Professional Services' ? 'rotate-180' : ''
                     }`} 
                     fill="none" 
                     stroke="currentColor" 
@@ -502,10 +509,10 @@ const Header = () => {
                   </svg>
                 </button>
                 
-                {activeDropdown === 'Diasporan Services' && (
+                {activeDropdown === 'Professional Services' && (
                   <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
                     <div className="py-2">
-                      {quickFilters['Diasporan Services'].map((service) => (
+                      {quickFilters['Professional Services'].map((service) => (
                         <button
                           key={service}
                           onClick={() => {
@@ -568,6 +575,9 @@ const Header = () => {
                       </div>
                     )}
                   </div>
+                  <span className="hidden lg:inline-block text-sm font-medium">
+                    Welcome, {user.firstName || user.displayName?.split(' ')[0] || 'User'}
+                  </span>
                 </button>
 
                 {isUserMenuOpen && (
@@ -584,11 +594,10 @@ const Header = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            const result = await switchRole('buyer');
                             setIsUserMenuOpen(false);
-                            if (result.success) {
-                              navigate('/dashboard', { replace: true });
-                            }
+                            const result = await switchRole('buyer');
+                            // Always navigate to buyer dashboard when clicked
+                            navigate('/dashboard', { replace: true });
                           }}
                           className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
@@ -596,9 +605,17 @@ const Header = () => {
                           Buyer
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            handleVendorSwitch();
+                            setIsUserMenuOpen(false);
+                            const result = await switchRole('vendor');
+                            if (result.requiresVendorRegistration) {
+                              // Show vendor registration modal
+                              setShowVendorRegistrationModal(true);
+                            } else if (result.success || isVendor()) {
+                              // Navigate to vendor dashboard if switch successful or already vendor
+                              navigate('/vendor/dashboard', { replace: true });
+                            }
                           }}
                           className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                         >

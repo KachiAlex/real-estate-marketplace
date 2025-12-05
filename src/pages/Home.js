@@ -490,11 +490,50 @@ const Home = () => {
       );
     }
     
-    // Apply location filter (from applied filters)
+    // Apply location filter (from applied filters) - optimized for precise matching
     if (appliedLocation) {
-      filtered = filtered.filter(property => 
-        property?.location?.toLowerCase().includes(appliedLocation.toLowerCase())
-      );
+      const searchLocation = appliedLocation.toLowerCase().trim();
+      filtered = filtered.filter(property => {
+        // Priority 1: Check city field (most reliable)
+        const city = property?.city?.toLowerCase() || 
+                     (property?.location?.city && typeof property.location === 'object' ? property.location.city.toLowerCase() : '') || '';
+        if (city === searchLocation) {
+          return true;
+        }
+        
+        // Priority 2: Check state field
+        const state = property?.state?.toLowerCase() || 
+                      (property?.location?.state && typeof property.location === 'object' ? property.location.state.toLowerCase() : '') || '';
+        if (state === searchLocation) {
+          return true;
+        }
+        
+        // Priority 3: Check string location field (for mock data format: "Address, City, State")
+        if (property?.location && typeof property.location === 'string') {
+          const locationString = property.location.toLowerCase();
+          // Split by comma and check each part
+          const locationParts = locationString.split(',').map(part => part.trim());
+          // Check if any part exactly matches the search location
+          if (locationParts.includes(searchLocation)) {
+            return true;
+          }
+          // Also check if the location string ends with the search term (common pattern)
+          if (locationString.endsWith(searchLocation) || locationString.endsWith(`, ${searchLocation}`)) {
+            return true;
+          }
+        }
+        
+        // Priority 4: Check if location object has city or state that matches
+        if (property?.location && typeof property.location === 'object') {
+          const objCity = property.location.city?.toLowerCase() || '';
+          const objState = property.location.state?.toLowerCase() || '';
+          if (objCity === searchLocation || objState === searchLocation) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
     }
     
     // Apply property status filter (from applied filters)
@@ -834,7 +873,14 @@ const Home = () => {
   
   const handlePaginationClick = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to properties section instead of top of page
+    const propertiesSection = document.getElementById('properties-section');
+    if (propertiesSection) {
+      propertiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // Fallback to top if section not found
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -919,10 +965,10 @@ const Home = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Security Message - Plain Text */}
-        <div className="mb-12 text-center">
-          <p className="text-lg md:text-xl font-bold text-gray-800 leading-relaxed">
+        <div className="mb-6 text-center">
+          <p className="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed">
             Secure real estate transactions with{' '}
             <span className="text-blue-600">escrow protection</span>
             ,{' '}
@@ -1289,7 +1335,7 @@ const Home = () => {
           </div>
 
           {/* Property Listings */}
-          <div className="w-full lg:flex-1">
+          <div id="properties-section" className="w-full lg:flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-700">{(filteredProperties?.length || 0)} {(filteredProperties?.length || 0) === 1 ? 'property' : 'properties'} found</p>
@@ -1418,20 +1464,60 @@ const Home = () => {
             )}
 
             {/* Pagination */}
-            {(filteredProperties?.length || 0) > 0 && totalPages > 1 && (
-              <div className="flex items-center justify-center mt-8 space-x-2">
-                <button 
-                  onClick={() => handlePaginationClick(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  &lt;
-                </button>
-                
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  const pageNumber = i + 1;
-                  return (
+            {(filteredProperties?.length || 0) > 0 && totalPages > 1 && (() => {
+              // Calculate which page numbers to show
+              let startPage, endPage;
+              
+              if (totalPages <= 7) {
+                // Show all pages if 7 or fewer
+                startPage = 1;
+                endPage = totalPages;
+              } else {
+                // Show pages around current page
+                if (currentPage <= 4) {
+                  startPage = 1;
+                  endPage = 5;
+                } else if (currentPage >= totalPages - 3) {
+                  startPage = totalPages - 4;
+                  endPage = totalPages;
+                } else {
+                  startPage = currentPage - 2;
+                  endPage = currentPage + 2;
+                }
+              }
+              
+              const pageNumbers = [];
+              for (let i = startPage; i <= endPage; i++) {
+                pageNumbers.push(i);
+              }
+              
+              return (
+                <div className="flex items-center justify-center mt-8 space-x-2">
+                  <button 
+                    onClick={() => handlePaginationClick(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Previous page"
+                  >
+                    &lt;
+                  </button>
+                  
+                  {startPage > 1 && (
+                    <>
+                      <button 
+                        onClick={() => handlePaginationClick(1)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                        title="Go to page 1"
+                      >
+                        1
+                      </button>
+                      {startPage > 2 && (
+                        <span className="px-3 py-2 text-gray-600">...</span>
+                      )}
+                    </>
+                  )}
+                  
+                  {pageNumbers.map((pageNumber) => (
                     <button 
                       key={pageNumber}
                       onClick={() => handlePaginationClick(pageNumber)}
@@ -1444,32 +1530,34 @@ const Home = () => {
                     >
                       {pageNumber}
                     </button>
-                  );
-                })}
-                
-                {totalPages > 5 && (
-                  <>
-                    <span className="px-3 py-2 text-gray-600">...</span>
-                    <button 
-                      onClick={() => handlePaginationClick(totalPages)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
-                      title={`Go to page ${totalPages}`}
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-                
-                <button 
-                  onClick={() => handlePaginationClick(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  &gt;
-                </button>
-              </div>
-            )}
+                  ))}
+                  
+                  {endPage < totalPages && (
+                    <>
+                      {endPage < totalPages - 1 && (
+                        <span className="px-3 py-2 text-gray-600">...</span>
+                      )}
+                      <button 
+                        onClick={() => handlePaginationClick(totalPages)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                        title={`Go to page ${totalPages}`}
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                  
+                  <button 
+                    onClick={() => handlePaginationClick(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Next page"
+                  >
+                    &gt;
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

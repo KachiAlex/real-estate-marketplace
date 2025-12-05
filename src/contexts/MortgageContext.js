@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { 
   calculateMonthlyPayment, 
   generatePaymentSchedule, 
@@ -9,88 +10,9 @@ import {
   getDaysUntilPayment,
   getUpcomingPayments as getUpcomingPaymentsUtil 
 } from '../utils/mortgageCalculator';
+import { transformMortgagesArray } from '../utils/mortgageDataTransform';
 
-// Mock mortgage data
-const mockMortgages = [
-  {
-    id: 'MORT-001',
-    userId: '3', // Onyedikachi Akoma
-    propertyId: 'prop_001',
-    propertyTitle: 'Beautiful Family Home in Lekki Phase 1',
-    propertyLocation: 'Lekki Phase 1, Lagos',
-    propertyPrice: 185000000,
-    loanAmount: 148000000, // 80% of property value
-    downPayment: 37000000, // 20% down payment
-    interestRate: 18.5,
-    loanTerm: 25, // years
-    monthlyPayment: 2450000, // Monthly payment amount
-    totalPayments: 300, // Total number of payments
-    paymentsMade: 3,
-    paymentsRemaining: 297,
-    startDate: '2024-01-15T00:00:00Z',
-    nextPaymentDate: '2024-05-15T00:00:00Z',
-    status: 'active',
-    paymentHistory: [
-      {
-        id: 'PAY-001',
-        amount: 2450000,
-        dueDate: '2024-02-15T00:00:00Z',
-        paidDate: '2024-02-14T10:30:00Z',
-        status: 'paid',
-        paymentMethod: 'flutterwave'
-      },
-      {
-        id: 'PAY-002',
-        amount: 2450000,
-        dueDate: '2024-03-15T00:00:00Z',
-        paidDate: '2024-03-15T09:15:00Z',
-        status: 'paid',
-        paymentMethod: 'flutterwave'
-      },
-      {
-        id: 'PAY-003',
-        amount: 2450000,
-        dueDate: '2024-04-15T00:00:00Z',
-        paidDate: '2024-04-14T14:20:00Z',
-        status: 'paid',
-        paymentMethod: 'flutterwave'
-      }
-    ],
-    createdAt: '2024-01-15T00:00:00Z',
-    updatedAt: '2024-04-14T14:20:00Z'
-  },
-  {
-    id: 'MORT-002',
-    userId: '1', // John Doe
-    propertyId: 'prop_002',
-    propertyTitle: 'Modern Downtown Apartment in Victoria Island',
-    propertyLocation: 'Victoria Island, Lagos',
-    propertyPrice: 120000000,
-    loanAmount: 96000000, // 80% of property value
-    downPayment: 24000000, // 20% down payment
-    interestRate: 16.5,
-    loanTerm: 20, // years
-    monthlyPayment: 1800000, // Monthly payment amount
-    totalPayments: 240, // Total number of payments
-    paymentsMade: 1,
-    paymentsRemaining: 239,
-    startDate: '2024-03-01T00:00:00Z',
-    nextPaymentDate: '2024-05-01T00:00:00Z',
-    status: 'active',
-    paymentHistory: [
-      {
-        id: 'PAY-004',
-        amount: 1800000,
-        dueDate: '2024-04-01T00:00:00Z',
-        paidDate: '2024-03-31T16:45:00Z',
-        status: 'paid',
-        paymentMethod: 'flutterwave'
-      }
-    ],
-    createdAt: '2024-03-01T00:00:00Z',
-    updatedAt: '2024-03-31T16:45:00Z'
-  }
-];
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
 const MortgageContext = createContext();
 
@@ -107,56 +29,78 @@ export const MortgageProvider = ({ children }) => {
   const { createTestNotification } = useNotifications();
   const [mortgages, setMortgages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Load mock data immediately and generate payment schedules
-    if (user) {
-      const userMortgages = mockMortgages.filter(mortgage => mortgage.userId === user.id);
+  // Fetch mortgages from backend API
+  const fetchMortgages = useCallback(async () => {
+    if (!user) {
+      setMortgages([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
       
-      // Generate payment schedules for each mortgage
-      const mortgagesWithSchedules = userMortgages.map(mortgage => {
-        // Check if schedule hasn't been generated yet
-        if (!mortgage.paymentSchedule || mortgage.paymentSchedule.length === 0) {
-          const schedule = generatePaymentSchedule(
-            mortgage.loanAmount,
-            mortgage.interestRate,
-            mortgage.loanTerm,
-            mortgage.startDate,
-            mortgage.downPayment
-          );
-          
-          // Mark already paid payments in the schedule
-          schedule.forEach(payment => {
-            const paidPayment = mortgage.paymentHistory.find(p => 
-              payment.dueDate === p.dueDate || 
-              (payment.paymentNumber && p.paymentNumber === payment.paymentNumber)
-            );
-            if (paidPayment) {
-              payment.status = 'paid';
-              payment.paidDate = paidPayment.paidDate;
-              payment.paymentMethod = paidPayment.paymentMethod;
-            }
-          });
-          
-          return {
-            ...mortgage,
-            paymentSchedule: schedule
-          };
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No authentication token found');
+        setMortgages([]);
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/mortgages/active`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        params: {
+          status: 'active' // Only fetch active mortgages for dashboard
         }
-        return mortgage;
       });
+
+      if (response.data && response.data.success) {
+        // Transform backend data to frontend format
+        const transformedMortgages = transformMortgagesArray(response.data.data || []);
+        setMortgages(transformedMortgages);
+      } else {
+        setMortgages([]);
+      }
+    } catch (err) {
+      console.error('Error fetching mortgages:', err);
+      setError(err.response?.data?.message || 'Failed to load mortgages');
       
-      setMortgages(mortgagesWithSchedules);
+      // Don't show error toast if it's just no data (401/403 might be handled elsewhere)
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to load mortgages. Please try again later.');
+      }
+      
+      setMortgages([]);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
-  const getMortgageById = (mortgageId) => {
-    return mortgages.find(mortgage => mortgage.id === mortgageId);
-  };
+  // Load mortgages when user changes
+  useEffect(() => {
+    fetchMortgages();
+  }, [fetchMortgages]);
 
-  const getUserMortgages = () => {
+  const getMortgageById = useCallback((mortgageId) => {
+    return mortgages.find(mortgage => 
+      mortgage.id === mortgageId || 
+      mortgage._id === mortgageId ||
+      mortgage.id?.toString() === mortgageId?.toString()
+    );
+  }, [mortgages]);
+
+  const getUserMortgages = useCallback(() => {
     return mortgages;
-  };
+  }, [mortgages]);
+
+  // Refresh mortgages from backend
+  const refreshMortgages = useCallback(async () => {
+    await fetchMortgages();
+  }, [fetchMortgages]);
 
   const getUpcomingPayments = () => {
     const now = new Date();
@@ -453,13 +397,15 @@ export const MortgageProvider = ({ children }) => {
   const value = {
     mortgages,
     loading,
+    error,
     getMortgageById,
     getUserMortgages,
     getUpcomingPayments,
     makePayment,
     getPaymentSummary,
     enableAutoPay,
-    disableAutoPay
+    disableAutoPay,
+    refreshMortgages
   };
 
   return (

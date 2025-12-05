@@ -184,10 +184,16 @@ const SavedProperties = () => {
       return;
     }
     
-    // Simulate contacting agent
-    const agentName = property.agent?.name || 'Property Agent';
-    toast.success(`Contacting ${agentName} for "${property.title}"...`);
-    console.log('Contacting agent:', agentName, 'for property:', property.title);
+    // Get agent's phone number
+    const agentPhone = property?.agent?.phone || property?.owner?.phone || property?.vendorPhone || property?.contactPhone;
+    
+    if (!agentPhone) {
+      toast.error('Agent phone number not available');
+      return;
+    }
+    
+    // Initiate phone call
+    window.location.href = `tel:${agentPhone}`;
     
     // In a real app, this would open a contact form or messaging system
     setTimeout(() => {
