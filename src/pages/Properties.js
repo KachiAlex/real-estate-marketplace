@@ -22,6 +22,7 @@ const Properties = () => {
   const [selectedVendor, setSelectedVendor] = useState('');
   // Applied filters (what actually filters the properties)
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [appliedLocation, setAppliedLocation] = useState('');
   const [appliedType, setAppliedType] = useState('');
   const [appliedStatus, setAppliedStatus] = useState('');
   const [appliedPriceRange, setAppliedPriceRange] = useState({ min: '', max: '' });
@@ -50,8 +51,66 @@ const Properties = () => {
   const filteredProperties = useMemo(() => {
     let filtered = [...safeProperties];
 
-    // Apply search query
-    if (appliedSearchQuery.trim()) {
+    // Apply location filter (priority) - optimized for precise matching
+    if (appliedLocation) {
+      const normalizedSearchLocation = normalizeLocation(appliedLocation).toLowerCase().trim();
+      filtered = filtered.filter(property => {
+        // Priority 1: Check city field (most reliable)
+        const city = property?.city?.toLowerCase() || 
+                     (property?.location?.city && typeof property.location === 'object' ? property.location.city.toLowerCase() : '') || '';
+        const normalizedCity = normalizeLocation(city);
+        if (normalizedCity === normalizedSearchLocation || city === normalizedSearchLocation) {
+          return true;
+        }
+        
+        // Priority 2: Check state field
+        const state = property?.state?.toLowerCase() || 
+                      (property?.location?.state && typeof property.location === 'object' ? property.location.state.toLowerCase() : '') || '';
+        const normalizedState = normalizeLocation(state);
+        if (normalizedState === normalizedSearchLocation || state === normalizedSearchLocation) {
+          return true;
+        }
+        
+        // Priority 3: Check string location field (for mock data format: "Address, City, State")
+        if (property?.location && typeof property.location === 'string') {
+          const locationString = property.location.toLowerCase();
+          // Split by comma and check each part
+          const locationParts = locationString.split(',').map(part => normalizeLocation(part.trim()));
+          // Check if any part exactly matches the search location
+          if (locationParts.includes(normalizedSearchLocation)) {
+            return true;
+          }
+          // Also check if the location string ends with the search term (common pattern)
+          if (locationString.endsWith(normalizedSearchLocation) || locationString.endsWith(`, ${normalizedSearchLocation}`)) {
+            return true;
+          }
+          // Check each part against normalized search location
+          const originalParts = locationString.split(',').map(part => part.trim());
+          for (const part of originalParts) {
+            if (normalizeLocation(part) === normalizedSearchLocation) {
+              return true;
+            }
+          }
+        }
+        
+        // Priority 4: Check if location object has city or state that matches
+        if (property?.location && typeof property.location === 'object') {
+          const objCity = property.location.city?.toLowerCase() || '';
+          const objState = property.location.state?.toLowerCase() || '';
+          if (normalizeLocation(objCity) === normalizedSearchLocation || 
+              normalizeLocation(objState) === normalizedSearchLocation ||
+              objCity === normalizedSearchLocation || 
+              objState === normalizedSearchLocation) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
+    }
+
+    // Apply search query (only if location filter is not applied)
+    if (!appliedLocation && appliedSearchQuery.trim()) {
       const query = appliedSearchQuery.toLowerCase();
       filtered = filtered.filter(property => 
         property.title?.toLowerCase().includes(query) ||
@@ -68,7 +127,11 @@ const Properties = () => {
 
     // Apply status filter
     if (appliedStatus) {
-      filtered = filtered.filter(property => property.status === appliedStatus || property.listingType === appliedStatus);
+      filtered = filtered.filter(property => 
+        property.status === appliedStatus || 
+        property.listingType === appliedStatus ||
+        property.label === appliedStatus
+      );
     }
 
     // Apply price range filter
@@ -179,7 +242,7 @@ const Properties = () => {
     }
 
     return sorted;
-  }, [safeProperties, appliedSearchQuery, appliedType, appliedStatus, appliedPriceRange, appliedVendor, sortBy]);
+  }, [safeProperties, appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedPriceRange, appliedVendor, sortBy]);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
@@ -220,43 +283,110 @@ const Properties = () => {
     });
   }, [fetchProperties]);
 
-  // Handle URL parameters from property alerts
+  // Normalize location names (handle aliases)
+  const normalizeLocation = (location) => {
+    if (!location) return location;
+    const locationMap = {
+      'port harcourt': 'Rivers',
+      'port-harcourt': 'Rivers',
+      'ph': 'Rivers',
+      'fct': 'Abuja',
+      'abuja fct': 'Abuja'
+    };
+    const normalized = locationMap[location.toLowerCase().trim()];
+    return normalized || location;
+  };
+
+  // Map type values from URL to display format
+  const mapTypeFromUrl = (urlType) => {
+    const typeMap = {
+      'buy': 'For Sale',
+      'rent': 'For Rent',
+      'short-let': 'Shortlet',
+      'sale': 'For Sale',
+      'lease': 'For Lease'
+    };
+    return typeMap[urlType?.toLowerCase()] || urlType;
+  };
+
+  // Map status values from URL to display format
+  const mapStatusFromUrl = (urlStatus) => {
+    const statusMap = {
+      'buy': 'For Sale',
+      'rent': 'For Rent',
+      'short-let': 'Shortlet',
+      'sale': 'For Sale',
+      'lease': 'For Lease',
+      'shortlet': 'Shortlet'
+    };
+    return statusMap[urlStatus?.toLowerCase()] || urlStatus;
+  };
+
+  // Handle URL parameters on initial load and from property alerts
   useEffect(() => {
     const fromAlert = searchParams.get('fromAlert');
     const alertNameParam = searchParams.get('alertName');
     
+    // Get URL parameters
+    const location = searchParams.get('location');
+    const type = searchParams.get('type');
+    const status = searchParams.get('status');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const minBedrooms = searchParams.get('minBedrooms');
+    const maxBedrooms = searchParams.get('maxBedrooms');
+    const minBathrooms = searchParams.get('minBathrooms');
+    const maxBathrooms = searchParams.get('maxBathrooms');
+    const minArea = searchParams.get('minArea');
+    const maxArea = searchParams.get('maxArea');
+    const features = searchParams.get('features');
+    
+    // Apply location filter (normalize location name)
+    if (location) {
+      const normalizedLoc = normalizeLocation(location);
+      setAppliedLocation(normalizedLoc);
+      setSearchQuery(normalizedLoc); // Also set in search query for display
+    }
+    
+    // Apply type filter (map from URL format to display format)
+    // Note: When type is "buy", "rent", or "short-let", these should map to status, not type
+    if (type) {
+      const mappedType = mapTypeFromUrl(type);
+      // If type is a status-like value (buy/rent/short-let), apply as status instead
+      if (['buy', 'rent', 'short-let', 'sale', 'lease'].includes(type.toLowerCase())) {
+        setAppliedStatus(mappedType);
+        setSelectedStatus(mappedType);
+      } else {
+        // Otherwise, it's a property type like "apartment", "house", etc.
+        setAppliedType(mappedType);
+        setSelectedType(mappedType);
+      }
+    }
+    
+    // Apply status filter (map from URL format to display format)
+    if (status) {
+      const mappedStatus = mapStatusFromUrl(status);
+      setAppliedStatus(mappedStatus);
+      setSelectedStatus(mappedStatus);
+    }
+    
+    // Apply price range
+    if (minPrice || maxPrice) {
+      setPriceRange(prev => ({ 
+        ...prev, 
+        min: minPrice || prev.min, 
+        max: maxPrice || prev.max 
+      }));
+      setAppliedPriceRange({ 
+        min: minPrice || '', 
+        max: maxPrice || '' 
+      });
+    }
+    
+    // Handle alert-specific logic
     if (fromAlert && alertNameParam) {
       console.log('Loading properties from alert:', alertNameParam);
       setAlertName(alertNameParam);
-      
-      // Apply filters from URL parameters
-      const location = searchParams.get('location');
-      const type = searchParams.get('type');
-      const minPrice = searchParams.get('minPrice');
-      const maxPrice = searchParams.get('maxPrice');
-      const minBedrooms = searchParams.get('minBedrooms');
-      const maxBedrooms = searchParams.get('maxBedrooms');
-      const minBathrooms = searchParams.get('minBathrooms');
-      const maxBathrooms = searchParams.get('maxBathrooms');
-      const minArea = searchParams.get('minArea');
-      const maxArea = searchParams.get('maxArea');
-      const features = searchParams.get('features');
-      
-      // Update local filter states (pending filters)
-      if (location) setSearchQuery(location);
-      if (type) setSelectedType(type);
-      if (minPrice) setPriceRange(prev => ({ ...prev, min: minPrice }));
-      if (maxPrice) setPriceRange(prev => ({ ...prev, max: maxPrice }));
-      
-      // Also update applied filters immediately for URL parameters
-      if (location) setAppliedSearchQuery(location);
-      if (type) setAppliedType(type);
-      if (minPrice || maxPrice) {
-        setAppliedPriceRange({ 
-          min: minPrice || '', 
-          max: maxPrice || '' 
-        });
-      }
       
       // Apply filters to context
       const alertFilters = {
@@ -275,6 +405,9 @@ const Properties = () => {
       
       setFilters(alertFilters);
       toast.success(`Showing properties matching "${alertNameParam}" alert criteria`);
+    } else if (location || type || status) {
+      // Auto-apply filters from URL (not from alert)
+      toast.success(`Filtering properties${location ? ` in ${location}` : ''}${type ? ` - ${mapTypeFromUrl(type)}` : ''}${status ? ` - ${mapStatusFromUrl(status)}` : ''}`);
     }
   }, [searchParams, setFilters]);
 
