@@ -664,9 +664,6 @@ const AIAssistant = () => {
             <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center" style={{ display: 'none' }}>
               <span className="text-white text-2xl font-bold">K</span>
             </div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">!</span>
-            </div>
           </button>
         </div>
       )}

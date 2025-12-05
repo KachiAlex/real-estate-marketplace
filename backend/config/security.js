@@ -83,7 +83,8 @@ const securityConfig = {
   allowedFileTypes: {
     images: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
     videos: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'],
-    documents: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+    documents: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+    mortgageDocument: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/jpeg', 'image/jpg', 'image/png']
   },
 
   // File size limits (in bytes)

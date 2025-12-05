@@ -11,6 +11,7 @@ const {
   uploadPropertyVideos,
   uploadPropertyDocuments,
   uploadAvatar,
+  uploadMortgageDocuments,
   deleteFile,
   deleteMultipleFiles,
   isConfigured,
@@ -63,6 +64,20 @@ const documentUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: fileFilter(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+});
+
+const mortgageDocumentUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png'
+  ])
 });
 
 const avatarUpload = multer({
@@ -287,6 +302,60 @@ router.post(
       res.status(500).json({
         success: false,
         message: error.message || 'Failed to upload avatar',
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/upload/mortgage/documents
+ * @desc    Upload mortgage application documents (bank statements, etc.)
+ * @access  Private
+ */
+router.post(
+  '/mortgage/documents',
+  protect,
+  checkCloudinaryConfig,
+  mortgageDocumentUpload.array('documents', 10), // Max 10 documents
+  async (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files provided'
+        });
+      }
+
+      const userId = req.user.id || req.user._id;
+      const { applicationId } = req.body; // Optional: if application already exists
+      
+      const result = await uploadMortgageDocuments(req.files, userId, applicationId);
+
+      infoLogger('Mortgage documents uploaded', {
+        userId,
+        applicationId: applicationId || 'pending',
+        count: result.data.totalUploaded
+      });
+
+      res.json({
+        success: true,
+        message: `Successfully uploaded ${result.data.totalUploaded} document(s)`,
+        data: result.data
+      });
+    } catch (error) {
+      errorLogger(error, req, { context: 'Mortgage documents upload' });
+      
+      // Clean up any uploaded files on error
+      if (req.files) {
+        req.files.forEach(file => {
+          fs.unlink(file.path).catch(() => {});
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload documents',
         ...(process.env.NODE_ENV === 'development' && { error: error.message })
       });
     }

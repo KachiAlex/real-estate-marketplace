@@ -40,6 +40,12 @@ const uploadOptions = {
     allowed_formats: ['pdf', 'doc', 'docx', 'txt'],
     max_file_size: 10485760 // 10MB
   },
+  mortgageDocuments: {
+    folder: 'mortgages/documents',
+    resource_type: 'raw',
+    allowed_formats: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'], // Allow images for bank statements
+    max_file_size: 10485760 // 10MB
+  },
   avatars: {
     folder: 'users/avatars',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],

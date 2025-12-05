@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaArrowRight, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaArrowRight, FaSearch, FaChevronLeft, FaChevronRight, FaCity, FaMonument, FaIndustry, FaMapMarkedAlt } from 'react-icons/fa';
 import { useProperty } from '../contexts/PropertyContext';
 import { getAllAgents, filterAgents, paginateAgents } from '../services/agentService';
 
@@ -294,7 +294,9 @@ const HomeSections = () => {
             {/* Major Cities */}
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-white">
               <div className="text-center">
-                <div className="text-4xl mb-4">🏙️</div>
+                <div className="text-4xl mb-4 flex justify-center">
+                  <FaCity className="text-gray-200" />
+                </div>
                 <h3 className="text-xl font-bold mb-4">Navigate Lagos</h3>
                 <p className="text-blue-100 mb-4">
                   Discover properties in Nigeria's commercial capital
@@ -311,7 +313,9 @@ const HomeSections = () => {
 
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-white">
               <div className="text-center">
-                <div className="text-4xl mb-4">🏛️</div>
+                <div className="text-4xl mb-4 flex justify-center">
+                  <FaMonument className="text-gray-200" />
+                </div>
                 <h3 className="text-xl font-bold mb-4">Navigate Abuja</h3>
                 <p className="text-green-100 mb-4">
                   Find properties in the federal capital territory
@@ -328,7 +332,9 @@ const HomeSections = () => {
 
             <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-white">
               <div className="text-center">
-                <div className="text-4xl mb-4">⛽</div>
+                <div className="text-4xl mb-4 flex justify-center">
+                  <FaIndustry className="text-gray-200" />
+                </div>
                 <h3 className="text-xl font-bold mb-4">Navigate Rivers</h3>
                 <p className="text-purple-100 mb-4">
                   Explore properties in the oil-rich state
@@ -345,7 +351,9 @@ const HomeSections = () => {
 
             <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-white">
               <div className="text-center">
-                <div className="text-4xl mb-4">🗺️</div>
+                <div className="text-4xl mb-4 flex justify-center">
+                  <FaMapMarkedAlt className="text-gray-200" />
+                </div>
                 <h3 className="text-xl font-bold mb-4">Navigate All 36 States</h3>
                 <p className="text-orange-100 mb-4">
                   Discover properties across Nigeria

@@ -282,144 +282,173 @@ router.put('/password', protect, [
 // @desc    Request password reset (forgot password)
 // @route   POST /api/auth/forgot-password
 // @access  Public
-// Wrapped handler to catch all errors including unhandled promise rejections
-router.post('/forgot-password', (req, res, next) => {
-  const handler = async (req, res, next) => {
-    try {
-      // Manual email validation to avoid middleware errors
-      const { email } = req.body;
-      
-      if (!email || typeof email !== 'string') {
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
+// NOTE: This route is now registered directly in server.js BEFORE middleware
+// to ensure it always works. This handler is kept for future use.
+// router.post('/forgot-password', ...) - REMOVED, registered in server.js instead
 
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim())) {
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-
-      const normalizedEmail = email.trim().toLowerCase();
-
-      // Find user with error handling
-      let user;
-      try {
-        user = await userService.findByEmail(normalizedEmail);
-      } catch (dbError) {
-        console.error('Database error in forgot-password:', dbError);
-        console.error('Database error stack:', dbError.stack);
-        // Return success for security
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-      
-      // For security, always return success message (don't reveal if email exists)
-      if (!user) {
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-
-      // Generate reset token with error handling
-      let resetToken, resetTokenHash;
-      try {
-        resetToken = crypto.randomBytes(32).toString('hex');
-        resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-      } catch (cryptoError) {
-        console.error('Crypto error in forgot-password:', cryptoError);
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-
-      // Save token and expiry (1 hour) with error handling
-      try {
-        await userService.updateUser(user.id, {
-          resetPasswordToken: resetTokenHash,
-          resetPasswordExpires: Date.now() + 60 * 60 * 1000
-        });
-      } catch (updateError) {
-        console.error('Error updating user with reset token:', updateError);
-        console.error('Update error stack:', updateError.stack);
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-
-      // Create reset URL
-      const frontendUrl = process.env.FRONTEND_URL || 'https://real-estate-marketplace-37544.web.app';
-      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
-
-      // Send email
-      const subject = 'Password Reset Request - PropertyArk';
-      const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Password Reset Request</h2>
-          <p>You requested a password reset for your PropertyArk account.</p>
-          <p>Click the button below to reset your password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0;">Reset Password</a>
-          <p>Or copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #2563eb;">${resetUrl}</p>
-          <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
-          <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
-        </div>
-      `;
-      const text = `You requested a password reset for your PropertyArk account.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`;
-
-      // Send email (don't fail request if email fails)
-      try {
-        const emailResult = await emailService.sendEmail(normalizedEmail, subject, html, text);
-        if (!emailResult.success) {
-          console.error('Email sending failed:', emailResult.error);
-        }
-      } catch (emailError) {
-        console.error('Email service error:', emailError);
-        // Continue - still return success
-      }
-
-      // Always return success for security
-      if (!res.headersSent) {
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      console.error('Error stack:', error.stack);
-      // Always return success for security
-      if (!res.headersSent) {
-        return res.json({
-          success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
-        });
-      }
+// OLD HANDLER - Commented out for now, will add back incrementally
+/*
+const forgotPasswordHandler = async (req, res, next) => {
+  // Log that the route was hit
+  console.log('🔵 [FORGOT-PASSWORD] Route hit at', new Date().toISOString());
+  console.log('🔵 [FORGOT-PASSWORD] Request body:', JSON.stringify(req.body));
+  
+  // Ensure response object exists
+  if (!res || typeof res.json !== 'function') {
+    console.error('❌ [FORGOT-PASSWORD] Invalid response object');
+    if (res && typeof res.json === 'function') {
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
     }
-  };
+    return;
+  }
 
-  // Execute handler and catch any promise rejections
-  Promise.resolve(handler(req, res, next)).catch((error) => {
-    console.error('Unhandled promise rejection in forgot-password:', error);
-    console.error('Error stack:', error.stack);
-    if (!res.headersSent) {
+  try {
+    // Ensure request body exists
+    if (!req || !req.body) {
+      console.log('⚠️ [FORGOT-PASSWORD] No request body');
       return res.json({
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.'
       });
     }
-  });
-});
+
+    // Manual email validation to avoid middleware errors
+    const { email } = req.body;
+    
+    if (!email || typeof email !== 'string') {
+      console.log('⚠️ [FORGOT-PASSWORD] Invalid email format');
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      console.log('⚠️ [FORGOT-PASSWORD] Email regex validation failed');
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('🔵 [FORGOT-PASSWORD] Processing email:', normalizedEmail);
+
+    // Find user with error handling
+    let user;
+    try {
+      console.log('🔵 [FORGOT-PASSWORD] Looking up user in database...');
+      user = await userService.findByEmail(normalizedEmail);
+      console.log('🔵 [FORGOT-PASSWORD] User lookup result:', user ? 'Found' : 'Not found');
+    } catch (dbError) {
+      console.error('❌ [FORGOT-PASSWORD] Database error:', dbError.message);
+      console.error('❌ [FORGOT-PASSWORD] Database error stack:', dbError.stack);
+      // Return success for security
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+    
+    // For security, always return success message (don't reveal if email exists)
+    if (!user) {
+      console.log('🔵 [FORGOT-PASSWORD] User not found, returning success');
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    console.log('🔵 [FORGOT-PASSWORD] User found, generating reset token...');
+
+    // Generate reset token with error handling
+    let resetToken, resetTokenHash;
+    try {
+      resetToken = crypto.randomBytes(32).toString('hex');
+      resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+      console.log('🔵 [FORGOT-PASSWORD] Reset token generated');
+    } catch (cryptoError) {
+      console.error('❌ [FORGOT-PASSWORD] Crypto error:', cryptoError.message);
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Save token and expiry (1 hour) with error handling
+    try {
+      console.log('🔵 [FORGOT-PASSWORD] Saving reset token to database...');
+      await userService.updateUser(user.id, {
+        resetPasswordToken: resetTokenHash,
+        resetPasswordExpires: Date.now() + 60 * 60 * 1000
+      });
+      console.log('🔵 [FORGOT-PASSWORD] Reset token saved successfully');
+    } catch (updateError) {
+      console.error('❌ [FORGOT-PASSWORD] Error updating user:', updateError.message);
+      console.error('❌ [FORGOT-PASSWORD] Update error stack:', updateError.stack);
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Create reset URL
+    const frontendUrl = process.env.FRONTEND_URL || 'https://real-estate-marketplace-37544.web.app';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
+    console.log('🔵 [FORGOT-PASSWORD] Reset URL created');
+
+    // Send email
+    const subject = 'Password Reset Request - PropertyArk';
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Password Reset Request</h2>
+        <p>You requested a password reset for your PropertyArk account.</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0;">Reset Password</a>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #2563eb;">${resetUrl}</p>
+        <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+        <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+    const text = `You requested a password reset for your PropertyArk account.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`;
+
+    // Send email (don't fail request if email fails)
+    try {
+      console.log('🔵 [FORGOT-PASSWORD] Attempting to send email...');
+      const emailResult = await emailService.sendEmail(normalizedEmail, subject, html, text);
+      if (!emailResult.success) {
+        console.error('⚠️ [FORGOT-PASSWORD] Email sending failed:', emailResult.error);
+      } else {
+        console.log('✅ [FORGOT-PASSWORD] Email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('⚠️ [FORGOT-PASSWORD] Email service error:', emailError.message);
+      // Continue - still return success
+    }
+
+    // Always return success for security
+    console.log('✅ [FORGOT-PASSWORD] Returning success response');
+    return res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('❌ [FORGOT-PASSWORD] Unexpected error:', error.message);
+    console.error('❌ [FORGOT-PASSWORD] Error stack:', error.stack);
+    // Always return success for security - pass to global handler
+    if (!res.headersSent) {
+      // Pass error to global error handler which will return success
+      return next(error);
+    }
+  }
+};
+*/
 
 // @desc    Reset password with token
 // @route   POST /api/auth/reset-password

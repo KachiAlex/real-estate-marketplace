@@ -61,12 +61,24 @@ class EmailService {
         throw new Error('Email transporter not initialized');
       }
 
+      // Format sender email with name for better deliverability
+      const emailFrom = process.env.EMAIL_FROM || 'PropertyArk <noreply@realestate.com>';
+      const senderName = process.env.EMAIL_FROM_NAME || 'PropertyArk';
+      const senderEmail = emailFrom.includes('<') 
+        ? emailFrom 
+        : `${senderName} <${emailFrom}>`;
+
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@realestate.com',
+        from: senderEmail,
         to,
         subject,
         html,
         text,
+        // Add headers for better deliverability
+        headers: {
+          'X-Entity-Ref-ID': Date.now().toString(),
+          'X-Mailer': 'PropertyArk Platform'
+        },
         ...options
       };
 

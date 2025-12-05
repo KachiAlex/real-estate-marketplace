@@ -278,6 +278,31 @@ const uploadAvatar = async (file, userId) => {
 };
 
 /**
+ * Upload mortgage application documents
+ * @param {Array} files - Array of document files
+ * @param {String} userId - User ID for folder organization
+ * @param {String} applicationId - Optional application ID if known
+ * @returns {Promise<Object>} Upload results
+ */
+const uploadMortgageDocuments = async (files, userId, applicationId = null) => {
+  try {
+    const folderPath = applicationId 
+      ? `mortgages/${userId}/${applicationId}/documents`
+      : `mortgages/${userId}/documents`;
+    
+    const options = {
+      folder: folderPath,
+      resource_type: 'raw'
+    };
+
+    return await uploadMultipleFiles(files, 'mortgageDocuments', options);
+  } catch (error) {
+    errorLogger(error, null, { context: 'Mortgage documents upload', userId, applicationId });
+    throw error;
+  }
+};
+
+/**
  * Generate image variants (thumbnails, different sizes)
  * @param {String} publicId - Cloudinary public ID
  * @returns {Object} URLs for different sizes
@@ -302,6 +327,7 @@ module.exports = {
   uploadPropertyVideos,
   uploadPropertyDocuments,
   uploadAvatar,
+  uploadMortgageDocuments,
   generateImageVariants,
   isConfigured
 };

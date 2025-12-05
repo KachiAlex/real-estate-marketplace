@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { FaLock, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import toast from 'react-hot-toast';
 
 const ResetPassword = () => {
@@ -13,26 +15,58 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(true);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+  const [actionCode, setActionCode] = useState(null);
+  const [email, setEmail] = useState('');
 
-  const token = searchParams.get('token');
-  const email = searchParams.get('email');
+  // Get action code from URL query params (Firebase Auth uses 'oobCode' and 'mode')
+  const oobCode = searchParams.get('oobCode');
+  const mode = searchParams.get('mode');
 
   useEffect(() => {
-    if (!token || !email) {
-      toast.error('Invalid reset link');
+    // Validate that we have the required Firebase Auth parameters
+    if (!oobCode || mode !== 'resetPassword') {
+      toast.error('Invalid or expired reset link');
       navigate('/forgot-password');
+      return;
     }
-  }, [token, email, navigate]);
 
-  const getApiUrl = () => {
-    let apiUrl = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-    if (apiUrl.endsWith('/api')) {
-      apiUrl = apiUrl.slice(0, -4);
-    }
-    return apiUrl;
-  };
+    // Verify the password reset code is valid
+    const verifyCode = async () => {
+      setValidating(true);
+      try {
+        const verifiedEmail = await verifyPasswordResetCode(auth, oobCode);
+        setActionCode(oobCode);
+        setEmail(verifiedEmail);
+        setValidating(false);
+      } catch (error) {
+        console.error('Password reset code verification error:', error);
+        let errorMessage = 'Invalid or expired reset link.';
+        
+        switch (error.code) {
+          case 'auth/expired-action-code':
+            errorMessage = 'The password reset link has expired. Please request a new one.';
+            break;
+          case 'auth/invalid-action-code':
+            errorMessage = 'Invalid reset link. Please request a new password reset.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled. Please contact support.';
+            break;
+        }
+        
+        toast.error(errorMessage);
+        setValidating(false);
+        setTimeout(() => {
+          navigate('/forgot-password');
+        }, 2000);
+      }
+    };
+
+    verifyCode();
+  }, [oobCode, mode, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -60,34 +94,48 @@ const ResetPassword = () => {
       return;
     }
 
+    if (!actionCode) {
+      toast.error('Invalid reset link. Please request a new one.');
+      navigate('/forgot-password');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          email,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess(true);
-        toast.success('Password reset successfully!');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        toast.error(data.message || 'Failed to reset password');
-      }
+      // Confirm password reset using Firebase Auth
+      await confirmPasswordReset(auth, actionCode, formData.password);
+      
+      setSuccess(true);
+      toast.success('Password reset successfully!');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Reset password error:', error);
-      toast.error('An error occurred. Please try again.');
+      
+      let errorMessage = 'An error occurred. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          break;
+        case 'auth/expired-action-code':
+          errorMessage = 'The password reset link has expired. Please request a new one.';
+          setTimeout(() => {
+            navigate('/forgot-password');
+          }, 2000);
+          break;
+        case 'auth/invalid-action-code':
+          errorMessage = 'Invalid reset link. Please request a new password reset.';
+          setTimeout(() => {
+            navigate('/forgot-password');
+          }, 2000);
+          break;
+        default:
+          errorMessage = error.message || 'Failed to reset password. Please try again.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -117,7 +165,23 @@ const ResetPassword = () => {
     );
   }
 
-  if (!token || !email) {
+  if (validating) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Reset Link</h2>
+            <p className="text-gray-600">Please wait while we verify your password reset link...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!actionCode || !email) {
     return null;
   }
 

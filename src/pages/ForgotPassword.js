@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaEnvelope, FaArrowLeft } from 'react-icons/fa';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
@@ -8,12 +10,10 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const getApiUrl = () => {
-    let apiUrl = process.env.REACT_APP_API_URL || 'https://api-kzs3jdpe7a-uc.a.run.app';
-    if (apiUrl.endsWith('/api')) {
-      apiUrl = apiUrl.slice(0, -4);
-    }
-    return apiUrl;
+  const getFrontendUrl = () => {
+    return process.env.REACT_APP_FRONTEND_URL || 
+           window.location.origin || 
+           'https://real-estate-marketplace-37544.web.app';
   };
 
   const handleSubmit = async (e) => {
@@ -32,25 +32,42 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
-      });
+      const normalizedEmail = email.trim().toLowerCase();
+      
+      // Configure action code settings for password reset
+      const actionCodeSettings = {
+        url: `${getFrontendUrl()}/reset-password`,
+        handleCodeInApp: false, // Open link in browser, not app
+      };
 
-      const data = await response.json();
-
-      if (data.success) {
-        setSubmitted(true);
-        toast.success('Password reset link sent to your email');
-      } else {
-        toast.error(data.message || 'Failed to send reset link');
-      }
+      // Send password reset email using Firebase Auth
+      await sendPasswordResetEmail(auth, normalizedEmail, actionCodeSettings);
+      
+      setSubmitted(true);
+      toast.success('Password reset link sent to your email');
     } catch (error) {
       console.error('Forgot password error:', error);
-      toast.error('An error occurred. Please try again.');
+      
+      // Handle specific Firebase Auth errors
+      let errorMessage = 'An error occurred. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          // For security, still show success message (don't reveal if email exists)
+          setSubmitted(true);
+          toast.success('If an account with that email exists, a password reset link has been sent.');
+          return;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many requests. Please try again later.';
+          break;
+        default:
+          errorMessage = error.message || 'Failed to send reset link. Please try again.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

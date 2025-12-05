@@ -2,14 +2,17 @@
 import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useProperty } from '../contexts/PropertyContext';
 import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { uploadMortgageDocuments } from '../utils/mortgageDocumentUpload';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
 const Mortgage = () => {
   const { user } = useAuth();
+  const { properties, loading: propertiesLoading } = useProperty();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -51,6 +54,9 @@ const Mortgage = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [banks, setBanks] = useState([]);
   const [selectedBankId, setSelectedBankId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load approved mortgage banks
   useEffect(() => {
@@ -95,6 +101,7 @@ const Mortgage = () => {
   };
 
   const handleConfirmMortgageApplication = async () => {
+    // Validation
     if (!acceptTerms) {
       toast.error('Please accept the terms and conditions');
       return;
@@ -115,120 +122,169 @@ const Mortgage = () => {
       return;
     }
 
-    const selectedBank = banks.find(b => b._id === selectedBankId);
+    if (!selectedProperty) {
+      toast.error('No property selected');
+      return;
+    }
+
+    const selectedBank = banks.find(b => b._id === selectedBankId || b.id === selectedBankId);
     if (!selectedBank) {
       toast.error('Selected bank not found');
       return;
     }
 
-    // Create mortgage application data (local demo)
-    const mortgageApplication = {
-      id: `MORT-${Date.now()}`,
-      propertyId: selectedProperty.id,
-      propertyTitle: selectedProperty.title,
-      propertyLocation: selectedProperty.location,
-      propertyPrice: selectedProperty.price,
-      userId: user.id,
-      userName: `${user.firstName} ${user.lastName}`,
-      userEmail: user.email,
-      status: 'pending_vendor_review',
-      requestedAt: new Date().toISOString(),
-      requestedAmount: Math.round(selectedProperty.price * 0.8), // 80% of property value
-      downPayment: Math.round(selectedProperty.price * 0.2), // 20% down payment
-      loanTerm: '25 years',
-      interestRate: '18.5%',
-      monthlyPayment: Math.round((selectedProperty.price * 0.8 * 0.185) / 12), // Rough calculation
-      applicationType: 'residential_mortgage',
-      employmentDetails: {
-        type: employmentType,
-        employerName,
-        jobTitle,
-        monthlyIncome: employmentType === 'employed' ? monthlyIncome : businessMonthlyIncome,
-        yearsOfEmployment,
-        businessName,
-        businessType
-      },
-      bankStatements: bankStatements.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadedAt: new Date().toISOString()
-      })),
-      vendorResponse: null,
-      documentsRequired: [
-        'Proof of Income',
-        'Bank Statements (6 months)',
-        'Employment Letter',
-        'Tax Returns',
-        'Property Valuation Report',
-        'Identity Documents'
-      ],
-      agentContact: {
-        name: 'Mortgage Specialist',
-        phone: '+234-800-MORTGAGE',
-        email: 'mortgage@realestate.com'
-      }
-    };
-    
-    // Store in localStorage for demo
-    const existingApplications = JSON.parse(localStorage.getItem('mortgageApplications') || '[]');
-    existingApplications.push(mortgageApplication);
-    localStorage.setItem('mortgageApplications', JSON.stringify(existingApplications));
-    
-    // Show success message with detailed information
-    toast.success(`Mortgage application submitted for "${selectedProperty.title}"! The vendor will review your application.`);
-    
-    // Show additional info with mortgage details
-    setTimeout(() => {
-      toast.info(`Loan Amount: ₦${mortgageApplication.requestedAmount.toLocaleString()} | Monthly Payment: ₦${mortgageApplication.monthlyPayment.toLocaleString()}`);
-    }, 1500);
-    
-    setTimeout(() => {
-      toast.info(`You will be contacted within 24 hours by ${mortgageApplication.agentContact.name} (${mortgageApplication.agentContact.phone})`);
-    }, 3000);
-    
-    // Reset modal
-    setShowMortgageModal(false);
-    setSelectedProperty(null);
-    setEmploymentType('employed');
-    setEmployerName('');
-    setJobTitle('');
-    setMonthlyIncome('');
-    setYearsOfEmployment('');
-    setBusinessName('');
-    setBusinessType('');
-    setBusinessMonthlyIncome('');
-    setBankStatements([]);
-    setAcceptTerms(false);
-    
-    console.log('Mortgage application created (local demo):', mortgageApplication);
+    // Get property ID - handle both id and _id formats
+    const propertyId = selectedProperty.id || selectedProperty._id || selectedProperty.propertyId;
+    if (!propertyId) {
+      toast.error('Invalid property ID');
+      return;
+    }
 
-    // Also send to backend mortgage applications API
+    // Calculate loan terms
+    const propertyPrice = typeof selectedProperty.price === 'number' ? selectedProperty.price : parseFloat(selectedProperty.price) || 0;
+    const downPaymentPercent = selectedProperty.category === 'commercial' ? 25 : 20;
+    const loanTermYears = selectedProperty.category === 'commercial' ? 15 : 25;
+    const defaultInterestRate = 18.5; // Default rate, could be from bank products later
+    
+    const downPayment = Math.round(propertyPrice * (downPaymentPercent / 100));
+    const requestedAmount = propertyPrice - downPayment;
+
+    // Prepare employment details
+    const employmentDetails = {
+      type: employmentType,
+      employerName: employmentType === 'employed' ? employerName : undefined,
+      jobTitle: employmentType === 'employed' ? jobTitle : undefined,
+      monthlyIncome: parseFloat(employmentType === 'employed' ? monthlyIncome : businessMonthlyIncome) || 0,
+      yearsOfEmployment: parseFloat(yearsOfEmployment) || 0,
+      businessName: employmentType === 'self-employed' ? businessName : undefined,
+      businessType: employmentType === 'self-employed' ? businessType : undefined
+    };
+
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    setIsUploading(false);
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Not authenticated');
+        throw new Error('Authentication required. Please login again.');
       }
 
-      await axios.post(
+      // Upload documents first if any files are provided
+      let documents = [];
+      if (bankStatements && bankStatements.length > 0) {
+        setIsUploading(true);
+        setUploadProgress(0);
+        
+        const uploadResult = await uploadMortgageDocuments(
+          bankStatements,
+          null, // applicationId - not created yet
+          (progress) => {
+            setUploadProgress(progress);
+          }
+        );
+
+        setIsUploading(false);
+
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload documents');
+        }
+
+        documents = uploadResult.data || [];
+        toast.success(`Successfully uploaded ${documents.length} document(s)`);
+      }
+
+      // Submit to backend API only (no localStorage)
+      const response = await axios.post(
         `${API_BASE_URL}/api/mortgages/apply`,
         {
-          propertyId: selectedProperty.id,
+          propertyId: propertyId, // Proper ID format (id or _id)
           mortgageBankId: selectedBankId,
-          requestedAmount: mortgageApplication.requestedAmount,
-          downPayment: mortgageApplication.downPayment,
-          loanTermYears: 25,
-          interestRate: 18.5,
-          employmentDetails: mortgageApplication.employmentDetails,
-          documents: mortgageApplication.bankStatements
+          requestedAmount: requestedAmount,
+          downPayment: downPayment,
+          loanTermYears: loanTermYears,
+          interestRate: defaultInterestRate,
+          employmentDetails: employmentDetails,
+          documents: documents // Now contains Cloudinary URLs
         },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
+
+      if (response.data && response.data.success) {
+        // Success - reset form and show success message
+        toast.success(`Mortgage application submitted successfully for "${selectedProperty.title}"!`);
+        
+        // Show application details
+        setTimeout(() => {
+          toast.info(
+            `Loan Amount: ₦${requestedAmount.toLocaleString()} | ` +
+            `Down Payment: ₦${downPayment.toLocaleString()} | ` +
+            `Term: ${loanTermYears} years`
+          );
+        }, 1500);
+
+        // Reset form
+        setShowMortgageModal(false);
+        setSelectedProperty(null);
+        setSelectedBankId('');
+        setEmploymentType('employed');
+        setEmployerName('');
+        setJobTitle('');
+        setMonthlyIncome('');
+        setYearsOfEmployment('');
+        setBusinessName('');
+        setBusinessType('');
+        setBusinessMonthlyIncome('');
+        setBankStatements([]);
+        setAcceptTerms(false);
+
+        // Optional: Navigate to applications page or show confirmation
+        setTimeout(() => {
+          navigate('/mortgages');
+        }, 3000);
+      } else {
+        throw new Error(response.data?.message || 'Failed to submit application');
+      }
     } catch (error) {
-      console.error('Error sending mortgage application to backend:', error);
-      // Keep local demo working even if backend fails
+      console.error('Error submitting mortgage application:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Failed to submit mortgage application. Please try again.';
+      
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+          setTimeout(() => navigate('/login'), 2000);
+        } else if (status === 400) {
+          errorMessage = data?.message || data?.errors?.[0]?.msg || 'Invalid application data. Please check all fields.';
+        } else if (status === 404) {
+          errorMessage = 'Property or bank not found. Please refresh and try again.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else {
+          errorMessage = data?.message || `Error: ${status}. Please try again.`;
+        }
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -264,199 +320,86 @@ const Mortgage = () => {
     { type: '5/1 ARM', rate: 11.9, change: 0.05, trend: 'up' }
   ];
 
-  // Demo mortgage-ready properties (any property can be financed via mortgage)
-  const allEligibleProperties = [
-    {
-      id: 1,
-      title: "Luxury Apartment in Ikoyi",
-      location: "Ikoyi, Lagos",
-      price: 38500000,
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
-      bedrooms: 3,
-      bathrooms: 3,
-      area: 250,
-      tags: ["Mortgage Ready", "Verified", "Featured"],
-      monthlyPayment: 364720,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: false
-    },
-    {
-      id: 2,
-      title: "Modern Villa in Victoria Island",
-      location: "Victoria Island, Lagos",
-      price: 45000000,
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
-      bedrooms: 4,
-      bathrooms: 4,
-      area: 320,
-      tags: ["Mortgage Ready", "Verified", "New"],
-      monthlyPayment: 425000,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: false,
-      isNewDevelopment: true,
-      isRecentlyAdded: false
-    },
-    {
-      id: 3,
-      title: "Penthouse in Lekki",
-      location: "Lekki, Lagos",
-      price: 52000000,
-      image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-      bedrooms: 5,
-      bathrooms: 5,
-      area: 400,
-      tags: ["Mortgage Ready", "Verified", "Featured"],
-      monthlyPayment: 490000,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: true,
-      isNewDevelopment: false,
-      isRecentlyAdded: false
-    },
-    {
-      id: 4,
-      title: "Commercial Office Space in Ikeja",
-      location: "Ikeja, Lagos",
-      price: 68000000,
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop",
-      bedrooms: 0,
-      bathrooms: 2,
-      area: 500,
-      tags: ["Mortgage Ready", "Verified"],
-      monthlyPayment: 640000,
-      downPaymentPercent: 25,
-      loanTerm: 15,
-      interestRate: 13.5,
-      category: "commercial",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: false
-    },
-    {
-      id: 5,
-      title: "Retail Shop in Surulere",
-      location: "Surulere, Lagos",
-      price: 35000000,
-      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
-      bedrooms: 0,
-      bathrooms: 1,
-      area: 200,
-      tags: ["Mortgage Ready", "Verified"],
-      monthlyPayment: 330000,
-      downPaymentPercent: 25,
-      loanTerm: 15,
-      interestRate: 13.5,
-      category: "commercial",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: true
-    },
-    {
-      id: 6,
-      title: "New Development Apartment in Lekki Phase 1",
-      location: "Lekki Phase 1, Lagos",
-      price: 42000000,
-      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 220,
-      tags: ["Mortgage Ready", "Verified", "New"],
-      monthlyPayment: 397000,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: false,
-      isNewDevelopment: true,
-      isRecentlyAdded: false
-    },
-    {
-      id: 7,
-      title: "Townhouse in Gwarinpa",
-      location: "Gwarinpa, Abuja",
-      price: 48000000,
-      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 280,
-      tags: ["Mortgage Ready", "Verified"],
-      monthlyPayment: 454000,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: false
-    },
-    {
-      id: 8,
-      title: "Warehouse in Apapa",
-      location: "Apapa, Lagos",
-      price: 75000000,
-      image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=300&fit=crop",
-      bedrooms: 0,
-      bathrooms: 2,
-      area: 800,
-      tags: ["Mortgage Ready", "Verified"],
-      monthlyPayment: 710000,
-      downPaymentPercent: 25,
-      loanTerm: 15,
-      interestRate: 13.5,
-      category: "commercial",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: false
-    },
-    {
-      id: 9,
-      title: "New Development Duplex in Banana Island",
-      location: "Banana Island, Lagos",
-      price: 95000000,
-      image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop",
-      bedrooms: 5,
-      bathrooms: 4,
-      area: 450,
-      tags: ["Mortgage Ready", "Verified", "Featured", "New"],
-      monthlyPayment: 900000,
-      downPaymentPercent: 20,
-      loanTerm: 25,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: true,
-      isNewDevelopment: true,
-      isRecentlyAdded: false
-    },
-    {
-      id: 10,
-      title: "Studio Apartment in Yaba",
-      location: "Yaba, Lagos",
-      price: 28000000,
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop",
-      bedrooms: 1,
-      bathrooms: 1,
-      area: 120,
-      tags: ["Mortgage Ready", "Verified"],
-      monthlyPayment: 265000,
-      downPaymentPercent: 20,
-      loanTerm: 20,
-      interestRate: 13.5,
-      category: "residential",
-      isPreApproved: false,
-      isNewDevelopment: false,
-      isRecentlyAdded: true
+  // Helper function to calculate monthly mortgage payment
+  const calculateMonthlyPayment = (principal, annualRate, years) => {
+    const monthlyRate = annualRate / 100 / 12;
+    const numberOfPayments = years * 12;
+    if (monthlyRate === 0) {
+      return principal / numberOfPayments;
     }
-  ];
+    return (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
+           (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  };
+
+  // Transform real properties for mortgage page (any property can be financed via mortgage)
+  const allEligibleProperties = useMemo(() => {
+    if (!properties || properties.length === 0) {
+      return [];
+    }
+
+    const defaultInterestRate = 13.5;
+    const defaultLoanTerm = 20;
+    const defaultDownPaymentPercent = 20;
+
+    return properties
+      .filter(prop => prop.price && prop.price > 0) // Only properties with valid prices
+      .map((prop) => {
+        const propertyId = prop.id || prop._id || prop.propertyId;
+        const price = typeof prop.price === 'number' ? prop.price : parseFloat(prop.price) || 0;
+        const downPaymentPercent = prop.typeSlug === 'office' || prop.typeSlug === 'retail' || prop.typeSlug === 'warehouse' ? 25 : defaultDownPaymentPercent;
+        const loanTerm = prop.typeSlug === 'office' || prop.typeSlug === 'retail' || prop.typeSlug === 'warehouse' ? 15 : defaultLoanTerm;
+        const downPayment = price * (downPaymentPercent / 100);
+        const loanAmount = price - downPayment;
+        const monthlyPayment = calculateMonthlyPayment(loanAmount, defaultInterestRate, loanTerm);
+
+        // Determine category
+        const residentialTypes = ['apartment', 'house', 'villa', 'penthouse', 'townhouse', 'bungalow', 'studio'];
+        const category = residentialTypes.includes(prop.typeSlug) ? 'residential' : 'commercial';
+
+        // Build tags
+        const tags = ['Mortgage Ready'];
+        if (prop.isVerified) tags.push('Verified');
+        // Add more tags based on property features
+        if (prop.yearBuilt && new Date().getFullYear() - prop.yearBuilt <= 5) {
+          tags.push('New');
+        }
+
+        // Determine location string
+        let locationStr = '';
+        if (prop.location) {
+          locationStr = typeof prop.location === 'string' ? prop.location : 
+            `${prop.city || ''}, ${prop.state || ''}`.trim();
+        } else if (prop.city || prop.state) {
+          locationStr = `${prop.city || ''}, ${prop.state || ''}`.trim();
+        } else {
+          locationStr = 'Location not specified';
+        }
+
+        return {
+          id: propertyId,
+          _id: propertyId, // For MongoDB compatibility
+          title: prop.title || 'Untitled Property',
+          location: locationStr,
+          price: price,
+          image: prop.image || prop.images?.[0] || '/placeholder.jpg',
+          bedrooms: prop.bedrooms || 0,
+          bathrooms: prop.bathrooms || 0,
+          area: prop.area || prop.sqft || 0,
+          tags: tags,
+          monthlyPayment: Math.round(monthlyPayment),
+          downPaymentPercent: downPaymentPercent,
+          loanTerm: loanTerm,
+          interestRate: defaultInterestRate,
+          category: category,
+          isPreApproved: false, // Could be enhanced with actual pre-approval data
+          isNewDevelopment: prop.yearBuilt && new Date().getFullYear() - prop.yearBuilt <= 2,
+          isRecentlyAdded: prop.createdAt && new Date(prop.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          // Keep original property data for reference
+          originalProperty: prop
+        };
+      })
+      .filter(prop => prop.price > 0); // Ensure valid price
+  }, [properties]);
 
   // Filter properties based on active tab
   const eligibleProperties = useMemo(() => {
@@ -1213,16 +1156,31 @@ const Mortgage = () => {
                   multiple
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleFileUpload}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isUploading || isSubmitting}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {bankStatements.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-sm text-gray-600">Uploaded files:</p>
+                    <p className="text-sm text-gray-600">Selected files:</p>
                     <ul className="text-sm text-gray-500">
                       {bankStatements.map((file, index) => (
-                        <li key={index}>• {file.name}</li>
+                        <li key={index}>• {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+                {isUploading && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                      <span>Uploading documents...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1265,9 +1223,22 @@ const Mortgage = () => {
               </button>
               <button
                 onClick={handleConfirmMortgageApplication}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting || isUploading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                Submit Application
+                {isUploading ? (
+                  <>
+                    <FaClock className="animate-spin" />
+                    <span>Uploading Documents ({uploadProgress}%)...</span>
+                  </>
+                ) : isSubmitting ? (
+                  <>
+                    <FaClock className="animate-spin" />
+                    <span>Submitting Application...</span>
+                  </>
+                ) : (
+                  <span>Submit Application</span>
+                )}
               </button>
             </div>
           </div>

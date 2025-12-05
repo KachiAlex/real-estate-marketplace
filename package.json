@@ -11,6 +11,7 @@
     "frontend:start": "react-scripts start",
     "frontend:build": "react-scripts build",
     "frontend:test": "react-scripts test",
+    "frontend:test:ci": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts test",
     "frontend:eject": "react-scripts eject",
     "dev:full": "concurrently \"npm run dev\" \"npm run frontend:start\"",
     "test:e2e": "cypress run",
