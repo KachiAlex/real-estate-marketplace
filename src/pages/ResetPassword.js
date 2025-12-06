@@ -26,10 +26,19 @@ const ResetPassword = () => {
   const mode = searchParams.get('mode');
 
   useEffect(() => {
+    // Check if password was already successfully reset (stored in sessionStorage)
+    const resetCompleted = sessionStorage.getItem('passwordResetCompleted');
+    if (resetCompleted === 'true') {
+      // Password already reset, redirect to login
+      navigate('/login', { replace: true });
+      return;
+    }
+
     // Validate that we have the required Firebase Auth parameters
     if (!oobCode || mode !== 'resetPassword') {
-      toast.error('Invalid or expired reset link');
-      navigate('/forgot-password');
+      // If no valid parameters, redirect to login (not forgot-password)
+      // This handles cases where user navigates here after successful reset
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -48,20 +57,33 @@ const ResetPassword = () => {
         switch (error.code) {
           case 'auth/expired-action-code':
             errorMessage = 'The password reset link has expired. Please request a new one.';
+            // Redirect to forgot-password to request a new link
+            setTimeout(() => {
+              navigate('/forgot-password', { replace: true });
+            }, 2000);
             break;
           case 'auth/invalid-action-code':
-            errorMessage = 'Invalid reset link. Please request a new password reset.';
+            errorMessage = 'Invalid reset link. This link may have already been used.';
+            // If invalid, likely already used - redirect to login
+            setTimeout(() => {
+              navigate('/login', { replace: true });
+            }, 2000);
             break;
           case 'auth/user-disabled':
             errorMessage = 'This account has been disabled. Please contact support.';
+            setTimeout(() => {
+              navigate('/login', { replace: true });
+            }, 2000);
             break;
+          default:
+            // For other errors, redirect to login
+            setTimeout(() => {
+              navigate('/login', { replace: true });
+            }, 2000);
         }
         
         toast.error(errorMessage);
         setValidating(false);
-        setTimeout(() => {
-          navigate('/forgot-password');
-        }, 2000);
       }
     };
 
@@ -118,6 +140,7 @@ const ResetPassword = () => {
         await auth.signOut();
         
         // Step 3: Sync password to backend database
+        let syncSuccess = false;
         try {
           const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
           const syncResponse = await fetch(`${apiBaseUrl}/auth/sync-password`, {
@@ -137,7 +160,9 @@ const ResetPassword = () => {
             // Don't fail the whole operation - Firebase reset was successful
             toast.error('Password reset successful, but backend sync failed. You can still login with Firebase.');
           } else {
-            console.log('Password successfully synced to backend database');
+            const syncData = await syncResponse.json();
+            console.log('Password successfully synced to backend database:', syncData);
+            syncSuccess = true;
           }
         } catch (syncError) {
           console.warn('Error syncing password to backend:', syncError.message);
@@ -146,7 +171,21 @@ const ResetPassword = () => {
         }
         
         setSuccess(true);
-        toast.success('Password reset successfully! You can now log in with your new password.');
+        // Mark password reset as completed in sessionStorage
+        sessionStorage.setItem('passwordResetCompleted', 'true');
+        
+        if (syncSuccess) {
+          toast.success('Password reset successfully! Redirecting to login...');
+        } else {
+          toast.success('Password reset successfully! Redirecting to login...');
+        }
+        
+        // Automatically redirect to login after 2 seconds, clearing URL parameters
+        setTimeout(() => {
+          // Clear the sessionStorage flag before navigating
+          sessionStorage.removeItem('passwordResetCompleted');
+          navigate('/login', { replace: true });
+        }, 2000);
       } catch (signInError) {
         console.error('Failed to verify new password with login:', signInError);
         // If we can't sign in with the new password, something went wrong
@@ -198,11 +237,14 @@ const ResetPassword = () => {
             <p className="text-gray-600 mb-6">
               Your password has been reset successfully. You can now log in with your new password using your email: <strong>{email}</strong>
             </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Redirecting to login page...
+            </p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { replace: true })}
               className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              Continue
+              Continue to Login
             </button>
           </div>
         </div>
