@@ -34,9 +34,9 @@ const ResetPassword = () => {
     // Check if password was already successfully reset (stored in sessionStorage)
     const resetCompleted = sessionStorage.getItem('passwordResetCompleted');
     if (resetCompleted === 'true') {
-      // Password already reset, clear the flag and redirect to login
+      // Password already reset, clear the flag and redirect to login using hard redirect
       sessionStorage.removeItem('passwordResetCompleted');
-      navigate('/login', { replace: true });
+      window.location.href = `${window.location.origin}/login`;
       return;
     }
 
@@ -73,13 +73,13 @@ const ResetPassword = () => {
             // If invalid, likely already used - check sessionStorage first
             const wasCompleted = sessionStorage.getItem('passwordResetCompleted');
             if (wasCompleted === 'true') {
-              // Was already completed, redirect to login
+              // Was already completed, redirect to login using hard redirect
               sessionStorage.removeItem('passwordResetCompleted');
-              navigate('/login', { replace: true });
+              window.location.href = `${window.location.origin}/login`;
             } else {
               // Never completed, redirect to login (don't go to forgot-password)
               setTimeout(() => {
-                navigate('/login', { replace: true });
+                window.location.href = `${window.location.origin}/login`;
               }, 2000);
             }
             break;
@@ -134,7 +134,14 @@ const ResetPassword = () => {
 
     if (!actionCode) {
       toast.error('Invalid reset link. Please request a new one.');
-      navigate('/forgot-password');
+      // Check if password was already reset
+      const wasReset = sessionStorage.getItem('passwordResetCompleted');
+      if (wasReset === 'true') {
+        sessionStorage.removeItem('passwordResetCompleted');
+        window.location.href = `${window.location.origin}/login`;
+      } else {
+        navigate('/forgot-password');
+      }
       return;
     }
 
@@ -189,12 +196,13 @@ const ResetPassword = () => {
         
         toast.success('Password reset successfully! Redirecting to login...');
         
-        // Set success state first
-        setSuccess(true);
-        
-        // Clear URL parameters and immediately redirect to login
-        // Use window.location to do a hard redirect which completely clears the URL
-        window.location.replace('/login');
+        // Immediately redirect to login using full URL to ensure it works
+        // This completely clears the URL and prevents any React Router interference
+        // Use setTimeout(0) to ensure toast is shown before redirect
+        setTimeout(() => {
+          const baseUrl = window.location.origin;
+          window.location.href = `${baseUrl}/login`;
+        }, 100);
       } catch (signInError) {
         console.error('Failed to verify new password with login:', signInError);
         // If we can't sign in with the new password, something went wrong
