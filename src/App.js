@@ -36,6 +36,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const About = lazy(() => import('./pages/About'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogDetail = lazy(() => import('./pages/BlogDetail'));
+const ProfessionalServicesEnquiry = lazy(() => import('./pages/ProfessionalServicesEnquiry'));
 const Escrow = lazy(() => import('./pages/Escrow'));
 const Investments = lazy(() => import('./pages/Investments'));
 const InvestmentDetail = lazy(() => import('./pages/InvestmentDetail'));
@@ -156,6 +157,7 @@ function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogDetail />} />
+                  <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
                   <Route path="/search" element={
                     <ProtectedRoute>
                     <div className="flex w-full">

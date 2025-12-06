@@ -20,13 +20,19 @@ const Dashboard = () => {
   const recentProperties = properties.slice(0, 3);
 
   // Load favorites from localStorage
-  useEffect(() => {
+  const loadFavorites = useCallback(() => {
     if (user) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
       setFavorites(new Set(savedFavorites));
+      return savedFavorites.length;
     }
+    return 0;
   }, [user]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [user, loadFavorites]);
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
@@ -35,7 +41,7 @@ const Dashboard = () => {
     // Get saved properties count from localStorage (includes mock data)
     const key = `favorites_${user.id}`;
     const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
-    const savedCount = savedFavorites.length;
+    const savedCount = Array.isArray(savedFavorites) ? savedFavorites.length : 0;
 
     // Get scheduled viewings from localStorage
     const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
@@ -101,7 +107,7 @@ const Dashboard = () => {
     if (user) {
       refreshDashboardStats();
     }
-  }, [user, favorites, refreshDashboardStats]);
+  }, [user, favorites.size, refreshDashboardStats]);
 
   const handleViewProperty = (propertyId) => {
     navigate(`/property/${propertyId}`);
@@ -860,7 +866,7 @@ const Dashboard = () => {
                         e.stopPropagation();
                         if (!user) {
                           setAuthRedirect('/dashboard');
-                          toast.error('Please login to save properties to favorites');
+                          toast.error('Please login to save properties');
                           navigate('/login');
                           return;
                         }
@@ -871,29 +877,39 @@ const Dashboard = () => {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
                               newFavorites.add(property.id);
-                              toast.success('Property added to saved properties');
+                              toast.success('Property saved successfully');
                             } else {
                               newFavorites.delete(property.id);
                               toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
                             
-                            // Refresh dashboard stats
-                            refreshDashboardStats();
+                            // Dispatch custom event to notify other components
+                            window.dispatchEvent(new CustomEvent('favoritesUpdated'));
+                            
+                            // Reload favorites and refresh dashboard stats immediately
+                            setTimeout(() => {
+                              loadFavorites();
+                              refreshDashboardStats();
+                            }, 100);
                           }
                         } catch (e) {
-                          toast.error('Failed to update favorite');
+                          toast.error('Failed to save property');
                         }
                       }}
                       className={`text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all ${
-                        favorites.has(property.id) ? 'text-red-500' : ''
+                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-90' : ''
                       }`}
-                      title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      title={favorites.has(property.id) ? 'Remove from saved properties' : 'Save property'}
                     >
-                      <FaHeart className={`text-sm transition-all ${favorites.has(property.id) ? 'fill-current text-red-500' : ''}`} />
+                      <FaHeart className={`text-sm transition-all ${
+                        favorites.has(property.id) 
+                          ? 'fill-current text-white' 
+                          : 'text-white'
+                      }`} />
                     </button>
+                  </div>
                 </div>
-              </div>
                 
                 <div className="property-card-content">
                   <div className="property-price">
@@ -915,9 +931,32 @@ const Dashboard = () => {
                       <FaRuler />
                       <span>{property.area || property.details?.sqft || 0}m² Area</span>
                     </div>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewProperty(property.id);
+                      }}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center cursor-pointer"
+                    >
+                      View Details →
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleScheduleViewing(property);
+                      }}
+                      className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                      title={`Schedule a viewing for ${property.title}`}
+                    >
+                      <FaCalendar className="mr-2" />
+                      Schedule Viewing
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
             ))}
                 </div>
               </div>
@@ -965,7 +1004,7 @@ const Dashboard = () => {
                         e.stopPropagation();
                         if (!user) {
                           setAuthRedirect('/dashboard');
-                          toast.error('Please login to save properties to favorites');
+                          toast.error('Please login to save properties');
                           navigate('/login');
                           return;
                         }
@@ -976,24 +1015,30 @@ const Dashboard = () => {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
                               newFavorites.add(property.id);
-                              toast.success('Property added to saved properties');
+                              toast.success('Property saved successfully');
                             } else {
                               newFavorites.delete(property.id);
                               toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
                             
-                            // Refresh dashboard stats
-                            refreshDashboardStats();
+                            // Dispatch custom event to notify other components
+                            window.dispatchEvent(new CustomEvent('favoritesUpdated'));
+                            
+                            // Reload favorites and refresh dashboard stats immediately
+                            setTimeout(() => {
+                              loadFavorites();
+                              refreshDashboardStats();
+                            }, 100);
                           }
                         } catch (e) {
-                          toast.error('Failed to update favorite');
+                          toast.error('Failed to save property');
                         }
                       }}
                       className={`w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all ${
-                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-80' : ''
+                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-90' : ''
                       }`}
-                      title={favorites.has(property.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      title={favorites.has(property.id) ? 'Remove from saved properties' : 'Save property'}
                     >
                       <FaHeart className={`text-sm transition-all ${
                         favorites.has(property.id) 

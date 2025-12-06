@@ -516,8 +516,8 @@ const Header = () => {
                         <button
                           key={service}
                           onClick={() => {
-                            toast.info(`${service} - Coming soon!`);
                             setActiveDropdown(null);
+                            navigate(`/professional-services/enquiry?service=${encodeURIComponent(service)}`);
                           }}
                           className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
                         >

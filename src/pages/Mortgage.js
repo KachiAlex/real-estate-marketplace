@@ -1042,6 +1042,94 @@ const Mortgage = () => {
                     No mortgage banks are currently available. Please try again later.
                   </p>
                 )}
+
+                {/* Display Bank Products with Rates */}
+                {selectedBankId && (() => {
+                  const selectedBank = banks.find(b => b._id === selectedBankId || b.id === selectedBankId);
+                  const activeProducts = selectedBank?.mortgageProducts?.filter(p => p.isActive) || [];
+                  
+                  if (activeProducts.length > 0) {
+                    return (
+                      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                          {selectedBank?.name} - Available Products & Rates
+                        </h4>
+                        <div className="space-y-3">
+                          {activeProducts.map((product, index) => (
+                            <div 
+                              key={index} 
+                              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h5 className="font-semibold text-gray-900 text-sm">{product.name}</h5>
+                                  {product.description && (
+                                    <p className="text-xs text-gray-600 mt-1">{product.description}</p>
+                                  )}
+                                </div>
+                                <div className="ml-4 text-right">
+                                  <div className="text-lg font-bold text-blue-600">
+                                    {product.interestRate}%
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">
+                                    {product.interestRateType}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t border-gray-100">
+                                <div>
+                                  <p className="text-xs text-gray-500">Loan Range</p>
+                                  <p className="text-xs font-medium text-gray-900 mt-1">
+                                    ₦{product.minLoanAmount?.toLocaleString()} - ₦{product.maxLoanAmount?.toLocaleString()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Down Payment</p>
+                                  <p className="text-xs font-medium text-gray-900 mt-1">
+                                    {product.minDownPaymentPercent}% min
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Max Term</p>
+                                  <p className="text-xs font-medium text-gray-900 mt-1">
+                                    {product.maxLoanTerm} years
+                                  </p>
+                                </div>
+                                {product.eligibilityCriteria && (
+                                  <div>
+                                    <p className="text-xs text-gray-500">Requirements</p>
+                                    <div className="text-xs text-gray-900 mt-1 space-y-0.5">
+                                      {product.eligibilityCriteria.minMonthlyIncome > 0 && (
+                                        <p>Income: ₦{product.eligibilityCriteria.minMonthlyIncome.toLocaleString()}/mo</p>
+                                      )}
+                                      {product.eligibilityCriteria.minCreditScore > 0 && (
+                                        <p>Credit: {product.eligibilityCriteria.minCreditScore}+</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-3 italic">
+                          * Rates and terms shown are indicative. Final terms subject to bank review and approval.
+                        </p>
+                      </div>
+                    );
+                  } else if (selectedBank && (!selectedBank.mortgageProducts || selectedBank.mortgageProducts.length === 0)) {
+                    return (
+                      <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-800">
+                          <FaMoneyBillWave className="inline mr-2" />
+                          {selectedBank.name} has no active mortgage products available at this time.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
               {/* Employment Type */}
               <div>

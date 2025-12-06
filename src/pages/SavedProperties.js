@@ -1,121 +1,146 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useProperty } from '../contexts/PropertyContext';
 import { FaHeart, FaShare, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaTrash, FaEye, FaPhone, FaEnvelope, FaFilter, FaSort, FaShoppingCart, FaCalendar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const SavedProperties = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { properties = [], toggleFavorite } = useProperty();
   const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('dateAdded');
   const [filterBy, setFilterBy] = useState('all');
 
-  // Mock saved properties data
-  useEffect(() => {
-    const mockSavedProperties = [
-      {
-        id: 1,
-        title: "Luxury 4-Bedroom Villa in Victoria Island",
-        location: "Victoria Island, Lagos",
-        price: 250000000,
-        bedrooms: 4,
-        bathrooms: 5,
-        area: 450,
-        image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=300&fit=crop",
-        dateAdded: "2024-01-15",
-        status: "available",
-        type: "sale",
-        agent: {
-          name: "Sarah Johnson",
-          phone: "+234 801 234 5678",
-          email: "sarah@propertyark.com"
-        }
-      },
-      {
-        id: 2,
-        title: "Modern 3-Bedroom Apartment in Ikoyi",
-        location: "Ikoyi, Lagos",
-        price: 180000000,
-        bedrooms: 3,
-        bathrooms: 3,
-        area: 320,
-        image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&h=300&fit=crop",
-        dateAdded: "2024-01-10",
-        status: "available",
-        type: "sale",
-        agent: {
-          name: "Michael Adebayo",
-          phone: "+234 802 345 6789",
-          email: "michael@propertyark.com"
-        }
-      },
-      {
-        id: 3,
-        title: "Elegant 2-Bedroom Penthouse in Lekki",
-        location: "Lekki Phase 1, Lagos",
-        price: 120000000,
-        bedrooms: 2,
-        bathrooms: 2,
-        area: 280,
-        image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=500&h=300&fit=crop",
-        dateAdded: "2024-01-08",
-        status: "sold",
-        type: "sale",
-        agent: {
-          name: "Grace Okafor",
-          phone: "+234 803 456 7890",
-          email: "grace@propertyark.com"
-        }
-      },
-      {
-        id: 4,
-        title: "Spacious 5-Bedroom Duplex in Abuja",
-        location: "Asokoro, Abuja",
-        price: 320000000,
-        bedrooms: 5,
-        bathrooms: 6,
-        area: 580,
-        image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=500&h=300&fit=crop",
-        dateAdded: "2024-01-05",
-        status: "available",
-        type: "sale",
-        agent: {
-          name: "David Okonkwo",
-          phone: "+234 804 567 8901",
-          email: "david@propertyark.com"
-        }
-      },
-      {
-        id: 5,
-        title: "Contemporary 3-Bedroom Townhouse",
-        location: "GRA, Port Harcourt",
-        price: 95000000,
-        bedrooms: 3,
-        bathrooms: 3,
-        area: 350,
-        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500&h=300&fit=crop",
-        dateAdded: "2024-01-03",
-        status: "rented",
-        type: "rent",
-        agent: {
-          name: "Blessing Nwosu",
-          phone: "+234 805 678 9012",
-          email: "blessing@propertyark.com"
-        }
-      }
-    ];
-
-    setTimeout(() => {
-      setSavedProperties(mockSavedProperties);
+  // Load saved properties from localStorage and match with actual property data
+  const loadSavedProperties = useCallback(() => {
+    if (!user) {
+      setSavedProperties([]);
       setLoading(false);
-    }, 1000);
-  }, []);
+      return;
+    }
 
-  const handleRemoveFromSaved = (propertyId) => {
-    setSavedProperties(prev => prev.filter(property => property.id !== propertyId));
-    toast.success('Property removed from saved list');
+    try {
+      // Get saved property IDs from localStorage
+      const key = `favorites_${user.id}`;
+      const savedFavoriteIds = JSON.parse(localStorage.getItem(key) || '[]');
+      
+      if (!Array.isArray(savedFavoriteIds) || savedFavoriteIds.length === 0) {
+        setSavedProperties([]);
+        setLoading(false);
+        return;
+      }
+
+      // Match saved IDs with actual properties
+      const matchedProperties = savedFavoriteIds
+        .map(favoriteId => {
+          // Try to find property by different ID formats
+          const property = properties.find(p => 
+            p.id === favoriteId || 
+            p.id?.toString() === favoriteId?.toString() ||
+            p.propertyId === favoriteId ||
+            p.propertyId?.toString() === favoriteId?.toString()
+          );
+          
+          if (property) {
+            // Transform property to match SavedProperties format
+            return {
+              id: property.id || property.propertyId || favoriteId,
+              title: property.title || 'Untitled Property',
+              location: typeof property.location === 'string' 
+                ? property.location 
+                : property.location?.address 
+                  ? `${property.location.address}${property.location.city ? ', ' + property.location.city : ''}${property.location.state ? ', ' + property.location.state : ''}`
+                  : property.city && property.state 
+                    ? `${property.city}, ${property.state}`
+                    : property.city || property.state || 'Location not specified',
+              price: property.price || 0,
+              bedrooms: property.bedrooms || property.details?.bedrooms || 0,
+              bathrooms: property.bathrooms || property.details?.bathrooms || 0,
+              area: property.area || property.details?.sqft || property.sqft || 0,
+              image: property.image || property.images?.[0]?.url || property.images?.[0] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+              dateAdded: property.dateAdded || property.createdAt || new Date().toISOString().split('T')[0],
+              status: property.status || property.listingType || 'available',
+              type: property.type || 'sale',
+              agent: property.agent || property.owner || {
+                name: property.vendorName || 'Property Agent',
+                phone: property.vendorPhone || property.contactPhone || '+234-XXX-XXXX',
+                email: property.vendorEmail || property.contactEmail || 'agent@example.com'
+              }
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Remove null entries
+
+      setSavedProperties(matchedProperties);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading saved properties:', error);
+      setSavedProperties([]);
+      setLoading(false);
+    }
+  }, [user, properties]);
+
+  // Fetch properties if not already loaded
+  useEffect(() => {
+    if (properties.length === 0 && user) {
+      // Properties will be loaded by PropertyProvider, just wait
+    }
+  }, [properties.length, user]);
+
+  // Load saved properties when user or properties change
+  useEffect(() => {
+    loadSavedProperties();
+  }, [loadSavedProperties]);
+
+  // Listen for storage changes (when properties are saved/removed from other tabs/pages)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === `favorites_${user?.id}`) {
+        loadSavedProperties();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events (for same-tab updates)
+    const handleFavoriteChange = () => {
+      loadSavedProperties();
+    };
+    
+    window.addEventListener('favoritesUpdated', handleFavoriteChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('favoritesUpdated', handleFavoriteChange);
+    };
+  }, [user, loadSavedProperties]);
+
+  const handleRemoveFromSaved = async (propertyId) => {
+    if (!user) {
+      toast.error('Please login to manage saved properties');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // Remove from localStorage using toggleFavorite
+      const result = await toggleFavorite(propertyId);
+      
+      if (result && result.success) {
+        // Reload saved properties to reflect the change
+        loadSavedProperties();
+        toast.success('Property removed from saved list');
+      } else {
+        toast.error('Failed to remove property');
+      }
+    } catch (error) {
+      console.error('Error removing property:', error);
+      toast.error('Failed to remove property');
+    }
   };
 
   const handleBuyProperty = (property) => {
@@ -273,7 +298,7 @@ const SavedProperties = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Saved Properties</h1>
         <p className="text-gray-600">
           Manage your saved properties and track their availability status
@@ -281,7 +306,7 @@ const SavedProperties = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-lg">
@@ -330,7 +355,13 @@ const SavedProperties = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Locations</p>
               <p className="text-2xl font-bold text-gray-900">
-                {new Set(savedProperties.map(p => p.location.split(',')[1]?.trim())).size}
+                {new Set(savedProperties.map(p => {
+                  if (typeof p.location === 'string') {
+                    const parts = p.location.split(',');
+                    return parts[parts.length > 1 ? 1 : 0]?.trim() || p.location;
+                  }
+                  return p.location || 'Unknown';
+                })).size}
               </p>
             </div>
           </div>
@@ -338,7 +369,7 @@ const SavedProperties = () => {
       </div>
 
       {/* Filters and Sort */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex items-center space-x-2">
