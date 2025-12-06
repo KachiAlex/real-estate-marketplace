@@ -26,10 +26,16 @@ const ResetPassword = () => {
   const mode = searchParams.get('mode');
 
   useEffect(() => {
+    // Skip if already showing success or loading (prevents re-verification during reset)
+    if (success || loading) {
+      return;
+    }
+
     // Check if password was already successfully reset (stored in sessionStorage)
     const resetCompleted = sessionStorage.getItem('passwordResetCompleted');
     if (resetCompleted === 'true') {
-      // Password already reset, redirect to login
+      // Password already reset, clear the flag and redirect to login
+      sessionStorage.removeItem('passwordResetCompleted');
       navigate('/login', { replace: true });
       return;
     }
@@ -63,11 +69,19 @@ const ResetPassword = () => {
             }, 2000);
             break;
           case 'auth/invalid-action-code':
-            errorMessage = 'Invalid reset link. This link may have already been used.';
-            // If invalid, likely already used - redirect to login
-            setTimeout(() => {
+            errorMessage = 'Invalid reset link. This link may have already been used. Redirecting to login...';
+            // If invalid, likely already used - check sessionStorage first
+            const wasCompleted = sessionStorage.getItem('passwordResetCompleted');
+            if (wasCompleted === 'true') {
+              // Was already completed, redirect to login
+              sessionStorage.removeItem('passwordResetCompleted');
               navigate('/login', { replace: true });
-            }, 2000);
+            } else {
+              // Never completed, redirect to login (don't go to forgot-password)
+              setTimeout(() => {
+                navigate('/login', { replace: true });
+              }, 2000);
+            }
             break;
           case 'auth/user-disabled':
             errorMessage = 'This account has been disabled. Please contact support.';
@@ -88,7 +102,7 @@ const ResetPassword = () => {
     };
 
     verifyCode();
-  }, [oobCode, mode, navigate]);
+  }, [oobCode, mode, navigate, success, loading]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -170,22 +184,17 @@ const ResetPassword = () => {
           toast.error('Password reset successful, but backend sync failed. You can still login with Firebase.');
         }
         
-        setSuccess(true);
-        // Mark password reset as completed in sessionStorage
+        // Mark password reset as completed in sessionStorage FIRST
         sessionStorage.setItem('passwordResetCompleted', 'true');
         
-        if (syncSuccess) {
-          toast.success('Password reset successfully! Redirecting to login...');
-        } else {
-          toast.success('Password reset successfully! Redirecting to login...');
-        }
+        toast.success('Password reset successfully! Redirecting to login...');
         
-        // Automatically redirect to login after 2 seconds, clearing URL parameters
-        setTimeout(() => {
-          // Clear the sessionStorage flag before navigating
-          sessionStorage.removeItem('passwordResetCompleted');
-          navigate('/login', { replace: true });
-        }, 2000);
+        // Set success state first
+        setSuccess(true);
+        
+        // Clear URL parameters and immediately redirect to login
+        // Use window.location to do a hard redirect which completely clears the URL
+        window.location.replace('/login');
       } catch (signInError) {
         console.error('Failed to verify new password with login:', signInError);
         // If we can't sign in with the new password, something went wrong
@@ -207,10 +216,18 @@ const ResetPassword = () => {
           }, 2000);
           break;
         case 'auth/invalid-action-code':
-          errorMessage = 'Invalid reset link. Please request a new password reset.';
-          setTimeout(() => {
-            navigate('/forgot-password');
-          }, 2000);
+          errorMessage = 'Invalid reset link. This link may have already been used. Redirecting to login...';
+          // Check if password was already reset
+          const alreadyReset = sessionStorage.getItem('passwordResetCompleted');
+          if (alreadyReset === 'true') {
+            sessionStorage.removeItem('passwordResetCompleted');
+            navigate('/login', { replace: true });
+          } else {
+            // Never reset, so redirect to login (not forgot-password)
+            setTimeout(() => {
+              navigate('/login', { replace: true });
+            }, 2000);
+          }
           break;
         case 'auth/invalid-credential':
           errorMessage = 'Unable to verify the new password. Please try again.';
