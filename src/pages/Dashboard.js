@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
@@ -11,6 +11,7 @@ import PriceTrendsChart from '../components/PriceTrendsChart';
 const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { properties, loading, toggleFavorite } = useProperty();
   const { userInvestments, getUserInvestmentSummary } = useInvestment();
   const { getUserMortgages, getPaymentSummary } = useMortgage();
@@ -33,6 +34,38 @@ const Dashboard = () => {
   useEffect(() => {
     loadFavorites();
   }, [user, loadFavorites]);
+
+  // Listen for favorites changes from other components/pages
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFavoritesUpdate = () => {
+      // Reload favorites and refresh dashboard stats
+      loadFavorites();
+      // Use setTimeout to ensure refreshDashboardStats is called after state updates
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleStorageChange = (e) => {
+      // Listen for localStorage changes (works across tabs)
+      const key = `favorites_${user.id}`;
+      if (e.key === key) {
+        handleFavoritesUpdate();
+      }
+    };
+
+    // Listen for custom event (works in same tab)
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    // Listen for storage events (works across tabs)
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user, loadFavorites, refreshDashboardStats]);
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
@@ -108,6 +141,33 @@ const Dashboard = () => {
       refreshDashboardStats();
     }
   }, [user, favorites.size, refreshDashboardStats]);
+
+  // Refresh dashboard when page becomes visible (user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        // Refresh favorites and stats when user returns to the page
+        loadFavorites();
+        refreshDashboardStats();
+      }
+    };
+
+    const handleFocus = () => {
+      if (user) {
+        // Refresh when window regains focus
+        loadFavorites();
+        refreshDashboardStats();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, loadFavorites, refreshDashboardStats]);
 
   const handleViewProperty = (propertyId) => {
     navigate(`/property/${propertyId}`);
@@ -340,6 +400,15 @@ const Dashboard = () => {
 
     loadDashboardStats();
   }, [user, properties.length, userInvestments, getUserInvestmentSummary, getPaymentSummary]);
+
+  // Refresh dashboard when navigating to this route (e.g., coming back from SavedProperties)
+  useEffect(() => {
+    if (location.pathname === '/dashboard' && user) {
+      // Refresh favorites and stats when user navigates to dashboard
+      loadFavorites();
+      refreshDashboardStats();
+    }
+  }, [location.pathname, user, loadFavorites, refreshDashboardStats]);
 
   // Mock data for recent properties (fallback if no properties loaded)
   const mockProperties = [

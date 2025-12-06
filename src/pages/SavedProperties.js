@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 const SavedProperties = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { properties = [], toggleFavorite } = useProperty();
+  const { properties = [], toggleFavorite, fetchProperties, loading: propertiesLoading } = useProperty();
   const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('dateAdded');
@@ -27,6 +27,13 @@ const SavedProperties = () => {
       const key = `favorites_${user.id}`;
       const savedFavoriteIds = JSON.parse(localStorage.getItem(key) || '[]');
       
+      console.log('SavedProperties: Loading saved properties', {
+        savedFavoriteIds,
+        savedFavoriteIdsCount: savedFavoriteIds.length,
+        propertiesAvailable: properties.length,
+        propertyIdsSample: properties.slice(0, 3).map(p => p.id || p.propertyId || p._id)
+      });
+      
       if (!Array.isArray(savedFavoriteIds) || savedFavoriteIds.length === 0) {
         setSavedProperties([]);
         setLoading(false);
@@ -36,26 +43,36 @@ const SavedProperties = () => {
       // Match saved IDs with actual properties
       const matchedProperties = savedFavoriteIds
         .map(favoriteId => {
-          // Try to find property by different ID formats
-          const property = properties.find(p => 
-            p.id === favoriteId || 
-            p.id?.toString() === favoriteId?.toString() ||
-            p.propertyId === favoriteId ||
-            p.propertyId?.toString() === favoriteId?.toString()
-          );
+          // Try to find property by different ID formats (more comprehensive matching)
+          const property = properties.find(p => {
+            const propId = p.id || p.propertyId || p._id;
+            const propIdStr = propId?.toString();
+            const favoriteIdStr = favoriteId?.toString();
+            
+            const matches = (
+              propId === favoriteId ||
+              propIdStr === favoriteIdStr ||
+              propIdStr === favoriteId ||
+              propId === favoriteIdStr ||
+              // Handle MongoDB ObjectId format
+              (propId && favoriteId && propId.toString() === favoriteId.toString())
+            );
+            
+            return matches;
+          });
           
           if (property) {
             // Transform property to match SavedProperties format
             return {
-              id: property.id || property.propertyId || favoriteId,
+              id: property.id || property.propertyId || property._id || favoriteId,
               title: property.title || 'Untitled Property',
               location: typeof property.location === 'string' 
                 ? property.location 
                 : property.location?.address 
-                  ? `${property.location.address}${property.location.city ? ', ' + property.location.city : ''}${property.location.state ? ', ' + property.location.state : ''}`
+                  ? `${property.location.address}${property.location.city ? ', ' + property.location.city : ''}${property.location.state ? ', ' + property.location.state : ''}`.replace(/^, |, $/g, '').trim()
                   : property.city && property.state 
                     ? `${property.city}, ${property.state}`
-                    : property.city || property.state || 'Location not specified',
+                    : property.city || property.state || property.address || 'Location not specified',
               price: property.price || 0,
               bedrooms: property.bedrooms || property.details?.bedrooms || 0,
               bathrooms: property.bathrooms || property.details?.bathrooms || 0,
@@ -71,9 +88,27 @@ const SavedProperties = () => {
               }
             };
           }
+          
+          // If property not found, log for debugging
+          console.warn('SavedProperties: Property not found in properties list', {
+            favoriteId,
+            favoriteIdType: typeof favoriteId,
+            availablePropertyIds: properties.map(p => ({
+              id: p.id || p.propertyId || p._id,
+              type: typeof (p.id || p.propertyId || p._id)
+            })).slice(0, 5)
+          });
+          
           return null;
         })
         .filter(Boolean); // Remove null entries
+
+      console.log('SavedProperties: Loaded properties result', {
+        savedFavoriteIdsCount: savedFavoriteIds.length,
+        matchedPropertiesCount: matchedProperties.length,
+        totalPropertiesAvailable: properties.length,
+        unmatchedIds: savedFavoriteIds.filter(id => !matchedProperties.find(p => (p.id === id || p.id?.toString() === id?.toString())))
+      });
 
       setSavedProperties(matchedProperties);
       setLoading(false);
@@ -86,15 +121,27 @@ const SavedProperties = () => {
 
   // Fetch properties if not already loaded
   useEffect(() => {
-    if (properties.length === 0 && user) {
-      // Properties will be loaded by PropertyProvider, just wait
+    if (user && fetchProperties) {
+      // Always fetch properties to ensure we have the latest data
+      if (properties.length === 0 && !propertiesLoading) {
+        console.log('SavedProperties: Fetching properties...');
+        fetchProperties();
+      }
     }
-  }, [properties.length, user]);
+  }, [user, fetchProperties, properties.length, propertiesLoading]);
 
   // Load saved properties when user or properties change
   useEffect(() => {
-    loadSavedProperties();
-  }, [loadSavedProperties]);
+    // Wait a bit for properties to load if they're not loaded yet
+    if (properties.length === 0) {
+      const timer = setTimeout(() => {
+        loadSavedProperties();
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      loadSavedProperties();
+    }
+  }, [loadSavedProperties, properties.length]);
 
   // Listen for storage changes (when properties are saved/removed from other tabs/pages)
   useEffect(() => {
@@ -133,6 +180,22 @@ const SavedProperties = () => {
       if (result && result.success) {
         // Reload saved properties to reflect the change
         loadSavedProperties();
+        
+        // Dispatch custom event to notify Dashboard and other components
+        window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
+          detail: { propertyId, favorited: false } 
+        }));
+        
+        // Also trigger storage event simulation for same-tab updates
+        const key = `favorites_${user.id}`;
+        const event = new StorageEvent('storage', {
+          key: key,
+          newValue: localStorage.getItem(key),
+          oldValue: null,
+          storageArea: localStorage
+        });
+        window.dispatchEvent(event);
+        
         toast.success('Property removed from saved list');
       } else {
         toast.error('Failed to remove property');

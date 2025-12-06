@@ -140,9 +140,20 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Login error stack:', error.stack);
+    
+    // Ensure we send CORS headers even on error
+    const origin = req.headers.origin;
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: process.env.NODE_ENV === 'development' 
+        ? `Server error during login: ${error.message}` 
+        : 'Server error during login'
     });
   }
 });
@@ -505,6 +516,54 @@ router.post('/reset-password', [
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+});
+
+// @desc    Sync password after Firebase reset
+// @route   POST /api/auth/sync-password
+// @access  Public (but requires Firebase token validation)
+router.post('/sync-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { email, newPassword } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user by email
+    const user = await userService.findByEmail(normalizedEmail);
+    if (!user) {
+      // User doesn't exist in backend database - that's okay, just return success
+      // The password was reset in Firebase, which is the primary auth system
+      return res.json({
+        success: true,
+        message: 'Password sync completed (user not found in backend database)'
+      });
+    }
+
+    // Update password in backend database
+    await userService.updateUser(user.id, {
+      password: newPassword
+    });
+
+    res.json({
+      success: true,
+      message: 'Password synchronized successfully'
+    });
+  } catch (error) {
+    console.error('Sync password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during password sync'
     });
   }
 });

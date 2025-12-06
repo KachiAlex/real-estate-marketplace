@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { FaLock, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { confirmPasswordReset, verifyPasswordResetCode, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import toast from 'react-hot-toast';
 
@@ -75,6 +75,8 @@ const ResetPassword = () => {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length > 128) {
+      newErrors.password = 'Password is too long (maximum 128 characters)';
     }
 
     if (!formData.confirmPassword) {
@@ -102,14 +104,54 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      // Confirm password reset using Firebase Auth
+      // Step 1: Confirm password reset using Firebase Auth
       await confirmPasswordReset(auth, actionCode, formData.password);
+      console.log('Firebase password reset confirmed successfully');
       
-      setSuccess(true);
-      toast.success('Password reset successfully!');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      // Step 2: Verify the new password works by attempting to sign in
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, formData.password);
+        const firebaseToken = await userCredential.user.getIdToken();
+        console.log('Password verified - login successful with new password');
+        
+        // Sign out immediately after verification (we just need to confirm it works)
+        await auth.signOut();
+        
+        // Step 3: Sync password to backend database
+        try {
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          const syncResponse = await fetch(`${apiBaseUrl}/auth/sync-password`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: email,
+              newPassword: formData.password
+            })
+          });
+          
+          if (!syncResponse.ok) {
+            const errorData = await syncResponse.json().catch(() => ({}));
+            console.warn('Failed to sync password to backend:', errorData.message || 'Unknown error');
+            // Don't fail the whole operation - Firebase reset was successful
+            toast.error('Password reset successful, but backend sync failed. You can still login with Firebase.');
+          } else {
+            console.log('Password successfully synced to backend database');
+          }
+        } catch (syncError) {
+          console.warn('Error syncing password to backend:', syncError.message);
+          // Don't fail the whole operation - Firebase reset was successful
+          toast.error('Password reset successful, but backend sync failed. You can still login with Firebase.');
+        }
+        
+        setSuccess(true);
+        toast.success('Password reset successfully! You can now log in with your new password.');
+      } catch (signInError) {
+        console.error('Failed to verify new password with login:', signInError);
+        // If we can't sign in with the new password, something went wrong
+        throw new Error('Password reset failed. The new password could not be verified. Please try again.');
+      }
     } catch (error) {
       console.error('Reset password error:', error);
       
@@ -117,7 +159,7 @@ const ResetPassword = () => {
       
       switch (error.code) {
         case 'auth/weak-password':
-          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          errorMessage = 'Password is too weak. Please choose a stronger password (at least 6 characters).';
           break;
         case 'auth/expired-action-code':
           errorMessage = 'The password reset link has expired. Please request a new one.';
@@ -130,6 +172,9 @@ const ResetPassword = () => {
           setTimeout(() => {
             navigate('/forgot-password');
           }, 2000);
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Unable to verify the new password. Please try again.';
           break;
         default:
           errorMessage = error.message || 'Failed to reset password. Please try again.';
@@ -151,14 +196,14 @@ const ResetPassword = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Reset Successful!</h2>
             <p className="text-gray-600 mb-6">
-              Your password has been reset successfully. You can now log in with your new password.
+              Your password has been reset successfully. You can now log in with your new password using your email: <strong>{email}</strong>
             </p>
-            <Link
-              to="/login"
+            <button
+              onClick={() => navigate('/login')}
               className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              Go to Login
-            </Link>
+              Continue
+            </button>
           </div>
         </div>
       </div>

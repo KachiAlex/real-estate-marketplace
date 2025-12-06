@@ -42,9 +42,19 @@ const securityConfig = {
         origin.includes('.firebaseapp.com')
       );
 
+      // In production, always allow Firebase hosting domains
+      if (process.env.NODE_ENV === 'production' && isFirebaseHosting) {
+        return callback(null, true);
+      }
+
       if (allowedOrigins.indexOf(origin) !== -1 || isFirebaseHosting || process.env.NODE_ENV === 'development') {
         callback(null, true);
       } else {
+        // Log for debugging but still allow in development
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('CORS: Origin not in allowed list but allowing in dev:', origin);
+          return callback(null, true);
+        }
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -52,7 +62,8 @@ const securityConfig = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 600 // 10 minutes
+    maxAge: 600, // 10 minutes
+    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
   },
 
   // Input sanitization patterns

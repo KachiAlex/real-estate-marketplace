@@ -116,9 +116,44 @@ const emailService = require('./services/emailService');
 // NOTE: forgot-password route is now registered at the VERY TOP of the file
 // (right after const app = express()) to ensure it's the first route
 
-// Middleware
-app.use(securityConfig.helmet);
+// Middleware - CORS must be applied BEFORE other middleware
+// This ensures CORS headers are set even if errors occur
 app.use(cors(securityConfig.cors));
+
+// Additional CORS headers middleware to ensure they're always set
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers for all responses
+  if (origin) {
+    const isFirebaseHosting = origin.includes('.web.app') || origin.includes('.firebaseapp.com');
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://propertyark.com',
+      'https://www.propertyark.com',
+      'https://real-estate-marketplace-37544.web.app',
+      'https://real-estate-marketplace-37544.firebaseapp.com'
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin) || isFirebaseHosting || process.env.NODE_ENV === 'development') {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    }
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
+app.use(securityConfig.helmet);
 app.use(createLogger());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -441,6 +476,28 @@ app.get('/api/agents', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  // Ensure CORS headers are set even on errors
+  const origin = req.headers.origin;
+  if (origin) {
+    const isFirebaseHosting = origin.includes('.web.app') || origin.includes('.firebaseapp.com');
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://propertyark.com',
+      'https://www.propertyark.com',
+      'https://real-estate-marketplace-37544.web.app',
+      'https://real-estate-marketplace-37544.firebaseapp.com'
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin) || isFirebaseHosting || process.env.NODE_ENV === 'development') {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    }
+  }
+  
   // Log ALL errors for debugging - use both console.log and console.error
   console.log('❌ [GLOBAL-HANDLER] Error caught - Path:', req.path);
   console.log('❌ [GLOBAL-HANDLER] Original URL:', req.originalUrl);
