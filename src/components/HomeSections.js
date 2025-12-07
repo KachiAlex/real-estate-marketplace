@@ -28,8 +28,41 @@ const HomeSections = () => {
 
   // Filter and paginate agents
   const { data: paginatedAgents, pagination } = useMemo(() => {
-    const filtered = filterAgents(allAgents, searchQuery, selectedLocation);
-    return paginateAgents(filtered, currentPage, itemsPerPage);
+    try {
+      // Ensure allAgents is an array
+      const safeAgents = Array.isArray(allAgents) ? allAgents : [];
+      // Ensure filterAgents and paginateAgents are functions before calling
+      if (typeof filterAgents === 'function' && typeof paginateAgents === 'function') {
+        const filtered = filterAgents(safeAgents, searchQuery || '', selectedLocation || 'all');
+        return paginateAgents(filtered, currentPage || 1, itemsPerPage || 6);
+      }
+      // Return default structure if functions aren't available
+      return {
+        data: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: 6,
+          hasNextPage: false,
+          hasPreviousPage: false
+        }
+      };
+    } catch (error) {
+      console.error('Error in useMemo for agents:', error);
+      // Return safe default on error
+      return {
+        data: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: 6,
+          hasNextPage: false,
+          hasPreviousPage: false
+        }
+      };
+    }
   }, [allAgents, searchQuery, selectedLocation, currentPage, itemsPerPage]);
 
   // Reset to page 1 when filters change

@@ -47,6 +47,45 @@ const Properties = () => {
     }
   }, [user]);
 
+  // Normalize location names (handle aliases) - MUST be defined before useMemo that uses it
+  const normalizeLocation = (location) => {
+    if (!location) return location;
+    const locationMap = {
+      'port harcourt': 'Rivers',
+      'port-harcourt': 'Rivers',
+      'ph': 'Rivers',
+      'fct': 'Abuja',
+      'abuja fct': 'Abuja'
+    };
+    const normalized = locationMap[location.toLowerCase().trim()];
+    return normalized || location;
+  };
+
+  // Map type values from URL to display format
+  const mapTypeFromUrl = (urlType) => {
+    const typeMap = {
+      'buy': 'For Sale',
+      'rent': 'For Rent',
+      'short-let': 'Shortlet',
+      'sale': 'For Sale',
+      'lease': 'For Lease'
+    };
+    return typeMap[urlType?.toLowerCase()] || urlType;
+  };
+
+  // Map status values from URL to display format
+  const mapStatusFromUrl = (urlStatus) => {
+    const statusMap = {
+      'buy': 'For Sale',
+      'rent': 'For Rent',
+      'short-let': 'Shortlet',
+      'sale': 'For Sale',
+      'lease': 'For Lease',
+      'shortlet': 'Shortlet'
+    };
+    return statusMap[urlStatus?.toLowerCase()] || urlStatus;
+  };
+
   // Filtered properties using applied filters (only updates when Apply Filters is clicked)
   const filteredProperties = useMemo(() => {
     let filtered = [...safeProperties];
@@ -283,45 +322,6 @@ const Properties = () => {
     });
   }, [fetchProperties]);
 
-  // Normalize location names (handle aliases)
-  const normalizeLocation = (location) => {
-    if (!location) return location;
-    const locationMap = {
-      'port harcourt': 'Rivers',
-      'port-harcourt': 'Rivers',
-      'ph': 'Rivers',
-      'fct': 'Abuja',
-      'abuja fct': 'Abuja'
-    };
-    const normalized = locationMap[location.toLowerCase().trim()];
-    return normalized || location;
-  };
-
-  // Map type values from URL to display format
-  const mapTypeFromUrl = (urlType) => {
-    const typeMap = {
-      'buy': 'For Sale',
-      'rent': 'For Rent',
-      'short-let': 'Shortlet',
-      'sale': 'For Sale',
-      'lease': 'For Lease'
-    };
-    return typeMap[urlType?.toLowerCase()] || urlType;
-  };
-
-  // Map status values from URL to display format
-  const mapStatusFromUrl = (urlStatus) => {
-    const statusMap = {
-      'buy': 'For Sale',
-      'rent': 'For Rent',
-      'short-let': 'Shortlet',
-      'sale': 'For Sale',
-      'lease': 'For Lease',
-      'shortlet': 'Shortlet'
-    };
-    return statusMap[urlStatus?.toLowerCase()] || urlStatus;
-  };
-
   // Handle URL parameters on initial load and from property alerts
   useEffect(() => {
     const fromAlert = searchParams.get('fromAlert');
@@ -346,6 +346,10 @@ const Properties = () => {
       const normalizedLoc = normalizeLocation(location);
       setAppliedLocation(normalizedLoc);
       setSearchQuery(normalizedLoc); // Also set in search query for display
+    } else {
+      // Clear location filter if no location parameter in URL
+      setAppliedLocation('');
+      // Don't clear searchQuery here as user might have typed something
     }
     
     // Apply type filter (map from URL format to display format)
