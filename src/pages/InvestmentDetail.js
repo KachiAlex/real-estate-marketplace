@@ -44,15 +44,37 @@ const InvestmentDetail = () => {
     try {
       setLoading(true);
       const investmentData = await getInvestmentById(id);
+      
+      if (!investmentData) {
+        setError('Investment not found');
+        setLoading(false);
+        return;
+      }
+      
       setInvestment(investmentData);
 
-      // Load vendor details
-      if (investmentData.vendorId) {
-        const vendorRef = doc(db, 'users', investmentData.vendorId);
-        const vendorDoc = await getDoc(vendorRef);
-        if (vendorDoc.exists()) {
-          setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
+      // Load vendor details (try vendorId first, then sponsorId)
+      const vendorIdToLoad = investmentData?.vendorId || investmentData?.sponsorId;
+      if (vendorIdToLoad) {
+        try {
+          const vendorRef = doc(db, 'users', vendorIdToLoad);
+          const vendorDoc = await getDoc(vendorRef);
+          if (vendorDoc.exists()) {
+            setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
+          } else if (investmentData.sponsor) {
+            // Use sponsor info from investment data if vendor doc doesn't exist
+            setVendor(investmentData.sponsor);
+          }
+        } catch (err) {
+          console.warn('Error loading vendor:', err);
+          // Use sponsor info from investment data if available
+          if (investmentData.sponsor) {
+            setVendor(investmentData.sponsor);
+          }
         }
+      } else if (investmentData.sponsor) {
+        // Use sponsor info directly if no ID is available
+        setVendor(investmentData.sponsor);
       }
 
       // Check if user already has an escrow transaction for this investment
@@ -77,8 +99,9 @@ const InvestmentDetail = () => {
       return;
     }
 
-    if (parseFloat(investmentAmount) < investment.minInvestment) {
-      setError(`Minimum investment amount is $${investment.minInvestment.toLocaleString()}`);
+    const minInvestment = investment.minInvestment ?? investment.minimumInvestment ?? 0;
+    if (parseFloat(investmentAmount) < minInvestment) {
+      setError(`Minimum investment amount is $${(minInvestment || 0).toLocaleString()}`);
       return;
     }
 
@@ -87,11 +110,12 @@ const InvestmentDetail = () => {
       setError(null);
 
       // Create escrow transaction
+      const vendorId = investment.vendorId ?? investment.sponsorId ?? null;
       const escrowId = await createEscrowTransaction(
         id,
         parseFloat(investmentAmount),
         user.uid,
-        investment.vendorId
+        vendorId
       );
 
       setShowInvestModal(false);
@@ -146,8 +170,30 @@ const InvestmentDetail = () => {
     );
   }
 
-  const riskInfo = getRiskLevel(investment.riskScore);
-  const progressPercentage = (investment.currentFunding / investment.targetAmount) * 100;
+  // Normalize investment data to handle different property names and missing values
+  const normalizedInvestment = {
+    ...investment,
+    // Map actual properties to expected ones
+    currentFunding: investment.currentFunding ?? investment.raisedAmount ?? 0,
+    targetAmount: investment.targetAmount ?? investment.totalAmount ?? 0,
+    minInvestment: investment.minInvestment ?? investment.minimumInvestment ?? 0,
+    maxInvestment: investment.maxInvestment ?? investment.totalAmount ?? 0,
+    expectedROI: investment.expectedROI ?? investment.expectedReturn ?? 0,
+    termMonths: investment.termMonths ?? investment.duration ?? 0,
+    riskScore: investment.riskScore ?? (investment.expectedReturn && investment.expectedReturn > 20 ? 7 : investment.expectedReturn && investment.expectedReturn > 15 ? 5 : 3),
+    propertyType: investment.propertyType ?? investment.type ?? 'N/A',
+    propertyLocation: investment.propertyLocation ?? (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A'),
+    propertyValue: investment.propertyValue ?? investment.totalAmount ?? 0,
+    propertyDescription: investment.propertyDescription ?? investment.description ?? '',
+    paymentSchedule: investment.paymentSchedule ?? 'Monthly',
+    exitStrategy: investment.exitStrategy ?? 'End of term',
+    vendorId: investment.vendorId ?? investment.sponsorId ?? null
+  };
+
+  const riskInfo = getRiskLevel(normalizedInvestment.riskScore ?? 5);
+  const progressPercentage = normalizedInvestment.targetAmount > 0 
+    ? (normalizedInvestment.currentFunding / normalizedInvestment.targetAmount) * 100 
+    : 0;
 
   return (
     <Container className="py-5">
@@ -177,11 +223,11 @@ const InvestmentDetail = () => {
               <Row className="mb-4">
                 <Col md={6}>
                   <h6>Expected ROI</h6>
-                  <p className="h4 text-success">{investment.expectedROI}%</p>
+                  <p className="h4 text-success">{normalizedInvestment.expectedROI || 0}%</p>
                 </Col>
                 <Col md={6}>
                   <h6>Investment Term</h6>
-                  <p className="h4">{investment.termMonths} months</p>
+                  <p className="h4">{normalizedInvestment.termMonths || 0} months</p>
                 </Col>
               </Row>
 
@@ -192,8 +238,8 @@ const InvestmentDetail = () => {
                 className="mb-2"
               />
               <div className="d-flex justify-content-between text-muted">
-                <span>${investment.currentFunding.toLocaleString()} raised</span>
-                <span>${investment.targetAmount.toLocaleString()} target</span>
+                <span>${(normalizedInvestment.currentFunding || 0).toLocaleString()} raised</span>
+                <span>${(normalizedInvestment.targetAmount || 0).toLocaleString()} target</span>
               </div>
 
               <h5 className="mt-4">Property Collateral</h5>
@@ -201,13 +247,13 @@ const InvestmentDetail = () => {
                 <Card.Body>
                   <Row>
                     <Col md={6}>
-                      <p><strong>Property Type:</strong> {investment.propertyType}</p>
-                      <p><strong>Location:</strong> {investment.propertyLocation}</p>
-                      <p><strong>Estimated Value:</strong> ${investment.propertyValue.toLocaleString()}</p>
+                      <p><strong>Property Type:</strong> {normalizedInvestment.propertyType || 'N/A'}</p>
+                      <p><strong>Location:</strong> {normalizedInvestment.propertyLocation || 'N/A'}</p>
+                      <p><strong>Estimated Value:</strong> ${(normalizedInvestment.propertyValue || 0).toLocaleString()}</p>
                     </Col>
                     <Col md={6}>
                       <p><strong>Property Details:</strong></p>
-                      <p className="text-muted">{investment.propertyDescription}</p>
+                      <p className="text-muted">{normalizedInvestment.propertyDescription || normalizedInvestment.description || 'N/A'}</p>
                     </Col>
                   </Row>
                 </Card.Body>
@@ -216,20 +262,20 @@ const InvestmentDetail = () => {
               <h5 className="mt-4">Investment Terms</h5>
               <ListGroup>
                 <ListGroup.Item>
-                  <strong>Minimum Investment:</strong> ${investment.minInvestment.toLocaleString()}
+                  <strong>Minimum Investment:</strong> ${(normalizedInvestment.minInvestment || 0).toLocaleString()}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Maximum Investment:</strong> ${investment.maxInvestment.toLocaleString()}
+                  <strong>Maximum Investment:</strong> ${(normalizedInvestment.maxInvestment || 0).toLocaleString()}
                 </ListGroup.Item>
                 <ListGroup.Item>
                   <strong>Risk Level:</strong> 
                   <Badge bg={riskInfo.color} className="ms-2">{riskInfo.level}</Badge>
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Payment Schedule:</strong> {investment.paymentSchedule}
+                  <strong>Payment Schedule:</strong> {normalizedInvestment.paymentSchedule || 'N/A'}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Exit Strategy:</strong> {investment.exitStrategy}
+                  <strong>Exit Strategy:</strong> {normalizedInvestment.exitStrategy || 'N/A'}
                 </ListGroup.Item>
               </ListGroup>
 
@@ -265,13 +311,13 @@ const InvestmentDetail = () => {
             <Card.Body>
               <div className="mb-3">
                 <h6>Expected Return</h6>
-                <p className="h4 text-success">${(parseFloat(investmentAmount || investment.minInvestment) * (investment.expectedROI / 100)).toLocaleString()}</p>
-                <small className="text-muted">Based on {investment.expectedROI}% ROI</small>
+                <p className="h4 text-success">${(parseFloat(investmentAmount || normalizedInvestment.minInvestment || 0) * ((normalizedInvestment.expectedROI || 0) / 100)).toLocaleString()}</p>
+                <small className="text-muted">Based on {normalizedInvestment.expectedROI || 0}% ROI</small>
               </div>
 
               <div className="mb-3">
                 <h6>Investment Term</h6>
-                <p>{investment.termMonths} months</p>
+                <p>{normalizedInvestment.termMonths || 0} months</p>
               </div>
 
               <div className="mb-3">
@@ -279,11 +325,11 @@ const InvestmentDetail = () => {
                 <Badge bg={riskInfo.color}>{riskInfo.level} Risk</Badge>
               </div>
 
-              {vendor && (
+              {(vendor || investment.sponsor) && (
                 <div className="mb-4">
                   <h6>Investment Company</h6>
-                  <p className="mb-1"><strong>{vendor.companyName}</strong></p>
-                  <p className="text-muted small">{vendor.email}</p>
+                  <p className="mb-1"><strong>{vendor?.companyName || investment.sponsor?.name || 'N/A'}</strong></p>
+                  <p className="text-muted small">{vendor?.email || 'N/A'}</p>
                 </div>
               )}
 
@@ -339,13 +385,13 @@ const InvestmentDetail = () => {
                 type="number"
                 value={investmentAmount}
                 onChange={(e) => setInvestmentAmount(e.target.value)}
-                min={investment.minInvestment}
-                max={investment.maxInvestment}
-                placeholder={`Minimum: $${investment.minInvestment.toLocaleString()}`}
+                min={normalizedInvestment.minInvestment}
+                max={normalizedInvestment.maxInvestment}
+                placeholder={`Minimum: $${(normalizedInvestment.minInvestment || 0).toLocaleString()}`}
               />
               <Form.Text className="text-muted">
-                Minimum: ${investment.minInvestment.toLocaleString()} | 
-                Maximum: ${investment.maxInvestment.toLocaleString()}
+                Minimum: ${(normalizedInvestment.minInvestment || 0).toLocaleString()} | 
+                Maximum: ${(normalizedInvestment.maxInvestment || 0).toLocaleString()}
               </Form.Text>
             </Form.Group>
 
@@ -355,10 +401,10 @@ const InvestmentDetail = () => {
                 <strong>Amount:</strong> ${parseFloat(investmentAmount || 0).toLocaleString()}
               </p>
               <p className="mb-1">
-                <strong>Expected Return:</strong> ${(parseFloat(investmentAmount || 0) * (investment.expectedROI / 100)).toLocaleString()}
+                <strong>Expected Return:</strong> ${(parseFloat(investmentAmount || 0) * ((normalizedInvestment.expectedROI || 0) / 100)).toLocaleString()}
               </p>
               <p className="mb-0">
-                <strong>Term:</strong> {investment.termMonths} months
+                <strong>Term:</strong> {normalizedInvestment.termMonths || 0} months
               </p>
             </Alert>
 
