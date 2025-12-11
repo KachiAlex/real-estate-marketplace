@@ -23,7 +23,7 @@ const Investments = () => {
                 {investments.map((inv) => (
                   <tr key={inv.id}>
                     <td className="px-6 py-4 whitespace-nowrap">{inv.propertyTitle}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">${inv.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">${(inv.amount || 0).toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{inv.date}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{inv.status}</td>
                   </tr>

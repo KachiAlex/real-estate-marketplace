@@ -7,6 +7,7 @@ import { useMortgage } from '../contexts/MortgageContext';
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
+import { authenticatedFetch } from '../utils/authToken';
 
 const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
@@ -14,7 +15,7 @@ const Dashboard = () => {
   const location = useLocation();
   const { properties, loading, toggleFavorite } = useProperty();
   const { userInvestments, getUserInvestmentSummary } = useInvestment();
-  const { getUserMortgages, getPaymentSummary } = useMortgage();
+  const { getUserMortgages, getPaymentSummary, getUserApplications, getApplicationsByStatus } = useMortgage();
   const [favorites, setFavorites] = useState(new Set());
 
   // Get recent properties (first 3)
@@ -25,8 +26,10 @@ const Dashboard = () => {
     if (user) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
-      setFavorites(new Set(savedFavorites));
-      return savedFavorites.length;
+      // Convert all IDs to strings for consistent comparison
+      const normalizedFavorites = savedFavorites.map(id => String(id));
+      setFavorites(new Set(normalizedFavorites));
+      return normalizedFavorites.length;
     }
     return 0;
   }, [user]);
@@ -35,37 +38,20 @@ const Dashboard = () => {
     loadFavorites();
   }, [user, loadFavorites]);
 
-  // Listen for favorites changes from other components/pages
-  useEffect(() => {
-    if (!user) return;
-
-    const handleFavoritesUpdate = () => {
-      // Reload favorites and refresh dashboard stats
-      loadFavorites();
-      // Use setTimeout to ensure refreshDashboardStats is called after state updates
-      setTimeout(() => {
-        refreshDashboardStats();
-      }, 100);
-    };
-
-    const handleStorageChange = (e) => {
-      // Listen for localStorage changes (works across tabs)
-      const key = `favorites_${user.id}`;
-      if (e.key === key) {
-        handleFavoritesUpdate();
-      }
-    };
-
-    // Listen for custom event (works in same tab)
-    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
-    // Listen for storage events (works across tabs)
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [user, loadFavorites, refreshDashboardStats]);
+  // Initialize dashboard stats state
+  const [dashboardStats, setDashboardStats] = useState({
+    totalProperties: 0,
+    savedProperties: 0,
+    activeInquiries: 0,
+    scheduledViewings: 0,
+    completedViewings: 0,
+    totalInvested: 0,
+    activeInvestments: 0,
+    escrowTransactions: 0,
+    pendingPayments: 0,
+    totalEarnings: 0,
+    monthlyBudget: 5000000
+  });
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
@@ -76,20 +62,25 @@ const Dashboard = () => {
     const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
     const savedCount = Array.isArray(savedFavorites) ? savedFavorites.length : 0;
 
-    // Get scheduled viewings from localStorage
+    // Get scheduled viewings from localStorage (matches inspection requests page logic)
     const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
     const userViewingRequests = viewingRequests.filter(req => 
       req.userId === user.id || req.buyerId === user.id
     );
-    const scheduledViewings = userViewingRequests.filter(req => 
-      req.status === 'pending' || 
-      req.status === 'pending_vendor_confirmation' || 
-      req.status === 'accepted' ||
-      req.status === 'confirmed'
-    ).length;
-    const completedViewings = userViewingRequests.filter(req => 
-      req.status === 'completed' || req.status === 'viewed'
-    ).length;
+    // Scheduled viewings: pending, pending_vendor_confirmation, accepted, confirmed, proposed_new_time
+    const scheduledViewings = userViewingRequests.filter(req => {
+      const status = req.status?.toLowerCase();
+      return status === 'pending' || 
+             status === 'pending_vendor_confirmation' || 
+             status === 'accepted' ||
+             status === 'confirmed' ||
+             status === 'proposed_new_time';
+    }).length;
+    // Completed viewings: completed, viewed, declined (for historical tracking)
+    const completedViewings = userViewingRequests.filter(req => {
+      const status = req.status?.toLowerCase();
+      return status === 'completed' || status === 'viewed' || status === 'declined';
+    }).length;
 
     // Get active inquiries from localStorage (if exists)
     const inquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
@@ -100,21 +91,33 @@ const Dashboard = () => {
       inq.status === 'new' || inq.status === 'pending' || inq.status === 'contacted'
     ).length;
 
-    // Get escrow transactions from localStorage
+    // Get escrow transactions from localStorage (matches escrow page logic)
     const escrowTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
     const userEscrowTransactions = escrowTransactions.filter(t => 
-      t.buyerId === user.id || t.sellerId === user.id
+      t.buyerId === user.id || t.sellerId === user.id || t.buyerId === user.uid || t.sellerId === user.uid
     );
+    // Total escrow transactions count (matches escrow page)
     const escrowCount = userEscrowTransactions.length;
-    const pendingPayments = userEscrowTransactions.filter(t => 
-      t.status === 'pending' || t.status === 'funded'
-    ).length;
+    // Pending payments: pending_payment, pending, funded (awaiting completion)
+    const pendingPayments = userEscrowTransactions.filter(t => {
+      const status = t.status?.toLowerCase();
+      return status === 'pending_payment' || status === 'pending' || status === 'funded';
+    }).length;
 
-    // Get investment data from InvestmentContext
+    // Get investment data from InvestmentContext (matches investment dashboard logic)
     const investmentSummary = getUserInvestmentSummary();
+    // Total invested: sum of all user investments (matches investment page calculation)
     const totalInvested = investmentSummary.totalInvested || 0;
+    // Active investments: count of investments with status 'active' (matches investment dashboard)
     const activeInvestments = investmentSummary.activeInvestments || 0;
+    // Total earnings: sum of totalDividendsEarned (matches investment page)
     const totalEarnings = investmentSummary.totalDividends || 0;
+
+    // Get mortgage application data (moved outside callback)
+    const mortgageApplications = getUserApplications();
+    const pendingMortgageApps = getApplicationsByStatus('pending').length;
+    const underReviewMortgageApps = getApplicationsByStatus('under_review').length;
+    const approvedMortgageApps = getApplicationsByStatus('approved').length;
 
     // Get total properties count
     const totalProperties = properties.length || 0;
@@ -131,9 +134,88 @@ const Dashboard = () => {
       escrowTransactions: escrowCount,
       pendingPayments,
       totalEarnings,
-      monthlyBudget: user?.monthlyBudget || 5000000
+      monthlyBudget: user?.monthlyBudget || 5000000,
+      mortgageApplications: getUserApplications().length,
+      pendingMortgageApps: getApplicationsByStatus('pending').length,
+      underReviewMortgageApps: getApplicationsByStatus('under_review').length,
+      approvedMortgageApps: getApplicationsByStatus('approved').length
     }));
-  }, [user, properties.length, getUserInvestmentSummary]);
+  }, [user, properties.length, getUserInvestmentSummary, getUserApplications, getApplicationsByStatus]);
+
+  // Listen for data changes from other components/pages
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFavoritesUpdate = () => {
+      // Reload favorites and refresh dashboard stats
+      loadFavorites();
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleInquiriesUpdate = () => {
+      // Refresh dashboard stats when inquiries are updated
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleViewingsUpdate = () => {
+      // Refresh dashboard stats when viewings are updated
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleInvestmentsUpdate = () => {
+      // Refresh dashboard stats when investments are updated
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleEscrowUpdate = () => {
+      // Refresh dashboard stats when escrow transactions are updated
+      setTimeout(() => {
+        refreshDashboardStats();
+      }, 100);
+    };
+
+    const handleStorageChange = (e) => {
+      // Listen for localStorage changes (works across tabs)
+      const key = `favorites_${user.id}`;
+      if (e.key === key) {
+        handleFavoritesUpdate();
+      } else if (e.key === 'inquiries') {
+        handleInquiriesUpdate();
+      } else if (e.key === 'viewingRequests') {
+        handleViewingsUpdate();
+      } else if (e.key === `userInvestments_${user.id}`) {
+        handleInvestmentsUpdate();
+      } else if (e.key === 'escrowTransactions') {
+        handleEscrowUpdate();
+      }
+    };
+
+    // Listen for custom events (works in same tab)
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    window.addEventListener('inquiriesUpdated', handleInquiriesUpdate);
+    window.addEventListener('viewingsUpdated', handleViewingsUpdate);
+    window.addEventListener('investmentsUpdated', handleInvestmentsUpdate);
+    window.addEventListener('escrowUpdated', handleEscrowUpdate);
+    // Listen for storage events (works across tabs)
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+      window.removeEventListener('inquiriesUpdated', handleInquiriesUpdate);
+      window.removeEventListener('viewingsUpdated', handleViewingsUpdate);
+      window.removeEventListener('investmentsUpdated', handleInvestmentsUpdate);
+      window.removeEventListener('escrowUpdated', handleEscrowUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user, loadFavorites, refreshDashboardStats]);
 
   // Update saved properties count from localStorage (includes mock data)
   useEffect(() => {
@@ -255,6 +337,11 @@ const Dashboard = () => {
     existingRequests.push(viewingRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
     
+    // Dispatch event to notify other components
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { viewingRequest, action: 'created' }
+    }));
+    
     toast.success(`Viewing request sent for "${selectedProperty.title}"! The vendor will confirm or suggest an alternative time.`);
     
     // Refresh dashboard stats immediately
@@ -267,20 +354,6 @@ const Dashboard = () => {
     setSelectedTime('');
     setViewingMessage('');
   };
-
-  const [dashboardStats, setDashboardStats] = useState({
-    totalProperties: 0,
-    savedProperties: 0,
-    activeInquiries: 0,
-    scheduledViewings: 0,
-    totalInvested: 0,
-    activeInvestments: 0,
-    escrowTransactions: 0,
-    monthlyBudget: 0,
-    completedViewings: 0,
-    pendingPayments: 0,
-    totalEarnings: 0
-  });
 
   // Load dashboard stats from all sources (localStorage, contexts, backend)
   useEffect(() => {
@@ -339,44 +412,71 @@ const Dashboard = () => {
       // Get total properties count
       const totalProperties = properties.length || 0;
 
-      // Try to get additional data from backend API
+      // Try to get additional data from backend API (only if user has Firebase token)
       const fetchBackendStats = async () => {
         try {
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
-          const token = localStorage.getItem('token');
-
-          const res = await fetch(`${apiBaseUrl}/dashboard/user`, {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {})
-            }
-          });
-
-          const data = await res.json();
-          if (res.ok && data.success) {
-            const backend = data.data || {};
-            const backendInvestmentSummary = backend.investments || {};
-            const backendEscrowSummary = backend.escrow || {};
-
-            // Merge backend data with local data (prefer local for real-time updates)
-            setDashboardStats(prev => ({
-              ...prev,
-              totalProperties: backend.totalProperties ?? totalProperties,
+          // Check if user has a Firebase token before attempting API call
+          const { hasAuthToken } = await import('../utils/authToken');
+          const hasToken = await hasAuthToken();
+          
+          if (!hasToken) {
+            // Mock user or no Firebase token - skip API call and use local data only
+            console.log('Dashboard: No Firebase token available, using local data only');
+            setDashboardStats({
+              totalProperties,
               savedProperties: savedCount,
-              activeInquiries: activeInquiries || backend.activeInquiries || 0,
-              scheduledViewings: scheduledViewings || backend.scheduledViewings || 0,
-              completedViewings: completedViewings || backend.completedViewings || 0,
-              totalInvested: totalInvested || backendInvestmentSummary.totalInvested || 0,
-              activeInvestments: activeInvestments || backendInvestmentSummary.activeInvestments || 0,
-              escrowTransactions: escrowCount || backendEscrowSummary.count || 0,
-              pendingPayments: pendingPayments || backendEscrowSummary.pendingPayments || 0,
+              activeInquiries,
+              scheduledViewings,
+              completedViewings,
+              totalInvested,
+              activeInvestments,
+              escrowTransactions: escrowCount,
               monthlyBudget: user?.monthlyBudget || 5000000,
-              totalEarnings: totalEarnings || user?.totalEarnings || 0
-            }));
+              pendingPayments,
+              totalEarnings
+            });
             return;
           }
+
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          
+          // Use authenticatedFetch which handles token refresh automatically
+          const res = await authenticatedFetch(`${apiBaseUrl}/dashboard/user`, {
+            method: 'GET'
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              const backend = data.data || {};
+              const backendInvestmentSummary = backend.investments || {};
+              const backendEscrowSummary = backend.escrow || {};
+
+              // Merge backend data with local data (prefer local for real-time updates)
+              setDashboardStats(prev => ({
+                ...prev,
+                totalProperties: backend.totalProperties ?? totalProperties,
+                savedProperties: savedCount,
+                activeInquiries: activeInquiries || backend.activeInquiries || 0,
+                scheduledViewings: scheduledViewings || backend.scheduledViewings || 0,
+                completedViewings: completedViewings || backend.completedViewings || 0,
+                totalInvested: totalInvested || backendInvestmentSummary.totalInvested || 0,
+                activeInvestments: activeInvestments || backendInvestmentSummary.activeInvestments || 0,
+                escrowTransactions: escrowCount || backendEscrowSummary.count || 0,
+                pendingPayments: pendingPayments || backendEscrowSummary.pendingPayments || 0,
+                monthlyBudget: user?.monthlyBudget || 5000000,
+                totalEarnings: totalEarnings || user?.totalEarnings || 0
+              }));
+              return;
+            }
+          } else if (res.status === 401) {
+            // Suppress 401 errors - expected for mock users
+            console.log('Dashboard: API returned 401 - using local data only');
+            // Non-fatal - fall through to local data
+          }
         } catch (error) {
-          console.warn('Dashboard: Error fetching backend stats', error);
+          // Suppress errors for mock users
+          console.log('Dashboard: Error fetching backend stats (using local data)', error.message);
         }
 
         // Fallback to local data only
@@ -519,7 +619,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/my-inquiries')}
+                onClick={() => navigate('/inquiries')}
                 title="View active inquiries"
               >
                 <div className="flex items-center justify-between">
@@ -712,7 +812,7 @@ const Dashboard = () => {
                           <div>
                             <p className="text-green-600 text-sm font-medium">Total Invested</p>
                             <p className="text-green-900 text-xl font-bold">
-                              ₦{investmentSummary.totalInvested.toLocaleString()}
+                              ₦{(investmentSummary.totalInvested || 0).toLocaleString()}
                             </p>
                           </div>
                           <FaChartLine className="text-green-600 text-xl" />
@@ -724,7 +824,7 @@ const Dashboard = () => {
                           <div>
                             <p className="text-blue-600 text-sm font-medium">Dividends Earned</p>
                             <p className="text-blue-900 text-xl font-bold">
-                              ₦{investmentSummary.totalDividends.toLocaleString()}
+                              ₦{(investmentSummary.totalDividends || 0).toLocaleString()}
                             </p>
                           </div>
                           <FaMoneyBillWave className="text-blue-600 text-xl" />
@@ -754,7 +854,7 @@ const Dashboard = () => {
                               <div className="flex-1">
                                 <h5 className="font-medium text-gray-900">{investment.investmentTitle}</h5>
                                 <p className="text-sm text-gray-600">
-                                  Invested: ₦{investment.amount.toLocaleString()} • 
+                                  Invested: ₦{(investment.amount || 0).toLocaleString()} • 
                                   Status: <span className={`capitalize ${
                                     investment.status === 'active' ? 'text-green-600' :
                                     investment.status === 'pending_approval' ? 'text-yellow-600' :
@@ -768,7 +868,7 @@ const Dashboard = () => {
                               <div className="flex items-center space-x-4">
                                 <div className="text-right">
                                   <p className="font-semibold text-gray-900">
-                                    ₦{investment.totalDividendsEarned.toLocaleString()}
+                                    ₦{(investment.totalDividendsEarned || 0).toLocaleString()}
                                   </p>
                                   <p className="text-sm text-gray-600">Earned</p>
                                 </div>
@@ -941,20 +1041,23 @@ const Dashboard = () => {
                         }
                         
                         try {
-                          const result = await toggleFavorite(property.id);
+                          const propertyIdStr = String(property.id);
+                          const result = await toggleFavorite(propertyIdStr, property);
                           if (result && result.success) {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
-                              newFavorites.add(property.id);
+                              newFavorites.add(propertyIdStr);
                               toast.success('Property saved successfully');
                             } else {
-                              newFavorites.delete(property.id);
+                              newFavorites.delete(propertyIdStr);
                               toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
                             
                             // Dispatch custom event to notify other components
-                            window.dispatchEvent(new CustomEvent('favoritesUpdated'));
+                            window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
+                              detail: { propertyId: propertyIdStr, favorited: result.favorited } 
+                            }));
                             
                             // Reload favorites and refresh dashboard stats immediately
                             setTimeout(() => {
@@ -966,14 +1069,16 @@ const Dashboard = () => {
                           toast.error('Failed to save property');
                         }
                       }}
-                      className={`text-white bg-black bg-opacity-50 p-1 rounded hover:bg-opacity-70 transition-all ${
-                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-90' : ''
+                      className={`p-1 rounded hover:bg-opacity-70 transition-all ${
+                        favorites.has(String(property.id)) 
+                          ? 'bg-red-500 bg-opacity-90' 
+                          : 'bg-black bg-opacity-50'
                       }`}
-                      title={favorites.has(property.id) ? 'Remove from saved properties' : 'Save property'}
+                      title={favorites.has(String(property.id)) ? 'Remove from saved properties' : 'Save property'}
                     >
                       <FaHeart className={`text-sm transition-all ${
-                        favorites.has(property.id) 
-                          ? 'fill-current text-white' 
+                        favorites.has(String(property.id)) 
+                          ? 'text-red-500 fill-red-500' 
                           : 'text-white'
                       }`} />
                     </button>
@@ -982,7 +1087,7 @@ const Dashboard = () => {
                 
                 <div className="property-card-content">
                   <div className="property-price">
-                    ₦{property.price.toLocaleString()}
+                    ₦{(property.price || 0).toLocaleString()}
                   </div>
                   <h3 className="property-title">{property.title}</h3>
                   <p className="property-location">{property.location}</p>
@@ -1079,20 +1184,23 @@ const Dashboard = () => {
                         }
                         
                         try {
-                          const result = await toggleFavorite(property.id);
+                          const propertyIdStr = String(property.id);
+                          const result = await toggleFavorite(propertyIdStr, property);
                           if (result && result.success) {
                             const newFavorites = new Set(favorites);
                             if (result.favorited) {
-                              newFavorites.add(property.id);
+                              newFavorites.add(propertyIdStr);
                               toast.success('Property saved successfully');
                             } else {
-                              newFavorites.delete(property.id);
+                              newFavorites.delete(propertyIdStr);
                               toast.success('Property removed from saved properties');
                             }
                             setFavorites(newFavorites);
                             
                             // Dispatch custom event to notify other components
-                            window.dispatchEvent(new CustomEvent('favoritesUpdated'));
+                            window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
+                              detail: { propertyId: propertyIdStr, favorited: result.favorited } 
+                            }));
                             
                             // Reload favorites and refresh dashboard stats immediately
                             setTimeout(() => {
@@ -1104,14 +1212,16 @@ const Dashboard = () => {
                           toast.error('Failed to save property');
                         }
                       }}
-                      className={`w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all ${
-                        favorites.has(property.id) ? 'bg-red-500 bg-opacity-90' : ''
+                      className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all ${
+                        favorites.has(String(property.id)) 
+                          ? 'bg-red-500 bg-opacity-90' 
+                          : 'bg-black bg-opacity-50'
                       }`}
-                      title={favorites.has(property.id) ? 'Remove from saved properties' : 'Save property'}
+                      title={favorites.has(String(property.id)) ? 'Remove from saved properties' : 'Save property'}
                     >
                       <FaHeart className={`text-sm transition-all ${
-                        favorites.has(property.id) 
-                          ? 'fill-current text-white' 
+                        favorites.has(String(property.id)) 
+                          ? 'text-red-500 fill-red-500' 
                           : 'text-white'
                       }`} />
                     </button>

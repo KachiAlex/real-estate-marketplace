@@ -4,7 +4,7 @@ const mortgageApplicationSchema = new mongoose.Schema({
   property: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',
-    required: true
+    required: false // Optional for prequalification requests
   },
   buyer: {
     type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +21,7 @@ const mortgageApplicationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'under_review', 'approved', 'rejected', 'needs_more_info', 'withdrawn'],
+    enum: ['pending', 'under_review', 'approved', 'rejected', 'needs_more_info', 'withdrawn', 'prequalification_requested'],
     default: 'pending'
   },
   requestedAmount: {

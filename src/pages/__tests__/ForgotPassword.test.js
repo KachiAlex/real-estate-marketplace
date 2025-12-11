@@ -19,7 +19,7 @@ jest.mock('firebase/auth', () => ({
 }));
 
 // Mock Firebase config
-jest.mock('../config/firebase', () => ({
+jest.mock('../../config/firebase', () => ({
   auth: {},
 }));
 

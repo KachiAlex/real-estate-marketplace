@@ -1322,30 +1322,105 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
-  // Favorites: toggle favorite for current user on a property
-  const toggleFavorite = useCallback(async (propertyId) => {
+  /**
+   * Favorites: toggle favorite for current user on a property
+   * 
+   * IMPORTANT: This is the SINGLE SOURCE OF TRUTH for favorite state.
+   * All components should call this function instead of directly modifying localStorage.
+   * 
+   * This function:
+   * 1. Updates localStorage (favorites list and metadata)
+   * 2. Syncs to Firestore (best-effort, non-blocking)
+   * 3. Dispatches events for component synchronization
+   * 4. Returns success/failure status
+   * 
+   * DO NOT modify localStorage directly in components - always use this function.
+   */
+  const toggleFavorite = useCallback(async (propertyId, propertyData = null) => {
     try {
       if (!user) throw new Error('User must be logged in');
 
+      // Normalize propertyId to string for consistent storage and comparison
+      const propertyIdStr = String(propertyId);
+
       // Local persistence per user
       const key = `favorites_${user.id}`;
-      const existing = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+      const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
+      // Normalize all saved IDs to strings for consistent comparison
+      const existing = new Set(savedFavorites.map(id => String(id)));
       let isNowFavorited = false;
-      if (existing.has(propertyId)) {
-        existing.delete(propertyId);
+      
+      // Metadata storage key
+      const metadataKey = `favorites_metadata_${user.id}`;
+      const savedMetadata = JSON.parse(localStorage.getItem(metadataKey) || '{}');
+      
+      if (existing.has(propertyIdStr)) {
+        existing.delete(propertyIdStr);
+        delete savedMetadata[propertyIdStr];
         isNowFavorited = false;
       } else {
-        existing.add(propertyId);
+        existing.add(propertyIdStr);
         isNowFavorited = true;
+        
+        // Try to find property in current properties list to store metadata
+        let propertyToSave = propertyData;
+        if (!propertyToSave) {
+          propertyToSave = properties.find(p => {
+            const propId = p.id || p.propertyId || p._id;
+            return String(propId) === propertyIdStr || propId === propertyId;
+          });
+        }
+        
+        // Store property metadata if found (for displaying in SavedProperties even if not in current list)
+        if (propertyToSave) {
+          savedMetadata[propertyIdStr] = {
+            id: propertyToSave.id || propertyToSave.propertyId || propertyToSave._id || propertyIdStr,
+            title: propertyToSave.title,
+            price: propertyToSave.price,
+            location: propertyToSave.location,
+            bedrooms: propertyToSave.bedrooms || propertyToSave.details?.bedrooms,
+            bathrooms: propertyToSave.bathrooms || propertyToSave.details?.bathrooms,
+            area: propertyToSave.area || propertyToSave.details?.sqft || propertyToSave.sqft,
+            image: propertyToSave.image || propertyToSave.images?.[0]?.url || propertyToSave.images?.[0],
+            images: propertyToSave.images,
+            status: propertyToSave.status || propertyToSave.listingType || propertyToSave.statusSlug,
+            type: propertyToSave.type || propertyToSave.typeSlug,
+            agent: propertyToSave.agent,
+            owner: propertyToSave.owner,
+            vendorName: propertyToSave.vendorName,
+            vendorPhone: propertyToSave.vendorPhone,
+            vendorEmail: propertyToSave.vendorEmail,
+            contactPhone: propertyToSave.contactPhone,
+            contactEmail: propertyToSave.contactEmail,
+            city: propertyToSave.city,
+            state: propertyToSave.state,
+            address: propertyToSave.address,
+            createdAt: propertyToSave.createdAt,
+            dateAdded: new Date().toISOString()
+          };
+        }
       }
+      
+      // CRITICAL: Save normalized IDs as strings to localStorage
+      // This is the SINGLE SOURCE OF TRUTH - all components read from here
       localStorage.setItem(key, JSON.stringify(Array.from(existing)));
+      // Save metadata for displaying properties in SavedProperties tab
+      localStorage.setItem(metadataKey, JSON.stringify(savedMetadata));
+
+      // Verify the save was successful
+      const verifySaved = JSON.parse(localStorage.getItem(key) || '[]');
+      const verifyNormalized = verifySaved.map(id => String(id));
+      if (!verifyNormalized.includes(propertyIdStr) === !isNowFavorited) {
+        console.warn('PropertyContext: Favorite state verification failed, but continuing...');
+      }
 
       // Best-effort Firestore sync under users/{userId}/favorites/{propertyId}
+      // This is non-blocking - localStorage is the source of truth
       try {
-        const favoriteRef = doc(db, 'users', user.id, 'favorites', String(propertyId));
+        const favoriteRef = doc(db, 'users', user.id, 'favorites', propertyIdStr);
         if (isNowFavorited) {
           await setDoc(favoriteRef, {
-            propertyId,
+            propertyId: propertyIdStr,
             createdAt: new Date().toISOString()
           });
         } else {
@@ -1353,7 +1428,21 @@ export const PropertyProvider = ({ children }) => {
         }
       } catch (e) {
         // Non-fatal; local storage already updated
+        console.warn('PropertyContext: Firestore favorite sync failed (non-fatal):', e);
       }
+
+      // Dispatch event to notify other components (Dashboard, SavedProperties, etc.)
+      // Components listen for this event to update their UI
+      window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+        detail: { propertyId: propertyIdStr, favorited: isNowFavorited }
+      }));
+      
+      // Also trigger a storage event for cross-tab synchronization
+      // This allows favorites to sync across multiple browser tabs
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: key,
+        newValue: JSON.stringify(Array.from(existing))
+      }));
 
       toast.success(isNowFavorited ? 'Added to favorites' : 'Removed from favorites');
       return { success: true, favorited: isNowFavorited };

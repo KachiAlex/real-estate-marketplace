@@ -663,7 +663,7 @@ const AdminDashboard = () => {
                             })()}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ${property.price.toLocaleString()}
+                            ${(property.price || 0).toLocaleString()}
                           </div>
                         </div>
                       </div>

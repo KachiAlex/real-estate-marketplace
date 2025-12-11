@@ -154,94 +154,84 @@ const EscrowPaymentFlow = () => {
 
       setLoading(true);
 
-      // Step 1: Create escrow transaction
+      // Step 1: Create escrow transaction using EscrowContext
       const currentItem = property || investment;
-      const itemPrice = property ? property.price : (investment?.minInvestment || 0);
+      const itemPrice = property ? property.price : (investment?.minInvestment || investment?.minimumInvestment || 0);
       const itemTitle = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
       const itemId = property ? property.id : investment?.id;
       
-      const escrowData = {
-        [property ? 'propertyId' : 'investmentId']: itemId,
-        buyerId: user.id,
-        buyerName: `${user.firstName} ${user.lastName}`,
-        buyerEmail: user.email,
-        sellerId: property?.owner?.id || investment?.vendorId || 'seller-1',
-        sellerName: property?.owner ? `${property.owner.firstName} ${property.owner.lastName}` : (investment?.vendor || 'Investment Sponsor'),
-        sellerEmail: property?.owner?.email || investment?.vendorEmail || 'owner@example.com',
-        amount: itemPrice,
-        type: transactionType,
-        paymentMethod: paymentData.paymentMethod
-      };
+      if (!itemId || !itemPrice || itemPrice <= 0) {
+        toast.error('Invalid item or price');
+        setLoading(false);
+        return;
+      }
 
-      // For production demo, simulate the escrow creation process
-      // In production, this would call the real backend API
+      const sellerId = property?.owner?.id || property?.ownerId || investment?.vendorId || investment?.sponsorId || null;
       
-      // Simulate escrow transaction creation
-      const escrowResult = {
-        success: true,
-        data: {
-          id: `escrow_${Date.now()}`,
-          [property ? 'propertyId' : 'investmentId']: itemId,
-          [property ? 'propertyTitle' : 'investmentTitle']: itemTitle,
-          buyerId: user.id,
-          buyerName: `${user.firstName} ${user.lastName}`,
-          buyerEmail: user.email,
-          amount: itemPrice,
-          currency: 'NGN',
-          status: 'pending',
-          type: transactionType,
-          paymentMethod: paymentData.paymentMethod,
-          escrowFee: Math.round(itemPrice * 0.005),
-          totalAmount: calculateTotal(),
-          createdAt: new Date().toISOString(),
-          milestones: property ? [
-            { name: 'Initial Payment', status: 'pending', amount: Math.round(itemPrice * 0.1) },
-            { name: 'Property Inspection', status: 'pending', amount: 0 },
-            { name: 'Final Payment', status: 'pending', amount: Math.round(itemPrice * 0.9) }
-          ] : [
-            { name: 'Investment Payment', status: 'pending', amount: itemPrice },
-            { name: 'Document Verification', status: 'pending', amount: 0 }
-          ]
+      // Create escrow transaction using the context function
+      const escrowResult = await createEscrowTransaction(
+        itemId,
+        itemPrice,
+        user.uid || user.id,
+        sellerId,
+        {
+          type: transactionType === 'investment' ? 'investment' : 'property',
+          investmentData: investment ? {
+            ...investment,
+            title: investment.title || investment.investmentTitle,
+            investmentTitle: investment.investmentTitle || investment.title,
+            expectedROI: investment.expectedROI || investment.expectedReturn || 0,
+            expectedReturn: investment.expectedReturn || investment.expectedROI || 0,
+            lockPeriod: investment.lockPeriod || investment.termMonths || investment.duration || 0,
+            termMonths: investment.termMonths || investment.duration || investment.lockPeriod || 0,
+            duration: investment.duration || investment.termMonths || investment.lockPeriod || 0,
+            vendorId: investment.vendorId || investment.sponsorId,
+            sponsorId: investment.sponsorId || investment.vendorId,
+            sponsor: investment.sponsor || investment.vendor,
+            vendor: investment.vendor || investment.sponsor,
+            propertyLocation: investment.propertyLocation || (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A')
+          } : null
         }
-      };
+      );
+
+      if (!escrowResult.success) {
+        toast.error(escrowResult.error || 'Failed to create escrow transaction');
+        setLoading(false);
+        return;
+      }
+
+      const escrowId = escrowResult.id || escrowResult.data?.id;
+      if (!escrowId) {
+        toast.error('Failed to get escrow transaction ID');
+        setLoading(false);
+        return;
+      }
 
       // Simulate Flutterwave payment initialization
-      const paymentResult = {
-        success: true,
-        data: {
-          payment_url: `https://checkout.flutterwave.com/v3/hosted/pay/ESCROW_${escrowResult.data.id}_${Date.now()}`,
-          reference: `ESCROW_${escrowResult.data.id}_${Date.now()}`,
-          amount: calculateTotal(),
-          currency: 'NGN',
-          escrow_id: escrowResult.data.id
-        }
-      };
-
+      // In production, this would call the actual Flutterwave API
+      const paymentReference = `FLW-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
       // For demo purposes, simulate successful payment verification
       // In production, user would be redirected to Flutterwave and then back for verification
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate payment processing
       
-      const verifyResult = {
-        success: true,
-        message: 'Payment verified successfully',
-        data: {
-          escrow_id: escrowResult.data.id,
-          status: 'funded',
-          transaction_id: `demo_${Date.now()}`,
-          amount: calculateTotal(),
-          currency: 'NGN'
-        }
-      };
-
-      // Store transaction in localStorage for demo tracking
+      // Update escrow transaction status to funded
       const existingTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
-      existingTransactions.push({
-        ...escrowResult.data,
-        status: 'funded', // Money is now in escrow
-        flutterwaveTransactionId: verifyResult.data.transaction_id,
-        flutterwaveReference: paymentResult.data.reference,
-        fundedAt: new Date().toISOString()
-      });
-      localStorage.setItem('escrowTransactions', JSON.stringify(existingTransactions));
+      const updatedTransactions = existingTransactions.map(t => 
+        t.id === escrowId 
+          ? { 
+              ...t, 
+              status: 'payment_received', // Payment received, awaiting document verification
+              payment: {
+                method: paymentData.paymentMethod,
+                reference: paymentReference,
+                paidAt: new Date().toISOString()
+              },
+              fundedAt: new Date().toISOString()
+            }
+          : t
+      );
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
 
       setStep(3);
       toast.success('Payment successful! Funds are now held securely in escrow.');
@@ -250,9 +240,14 @@ const EscrowPaymentFlow = () => {
       if (investmentId) {
         localStorage.removeItem('pendingInvestmentProject');
       }
+
+      // Navigate to escrow transaction page after a short delay
+      setTimeout(() => {
+        navigate(`/escrow/${escrowId}`);
+      }, 2000);
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error(`Payment failed: ${error.message}`);
+      toast.error(`Payment failed: ${error.message || 'An error occurred'}`);
     } finally {
       setLoading(false);
     }

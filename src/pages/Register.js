@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
 import { handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
 import VendorRegistrationPayment from '../components/VendorRegistrationPayment';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
@@ -881,7 +881,7 @@ const Register = () => {
           </div>
 
           {/* Social Login Buttons */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-6">
             <button 
               onClick={async () => {
                 try {
@@ -909,10 +909,6 @@ const Register = () => {
             >
               <FaGoogle className="text-red-500 mr-2" />
               Google
-            </button>
-            <button disabled className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-400 cursor-not-allowed">
-              <FaFacebook className="text-blue-600 mr-2" />
-              Facebook
             </button>
           </div>
 

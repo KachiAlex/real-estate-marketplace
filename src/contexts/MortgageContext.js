@@ -28,7 +28,9 @@ export const MortgageProvider = ({ children }) => {
   const { user } = useAuth();
   const { createTestNotification } = useNotifications();
   const [mortgages, setMortgages] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Fetch mortgages from backend API
@@ -44,7 +46,7 @@ export const MortgageProvider = ({ children }) => {
       
       const token = localStorage.getItem('token');
       if (!token) {
-        console.warn('No authentication token found');
+        // User not authenticated - this is expected for unauthenticated users
         setMortgages([]);
         return;
       }
@@ -80,10 +82,56 @@ export const MortgageProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Load mortgages when user changes
+  // Fetch mortgage applications from backend API
+  const fetchApplications = useCallback(async () => {
+    if (!user) {
+      setApplications([]);
+      return;
+    }
+
+    try {
+      setApplicationsLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setApplications([]);
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/mortgages`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        params: {
+          // Fetch all applications for the user
+        }
+      });
+
+      if (response.data && response.data.success) {
+        setApplications(response.data.data || []);
+      } else {
+        setApplications([]);
+      }
+    } catch (err) {
+      console.error('Error fetching mortgage applications:', err);
+      setError(err.response?.data?.message || 'Failed to load applications');
+      
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to load mortgage applications. Please try again later.');
+      }
+      
+      setApplications([]);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  }, [user]);
+
+  // Load mortgages and applications when user changes
   useEffect(() => {
     fetchMortgages();
-  }, [fetchMortgages]);
+    fetchApplications();
+  }, [fetchMortgages, fetchApplications]);
 
   const getMortgageById = useCallback((mortgageId) => {
     return mortgages.find(mortgage => 
@@ -92,6 +140,27 @@ export const MortgageProvider = ({ children }) => {
       mortgage.id?.toString() === mortgageId?.toString()
     );
   }, [mortgages]);
+
+  const getApplicationById = useCallback((applicationId) => {
+    return applications.find(app => 
+      app.id === applicationId || 
+      app._id === applicationId ||
+      app.id?.toString() === applicationId?.toString()
+    );
+  }, [applications]);
+
+  const getUserApplications = useCallback(() => {
+    return applications;
+  }, [applications]);
+
+  const getApplicationsByStatus = useCallback((status) => {
+    return applications.filter(app => app.status === status);
+  }, [applications]);
+
+  // Refresh applications from backend
+  const refreshApplications = useCallback(async () => {
+    await fetchApplications();
+  }, [fetchApplications]);
 
   const getUserMortgages = useCallback(() => {
     return mortgages;
@@ -396,7 +465,9 @@ export const MortgageProvider = ({ children }) => {
 
   const value = {
     mortgages,
+    applications,
     loading,
+    applicationsLoading,
     error,
     getMortgageById,
     getUserMortgages,
@@ -405,7 +476,12 @@ export const MortgageProvider = ({ children }) => {
     getPaymentSummary,
     enableAutoPay,
     disableAutoPay,
-    refreshMortgages
+    refreshMortgages,
+    // Application functions
+    getUserApplications,
+    getApplicationById,
+    getApplicationsByStatus,
+    refreshApplications
   };
 
   return (

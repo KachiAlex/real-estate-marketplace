@@ -1,12 +1,15 @@
 ﻿import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { updateInspectionRequest } from '../services/inspectionService';
+import { FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const BuyerInspectionRequests = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const prevStatusRef = useRef({});
 
@@ -71,35 +74,116 @@ const BuyerInspectionRequests = () => {
     window.open(url, '_blank');
   };
 
+  // Load requests from localStorage (primary source for now)
+  const loadRequestsFromLocalStorage = () => {
+    if (!user?.id) return [];
+    
+    try {
+      const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      
+      // Filter by user ID (check both userId and buyerId for compatibility)
+      const userRequests = viewingRequests.filter(req => 
+        req.userId === user.id || req.buyerId === user.id
+      );
+      
+      // Transform localStorage format to match component expectations
+      const transformed = userRequests.map(req => ({
+        id: req.id,
+        // Map property fields to project fields (for display compatibility)
+        projectName: req.propertyTitle || req.projectName || req.title || 'Property',
+        projectLocation: req.propertyLocation || req.projectLocation || req.location || '',
+        // Keep original fields
+        preferredDate: req.preferredDate,
+        preferredTime: req.preferredTime,
+        confirmedDate: req.confirmedDate,
+        confirmedTime: req.confirmedTime,
+        proposedDate: req.proposedDate,
+        proposedTime: req.proposedTime,
+        status: req.status || 'pending_vendor',
+        createdAt: req.requestedAt || req.createdAt || new Date().toISOString(),
+        // Keep other fields
+        ...req
+      }));
+      
+      // Sort by date (newest first)
+      transformed.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      return transformed;
+    } catch (error) {
+      console.error('Error loading requests from localStorage:', error);
+      return [];
+    }
+  };
+
+  // Update requests state
+  const updateRequests = (newRequests) => {
+    setRequests(newRequests);
+    ensureNotificationPermission();
+    const prev = prevStatusRef.current || {};
+    for (const r of newRequests) {
+      const previous = prev[r.id];
+      if (previous && previous !== r.status) {
+        if (r.status === 'accepted') {
+          showWebNotification('Inspection confirmed', { body: `${r.projectName} on ${r.confirmedDate} ${r.confirmedTime}` });
+        } else if (r.status === 'proposed_new_time') {
+          showWebNotification('Vendor proposed a new time', { body: `${r.projectName}: ${r.proposedDate} ${r.proposedTime}` });
+        } else if (r.status === 'declined') {
+          showWebNotification('Inspection declined', { body: `${r.projectName}` });
+        }
+      }
+    }
+    prevStatusRef.current = Object.fromEntries(newRequests.map(x => [x.id, x.status]));
+  };
+
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setRequests([]);
+      return;
+    }
+
+    // Load from localStorage first (primary source)
+    const localRequests = loadRequestsFromLocalStorage();
+    updateRequests(localRequests);
+
+    // Also try to subscribe to Firestore (for future use when API is available)
+    let firestoreUnsub = null;
     try {
       const q = query(collection(db, 'inspectionRequests'), where('buyerId', '==', user.id));
-      const unsub = onSnapshot(q, (snap) => {
+      firestoreUnsub = onSnapshot(q, (snap) => {
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         arr.sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt || 0) - new Date(a.createdAt?.toDate?.() || a.createdAt || 0));
-        setRequests(arr);
-        ensureNotificationPermission();
-        const prev = prevStatusRef.current || {};
-        for (const r of arr) {
-          const previous = prev[r.id];
-          if (previous && previous !== r.status) {
-            if (r.status === 'accepted') {
-              showWebNotification('Inspection confirmed', { body: `${r.projectName} on ${r.confirmedDate} ${r.confirmedTime}` });
-            } else if (r.status === 'proposed_new_time') {
-              showWebNotification('Vendor proposed a new time', { body: `${r.projectName}: ${r.proposedDate} ${r.proposedTime}` });
-            } else if (r.status === 'declined') {
-              showWebNotification('Inspection declined', { body: `${r.projectName}` });
-            }
-          }
-        }
-        prevStatusRef.current = Object.fromEntries(arr.map(x => [x.id, x.status]));
+        
+        // Merge Firestore data with localStorage data (Firestore takes precedence if both exist)
+        const localRequests = loadRequestsFromLocalStorage();
+        const merged = [...arr, ...localRequests.filter(lr => !arr.find(fr => fr.id === lr.id))];
+        updateRequests(merged);
       });
-      return () => unsub();
     } catch (e) {
-      console.warn('Buyer realtime subscription failed', e);
+      console.warn('Buyer realtime subscription failed, using localStorage only:', e);
     }
+
+    // Listen for viewing updates from other components
+    const handleViewingsUpdate = () => {
+      const updatedRequests = loadRequestsFromLocalStorage();
+      updateRequests(updatedRequests);
+    };
+
+    window.addEventListener('viewingsUpdated', handleViewingsUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'viewingRequests') {
+        handleViewingsUpdate();
+      }
+    });
+
+    return () => {
+      if (firestoreUnsub) firestoreUnsub();
+      window.removeEventListener('viewingsUpdated', handleViewingsUpdate);
+    };
   }, [user?.id]);
 
   const acceptProposal = async (r) => {
@@ -118,6 +202,17 @@ const BuyerInspectionRequests = () => {
   const declineProposal = async (r) => {
     const ok = await updateInspectionRequest(r.id, { status: 'declined' });
     if (ok) toast.success('Proposal declined'); else toast.error('Failed to decline');
+  };
+
+  const handleViewProperty = (request) => {
+    // Try to get propertyId from the request
+    const propertyId = request.propertyId || request.projectId;
+    
+    if (propertyId) {
+      navigate(`/property/${propertyId}`);
+    } else {
+      toast.error('Property information not available');
+    }
   };
 
   return (
@@ -150,12 +245,22 @@ const BuyerInspectionRequests = () => {
                   r.status === 'pending_vendor' ? 'bg-yellow-100 text-yellow-800' :
                   r.status === 'accepted' ? 'bg-green-100 text-green-800' :
                   r.status === 'proposed_new_time' ? 'bg-blue-100 text-blue-800' :
+                  r.status === 'pending_vendor_confirmation' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
                   {r.status?.replaceAll('_',' ') || 'pending'}
                 </span>
               </div>
-              <div className="w-2/5 flex flex-wrap gap-2">
+              <div className="w-2/5 flex flex-wrap gap-2 items-center">
+                {/* View Property Icon */}
+                <button
+                  onClick={() => handleViewProperty(r)}
+                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                  title="View Property Details"
+                >
+                  <FaEye className="w-5 h-5" />
+                </button>
+                
                 {r.status === 'proposed_new_time' && (
                   <>
                     <button onClick={() => acceptProposal(r)} className="px-3 py-1 bg-green-600 text-white rounded">Accept Proposal</button>

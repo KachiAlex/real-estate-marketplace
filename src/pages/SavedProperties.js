@@ -27,10 +27,15 @@ const SavedProperties = () => {
       const key = `favorites_${user.id}`;
       const savedFavoriteIds = JSON.parse(localStorage.getItem(key) || '[]');
       
+      // Also check for stored property metadata (for mock data or properties not in current list)
+      const savedPropertiesMetadataKey = `favorites_metadata_${user.id}`;
+      const savedPropertiesMetadata = JSON.parse(localStorage.getItem(savedPropertiesMetadataKey) || '{}');
+      
       console.log('SavedProperties: Loading saved properties', {
         savedFavoriteIds,
         savedFavoriteIdsCount: savedFavoriteIds.length,
         propertiesAvailable: properties.length,
+        savedMetadataCount: Object.keys(savedPropertiesMetadata).length,
         propertyIdsSample: properties.slice(0, 3).map(p => p.id || p.propertyId || p._id)
       });
       
@@ -40,61 +45,75 @@ const SavedProperties = () => {
         return;
       }
 
+      // Helper function to transform property to SavedProperties format
+      const transformProperty = (property, favoriteId) => {
+        return {
+          id: String(property.id || property.propertyId || property._id || favoriteId),
+          title: property.title || 'Untitled Property',
+          location: typeof property.location === 'string' 
+            ? property.location 
+            : property.location?.address 
+              ? `${property.location.address}${property.location.city ? ', ' + property.location.city : ''}${property.location.state ? ', ' + property.location.state : ''}`.replace(/^, |, $/g, '').trim()
+              : property.city && property.state 
+                ? `${property.city}, ${property.state}`
+                : property.city || property.state || property.address || 'Location not specified',
+          price: property.price || 0,
+          bedrooms: property.bedrooms || property.details?.bedrooms || 0,
+          bathrooms: property.bathrooms || property.details?.bathrooms || 0,
+          area: property.area || property.details?.sqft || property.sqft || 0,
+          image: property.image || property.images?.[0]?.url || property.images?.[0] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+          dateAdded: property.dateAdded || property.createdAt || new Date().toISOString().split('T')[0],
+          status: property.status || property.listingType || property.statusSlug || 'available',
+          type: property.type || property.typeSlug || 'sale',
+          agent: property.agent || property.owner || {
+            name: property.vendorName || 'Property Agent',
+            phone: property.vendorPhone || property.contactPhone || '+234-XXX-XXXX',
+            email: property.vendorEmail || property.contactEmail || 'agent@example.com'
+          }
+        };
+      };
+
       // Match saved IDs with actual properties
       const matchedProperties = savedFavoriteIds
         .map(favoriteId => {
-          // Try to find property by different ID formats (more comprehensive matching)
+          // Normalize favoriteId to string for consistent comparison
+          const favoriteIdStr = String(favoriteId);
+          
+          // First, try to find property in current properties list
           const property = properties.find(p => {
             const propId = p.id || p.propertyId || p._id;
-            const propIdStr = propId?.toString();
-            const favoriteIdStr = favoriteId?.toString();
+            const propIdStr = String(propId || '');
             
+            // Compare as strings for consistent matching
             const matches = (
-              propId === favoriteId ||
               propIdStr === favoriteIdStr ||
-              propIdStr === favoriteId ||
-              propId === favoriteIdStr ||
-              // Handle MongoDB ObjectId format
-              (propId && favoriteId && propId.toString() === favoriteId.toString())
+              propId === favoriteId ||
+              String(propId) === String(favoriteId)
             );
             
             return matches;
           });
           
           if (property) {
-            // Transform property to match SavedProperties format
-            return {
-              id: property.id || property.propertyId || property._id || favoriteId,
-              title: property.title || 'Untitled Property',
-              location: typeof property.location === 'string' 
-                ? property.location 
-                : property.location?.address 
-                  ? `${property.location.address}${property.location.city ? ', ' + property.location.city : ''}${property.location.state ? ', ' + property.location.state : ''}`.replace(/^, |, $/g, '').trim()
-                  : property.city && property.state 
-                    ? `${property.city}, ${property.state}`
-                    : property.city || property.state || property.address || 'Location not specified',
-              price: property.price || 0,
-              bedrooms: property.bedrooms || property.details?.bedrooms || 0,
-              bathrooms: property.bathrooms || property.details?.bathrooms || 0,
-              area: property.area || property.details?.sqft || property.sqft || 0,
-              image: property.image || property.images?.[0]?.url || property.images?.[0] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
-              dateAdded: property.dateAdded || property.createdAt || new Date().toISOString().split('T')[0],
-              status: property.status || property.listingType || 'available',
-              type: property.type || 'sale',
-              agent: property.agent || property.owner || {
-                name: property.vendorName || 'Property Agent',
-                phone: property.vendorPhone || property.contactPhone || '+234-XXX-XXXX',
-                email: property.vendorEmail || property.contactEmail || 'agent@example.com'
-              }
-            };
+            // Found in current properties list
+            return transformProperty(property, favoriteId);
           }
           
-          // If property not found, log for debugging
-          console.warn('SavedProperties: Property not found in properties list', {
+          // If not found, check saved metadata (for mock data or properties not currently loaded)
+          const savedMetadata = savedPropertiesMetadata[favoriteIdStr];
+          if (savedMetadata) {
+            console.log('SavedProperties: Using saved metadata for property', favoriteIdStr);
+            return transformProperty(savedMetadata, favoriteId);
+          }
+          
+          // If property not found anywhere, log for debugging
+          console.warn('SavedProperties: Property not found in properties list or metadata', {
             favoriteId,
+            favoriteIdStr,
             favoriteIdType: typeof favoriteId,
             availablePropertyIds: properties.map(p => ({
               id: p.id || p.propertyId || p._id,
+              idStr: String(p.id || p.propertyId || p._id),
               type: typeof (p.id || p.propertyId || p._id)
             })).slice(0, 5)
           });
@@ -145,8 +164,11 @@ const SavedProperties = () => {
 
   // Listen for storage changes (when properties are saved/removed from other tabs/pages)
   useEffect(() => {
+    if (!user) return;
+
     const handleStorageChange = (e) => {
-      if (e.key === `favorites_${user?.id}`) {
+      if (e.key === `favorites_${user.id}`) {
+        console.log('SavedProperties: Storage change detected, reloading...');
         loadSavedProperties();
       }
     };
@@ -154,8 +176,12 @@ const SavedProperties = () => {
     window.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom events (for same-tab updates)
-    const handleFavoriteChange = () => {
-      loadSavedProperties();
+    const handleFavoriteChange = (event) => {
+      console.log('SavedProperties: Favorites updated event received', event.detail);
+      // Small delay to ensure localStorage is updated
+      setTimeout(() => {
+        loadSavedProperties();
+      }, 100);
     };
     
     window.addEventListener('favoritesUpdated', handleFavoriteChange);
@@ -174,27 +200,22 @@ const SavedProperties = () => {
     }
 
     try {
+      // Normalize propertyId to string
+      const propertyIdStr = String(propertyId);
+      
       // Remove from localStorage using toggleFavorite
-      const result = await toggleFavorite(propertyId);
+      const result = await toggleFavorite(propertyIdStr);
       
       if (result && result.success) {
         // Reload saved properties to reflect the change
-        loadSavedProperties();
+        setTimeout(() => {
+          loadSavedProperties();
+        }, 100);
         
         // Dispatch custom event to notify Dashboard and other components
         window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
-          detail: { propertyId, favorited: false } 
+          detail: { propertyId: propertyIdStr, favorited: false } 
         }));
-        
-        // Also trigger storage event simulation for same-tab updates
-        const key = `favorites_${user.id}`;
-        const event = new StorageEvent('storage', {
-          key: key,
-          newValue: localStorage.getItem(key),
-          oldValue: null,
-          storageArea: localStorage
-        });
-        window.dispatchEvent(event);
         
         toast.success('Property removed from saved list');
       } else {
@@ -263,6 +284,77 @@ const SavedProperties = () => {
     }, 2000);
   };
 
+  const createInquiry = (property, inquiryType, message = '') => {
+    if (!user || !property) return;
+
+    // Check if inquiry already exists for this property and user
+    const existingInquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+    const existingInquiry = existingInquiries.find(
+      inq => inq.propertyId === property.id && 
+             (inq.userId === user.id || inq.buyerId === user.id) &&
+             (inq.status === 'new' || inq.status === 'pending' || inq.status === 'contacted')
+    );
+
+    // If inquiry already exists, don't create duplicate
+    if (existingInquiry) {
+      return existingInquiry;
+    }
+
+    // Get property location
+    const propertyLocation = typeof property.location === 'string' 
+      ? property.location 
+      : property.location?.address || property.location?.city || property.address || property.city || 'Location not specified';
+
+    // Create new inquiry
+    const inquiry = {
+      id: `inquiry-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: propertyLocation,
+      propertyPrice: property.price || 0,
+      propertyImage: property.images?.[0]?.url || property.image || property.images?.[0] || '',
+      propertyBedrooms: property.bedrooms || property.details?.bedrooms || 0,
+      propertyBathrooms: property.bathrooms || property.details?.bathrooms || 0,
+      propertyArea: property.area || property.details?.sqft || 0,
+      userId: user.id,
+      buyerId: user.id,
+      buyerName: `${user.firstName} ${user.lastName}`,
+      buyerEmail: user.email,
+      buyerPhone: user.phone || '',
+      vendorId: property.vendorId || property.owner?.id || property.vendor?.id || '',
+      vendorName: property.owner?.firstName 
+        ? `${property.owner.firstName} ${property.owner.lastName || ''}`.trim()
+        : property.vendor?.firstName 
+        ? `${property.vendor.firstName} ${property.vendor.lastName || ''}`.trim()
+        : property.agent?.name || 'Property Vendor',
+      vendorEmail: property.owner?.email || property.vendor?.email || property.vendorEmail || property.agent?.email || '',
+      vendorPhone: property.owner?.phone || property.vendorPhone || property.contactPhone || property.vendor?.phone || property.agent?.phone || '',
+      inquiryType: inquiryType, // 'call' or 'message'
+      message: message || `I'm interested in ${property.title}. Please contact me.`,
+      status: 'new',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      responses: []
+    };
+
+    // Save to localStorage
+    existingInquiries.push(inquiry);
+    localStorage.setItem('inquiries', JSON.stringify(existingInquiries));
+
+    // Dispatch event to notify dashboard
+    window.dispatchEvent(new CustomEvent('inquiriesUpdated', {
+      detail: { inquiry, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'inquiries',
+      newValue: JSON.stringify(existingInquiries)
+    }));
+
+    return inquiry;
+  };
+
   const handleContactAgent = (property) => {
     console.log('Contact Agent clicked, property:', property, 'user:', user);
     
@@ -271,6 +363,9 @@ const SavedProperties = () => {
       navigate('/login');
       return;
     }
+    
+    // Create inquiry
+    createInquiry(property, 'call', `I'm interested in ${property.title}. Please contact me via phone call.`);
     
     // Get agent's phone number
     const agentPhone = property?.agent?.phone || property?.owner?.phone || property?.vendorPhone || property?.contactPhone;
@@ -283,10 +378,7 @@ const SavedProperties = () => {
     // Initiate phone call
     window.location.href = `tel:${agentPhone}`;
     
-    // In a real app, this would open a contact form or messaging system
-    setTimeout(() => {
-      toast.info(`Agent contact information sent to your email. You can also call ${property.agent?.phone || '+234-XXX-XXXX'} for immediate assistance.`);
-    }, 2000);
+    toast.success('Inquiry saved to My Inquiries.');
   };
 
   const handleSortChange = (e) => {
@@ -542,7 +634,7 @@ const SavedProperties = () => {
                 className="block property-card-content cursor-pointer"
               >
                 <div className="property-price">
-                  ₦{property.price.toLocaleString()}
+                  ₦{(property.price || 0).toLocaleString()}
                   {property.type === 'rent' && <span className="text-sm text-gray-500">/month</span>}
                 </div>
                 <h3 className="property-title">{property.title}</h3>
@@ -584,7 +676,7 @@ const SavedProperties = () => {
                         className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - ₦{property.price.toLocaleString()}
+                        Buy Property - ₦{(property.price || 0).toLocaleString()}
                       </button>
                     )}
                     
@@ -597,7 +689,7 @@ const SavedProperties = () => {
                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Rent Property - ₦{property.price.toLocaleString()}/month
+                        Rent Property - ₦{(property.price || 0).toLocaleString()}/month
                       </button>
                     )}
                     

@@ -51,34 +51,96 @@ const EscrowTransaction = () => {
   const loadTransactionDetails = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       const transactionData = await getEscrowTransaction(id);
+      
+      if (!transactionData) {
+        setError('Escrow transaction not found');
+        setLoading(false);
+        return;
+      }
+      
       setTransaction(transactionData);
 
-      // Load investment details
-      if (transactionData.investmentId) {
-        const investmentData = await getInvestmentById(transactionData.investmentId);
-        setInvestment(investmentData);
+      // Load investment details if this is an investment transaction
+      if (transactionData.investmentId || transactionData.type === 'investment') {
+        const investmentId = transactionData.investmentId || id;
+        try {
+          const investmentData = await getInvestmentById(investmentId);
+          if (investmentData) {
+            setInvestment(investmentData);
+          }
+        } catch (err) {
+          console.warn('Error loading investment:', err);
+          // Continue even if investment loading fails
+        }
       }
 
-      // Load vendor details
-      if (transactionData.vendorId) {
-        const vendorRef = doc(db, 'users', transactionData.vendorId);
-        const vendorDoc = await getDoc(vendorRef);
-        if (vendorDoc.exists()) {
-          setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
+      // Load vendor/seller details
+      const vendorId = transactionData.vendorId || transactionData.sellerId;
+      if (vendorId) {
+        try {
+          const vendorRef = doc(db, 'users', vendorId);
+          const vendorDoc = await getDoc(vendorRef);
+          if (vendorDoc.exists()) {
+            setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
+          } else if (transactionData.sellerName) {
+            // Use transaction data if Firestore doc doesn't exist
+            setVendor({
+              id: vendorId,
+              firstName: transactionData.sellerName?.split(' ')[0] || '',
+              lastName: transactionData.sellerName?.split(' ').slice(1).join(' ') || '',
+              email: transactionData.sellerEmail || ''
+            });
+          }
+        } catch (err) {
+          console.warn('Error loading vendor:', err);
+          // Use transaction data as fallback
+          if (transactionData.sellerName) {
+            setVendor({
+              id: vendorId,
+              firstName: transactionData.sellerName?.split(' ')[0] || '',
+              lastName: transactionData.sellerName?.split(' ').slice(1).join(' ') || '',
+              email: transactionData.sellerEmail || ''
+            });
+          }
         }
       }
 
       // Load buyer details
-      if (transactionData.buyerId) {
-        const buyerRef = doc(db, 'users', transactionData.buyerId);
-        const buyerDoc = await getDoc(buyerRef);
-        if (buyerDoc.exists()) {
-          setBuyer({ id: buyerDoc.id, ...buyerDoc.data() });
+      const buyerId = transactionData.buyerId;
+      if (buyerId) {
+        try {
+          const buyerRef = doc(db, 'users', buyerId);
+          const buyerDoc = await getDoc(buyerRef);
+          if (buyerDoc.exists()) {
+            setBuyer({ id: buyerDoc.id, ...buyerDoc.data() });
+          } else if (transactionData.buyerName) {
+            // Use transaction data if Firestore doc doesn't exist
+            setBuyer({
+              id: buyerId,
+              firstName: transactionData.buyerName?.split(' ')[0] || '',
+              lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
+              email: transactionData.buyerEmail || ''
+            });
+          }
+        } catch (err) {
+          console.warn('Error loading buyer:', err);
+          // Use transaction data as fallback
+          if (transactionData.buyerName) {
+            setBuyer({
+              id: buyerId,
+              firstName: transactionData.buyerName?.split(' ')[0] || '',
+              lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
+              email: transactionData.buyerEmail || ''
+            });
+          }
         }
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Error loading transaction details:', err);
+      setError(err.message || 'Failed to load transaction details');
     } finally {
       setLoading(false);
     }

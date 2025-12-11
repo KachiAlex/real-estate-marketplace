@@ -76,6 +76,17 @@ const MyInquiries = () => {
     existingRequests.push(viewingRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
     
+    // Dispatch event to notify Dashboard and other components
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { viewingRequest, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(existingRequests)
+    }));
+    
     toast.success(`Viewing request sent for "${selectedProperty.title}"! The vendor will confirm or suggest an alternative time.`);
     
     // Reset modal
@@ -86,145 +97,84 @@ const MyInquiries = () => {
     setViewingMessage('');
   };
 
-  // Mock inquiries data
+  // Load inquiries from localStorage
   useEffect(() => {
-    const mockInquiries = [
-      {
-        id: 1,
-        property: {
-          id: 1,
-          title: "Luxury 4-Bedroom Villa in Victoria Island",
-          location: "Victoria Island, Lagos",
-          price: 250000000,
-          bedrooms: 4,
-          bathrooms: 5,
-          area: 450,
-          image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=300&fit=crop"
-        },
-        message: "I'm interested in viewing this property. Could you please provide more details about the amenities and schedule a viewing?",
-        status: "pending",
-        date: "2024-01-15T10:30:00Z",
-        agent: {
-          name: "Sarah Johnson",
-          phone: "+234 801 234 5678",
-          email: "sarah@propertyark.com",
-          avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face"
-        },
-        responses: [
-          {
-            id: 1,
-            message: "Thank you for your interest! I'd be happy to show you this beautiful villa. The property includes a private pool, gym, and 24/7 security. I'm available for viewings this weekend. Would Saturday 2 PM work for you?",
-            date: "2024-01-15T14:20:00Z",
-            from: "agent"
-          }
-        ]
-      },
-      {
-        id: 2,
-        property: {
-          id: 2,
-          title: "Modern 3-Bedroom Apartment in Ikoyi",
-          location: "Ikoyi, Lagos",
-          price: 180000000,
-          bedrooms: 3,
-          bathrooms: 3,
-          area: 320,
-          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&h=300&fit=crop"
-        },
-        message: "What are the maintenance fees and what's included in the building amenities?",
-        status: "responded",
-        date: "2024-01-12T09:15:00Z",
-        agent: {
-          name: "Michael Adebayo",
-          phone: "+234 802 345 6789",
-          email: "michael@propertyark.com",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
-        },
-        responses: [
-          {
-            id: 1,
-            message: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
-            date: "2024-01-12T11:45:00Z",
-            from: "agent"
-          },
-          {
-            id: 2,
-            message: "Thank you for the information. I'm also interested in the parking situation - how many parking spaces are allocated per unit?",
-            date: "2024-01-12T15:30:00Z",
-            from: "user"
-          },
-          {
-            id: 3,
-            message: "Each unit comes with 2 covered parking spaces. There's also additional visitor parking available.",
-            date: "2024-01-12T16:10:00Z",
-            from: "agent"
-          }
-        ]
-      },
-      {
-        id: 3,
-        property: {
-          id: 3,
-          title: "Elegant 2-Bedroom Penthouse in Lekki",
-          location: "Lekki Phase 1, Lagos",
-          price: 120000000,
-          bedrooms: 2,
-          bathrooms: 2,
-          area: 280,
-          image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&h=300&fit=crop"
-        },
-        message: "Is this property still available? I'm looking to make an offer.",
-        status: "closed",
-        date: "2024-01-08T16:45:00Z",
-        agent: {
-          name: "Grace Okafor",
-          phone: "+234 803 456 7890",
-          email: "grace@propertyark.com",
-          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
-        },
-        responses: [
-          {
-            id: 1,
-            message: "I'm sorry, but this property was sold yesterday. However, I have a similar penthouse in the same building that just became available. Would you like me to send you the details?",
-            date: "2024-01-08T17:20:00Z",
-            from: "agent"
-          }
-        ]
-      },
-      {
-        id: 4,
-        property: {
-          id: 4,
-          title: "Spacious 5-Bedroom Duplex in Abuja",
-          location: "Asokoro, Abuja",
-          price: 320000000,
-          bedrooms: 5,
-          bathrooms: 6,
-          area: 580,
-          image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=500&h=300&fit=crop"
-        },
-        message: "I'm interested in this property for investment purposes. What's the rental yield potential in this area?",
-        status: "pending",
-        date: "2024-01-05T13:20:00Z",
-        agent: {
-          name: "David Okonkwo",
-          phone: "+234 804 567 8901",
-          email: "david@propertyark.com",
-          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-        },
-        responses: []
-      }
-    ];
-
-    setTimeout(() => {
-      setInquiries(mockInquiries);
+    if (!user) {
       setLoading(false);
-    }, 1000);
-  }, []);
+      return;
+    }
+
+    const loadInquiries = () => {
+      try {
+        const allInquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+        // Filter inquiries for current user
+        const userInquiries = allInquiries.filter(
+          inq => inq.userId === user.id || inq.buyerId === user.id
+        );
+
+        // Transform inquiries to match the expected format
+        const transformedInquiries = userInquiries.map(inq => ({
+          id: inq.id,
+          property: {
+            id: inq.propertyId,
+            title: inq.propertyTitle,
+            location: inq.propertyLocation,
+            price: inq.propertyPrice,
+            bedrooms: inq.propertyBedrooms,
+            bathrooms: inq.propertyBathrooms,
+            area: inq.propertyArea,
+            image: inq.propertyImage || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=300&fit=crop'
+          },
+          message: inq.message,
+          status: inq.status === 'new' || inq.status === 'contacted' ? 'pending' : 
+                  inq.status === 'responded' ? 'responded' : 
+                  inq.status === 'closed' ? 'closed' : 'pending',
+          date: inq.createdAt || inq.date,
+          agent: {
+            name: inq.vendorName || 'Property Vendor',
+            phone: inq.vendorPhone || '+234-XXX-XXXX',
+            email: inq.vendorEmail || '',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inq.vendorName || 'Vendor')}&background=random`
+          },
+          responses: inq.responses || []
+        }));
+
+        // Sort by date (newest first)
+        transformedInquiries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        setInquiries(transformedInquiries);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading inquiries:', error);
+        setInquiries([]);
+        setLoading(false);
+      }
+    };
+
+    loadInquiries();
+
+    // Listen for inquiries updates
+    const handleInquiriesUpdate = () => {
+      loadInquiries();
+    };
+
+    window.addEventListener('inquiriesUpdated', handleInquiriesUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'inquiries') {
+        loadInquiries();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('inquiriesUpdated', handleInquiriesUpdate);
+    };
+  }, [user]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'pending':
+      case 'new':
+      case 'contacted': return 'bg-yellow-100 text-yellow-800';
       case 'responded': return 'bg-blue-100 text-blue-800';
       case 'closed': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -242,7 +192,9 @@ const MyInquiries = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'pending': return 'Awaiting Response';
+      case 'pending':
+      case 'new':
+      case 'contacted': return 'Awaiting Response';
       case 'responded': return 'Responded';
       case 'closed': return 'Closed';
       default: return 'Unknown';
@@ -252,7 +204,13 @@ const MyInquiries = () => {
   const filteredAndSortedInquiries = inquiries
     .filter(inquiry => {
       if (filterBy === 'all') return true;
-      return inquiry.status === filterBy;
+      // Map statuses for filtering
+      const statusMap = {
+        'pending': ['pending', 'new', 'contacted'],
+        'responded': ['responded'],
+        'closed': ['closed']
+      };
+      return statusMap[filterBy]?.includes(inquiry.status) || inquiry.status === filterBy;
     })
     .sort((a, b) => {
       if (sortBy === 'date') {
@@ -452,7 +410,7 @@ const MyInquiries = () => {
                     </div>
                     <div className="mt-2">
                       <span className="text-xl font-bold text-gray-900">
-                        ₦{inquiry.property.price.toLocaleString()}
+                        ₦{(inquiry.property?.price || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -496,7 +454,7 @@ const MyInquiries = () => {
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - ₦{inquiry.property.price.toLocaleString()}
+                        Buy Property - ₦{(inquiry.property?.price || 0).toLocaleString()}
                       </button>
                       <button 
                         onClick={() => handleScheduleViewing(inquiry.property)}

@@ -147,10 +147,134 @@ router.post(
         data: application
       });
     } catch (error) {
-      console.error('Error creating mortgage application:', error);
+      errorLogger(error, req, { context: 'Mortgage application creation' });
       return res.status(500).json({
         success: false,
-        message: 'Server error creating mortgage application'
+        message: 'Server error while creating mortgage application',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+);
+
+// @desc    Submit pre-qualification request
+// @route   POST /api/mortgages/prequalify
+// @access  Private (buyer)
+router.post(
+  '/prequalify',
+  protect,
+  [
+    body('mortgageBankId').notEmpty().withMessage('Mortgage bank is required'),
+    body('employmentDetails').isObject().withMessage('Employment details are required')
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array()
+        });
+      }
+
+      const {
+        mortgageBankId,
+        employmentDetails,
+        documents
+      } = req.body;
+
+      // Validate bank exists
+      const bank = await MortgageBank.findById(mortgageBankId);
+      if (!bank || !bank.isActive || bank.verificationStatus !== 'approved') {
+        return res.status(400).json({ success: false, message: 'Selected mortgage bank is not available' });
+      }
+
+      // Store prequalification request (we can create a separate model or use MortgageApplication with a flag)
+      // For now, we'll create a MortgageApplication without a property
+      const monthlyIncome = employmentDetails.monthlyIncome || employmentDetails.businessMonthlyIncome || 0;
+      
+      // Estimate pre-qualification amount (typically 3-5x annual income)
+      const annualIncome = monthlyIncome * 12;
+      const estimatedMaxLoan = Math.round(annualIncome * 4); // 4x annual income as a conservative estimate
+      const estimatedDownPayment = Math.round(estimatedMaxLoan * 0.2); // 20% down payment
+      const estimatedPropertyValue = estimatedMaxLoan + estimatedDownPayment;
+
+      // Create a prequalification record (we'll use MortgageApplication with a special status)
+      const prequalification = await MortgageApplication.create({
+        buyer: req.user.id,
+        mortgageBank: bank._id,
+        status: 'prequalification_requested',
+        requestedAmount: estimatedMaxLoan,
+        downPayment: estimatedDownPayment,
+        loanTermYears: 25, // Default term
+        interestRate: 18.5, // Default rate, will be adjusted by bank
+        estimatedMonthlyPayment: Math.round((estimatedMaxLoan * 0.185) / 12), // Rough estimate
+        employmentDetails,
+        documents: documents || [],
+        notes: 'Pre-qualification request - no property selected yet'
+      });
+
+      // Populate for email
+      const populatedPrequal = await MortgageApplication.findById(prequalification._id)
+        .populate('buyer', 'firstName lastName email');
+
+      // Send email notification to bank
+      try {
+        if (bank.userAccount) {
+          const bankUser = await User.findById(bank.userAccount).select('firstName lastName email');
+          if (bankUser && bankUser.email) {
+            // Send prequalification notification email
+            await emailService.sendEmail(
+              bankUser.email,
+              'New Mortgage Pre-qualification Request',
+              `
+                <h2>New Pre-qualification Request</h2>
+                <p>A new mortgage pre-qualification request has been submitted.</p>
+                <h3>Buyer Information:</h3>
+                <p><strong>Name:</strong> ${populatedPrequal.buyer.firstName} ${populatedPrequal.buyer.lastName}</p>
+                <p><strong>Email:</strong> ${populatedPrequal.buyer.email}</p>
+                <h3>Employment Details:</h3>
+                <p><strong>Type:</strong> ${employmentDetails.type}</p>
+                ${employmentDetails.type === 'employed' ? `
+                  <p><strong>Employer:</strong> ${employmentDetails.employerName || 'N/A'}</p>
+                  <p><strong>Job Title:</strong> ${employmentDetails.jobTitle || 'N/A'}</p>
+                  <p><strong>Years of Employment:</strong> ${employmentDetails.yearsOfEmployment || 'N/A'}</p>
+                ` : `
+                  <p><strong>Business Name:</strong> ${employmentDetails.businessName || 'N/A'}</p>
+                  <p><strong>Business Type:</strong> ${employmentDetails.businessType || 'N/A'}</p>
+                `}
+                <p><strong>Monthly Income:</strong> ₦${monthlyIncome.toLocaleString()}</p>
+                <h3>Estimated Qualification:</h3>
+                <p><strong>Estimated Max Loan:</strong> ₦${estimatedMaxLoan.toLocaleString()}</p>
+                <p><strong>Estimated Property Value:</strong> ₦${estimatedPropertyValue.toLocaleString()}</p>
+                <p>Please review this pre-qualification request and contact the buyer within 24 hours.</p>
+              `,
+              `New Pre-qualification Request from ${populatedPrequal.buyer.firstName} ${populatedPrequal.buyer.lastName}`
+            ).catch(err => {
+              errorLogger(err, null, { context: 'Prequalification email to bank', prequalId: prequalification._id });
+            });
+          }
+        }
+      } catch (emailError) {
+        errorLogger(emailError, null, { context: 'Prequalification email notification', prequalId: prequalification._id });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Pre-qualification request submitted successfully. You will be contacted within 24 hours.',
+        data: {
+          prequalificationId: prequalification._id,
+          estimatedMaxLoan,
+          estimatedPropertyValue,
+          estimatedDownPayment
+        }
+      });
+    } catch (error) {
+      errorLogger(error, req, { context: 'Mortgage prequalification creation' });
+      return res.status(500).json({
+        success: false,
+        message: 'Server error while creating pre-qualification request',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }

@@ -142,12 +142,13 @@ app.use((req, res, next) => {
       res.header('Access-Control-Allow-Credentials', 'true');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+      res.header('Access-Control-Max-Age', '600');
     }
   }
   
-  // Handle preflight requests
+  // Handle preflight requests - must set headers before sending response
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.status(200).end();
   }
   
   next();

@@ -273,10 +273,39 @@ export const InvestmentProvider = ({ children }) => {
     // Load mock data immediately
     setInvestments(mockInvestmentOpportunities);
     if (user) {
-      setUserInvestments(mockUserInvestments.filter(inv => inv.userId === user.id));
+      // Load user investments from localStorage first, then fallback to mock data
+      const storageKey = `userInvestments_${user.id}`;
+      const storedInvestments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      
+      if (storedInvestments.length > 0) {
+        setUserInvestments(storedInvestments);
+      } else {
+        // Use mock data filtered by user ID
+        const mockUserData = mockUserInvestments.filter(inv => inv.userId === user.id);
+        setUserInvestments(mockUserData);
+        // Save to localStorage for persistence
+        if (mockUserData.length > 0) {
+          localStorage.setItem(storageKey, JSON.stringify(mockUserData));
+        }
+      }
+      
       setIsInvestmentCompany(user.role === 'investment_company');
+    } else {
+      setUserInvestments([]);
     }
   }, [user]);
+
+  // Persist userInvestments to localStorage whenever they change
+  useEffect(() => {
+    if (user && userInvestments.length >= 0) {
+      const storageKey = `userInvestments_${user.id}`;
+      localStorage.setItem(storageKey, JSON.stringify(userInvestments));
+      // Dispatch event to notify dashboard and other components
+      window.dispatchEvent(new CustomEvent('investmentsUpdated', {
+        detail: { userId: user.id, investments: userInvestments }
+      }));
+    }
+  }, [user, userInvestments]);
 
   const investInOpportunity = async (investmentId, amount) => {
     try {
@@ -312,7 +341,14 @@ export const InvestmentProvider = ({ children }) => {
       };
 
       // Update local state
-      setUserInvestments(prev => [...prev, newInvestment]);
+      const updatedInvestments = [...userInvestments, newInvestment];
+      setUserInvestments(updatedInvestments);
+      
+      // Persist to localStorage
+      if (user) {
+        const storageKey = `userInvestments_${user.id}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedInvestments));
+      }
       
       // Update investment raised amount
       setInvestments(prev => prev.map(inv => 
@@ -320,6 +356,11 @@ export const InvestmentProvider = ({ children }) => {
           ? { ...inv, raisedAmount: inv.raisedAmount + parseInt(amount), investors: inv.investors + 1 }
           : inv
       ));
+
+      // Dispatch event to notify dashboard
+      window.dispatchEvent(new CustomEvent('investmentsUpdated', {
+        detail: { userId: user.id, investments: updatedInvestments }
+      }));
 
       toast.success('Investment successful!');
       return { success: true, data: newInvestment };
@@ -339,16 +380,16 @@ export const InvestmentProvider = ({ children }) => {
   };
 
   const getUserInvestmentSummary = () => {
-    const totalInvested = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-    const totalDividends = userInvestments.reduce((sum, inv) => sum + inv.totalDividendsEarned, 0);
+    const totalInvested = userInvestments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const totalDividends = userInvestments.reduce((sum, inv) => sum + (inv.totalDividendsEarned || 0), 0);
     const averageReturn = userInvestments.length > 0 
-      ? userInvestments.reduce((sum, inv) => sum + inv.totalReturn, 0) / userInvestments.length 
+      ? userInvestments.reduce((sum, inv) => sum + (inv.totalReturn || 0), 0) / userInvestments.length 
       : 0;
 
     return {
-      totalInvested,
-      totalDividends,
-      averageReturn,
+      totalInvested: totalInvested || 0,
+      totalDividends: totalDividends || 0,
+      averageReturn: averageReturn || 0,
       activeInvestments: userInvestments.filter(inv => inv.status === 'active').length,
       totalInvestments: userInvestments.length
     };

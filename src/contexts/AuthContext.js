@@ -492,7 +492,11 @@ export const AuthProvider = ({ children }) => {
                   }
                 }
               } catch (firestoreError) {
-                console.error('Error loading from Firestore:', firestoreError);
+                // Firestore errors (e.g., permission denied) are expected for unauthenticated users
+                // Only log in development mode to reduce console noise
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Error loading from Firestore:', firestoreError.message);
+                }
                 // Continue with localStorage data if Firestore fails
               }
             }
@@ -569,119 +573,267 @@ export const AuthProvider = ({ children }) => {
       let userWithoutPassword = null;
       let backendUser = null;
       
-      // Step 1: Try backend API first (for real users registered via API)
+      // Step 1: Try Firebase Auth first (single attempt, reuse result)
+      let firebaseUid = null;
+      let firebaseToken = null;
+      let firebaseCredential = null;
+      let firebaseError = null; // Store Firebase error for later use
+      
       try {
-        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
-        const response = await fetch(`${apiBaseUrl}/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // Backend authentication successful
-          backendUser = {
-            id: data.user.id,
-            firstName: data.user.firstName,
-            lastName: data.user.lastName,
-            email: data.user.email,
-            role: data.user.role || 'user',
-            roles: [data.user.role || 'user'],
-            avatar: data.user.avatar,
-            token: data.token
-          };
-          
-          // Store token for API calls
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-          }
-          
-          console.log('AuthContext: Backend API login successful for user:', backendUser.email);
-          userWithoutPassword = backendUser;
-        } else {
-          // Backend returned error, try mock users as fallback
-          console.log('AuthContext: Backend API login failed, trying mock users...');
+        // Validate inputs before attempting Firebase Auth
+        if (!email || !email.trim()) {
+          throw new Error('Email is required');
         }
-      } catch (apiError) {
-        // API call failed (network error, etc.), try mock users as fallback
-        console.warn('AuthContext: Backend API error, falling back to mock users:', apiError.message);
+        if (!password || !password.trim()) {
+          throw new Error('Password is required');
+        }
+        
+        // Basic email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          throw new Error('Please enter a valid email address');
+        }
+        
+        // Note: For mock users, Firebase Auth will return 400/invalid-credential
+        // This is expected and we'll fall back to mock users
+        console.log('AuthContext: Attempting Firebase Auth sign-in with email:', email.trim());
+        firebaseCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        firebaseUid = firebaseCredential.user.uid;
+        firebaseToken = await firebaseCredential.user.getIdToken();
+        console.log('AuthContext: Firebase Auth sign-in successful, uid:', firebaseUid);
+      } catch (error) {
+        firebaseError = error; // Store error in outer scope
+        const errorCode = firebaseError.code || '';
+        const errorMessage = firebaseError.message || 'Authentication failed';
+        
+        // Handle specific Firebase authentication errors
+        // Only throw errors that definitively indicate authentication failure
+        // For ambiguous errors, allow fallback to backend API and mock users
+        
+        if (errorCode === 'auth/user-not-found' || errorCode === 'auth/invalid-credential') {
+          // Firebase uses 'auth/invalid-credential' for both "user not found" and "wrong password"
+          // This is by design for security. We'll try fallback methods first.
+          // Suppress console error - this is expected behavior for mock users
+          console.log('AuthContext: Firebase user not found or invalid credentials - trying backend API and mock users as fallback');
+          // Don't throw - allow fallback to backend API and mock users
+          // Store this error to show if all fallbacks fail
+          firebaseError._shouldShowError = true;
+          firebaseError._errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (errorCode === 'auth/invalid-email') {
+          // Invalid email format - this should throw immediately as it's a format issue
+          throw new Error('Invalid email address format. Please enter a valid email.');
+        } else if (errorCode === 'auth/too-many-requests') {
+          throw new Error('Too many failed login attempts. Please try again later or reset your password.');
+        } else if (errorCode === 'auth/user-disabled') {
+          throw new Error('This account has been disabled. Please contact support.');
+        } else if (errorCode === 'auth/network-request-failed') {
+          // Network errors should allow fallback
+          console.log('AuthContext: Network error during Firebase Auth - will try backend API as fallback');
+        } else if (errorCode === 'auth/operation-not-allowed') {
+          // Email/password not enabled - try fallback
+          console.log('AuthContext: Email/password auth not enabled in Firebase - will try backend API as fallback');
+        } else {
+          // For unknown errors (including 400 Bad Request), try fallback
+          // Use console.log instead of console.warn to reduce noise - these are expected for mock users
+          console.log('AuthContext: Firebase sign-in error (will try fallback):', errorCode || 'unknown');
+        }
       }
       
-      // Step 2: Fallback to mock users if backend didn't work
+      // Step 2: If Firebase Auth succeeded, try backend API to get user details
+      // OR if Firebase Auth failed, try backend API as fallback
+      if (firebaseUid && firebaseCredential) {
+        // Firebase Auth succeeded - try to get user details from backend
+        try {
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${firebaseToken}`
+          };
+          
+          // Try to get user details from backend with Firebase token
+          const fetchPromise = fetch(`${apiBaseUrl}/auth/login`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ email, password })
+          });
+
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Backend API timeout')), 3000)
+          );
+
+          try {
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+            if (response.ok) {
+              const data = await response.json();
+              
+              if (data.success && data.user) {
+                // Backend has user details - use them
+                backendUser = {
+                  id: data.user.id,
+                  firstName: data.user.firstName,
+                  lastName: data.user.lastName,
+                  email: data.user.email,
+                  role: data.user.role || 'user',
+                  roles: [data.user.role || 'user'],
+                  avatar: data.user.avatar,
+                  token: data.token || firebaseToken
+                };
+                
+                console.log('AuthContext: Backend API login successful for user:', backendUser.email);
+                userWithoutPassword = backendUser;
+              }
+            }
+          } catch (apiError) {
+            // Backend API failed - create user from Firebase Auth data
+            console.log('AuthContext: Backend API unavailable, creating user from Firebase Auth data');
+          }
+          
+          // If backend didn't provide user details, create from Firebase Auth
+          if (!userWithoutPassword && firebaseCredential?.user) {
+            const fbUser = firebaseCredential.user;
+            const displayName = fbUser.displayName || email.split('@')[0];
+            const nameParts = displayName.split(' ');
+            
+            userWithoutPassword = {
+              id: firebaseUid,
+              firstName: nameParts[0] || 'User',
+              lastName: nameParts.slice(1).join(' ') || '',
+              email: fbUser.email || email,
+              role: 'user',
+              roles: ['user'],
+              avatar: fbUser.photoURL || null,
+              token: firebaseToken
+            };
+            
+            console.log('AuthContext: Created user from Firebase Auth data:', userWithoutPassword.email);
+          }
+        } catch (apiError) {
+          // If backend call fails, create user from Firebase Auth
+          if (firebaseCredential?.user) {
+            const fbUser = firebaseCredential.user;
+            const displayName = fbUser.displayName || email.split('@')[0];
+            const nameParts = displayName.split(' ');
+            
+            userWithoutPassword = {
+              id: firebaseUid,
+              firstName: nameParts[0] || 'User',
+              lastName: nameParts.slice(1).join(' ') || '',
+              email: fbUser.email || email,
+              role: 'user',
+              roles: ['user'],
+              avatar: fbUser.photoURL || null,
+              token: firebaseToken
+            };
+            
+            console.log('AuthContext: Created user from Firebase Auth data (fallback):', userWithoutPassword.email);
+          }
+        }
+      } else {
+        // Firebase Auth failed - try backend API as fallback
+        try {
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+          
+          // Include Firebase token if available
+          if (firebaseToken) {
+            headers['Authorization'] = `Bearer ${firebaseToken}`;
+          }
+          
+          // Use Promise.race to add a timeout, so we don't wait too long for backend
+          const fetchPromise = fetch(`${apiBaseUrl}/auth/login`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ email, password })
+          });
+
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Backend API timeout')), 3000)
+          );
+
+          const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+          // Only parse JSON if response is OK, otherwise skip to mock users
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success) {
+              // Backend authentication successful
+              backendUser = {
+                id: data.user.id,
+                firstName: data.user.firstName,
+                lastName: data.user.lastName,
+                email: data.user.email,
+                role: data.user.role || 'user',
+                roles: [data.user.role || 'user'],
+                avatar: data.user.avatar,
+                token: data.token
+              };
+              
+              // Store token for API calls
+              if (data.token) {
+                localStorage.setItem('token', data.token);
+              }
+              
+              console.log('AuthContext: Backend API login successful for user:', backendUser.email);
+              userWithoutPassword = backendUser;
+            } else {
+              // Backend returned error, try mock users as fallback
+              // Silently fall through - errors are expected for mock users
+            }
+          } else {
+            // Backend returned error status (400, 500, 503, etc.), try mock users as fallback
+            // Silently fall through - errors are expected when backend doesn't have the user
+          }
+        } catch (apiError) {
+          // API call failed (network error, CORS error, timeout, parse error, etc.)
+          // Silently fall through - these errors are expected when backend is unavailable
+          // Note: Network errors (CORS, 503) will still appear in browser console
+          // but are harmless since we fall back to mock users
+        }
+      }
+      
+      // Step 3: Fallback to mock users if neither Firebase Auth nor backend API worked
       if (!userWithoutPassword) {
-        const foundUser = mockUsers.find(u => u.email === email && u.password === password);
+        // Case-insensitive email matching
+        const emailLower = email.trim().toLowerCase();
+        const foundUser = mockUsers.find(u => 
+          u.email.toLowerCase() === emailLower && u.password === password
+        );
         
         if (!foundUser) {
-          throw new Error('Invalid email or password');
+          // All authentication methods failed
+          console.error('AuthContext: All authentication methods failed for email:', email);
+          // Check if we have a stored error message from Firebase
+          if (firebaseError && firebaseError._shouldShowError && firebaseError._errorMessage) {
+            throw new Error(firebaseError._errorMessage);
+          }
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
         }
+        
+        console.log('AuthContext: Found user in mock users, email:', foundUser.email);
 
         const { password: _, ...mockUserWithoutPassword } = foundUser;
         userWithoutPassword = mockUserWithoutPassword;
         console.log('AuthContext: Mock user login successful for user:', userWithoutPassword.email);
       }
 
-      console.log('AuthContext [v2]: Login successful for user:', userWithoutPassword);
+      // CRITICAL: Ensure userWithoutPassword is set before proceeding
+      if (!userWithoutPassword) {
+        console.error('AuthContext: CRITICAL ERROR - userWithoutPassword is null after all authentication attempts');
+        throw new Error('Authentication failed. Please try again or contact support if the issue persists.');
+      }
+      
+      console.log('AuthContext [v2]: Login successful for user:', userWithoutPassword.email);
       console.log('AuthContext [v2]: User role:', userWithoutPassword.role);
       
-      // IMPORTANT: Also sign into Firebase Auth to enable Firestore access
-      let firebaseUid = userWithoutPassword.id;
-      console.log('AuthContext [v2]: Will now attempt Firebase Auth sign-in...');
-      try {
-        console.log('AuthContext [v2]: Signing into Firebase Auth with email:', email);
-        
-        // Try to sign in with Firebase Auth
-        try {
-          console.log('AuthContext [v2]: Attempting signInWithEmailAndPassword...');
-          const firebaseCredential = await signInWithEmailAndPassword(auth, email, password);
-          firebaseUid = firebaseCredential.user.uid;
-          console.log('AuthContext [v2]: Firebase Auth sign-in successful, uid:', firebaseUid);
-        } catch (signInError) {
-          console.log('AuthContext [v2]: Sign-in error code:', signInError.code, signInError.message);
-          // If user doesn't exist in Firebase, create the account
-          if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-            console.log('AuthContext [v2]: Firebase user not found, creating account...');
-            try {
-              const firebaseCredential = await createUserWithEmailAndPassword(auth, email, password);
-              firebaseUid = firebaseCredential.user.uid;
-              
-              // Update the profile with display name
-              await updateProfile(firebaseCredential.user, {
-                displayName: `${userWithoutPassword.firstName} ${userWithoutPassword.lastName}`
-              });
-              
-              console.log('AuthContext [v2]: Firebase account created, uid:', firebaseUid);
-              
-              // Save user data to Firestore
-              try {
-                const { doc, setDoc } = await import('firebase/firestore');
-                await setDoc(doc(db, 'users', firebaseUid), {
-                  email: email,
-                  firstName: userWithoutPassword.firstName,
-                  lastName: userWithoutPassword.lastName,
-                  role: userWithoutPassword.role,
-                  roles: userWithoutPassword.roles || [userWithoutPassword.role],
-                  createdAt: new Date().toISOString()
-                }, { merge: true });
-                console.log('AuthContext [v2]: User data saved to Firestore');
-              } catch (firestoreError) {
-                console.warn('AuthContext [v2]: Failed to save user to Firestore:', firestoreError);
-              }
-            } catch (createError) {
-              console.error('AuthContext [v2]: Failed to create Firebase account:', createError);
-              // Continue with mock auth even if Firebase auth fails
-            }
-          } else {
-            console.warn('AuthContext [v2]: Firebase sign-in error:', signInError.code, signInError.message);
-            // Continue with mock auth even if Firebase auth fails
-          }
-        }
-      } catch (firebaseError) {
-        console.error('AuthContext [v2]: Firebase Auth outer error:', firebaseError);
-        // Non-fatal - continue with mock authentication
+      // Use Firebase UID if available, otherwise use user ID
+      if (!firebaseUid) {
+        firebaseUid = userWithoutPassword.id;
       }
       
       console.log('AuthContext [v2]: Final Firebase UID:', firebaseUid);
@@ -700,10 +852,50 @@ export const AuthProvider = ({ children }) => {
         vendorCode: vendorCodeToUse
       };
       
+      // Store Firebase token if available for future API calls
+      if (firebaseToken) {
+        localStorage.setItem('firebaseToken', firebaseToken);
+        localStorage.setItem('token', firebaseToken); // Also store as 'token' for backward compatibility
+        finalUser.firebaseToken = firebaseToken;
+        finalUser.token = firebaseToken; // Also add to user object
+      }
+      
       console.log('AuthContext [v2]: User codes - userCode:', userCodeToUse, 'vendorCode:', vendorCodeToUse);
       
       setUser(finalUser);
       localStorage.setItem('currentUser', JSON.stringify(finalUser));
+      
+      // After successful login, fetch user dashboard data with token (only if Firebase token exists)
+      if (firebaseToken) {
+        try {
+          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          
+          const dashboardResponse = await fetch(`${apiBaseUrl}/dashboard/user`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${firebaseToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (dashboardResponse.ok) {
+            const dashboardData = await dashboardResponse.json();
+            console.log('AuthContext: Dashboard data fetched successfully');
+            // Optionally merge dashboard data with user object
+          } else if (dashboardResponse.status === 401) {
+            // Suppress 401 for non-Firebase users (expected)
+            console.log('AuthContext: Dashboard API returned 401 - using local data');
+            // Non-fatal - user can still use the app
+          }
+        } catch (dashboardError) {
+          // Suppress errors for mock users
+          console.log('AuthContext: Failed to fetch dashboard data (using local data)');
+          // Non-fatal - continue with login
+        }
+      } else {
+        // No Firebase token (mock user) - skip API call
+        console.log('AuthContext: No Firebase token, skipping dashboard API call');
+      }
       
       // Handle redirect after login
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
@@ -718,25 +910,39 @@ export const AuthProvider = ({ children }) => {
       }
       
       toast.success('Login successful!');
-      // Attempt to sync any locally stored inspection requests now that user is logged in
-      try {
-        const { syncLocalInspectionRequests } = await import('../services/inspectionService');
-        await syncLocalInspectionRequests();
-      } catch (e) {
-        console.warn('Inspection requests sync skipped or failed:', e?.message || e);
-      }
-      // Register FCM token after login
-      try {
-        const { registerFcmToken } = await import('../services/messagingService');
-        const token = await registerFcmToken(process.env.REACT_APP_FIREBASE_VAPID_KEY);
-        if (token) {
-          const { db } = await import('../config/firebase');
-          const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
-          await setDoc(doc(db, 'userFcmTokens', finalUser.uid || finalUser.id), { tokens: arrayUnion(token) }, { merge: true });
+      
+      // Non-blocking operations - don't let these fail the login
+      // Use setTimeout to make these async and non-blocking
+      setTimeout(async () => {
+        // Attempt to sync any locally stored inspection requests now that user is logged in
+        try {
+          const { syncLocalInspectionRequests } = await import('../services/inspectionService');
+          await syncLocalInspectionRequests();
+        } catch (e) {
+          console.warn('Inspection requests sync skipped or failed (non-fatal):', e?.message || e);
         }
-      } catch (e) {
-        console.warn('FCM registration skipped or failed:', e?.message || e);
-      }
+      }, 0);
+      // Register FCM token after login (non-blocking - don't let this fail the login)
+      // Use setTimeout to make this async and non-blocking
+      setTimeout(async () => {
+        try {
+          const { registerFcmToken } = await import('../services/messagingService');
+          const token = await registerFcmToken(process.env.REACT_APP_FIREBASE_VAPID_KEY);
+          if (token && firebaseToken) {
+            try {
+              const { db } = await import('../config/firebase');
+              const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
+              await setDoc(doc(db, 'userFcmTokens', finalUser.uid || finalUser.id), { tokens: arrayUnion(token) }, { merge: true });
+            } catch (firestoreError) {
+              // Firestore errors (like 400 Bad Request) should not break login
+              console.warn('FCM Firestore update failed (non-fatal):', firestoreError?.message || firestoreError);
+            }
+          }
+        } catch (e) {
+          // FCM registration errors should not break login
+          console.warn('FCM registration skipped or failed (non-fatal):', e?.message || e);
+        }
+      }, 0);
       return { success: true, user: finalUser, redirectUrl: redirectTo };
     } catch (error) {
       setError(error.message);
@@ -983,19 +1189,19 @@ export const AuthProvider = ({ children }) => {
           console.warn('AuthContext: Failed to save user to Firestore:', firestoreError);
         }
       } catch (firebaseError) {
+        // Handle Firebase-specific errors
         if (firebaseError.code === 'auth/email-already-in-use') {
-          // Try to sign in instead
-          try {
-            const firebaseCredential = await signInWithEmailAndPassword(auth, email, password);
-            firebaseUid = firebaseCredential.user.uid;
-            console.log('AuthContext: Signed into existing Firebase account, uid:', firebaseUid);
-          } catch (signInError) {
-            console.warn('AuthContext: Firebase account exists but password mismatch:', signInError);
-            throw new Error('An account with this email already exists with a different password');
-          }
+          // Email already exists in Firebase - user should login instead
+          throw new Error('An account with this email already exists. Please login instead.');
+        } else if (firebaseError.code === 'auth/weak-password') {
+          throw new Error('Password is too weak. Please use a stronger password (at least 6 characters).');
+        } else if (firebaseError.code === 'auth/invalid-email') {
+          throw new Error('Invalid email address. Please check your email and try again.');
+        } else if (firebaseError.code === 'auth/operation-not-allowed') {
+          throw new Error('Email/password registration is not enabled. Please contact support.');
         } else {
           console.warn('AuthContext: Firebase registration error:', firebaseError);
-          // Continue with local-only registration
+          // For other errors, continue with local-only registration (non-fatal)
         }
       }
       

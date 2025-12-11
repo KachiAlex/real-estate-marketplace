@@ -3,7 +3,8 @@ import MemoryInput from '../components/MemoryInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
-import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { useMortgage } from '../contexts/MortgageContext';
+import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp, FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { uploadMortgageDocuments } from '../utils/mortgageDocumentUpload';
@@ -13,6 +14,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.
 const Mortgage = () => {
   const { user } = useAuth();
   const { properties, loading: propertiesLoading } = useProperty();
+  const { getUserApplications, getApplicationsByStatus, refreshApplications } = useMortgage();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -33,7 +35,19 @@ const Mortgage = () => {
       navigate('/login');
       return;
     }
-    toast.success('Pre-qualification started! You will be contacted within 24 hours.');
+    // Reset form state
+    setEmploymentType('employed');
+    setEmployerName('');
+    setJobTitle('');
+    setMonthlyIncome('');
+    setYearsOfEmployment('');
+    setBusinessName('');
+    setBusinessType('');
+    setBusinessMonthlyIncome('');
+    setBankStatements([]);
+    setAcceptTerms(false);
+    setSelectedBankId('');
+    setShowPrequalificationModal(true);
   };
 
   const handleViewProperty = (propertyId) => {
@@ -41,6 +55,7 @@ const Mortgage = () => {
   };
 
   const [showMortgageModal, setShowMortgageModal] = useState(false);
+  const [showPrequalificationModal, setShowPrequalificationModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [employmentType, setEmploymentType] = useState('employed');
   const [employerName, setEmployerName] = useState('');
@@ -98,6 +113,156 @@ const Mortgage = () => {
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     setBankStatements(files);
+  };
+
+  const handlePrequalificationSubmission = async () => {
+    // Validation
+    if (!acceptTerms) {
+      toast.error('Please accept the terms and conditions');
+      return;
+    }
+
+    if (employmentType === 'employed' && (!employerName || !jobTitle || !monthlyIncome || !yearsOfEmployment)) {
+      toast.error('Please fill in all employment details');
+      return;
+    }
+
+    if (employmentType === 'self-employed' && (!businessName || !businessType || !businessMonthlyIncome)) {
+      toast.error('Please fill in all business details');
+      return;
+    }
+
+    if (!selectedBankId) {
+      toast.error('Please select a mortgage bank');
+      return;
+    }
+
+    const selectedBank = banks.find(b => b._id === selectedBankId || b.id === selectedBankId);
+    if (!selectedBank) {
+      toast.error('Selected bank not found');
+      return;
+    }
+
+    // Prepare employment details
+    const employmentDetails = {
+      type: employmentType,
+      employerName: employmentType === 'employed' ? employerName : undefined,
+      jobTitle: employmentType === 'employed' ? jobTitle : undefined,
+      monthlyIncome: parseFloat(employmentType === 'employed' ? monthlyIncome : businessMonthlyIncome) || 0,
+      yearsOfEmployment: parseFloat(yearsOfEmployment) || 0,
+      businessName: employmentType === 'self-employed' ? businessName : undefined,
+      businessType: employmentType === 'self-employed' ? businessType : undefined
+    };
+
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    setIsUploading(false);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please login again.');
+      }
+
+      // Upload documents first if any files are provided
+      let documents = [];
+      if (bankStatements && bankStatements.length > 0) {
+        setIsUploading(true);
+        setUploadProgress(0);
+        
+        const uploadResult = await uploadMortgageDocuments(
+          bankStatements,
+          null, // applicationId - not created yet
+          (progress) => {
+            setUploadProgress(progress);
+          }
+        );
+
+        setIsUploading(false);
+
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload documents');
+        }
+
+        documents = uploadResult.data || [];
+        toast.success(`Successfully uploaded ${documents.length} document(s)`);
+      }
+
+      // Submit prequalification request to backend
+      const response = await axios.post(
+        `${API_BASE_URL}/api/mortgages/prequalify`,
+        {
+          mortgageBankId: selectedBankId,
+          employmentDetails: employmentDetails,
+          documents: documents
+        },
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data && response.data.success) {
+        const { data } = response.data;
+        
+        // Display prequalification results
+        toast.success('Pre-qualification request submitted successfully!', {
+          duration: 5000
+        });
+        
+        // Show results in a detailed toast
+        setTimeout(() => {
+          toast(
+            <div className="p-4">
+              <h3 className="font-semibold text-lg mb-2">Prequalification Estimates</h3>
+              <div className="space-y-2 text-sm">
+                <p><strong>Estimated Max Loan:</strong> ₦{data.estimatedMaxLoan?.toLocaleString() || '0'}</p>
+                <p><strong>Estimated Property Value:</strong> ₦{data.estimatedPropertyValue?.toLocaleString() || '0'}</p>
+                <p><strong>Estimated Down Payment:</strong> ₦{data.estimatedDownPayment?.toLocaleString() || '0'}</p>
+                <p className="mt-2 text-gray-600">You will be contacted within 24 hours with your pre-qualification results.</p>
+              </div>
+            </div>,
+            {
+              duration: 10000,
+              icon: '✅'
+            }
+          );
+        }, 1500);
+        
+        // Refresh applications to show the new prequalification
+        setTimeout(() => {
+          if (refreshApplications) {
+            refreshApplications();
+          }
+        }, 2000);
+        
+        // Reset form
+        setShowPrequalificationModal(false);
+        setEmploymentType('employed');
+        setEmployerName('');
+        setJobTitle('');
+        setMonthlyIncome('');
+        setYearsOfEmployment('');
+        setBusinessName('');
+        setBusinessType('');
+        setBusinessMonthlyIncome('');
+        setBankStatements([]);
+        setAcceptTerms(false);
+        setSelectedBankId('');
+      } else {
+        throw new Error(response.data?.message || 'Failed to submit pre-qualification request');
+      }
+    } catch (error) {
+      console.error('Prequalification submission error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit pre-qualification request. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleConfirmMortgageApplication = async () => {
@@ -243,9 +408,16 @@ const Mortgage = () => {
         setBankStatements([]);
         setAcceptTerms(false);
 
-        // Optional: Navigate to applications page or show confirmation
+        // Refresh applications to show the new one
         setTimeout(() => {
-          navigate('/mortgages');
+          if (refreshApplications) {
+            refreshApplications();
+          }
+        }, 1000);
+
+        // Navigate to applications page
+        setTimeout(() => {
+          navigate('/mortgages/applications');
         }, 3000);
       } else {
         throw new Error(response.data?.message || 'Failed to submit application');
@@ -428,39 +600,16 @@ const Mortgage = () => {
     { name: "Zenith Bank", rating: 4.7, rate: 13.2 }
   ];
 
-  // Mock application status data
-  const applicationStatus = [
-    {
-      date: "August 10, 2025",
-      title: "Application Submitted",
-      status: "completed",
-      description: "Your mortgage application has been received and is being processed."
-    },
-    {
-      date: "August 12, 2025",
-      title: "Document Verification",
-      status: "completed",
-      description: "Your identification and financial documents have been verified."
-    },
-    {
-      date: "In Progress",
-      title: "Credit Assessment",
-      status: "in-progress",
-      description: "Your credit history is being reviewed to determine loan eligibility."
-    },
-    {
-      date: "Pending",
-      title: "Property Appraisal",
-      status: "pending",
-      description: "An independent appraisal will determine the property's value."
-    },
-    {
-      date: "Pending",
-      title: "Final Approval",
-      status: "pending",
-      description: "Final review and approval of your mortgage application."
-    }
-  ];
+  // Get real application status data from context
+  const userApplications = getUserApplications();
+  const pendingApplications = getApplicationsByStatus('pending');
+  const underReviewApplications = getApplicationsByStatus('under_review');
+  const approvedApplications = getApplicationsByStatus('approved');
+  
+  // Get recent applications for status display
+  const recentApplications = userApplications
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
 
   // Mock educational resources
   const educationalResources = [
@@ -953,30 +1102,74 @@ const Mortgage = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Status</h3>
           
-          <div className="space-y-4">
-            {applicationStatus.map((status, index) => (
-              <div key={index} className="flex items-start space-x-3">
-                <div className={`p-2 rounded-full ${getStatusColor(status.status)}`}>
-                  {getStatusIcon(status.status)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900">{status.date}</p>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status.status)}`}>
-                      {status.status}
-                    </span>
+          {recentApplications.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">No applications yet</p>
+              <button
+                onClick={() => navigate('/mortgage')}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Apply for Mortgage
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentApplications.map((application) => (
+                <div key={application._id || application.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                  <div className={`p-2 rounded-full ${
+                    application.status === 'approved' ? 'bg-green-100' :
+                    application.status === 'rejected' ? 'bg-red-100' :
+                    application.status === 'under_review' ? 'bg-blue-100' :
+                    'bg-yellow-100'
+                  }`}>
+                    {application.status === 'approved' ? <FaCheckCircle className="text-green-600" /> :
+                     application.status === 'rejected' ? <FaTimesCircle className="text-red-600" /> :
+                     application.status === 'under_review' ? <FaInfoCircle className="text-blue-600" /> :
+                     <FaClock className="text-yellow-600" />}
                   </div>
-                  <p className="text-sm font-medium text-gray-900">{status.title}</p>
-                  <p className="text-xs text-gray-600">{status.description}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {new Date(application.createdAt).toLocaleDateString()}
+                      </p>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        application.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        application.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        application.status === 'under_review' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {application.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {application.property?.title || 'Prequalification Request'}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Amount: ₦{application.requestedAmount?.toLocaleString() || '0'} | 
+                      Bank: {application.mortgageBank?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/mortgages/applications/${application._id || application.id}`)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    View
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">Application ID: MO-2025-005872</p>
-            <a href="#" className="text-sm text-brand-blue hover:underline">View Details</a>
-          </div>
+          {userApplications.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => navigate('/mortgages/applications')}
+                className="text-sm text-blue-600 hover:underline w-full text-center"
+              >
+                View All Applications
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Educational Resources */}
@@ -1326,6 +1519,240 @@ const Mortgage = () => {
                   </>
                 ) : (
                   <span>Submit Application</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prequalification Modal */}
+      {showPrequalificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Get Pre-qualified for a Mortgage</h3>
+            <p className="text-gray-600 mb-6">Fill out this form to get pre-qualified and see how much you can borrow. No impact on your credit score.</p>
+            
+            <div className="space-y-6">
+              {/* Bank Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Mortgage Bank <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedBankId}
+                  onChange={(e) => setSelectedBankId(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+                >
+                  <option value="">Choose a mortgage bank</option>
+                  {banks.map((bank) => (
+                    <option key={bank._id} value={bank._id}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+                {banks.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    No mortgage banks are currently available. Please try again later.
+                  </p>
+                )}
+              </div>
+
+              {/* Employment Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="employed"
+                      checked={employmentType === 'employed'}
+                      onChange={(e) => setEmploymentType(e.target.value)}
+                      className="mr-2"
+                    />
+                    Employed
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="self-employed"
+                      checked={employmentType === 'self-employed'}
+                      onChange={(e) => setEmploymentType(e.target.value)}
+                      className="mr-2"
+                    />
+                    Self-Employed
+                  </label>
+                </div>
+              </div>
+
+              {/* Employment Details */}
+              {employmentType === 'employed' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Employer Name</label>
+                    <MemoryInput
+                      fieldKey="mortgage.prequal.employerName"
+                      value={employerName}
+                      onChange={(val) => setEmployerName(val)}
+                      placeholder="Company Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                    <MemoryInput
+                      fieldKey="mortgage.prequal.jobTitle"
+                      value={jobTitle}
+                      onChange={(val) => setJobTitle(val)}
+                      placeholder="Your Position"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income (₦)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgage.prequal.monthlyIncome"
+                      value={monthlyIncome}
+                      onChange={(val) => setMonthlyIncome(val)}
+                      placeholder="500000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Years of Employment</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgage.prequal.yearsOfEmployment"
+                      value={yearsOfEmployment}
+                      onChange={(val) => setYearsOfEmployment(val)}
+                      placeholder="5"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Business Details */}
+              {employmentType === 'self-employed' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                    <MemoryInput
+                      fieldKey="mortgage.prequal.businessName"
+                      value={businessName}
+                      onChange={(val) => setBusinessName(val)}
+                      placeholder="Business Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                    <MemoryInput
+                      fieldKey="mortgage.prequal.businessType"
+                      value={businessType}
+                      onChange={(val) => setBusinessType(val)}
+                      placeholder="e.g., Consulting, Trading"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Business Income (₦)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgage.prequal.businessMonthlyIncome"
+                      value={businessMonthlyIncome}
+                      onChange={(val) => setBusinessMonthlyIncome(val)}
+                      placeholder="750000"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Bank Statements Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Statements (Last 6 months) - Optional</label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileUpload}
+                  disabled={isUploading || isSubmitting}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                {bankStatements.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">Selected files:</p>
+                    <ul className="text-sm text-gray-500">
+                      {bankStatements.map((file, index) => (
+                        <li key={index}>• {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {isUploading && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                      <span>Uploading documents...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
+              <div>
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mr-2 mt-1"
+                  />
+                  <span className="text-sm text-gray-700">
+                    I accept the mortgage pre-qualification terms and conditions and agree to provide additional documents as required.
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowPrequalificationModal(false);
+                  setEmploymentType('employed');
+                  setEmployerName('');
+                  setJobTitle('');
+                  setMonthlyIncome('');
+                  setYearsOfEmployment('');
+                  setBusinessName('');
+                  setBusinessType('');
+                  setBusinessMonthlyIncome('');
+                  setBankStatements([]);
+                  setAcceptTerms(false);
+                  setSelectedBankId('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePrequalificationSubmission}
+                disabled={isSubmitting || isUploading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {isUploading ? (
+                  <>
+                    <FaClock className="animate-spin" />
+                    <span>Uploading Documents ({uploadProgress}%)...</span>
+                  </>
+                ) : isSubmitting ? (
+                  <>
+                    <FaClock className="animate-spin" />
+                    <span>Submitting Request...</span>
+                  </>
+                ) : (
+                  <span>Submit Pre-qualification</span>
                 )}
               </button>
             </div>

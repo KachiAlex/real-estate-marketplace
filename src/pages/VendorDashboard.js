@@ -860,7 +860,7 @@ const VendorDashboard = () => {
 
                     <div className="p-4">
                       <div className="text-2xl font-bold text-gray-900 mb-1">
-                        ₦{property.price.toLocaleString()}
+                        ₦{(property.price || 0).toLocaleString()}
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
                       <p className="text-gray-600 text-sm mb-3 flex items-center">

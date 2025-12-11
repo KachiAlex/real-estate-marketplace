@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaHome } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaHome } from 'react-icons/fa';
 import { handleEmailPasswordAuth, handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
 
@@ -261,7 +261,7 @@ const Login = () => {
           </div>
 
           {/* Social Login Buttons */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-6">
             <button 
               onClick={async () => {
                 setLoading(true);
@@ -288,10 +288,6 @@ const Login = () => {
             >
               <FaGoogle className="text-red-500 mr-2" />
               Google
-            </button>
-            <button disabled className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-400 cursor-not-allowed">
-              <FaFacebook className="text-blue-600 mr-2" />
-              Facebook
             </button>
           </div>
 

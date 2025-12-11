@@ -119,17 +119,6 @@ const About = () => {
             </div>
           </div>
         </div>
-
-        {/* Contact CTA */}
-        <div className="bg-blue-600 rounded-lg shadow-lg p-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Start Investing?</h2>
-          <p className="text-xl text-blue-100 mb-6">
-            Join thousands of investors who are already building wealth through real estate.
-          </p>
-          <button className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors">
-            Get Started Today
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -103,8 +103,7 @@ const PropertyDetail = () => {
   const handleToggleFavorite = async () => {
     if (!user) {
       toast.error('Please login to add favorites');
-      setAuthRedirect(`/property/${id}`);
-      navigate('/login');
+      // User can continue viewing the property without being forced to login
       return;
     }
     
@@ -115,27 +114,43 @@ const PropertyDetail = () => {
 
     const storageKey = `favorites_${user.id}`;
     const wasFavorite = isFavorite;
+    const propertyIdStr = String(property.id);
 
     // Optimistic UI update
     setIsFavorite(!wasFavorite);
+    let updatedFavorites;
     try {
       const existing = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
       if (wasFavorite) {
-        existing.delete(property.id);
+        existing.delete(propertyIdStr);
         toast.success('Property removed from saved properties');
       } else {
-        existing.add(property.id);
+        existing.add(propertyIdStr);
         toast.success('Property added to saved properties');
       }
-      localStorage.setItem(storageKey, JSON.stringify(Array.from(existing)));
+      updatedFavorites = Array.from(existing);
+      localStorage.setItem(storageKey, JSON.stringify(updatedFavorites));
     } catch {
       // ignore localStorage errors
     }
 
     try {
-      const result = await toggleFavorite(property.id);
+      const result = await toggleFavorite(propertyIdStr, property);
       if (!result || result.success === undefined) {
         throw new Error('Failed to toggle favorite on server');
+      }
+      
+      // Dispatch event to notify other components (like Dashboard)
+      window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+        detail: { propertyId: propertyIdStr, favorited: !wasFavorite }
+      }));
+      
+      // Also trigger a storage event for cross-tab synchronization
+      if (updatedFavorites) {
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: storageKey,
+          newValue: JSON.stringify(updatedFavorites)
+        }));
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -145,9 +160,9 @@ const PropertyDetail = () => {
       try {
         const existing = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
         if (wasFavorite) {
-          existing.add(property.id);
+          existing.add(propertyIdStr);
         } else {
-          existing.delete(property.id);
+          existing.delete(propertyIdStr);
         }
         localStorage.setItem(storageKey, JSON.stringify(Array.from(existing)));
       } catch {
@@ -183,15 +198,85 @@ const PropertyDetail = () => {
     });
   };
 
+  const createInquiry = (property, inquiryType, message = '') => {
+    if (!user || !property) return;
+
+    // Check if inquiry already exists for this property and user
+    const existingInquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+    const existingInquiry = existingInquiries.find(
+      inq => inq.propertyId === property.id && 
+             (inq.userId === user.id || inq.buyerId === user.id) &&
+             (inq.status === 'new' || inq.status === 'pending' || inq.status === 'contacted')
+    );
+
+    // If inquiry already exists, don't create duplicate
+    if (existingInquiry) {
+      return existingInquiry;
+    }
+
+    // Create new inquiry
+    const inquiry = {
+      id: `inquiry-${Date.now()}`,
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyLocation: typeof property.location === 'string' 
+        ? property.location 
+        : property.location?.address || property.location?.city || 'Location not specified',
+      propertyPrice: property.price || 0,
+      propertyImage: property.images?.[0]?.url || property.image || property.images?.[0] || '',
+      propertyBedrooms: property.bedrooms || property.details?.bedrooms || 0,
+      propertyBathrooms: property.bathrooms || property.details?.bathrooms || 0,
+      propertyArea: property.area || property.details?.sqft || 0,
+      userId: user.id,
+      buyerId: user.id,
+      buyerName: `${user.firstName} ${user.lastName}`,
+      buyerEmail: user.email,
+      buyerPhone: user.phone || '',
+      vendorId: property.vendorId || property.owner?.id || property.vendor?.id || '',
+      vendorName: property.owner?.firstName 
+        ? `${property.owner.firstName} ${property.owner.lastName || ''}`.trim()
+        : property.vendor?.firstName 
+        ? `${property.vendor.firstName} ${property.vendor.lastName || ''}`.trim()
+        : 'Property Vendor',
+      vendorEmail: property.owner?.email || property.vendor?.email || property.vendorEmail || '',
+      vendorPhone: property.owner?.phone || property.vendorPhone || property.contactPhone || property.vendor?.phone || '',
+      inquiryType: inquiryType, // 'call' or 'message'
+      message: message || `I'm interested in ${property.title}. Please contact me.`,
+      status: 'new',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      responses: []
+    };
+
+    // Save to localStorage
+    existingInquiries.push(inquiry);
+    localStorage.setItem('inquiries', JSON.stringify(existingInquiries));
+
+    // Dispatch event to notify dashboard
+    window.dispatchEvent(new CustomEvent('inquiriesUpdated', {
+      detail: { inquiry, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'inquiries',
+      newValue: JSON.stringify(existingInquiries)
+    }));
+
+    return inquiry;
+  };
+
   const handleContactOwner = () => {
     console.log('Contact Owner clicked, property:', property, 'user:', user);
     
     if (!user) {
       toast.error('Please login to contact property vendor');
-      setAuthRedirect(`/property/${id}`);
-      navigate('/login');
+      // User can continue viewing the property without being forced to login
       return;
     }
+    
+    // Create inquiry
+    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via WhatsApp.`);
     
     // Get vendor's phone number
     const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
@@ -227,7 +312,7 @@ const PropertyDetail = () => {
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
     window.open(whatsappUrl, '_blank');
     
-    toast.success('Opening WhatsApp...');
+    toast.success('Opening WhatsApp... Inquiry saved to My Inquiries.');
   };
 
   const handleSendInquiry = () => {
@@ -245,8 +330,7 @@ const PropertyDetail = () => {
   const handleScheduleViewing = () => {
     if (!user) {
       toast.error('Please login to schedule a viewing');
-      setAuthRedirect(`/property/${id}`);
-      navigate('/login');
+      // User can continue viewing the property without being forced to login
       return;
     }
     // Open scheduling modal to pick date/time
@@ -288,6 +372,7 @@ const PropertyDetail = () => {
     };
     try {
       await createInspectionRequest(viewingRequest);
+      // Event is dispatched by createInspectionRequest service
       setShowScheduleModal(false);
       setPreferredDate('');
       setPreferredTime('');
@@ -301,8 +386,7 @@ const PropertyDetail = () => {
   const handleProceedToEscrow = () => {
     if (!user) {
       toast.error('Please login to proceed with purchase');
-      setAuthRedirect(`/property/${id}`);
-      navigate('/login');
+      // User can continue viewing the property without being forced to login
       return;
     }
 
@@ -311,6 +395,15 @@ const PropertyDetail = () => {
   };
 
   const handleCallVendor = () => {
+    if (!user) {
+      toast.error('Please login to call property vendor');
+      // User can continue viewing the property without being forced to login
+      return;
+    }
+
+    // Create inquiry
+    createInquiry(property, 'call', `I'm interested in ${property.title}. Please contact me via phone call.`);
+    
     // Get vendor's phone number
     const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
     
@@ -336,6 +429,8 @@ const PropertyDetail = () => {
     
     // Create tel: link and trigger phone dialer
     window.location.href = `tel:+${formattedPhone}`;
+    
+    toast.success('Inquiry saved to My Inquiries.');
   };
 
   if (loading) {

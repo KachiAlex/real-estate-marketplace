@@ -19,6 +19,18 @@ export const createInspectionRequest = async (requestData) => {
     };
     existing.push(newRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existing));
+    
+    // Dispatch event to notify Dashboard and other components
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { viewingRequest: newRequest, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(existing)
+    }));
+    
     return newRequest;
   } catch (error) {
     console.error('Error creating inspection request:', error);
@@ -32,6 +44,18 @@ export const createInspectionRequest = async (requestData) => {
     };
     existing.push(newRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existing));
+    
+    // Dispatch event to notify Dashboard and other components
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { viewingRequest: newRequest, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(existing)
+    }));
+    
     return newRequest;
   }
 };
@@ -94,6 +118,18 @@ export const updateInspectionRequest = async (requestId, updates) => {
         : r
     );
     localStorage.setItem('viewingRequests', JSON.stringify(updated));
+    
+    // Dispatch event to notify Dashboard and other components when status changes
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { requestId, updates, action: 'updated' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(updated)
+    }));
+    
     return true;
   } catch (error) {
     console.error('Error updating inspection request:', error);
@@ -105,6 +141,18 @@ export const updateInspectionRequest = async (requestId, updates) => {
         : r
     );
     localStorage.setItem('viewingRequests', JSON.stringify(updated));
+    
+    // Dispatch event to notify Dashboard and other components when status changes
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { requestId, updates, action: 'updated' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(updated)
+    }));
+    
     return true;
   }
 };

@@ -156,20 +156,8 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* User Account Section - Moved to bottom */}
+      {/* Logout Section - Moved to bottom */}
       <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 bg-white">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            <FaUser className="text-gray-500" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">{(user?.role || 'buyer').toUpperCase()} ACCOUNT</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {user?.firstName?.toUpperCase() || 'OLUWASEUN'} {user?.lastName?.toUpperCase() || 'ADEYEMI'}
-            </p>
-          </div>
-        </div>
-        {/* Logout */}
         <button
           onClick={logout}
           className="flex items-center space-x-3 px-3 py-2.5 sm:py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"

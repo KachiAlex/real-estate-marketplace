@@ -12,7 +12,7 @@ import {
   FaCheck,
   FaBuilding,
   FaChartLine,
-  FaPlay,
+  FaEye,
   FaSort,
   FaBed,
   FaBath,
@@ -802,7 +802,7 @@ const Home = () => {
     navigate('/about');
   };
   
-  const handleToggleFavorite = async (propertyId) => {
+  const handleToggleFavorite = async (propertyId, property = null) => {
     if (!user) {
       toast.error('Please login to save properties to favorites');
       navigate('/login');
@@ -825,10 +825,36 @@ const Home = () => {
     localStorage.setItem(storageKey, JSON.stringify(Array.from(optimisticFavorites)));
 
     try {
-      const result = await toggleFavorite(propertyId);
+      // If property not provided, try to find it in merged properties (including mock)
+      let propertyToSave = property;
+      if (!propertyToSave) {
+        // Check in mock properties first
+        propertyToSave = mockProperties.find(p => (p.id || p.propertyId) === propertyId);
+        // If not found, check in context properties
+        if (!propertyToSave) {
+          propertyToSave = properties.find(p => {
+            const propId = p.id || p.propertyId || p._id;
+            return propId === propertyId || String(propId) === String(propertyId);
+          });
+        }
+      }
+      
+      const propertyIdStr = String(propertyId);
+      const result = await toggleFavorite(propertyIdStr, propertyToSave);
       if (!result || !result.success) {
         throw new Error('Failed to toggle favorite on server');
       }
+      
+      // Dispatch event to notify other components (like Dashboard)
+      window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+        detail: { propertyId: propertyIdStr, favorited: !wasFavorite }
+      }));
+      
+      // Also trigger a storage event for cross-tab synchronization
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: storageKey,
+        newValue: JSON.stringify(Array.from(optimisticFavorites))
+      }));
     } catch (error) {
       console.error('Error toggling favorite:', error);
 
@@ -891,9 +917,39 @@ const Home = () => {
         keywords="real estate Nigeria, buy property Nigeria, rent property Lagos, property for sale, investment property, luxury homes"
       />
       <div className="min-h-screen bg-gray-50 w-full">
-      {/* Custom CSS for Range Slider */}
+      {/* Custom CSS for Range Slider and Scrolling Text */}
       <style dangerouslySetInnerHTML={{
         __html: `
+          @keyframes scroll-text {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          
+          @keyframes scroll-bg {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          
+          .animate-scroll-text {
+            animation: scroll-text 20s linear infinite;
+          }
+          
+          .animate-scroll-text:hover {
+            animation-play-state: paused;
+          }
+          
+          .animate-scroll-bg {
+            animation: scroll-bg 15s linear infinite;
+          }
+          
           .slider-thumb::-webkit-slider-thumb {
             appearance: none;
             width: 24px;
@@ -960,22 +1016,40 @@ const Home = () => {
       }} />
       
       {/* Static Hero Banner with Search - Full Width */}
-      <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-16">
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-8">
         <StaticHeroBanner />
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Security Message - Plain Text */}
-        <div className="mb-6 text-center">
-          <p className="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed">
-            Secure real estate transactions with{' '}
-            <span className="text-blue-600">escrow protection</span>
-            ,{' '}
-            <span className="text-green-600">verified listings</span>
-            , and{' '}
-            <span className="text-purple-600">transparent processes</span>
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        {/* Security Message - Static Text with Scrolling Background Effect */}
+        <div className="mb-3 overflow-hidden relative bg-gradient-to-r from-blue-50 via-green-50 to-purple-50 rounded-lg py-4">
+          {/* Scrolling background effect - flowing gradient waves */}
+          <div className="absolute inset-0 animate-scroll-bg">
+            <div className="inline-flex items-center space-x-20 whitespace-nowrap h-full">
+              {/* Multiple copies for seamless loop */}
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="inline-flex items-center space-x-16 h-full">
+                  <div className="w-32 h-full bg-gradient-to-r from-blue-200/30 via-blue-300/20 to-transparent rounded-full blur-sm"></div>
+                  <div className="w-28 h-full bg-gradient-to-r from-green-200/30 via-green-300/20 to-transparent rounded-full blur-sm"></div>
+                  <div className="w-36 h-full bg-gradient-to-r from-purple-200/30 via-purple-300/20 to-transparent rounded-full blur-sm"></div>
+                  <div className="w-24 h-full bg-gradient-to-r from-orange-200/30 via-orange-300/20 to-transparent rounded-full blur-sm"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Static text content - locked in position */}
+          <div className="relative z-10 text-center px-4">
+            <span className="text-lg md:text-xl font-bold text-gray-800">
+              Secure real estate transactions with{' '}
+              <span className="text-blue-600">escrow protection</span>
+              ,{' '}
+              <span className="text-green-600">verified listings</span>
+              , and{' '}
+              <span className="text-purple-600">transparent processes</span>
+            </span>
+          </div>
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">
@@ -1378,7 +1452,7 @@ const Home = () => {
                     </div>
                     <div className="absolute bottom-3 left-3">
                       <span className="text-2xl font-bold text-white">
-                        ₦{property.price.toLocaleString()}
+                        ₦{(property.price || 0).toLocaleString()}
                       </span>
                     </div>
                   </Link>
@@ -1386,7 +1460,7 @@ const Home = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleToggleFavorite(property.id);
+                        handleToggleFavorite(property.id, property);
                       }}
                       className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
                       title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
@@ -1777,7 +1851,7 @@ const Home = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
                 <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaPlay className="text-2xl text-white" />
+                  <FaEye className="text-2xl text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Virtual Tours</h3>
                 <p className="text-gray-300 mb-4">

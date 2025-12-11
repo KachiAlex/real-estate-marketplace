@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,15 +37,59 @@ const Properties = () => {
   const [sortBy, setSortBy] = useState('mostRecent'); // mostRecent, priceLow, priceHigh, mostPopular
 
   // Load favorites from localStorage
-  useEffect(() => {
+  const loadFavorites = useCallback(() => {
     if (user) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
-      setFavorites(new Set(savedFavorites));
+      // Normalize all IDs to strings for consistent comparison
+      const normalizedFavorites = savedFavorites.map(id => String(id));
+      setFavorites(new Set(normalizedFavorites));
+      return normalizedFavorites.length;
     } else {
       setFavorites(new Set());
+      return 0;
     }
   }, [user]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [user, loadFavorites]);
+
+  // Listen for favorites updates from other components (like Dashboard, PropertyDetail, etc.)
+  // Use a ref to track if we're currently updating to prevent reload loops
+  const isUpdatingRef = React.useRef(false);
+  
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFavoritesUpdate = (event) => {
+      // Don't reload if we're the ones who triggered the update
+      // The toggleFavorite function will handle reloading after it completes
+      if (!isUpdatingRef.current) {
+        // Reload favorites from localStorage when updated from other components
+        setTimeout(() => {
+          loadFavorites();
+        }, 150);
+      }
+    };
+
+    const handleStorageChange = (event) => {
+      // Listen for storage events (cross-tab synchronization)
+      if (event.key === `favorites_${user.id}` && !isUpdatingRef.current) {
+        setTimeout(() => {
+          loadFavorites();
+        }, 150);
+      }
+    };
+
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user, loadFavorites]);
 
   // Normalize location names (handle aliases) - MUST be defined before useMemo that uses it
   const normalizeLocation = (location) => {
@@ -148,14 +192,18 @@ const Properties = () => {
       });
     }
 
-    // Apply search query (only if location filter is not applied)
-    if (!appliedLocation && appliedSearchQuery.trim()) {
+    // Apply search query (works independently or with location filter)
+    if (appliedSearchQuery.trim()) {
       const query = appliedSearchQuery.toLowerCase();
       filtered = filtered.filter(property => 
         property.title?.toLowerCase().includes(query) ||
         property.description?.toLowerCase().includes(query) ||
         property.location?.toLowerCase().includes(query) ||
-        property.address?.toLowerCase().includes(query)
+        property.address?.toLowerCase().includes(query) ||
+        (property.city && property.city.toLowerCase().includes(query)) ||
+        (property.state && property.state.toLowerCase().includes(query)) ||
+        (property.location?.city && typeof property.location === 'object' && property.location.city.toLowerCase().includes(query)) ||
+        (property.location?.state && typeof property.location === 'object' && property.location.state.toLowerCase().includes(query))
       );
     }
 
@@ -328,6 +376,7 @@ const Properties = () => {
     const alertNameParam = searchParams.get('alertName');
     
     // Get URL parameters
+    const searchParam = searchParams.get('search');
     const location = searchParams.get('location');
     const type = searchParams.get('type');
     const status = searchParams.get('status');
@@ -341,15 +390,23 @@ const Properties = () => {
     const maxArea = searchParams.get('maxArea');
     const features = searchParams.get('features');
     
+    // Apply search query parameter (general text search)
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setAppliedSearchQuery(searchParam);
+    }
+    
     // Apply location filter (normalize location name)
     if (location) {
       const normalizedLoc = normalizeLocation(location);
       setAppliedLocation(normalizedLoc);
-      setSearchQuery(normalizedLoc); // Also set in search query for display
-    } else {
-      // Clear location filter if no location parameter in URL
+      // Only set search query if it wasn't already set by searchParam
+      if (!searchParam) {
+        setSearchQuery(normalizedLoc);
+      }
+    } else if (!searchParam) {
+      // Clear location filter if no location parameter in URL and no search param
       setAppliedLocation('');
-      // Don't clear searchQuery here as user might have typed something
     }
     
     // Apply type filter (map from URL format to display format)
@@ -489,7 +546,7 @@ const Properties = () => {
   const handleSaveSearch = () => {
     if (!user) {
       toast.error('Please login to save searches');
-      navigate('/login');
+      // User can continue browsing without being forced to login
       return;
     }
     setShowSaveSearchModal(true);
@@ -527,49 +584,100 @@ const Properties = () => {
     setSaveSearchName('');
   };
 
+  /**
+   * IMPORTANT: This function handles favorite toggling with proper synchronization.
+   * 
+   * Architecture:
+   * 1. Optimistic UI update (immediate visual feedback)
+   * 2. Call toggleFavorite from PropertyContext (single source of truth for localStorage)
+   * 3. PropertyContext handles: localStorage, events, Firestore sync
+   * 4. Reload favorites after successful toggle to ensure consistency
+   * 
+   * CRITICAL: Do NOT save to localStorage here - let PropertyContext handle it.
+   * This prevents race conditions and ensures single source of truth.
+   */
   const handleToggleFavorite = async (propertyId) => {
     if (!user) {
-      // Set redirect URL to return to current page after login
-      const currentUrl = `/properties`;
-      setAuthRedirect(currentUrl);
+      // Show login prompt but don't force redirect - allow user to continue browsing
       toast.error('Please login to save properties to favorites');
-      navigate('/login');
+      // Optionally navigate to login, but don't block the page
+      // User can continue browsing and login later if they want
       return;
     }
 
-    const storageKey = `favorites_${user.id}`;
-    const wasFavorite = favorites.has(propertyId);
+    // Normalize propertyId to string
+    const propertyIdStr = String(propertyId);
+    const wasFavorite = favorites.has(propertyIdStr);
 
-    // Optimistic UI update
+    // Set flag to prevent event listener from reloading during update
+    // This prevents race conditions where the listener reloads before toggleFavorite completes
+    isUpdatingRef.current = true;
+
+    // Optimistic UI update (visual feedback only, don't save to localStorage yet)
+    // CRITICAL: We do NOT save to localStorage here - PropertyContext.toggleFavorite handles it
     const optimisticFavorites = new Set(favorites);
     if (wasFavorite) {
-      optimisticFavorites.delete(propertyId);
-      toast.success('Property removed from saved properties');
+      optimisticFavorites.delete(propertyIdStr);
     } else {
-      optimisticFavorites.add(propertyId);
-      toast.success('Property added to saved properties');
+      optimisticFavorites.add(propertyIdStr);
     }
     setFavorites(optimisticFavorites);
-    localStorage.setItem(storageKey, JSON.stringify(Array.from(optimisticFavorites)));
 
     try {
-      const result = await toggleFavorite(propertyId);
+      // Find the property object to pass metadata
+      // Search in safeProperties (all properties) not filteredProperties (filtered list)
+      const property = safeProperties.find(p => {
+        const propId = p.id || p.propertyId || p._id;
+        return String(propId) === propertyIdStr || propId === propertyId;
+      });
+      
+      // If not found in safeProperties, try filteredProperties as fallback
+      const propertyToSave = property || filteredProperties.find(p => {
+        const propId = p.id || p.propertyId || p._id;
+        return String(propId) === propertyIdStr || propId === propertyId;
+      });
+      
+      // Call toggleFavorite - it will handle localStorage, events, and Firestore
+      // This is the SINGLE SOURCE OF TRUTH for favorite state
+      const result = await toggleFavorite(propertyIdStr, propertyToSave);
+      
       if (!result || !result.success) {
-        throw new Error('Failed to toggle favorite on server');
+        throw new Error(result?.error || 'Failed to toggle favorite');
       }
+      
+      // Verify localStorage was updated correctly
+      const storageKey = `favorites_${user.id}`;
+      const savedFavorites = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const normalizedSaved = savedFavorites.map(id => String(id));
+      const isActuallyFavorited = normalizedSaved.includes(propertyIdStr);
+      
+      if (isActuallyFavorited !== result.favorited) {
+        console.warn('Properties: Favorite state mismatch detected, reloading...');
+      }
+      
+      // Reload favorites from localStorage after successful toggle
+      // Use a longer delay to ensure toggleFavorite has completed all operations
+      setTimeout(() => {
+        loadFavorites();
+        // Always reset the flag, even if there was an error
+        isUpdatingRef.current = false;
+      }, 200);
+      
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Properties: Error toggling favorite:', error);
+      
+      // Always reset the flag on error
+      isUpdatingRef.current = false;
 
       // Revert optimistic update on error
-      const revertedFavorites = new Set(optimisticFavorites);
+      const revertedFavorites = new Set(favorites);
       if (wasFavorite) {
-        revertedFavorites.add(propertyId);
+        revertedFavorites.add(propertyIdStr);
       } else {
-        revertedFavorites.delete(propertyId);
+        revertedFavorites.delete(propertyIdStr);
       }
       setFavorites(revertedFavorites);
-      localStorage.setItem(storageKey, JSON.stringify(Array.from(revertedFavorites)));
-      toast.error('Failed to update saved properties. Please try again.');
+      toast.error(error.message || 'Failed to update saved properties. Please try again.');
     }
   };
 
@@ -586,7 +694,7 @@ const Properties = () => {
   const handleScheduleViewing = (property) => {
     if (!user) {
       toast.error('Please login to schedule viewings');
-      navigate('/login');
+      // User can continue browsing without being forced to login
       return;
     }
     
@@ -628,6 +736,17 @@ const Properties = () => {
     const existingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
     existingRequests.push(viewingRequest);
     localStorage.setItem('viewingRequests', JSON.stringify(existingRequests));
+    
+    // Dispatch event to notify Dashboard and other components
+    window.dispatchEvent(new CustomEvent('viewingsUpdated', {
+      detail: { viewingRequest, action: 'created' }
+    }));
+    
+    // Also trigger a storage event for cross-tab synchronization
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'viewingRequests',
+      newValue: JSON.stringify(existingRequests)
+    }));
     
     toast.success(`Viewing request sent for "${selectedProperty.title}"! The vendor will confirm or suggest an alternative time.`);
     
@@ -943,11 +1062,17 @@ const Properties = () => {
                         e.stopPropagation();
                         handleToggleFavorite(property.id);
                       }}
-                      className="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-colors"
-                      title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all ${
+                        favorites.has(String(property.id))
+                          ? 'bg-red-500 bg-opacity-90'
+                          : 'bg-black bg-opacity-50'
+                      }`}
+                      title={favorites.has(String(property.id)) ? "Remove from favorites" : "Add to favorites"}
                     >
-                      <FaHeart className={`text-lg transition-colors ${
-                        favorites.has(property.id) ? 'text-red-500' : 'text-white'
+                      <FaHeart className={`text-lg transition-all ${
+                        favorites.has(String(property.id)) 
+                          ? 'text-red-500 fill-red-500' 
+                          : 'text-white'
                       }`} />
                     </button>
                     <button

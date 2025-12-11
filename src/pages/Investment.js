@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
+import { useEscrow } from '../contexts/EscrowContext';
 import { FaChartLine, FaDownload, FaBookmark, FaCheck, FaMapMarkerAlt, FaUsers, FaCalendar, FaArrowUp, FaEye, FaShieldAlt, FaFileContract, FaLock, FaBuilding, FaExclamationTriangle, FaClock, FaPhone, FaEnvelope, FaGlobe, FaChevronDown, FaQuestionCircle, FaDollarSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
@@ -11,6 +12,7 @@ const Investment = () => {
   const navigate = useNavigate();
   const { user, setAuthRedirect } = useAuth();
   const { investments, userInvestments, investInOpportunity } = useInvestment();
+  const { createEscrowTransaction } = useEscrow();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProject, setSelectedProject] = useState(null);
   const [filterType, setFilterType] = useState('all');
@@ -268,55 +270,83 @@ const Investment = () => {
     try {
       setIsProcessingPayment(true);
 
-      // Create investment escrow transaction
-      const reference = `FLW-${Math.floor(100000 + Math.random()*900000)}`;
-      const investmentEscrow = {
-        id: `INV-${Date.now()}`,
-        investmentId: selectedProject.id,
-        investmentTitle: selectedProject.name,
-        propertyTitle: selectedProject.name,
-        amount: investmentAmount,
-        escrowFee: Math.round(investmentAmount * 0.005), // 0.5% escrow fee
-        totalAmount: investmentAmount + Math.round(investmentAmount * 0.005),
-        // Use a status compatible with Escrow page rendering
-        status: 'funded',
-        createdAt: new Date().toISOString(),
-        buyerId: user.id,
-        buyerName: `${user.firstName} ${user.lastName}`,
-        buyerEmail: user.email,
-        investor: `${user.firstName} ${user.lastName}`,
-        vendor: selectedProject.sponsor?.name || 'Investment Sponsor',
-        type: 'investment',
-        documentStatus: 'awaiting_vendor_documents',
-        payment: {
-          method: paymentMethod,
-          reference,
-          paidAt: new Date().toISOString()
-        },
-        collateralProperty: selectedProject.collateralProperty || 'Property deed pending vendor submission',
-        expectedROI: selectedProject.expectedROI,
-        lockPeriod: selectedProject.lockPeriod
-      };
+      // Create investment escrow transaction using EscrowContext
+      const vendorId = selectedProject.sponsorId || selectedProject.vendorId || null;
+      const escrowResult = await createEscrowTransaction(
+        selectedProject.id,
+        investmentAmount,
+        user.uid || user.id,
+        vendorId,
+        {
+          type: 'investment',
+          investmentData: {
+            ...selectedProject,
+            title: selectedProject.name || selectedProject.title,
+            investmentTitle: selectedProject.name || selectedProject.title,
+            expectedROI: selectedProject.expectedROI || selectedProject.expectedReturn || 0,
+            expectedReturn: selectedProject.expectedReturn || selectedProject.expectedROI || 0,
+            lockPeriod: selectedProject.lockPeriod || selectedProject.termMonths || selectedProject.duration || 0,
+            termMonths: selectedProject.termMonths || selectedProject.duration || selectedProject.lockPeriod || 0,
+            duration: selectedProject.duration || selectedProject.termMonths || selectedProject.lockPeriod || 0,
+            vendorId: vendorId,
+            sponsorId: vendorId,
+            sponsor: selectedProject.sponsor,
+            vendor: selectedProject.vendor || selectedProject.sponsor,
+            propertyLocation: selectedProject.location || selectedProject.propertyLocation || 'N/A'
+          }
+        }
+      );
 
-      // Store in localStorage for demo
+      if (!escrowResult.success) {
+        toast.error(escrowResult.error || 'Failed to create escrow transaction');
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      const escrowId = escrowResult.id || escrowResult.data?.id;
+      if (!escrowId) {
+        toast.error('Failed to get escrow transaction ID');
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Simulate payment processing
+      const reference = `FLW-${Math.floor(100000 + Math.random()*900000)}`;
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Update escrow status to payment_received
       const existingEscrows = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
-      existingEscrows.push(investmentEscrow);
-      localStorage.setItem('escrowTransactions', JSON.stringify(existingEscrows));
+      const updatedEscrows = existingEscrows.map(t => 
+        t.id === escrowId 
+          ? { 
+              ...t, 
+              status: 'payment_received',
+              payment: {
+                method: paymentMethod,
+                reference,
+                paidAt: new Date().toISOString()
+              },
+              fundedAt: new Date().toISOString()
+            }
+          : t
+      );
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedEscrows));
 
       // Record user investment in context (mock)
       await investInOpportunity(selectedProject.id, investmentAmount);
 
       setPaymentReference(reference);
-      setCreatedEscrow(investmentEscrow);
+      setCreatedEscrow(escrowResult.data);
       setPaymentSuccess(true);
       toast.success('Payment successful! Funds held in escrow pending vendor document submission.');
       
-      // Close modal after a delay to show success message
+      // Navigate to escrow transaction page after a delay
       setTimeout(() => {
         setShowInvestmentModal(false);
         resetInvestmentModal();
         setSelectedProject(null);
-      }, 3000);
+        navigate(`/escrow/${escrowId}`);
+      }, 2000);
     } catch (error) {
       console.error('Investment error:', error);
       toast.error('Failed to process investment');

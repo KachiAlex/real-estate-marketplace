@@ -11,7 +11,6 @@ import {
   Modal,
   Form,
   ProgressBar,
-  ListGroup,
   Image
 } from 'react-bootstrap';
 import { useInvestment } from '../contexts/InvestmentContext';
@@ -99,9 +98,26 @@ const InvestmentDetail = () => {
       return;
     }
 
-    const minInvestment = investment.minInvestment ?? investment.minimumInvestment ?? 0;
+    if (!investment) {
+      setError('Investment data not loaded');
+      return;
+    }
+
+    // Normalize investment data
+    const normalizedInvestment = {
+      ...investment,
+      currentFunding: Number(investment.currentFunding ?? investment.raisedAmount ?? 0) || 0,
+      targetAmount: Number(investment.targetAmount ?? investment.totalAmount ?? 0) || 0,
+      minInvestment: Number(investment.minInvestment ?? investment.minimumInvestment ?? 0) || 0,
+      maxInvestment: Number(investment.maxInvestment ?? investment.totalAmount ?? 0) || 0,
+      expectedROI: Number(investment.expectedROI ?? investment.expectedReturn ?? 0) || 0,
+      termMonths: Number(investment.termMonths ?? investment.duration ?? 0) || 0,
+      propertyLocation: investment.propertyLocation ?? (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A')
+    };
+
+    const minInvestment = normalizedInvestment.minInvestment;
     if (parseFloat(investmentAmount) < minInvestment) {
-      setError(`Minimum investment amount is $${(minInvestment || 0).toLocaleString()}`);
+      setError(`Minimum investment amount is $${(Number(minInvestment) || 0).toLocaleString()}`);
       return;
     }
 
@@ -109,19 +125,49 @@ const InvestmentDetail = () => {
       setProcessing(true);
       setError(null);
 
-      // Create escrow transaction
+      // Create escrow transaction for investment
       const vendorId = investment.vendorId ?? investment.sponsorId ?? null;
-      const escrowId = await createEscrowTransaction(
+      const result = await createEscrowTransaction(
         id,
         parseFloat(investmentAmount),
-        user.uid,
-        vendorId
+        user.uid || user.id,
+        vendorId,
+        {
+          type: 'investment',
+          investmentData: {
+            ...investment,
+            title: investment.title,
+            investmentTitle: investment.title,
+            expectedROI: normalizedInvestment.expectedROI,
+            expectedReturn: normalizedInvestment.expectedROI,
+            lockPeriod: normalizedInvestment.termMonths,
+            termMonths: normalizedInvestment.termMonths,
+            duration: normalizedInvestment.termMonths,
+            vendorId: vendorId,
+            sponsorId: vendorId,
+            sponsor: investment.sponsor || vendor,
+            vendor: investment.vendor || investment.sponsor,
+            propertyLocation: normalizedInvestment.propertyLocation
+          }
+        }
       );
+
+      if (!result.success) {
+        setError(result.error || 'Failed to create escrow transaction');
+        return;
+      }
+
+      const escrowId = result.id || result.data?.id;
+      if (!escrowId) {
+        setError('Failed to get escrow transaction ID');
+        return;
+      }
 
       setShowInvestModal(false);
       navigate(`/escrow/${escrowId}`);
     } catch (err) {
-      setError(err.message);
+      console.error('Investment error:', err);
+      setError(err.message || 'An error occurred while processing your investment');
     } finally {
       setProcessing(false);
     }
@@ -173,17 +219,17 @@ const InvestmentDetail = () => {
   // Normalize investment data to handle different property names and missing values
   const normalizedInvestment = {
     ...investment,
-    // Map actual properties to expected ones
-    currentFunding: investment.currentFunding ?? investment.raisedAmount ?? 0,
-    targetAmount: investment.targetAmount ?? investment.totalAmount ?? 0,
-    minInvestment: investment.minInvestment ?? investment.minimumInvestment ?? 0,
-    maxInvestment: investment.maxInvestment ?? investment.totalAmount ?? 0,
-    expectedROI: investment.expectedROI ?? investment.expectedReturn ?? 0,
-    termMonths: investment.termMonths ?? investment.duration ?? 0,
-    riskScore: investment.riskScore ?? (investment.expectedReturn && investment.expectedReturn > 20 ? 7 : investment.expectedReturn && investment.expectedReturn > 15 ? 5 : 3),
+    // Map actual properties to expected ones - ensure all numeric values are numbers
+    currentFunding: Number(investment.currentFunding ?? investment.raisedAmount ?? 0) || 0,
+    targetAmount: Number(investment.targetAmount ?? investment.totalAmount ?? 0) || 0,
+    minInvestment: Number(investment.minInvestment ?? investment.minimumInvestment ?? 0) || 0,
+    maxInvestment: Number(investment.maxInvestment ?? investment.totalAmount ?? 0) || 0,
+    expectedROI: Number(investment.expectedROI ?? investment.expectedReturn ?? 0) || 0,
+    termMonths: Number(investment.termMonths ?? investment.duration ?? 0) || 0,
+    riskScore: Number(investment.riskScore ?? (investment.expectedReturn && investment.expectedReturn > 20 ? 7 : investment.expectedReturn && investment.expectedReturn > 15 ? 5 : 3)) || 5,
     propertyType: investment.propertyType ?? investment.type ?? 'N/A',
     propertyLocation: investment.propertyLocation ?? (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A'),
-    propertyValue: investment.propertyValue ?? investment.totalAmount ?? 0,
+    propertyValue: Number(investment.propertyValue ?? investment.totalAmount ?? 0) || 0,
     propertyDescription: investment.propertyDescription ?? investment.description ?? '',
     paymentSchedule: investment.paymentSchedule ?? 'Monthly',
     exitStrategy: investment.exitStrategy ?? 'End of term',
@@ -196,162 +242,110 @@ const InvestmentDetail = () => {
     : 0;
 
   return (
-    <Container className="py-5">
-      <Row>
-        <Col lg={8}>
-          <Card className="mb-4">
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h2 className="mb-0">{investment.title}</h2>
-              {getStatusBadge(investment.status)}
-            </Card.Header>
-            <Card.Body>
-              {investment.images && investment.images.length > 0 && (
-                <div className="mb-4">
-                  <Image 
-                    src={investment.images[0]} 
-                    alt={investment.title}
-                    fluid
-                    className="rounded"
-                    style={{ maxHeight: '400px', objectFit: 'cover' }}
-                  />
-                </div>
-              )}
-              
-              <h5>Investment Overview</h5>
-              <p className="text-muted">{investment.description}</p>
-
-              <Row className="mb-4">
-                <Col md={6}>
-                  <h6>Expected ROI</h6>
-                  <p className="h4 text-success">{normalizedInvestment.expectedROI || 0}%</p>
-                </Col>
-                <Col md={6}>
-                  <h6>Investment Term</h6>
-                  <p className="h4">{normalizedInvestment.termMonths || 0} months</p>
-                </Col>
-              </Row>
-
-              <h5>Funding Progress</h5>
-              <ProgressBar 
-                now={progressPercentage} 
-                label={`${progressPercentage.toFixed(1)}%`}
-                className="mb-2"
-              />
-              <div className="d-flex justify-content-between text-muted">
-                <span>${(normalizedInvestment.currentFunding || 0).toLocaleString()} raised</span>
-                <span>${(normalizedInvestment.targetAmount || 0).toLocaleString()} target</span>
+    <Container fluid className="px-0">
+      {/* Hero Section with Image and Header */}
+      <div className="position-relative mb-4" style={{ backgroundColor: '#f8f9fa' }}>
+        <Row className="g-0">
+          {investment.images && investment.images.length > 0 && (
+            <Col lg={8}>
+              <div style={{ height: '500px', overflow: 'hidden' }}>
+                <Image 
+                  src={investment.images[0]} 
+                  alt={investment.title}
+                  fluid
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
               </div>
+            </Col>
+          )}
+          <Col lg={investment.images && investment.images.length > 0 ? 4 : 12}>
+            <div className="p-4 h-100 d-flex flex-column justify-content-between" style={{ minHeight: investment.images && investment.images.length > 0 ? '500px' : 'auto', backgroundColor: '#fff' }}>
+              <div>
+                <div className="d-flex justify-content-between align-items-start mb-3">
+                  <div className="flex-grow-1">
+                    <h1 className="h2 mb-2 fw-bold">{investment.title}</h1>
+                    <p className="text-muted mb-3">{investment.subtitle || 'Investment Opportunity'}</p>
+                  </div>
+                  <div className="ms-3">
+                    {getStatusBadge(investment.status)}
+                  </div>
+                </div>
 
-              <h5 className="mt-4">Property Collateral</h5>
-              <Card className="bg-light">
-                <Card.Body>
-                  <Row>
-                    <Col md={6}>
-                      <p><strong>Property Type:</strong> {normalizedInvestment.propertyType || 'N/A'}</p>
-                      <p><strong>Location:</strong> {normalizedInvestment.propertyLocation || 'N/A'}</p>
-                      <p><strong>Estimated Value:</strong> ${(normalizedInvestment.propertyValue || 0).toLocaleString()}</p>
+                {/* Key Metrics - Compact */}
+                <Row className="g-3 mb-4">
+                  <Col xs={6} sm={4}>
+                    <div className="text-center p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">ROI</div>
+                      <div className="h4 text-success mb-0 fw-bold">{normalizedInvestment.expectedROI || 0}%</div>
+                    </div>
+                  </Col>
+                  <Col xs={6} sm={4}>
+                    <div className="text-center p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">Term</div>
+                      <div className="h4 mb-0 fw-bold">{normalizedInvestment.termMonths || 0}m</div>
+                    </div>
+                  </Col>
+                  <Col xs={12} sm={4}>
+                    <div className="text-center p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">Risk</div>
+                      <Badge bg={riskInfo.color} className="fs-6 px-3 py-2">{riskInfo.level}</Badge>
+                    </div>
+                  </Col>
+                </Row>
+
+                {/* Funding Progress - Compact */}
+                <div className="mb-4">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-muted small">Funding Progress</span>
+                    <span className="fw-bold text-primary">{progressPercentage.toFixed(1)}%</span>
+                  </div>
+                  <ProgressBar 
+                    now={progressPercentage} 
+                    variant="success"
+                    style={{ height: '12px', borderRadius: '6px' }}
+                    className="mb-2"
+                  />
+                  <Row className="g-2 text-center">
+                    <Col xs={6}>
+                      <div className="p-2 bg-light rounded">
+                        <div className="text-muted small">Raised</div>
+                        <div className="fw-bold text-success">${(Number(normalizedInvestment.currentFunding) || 0).toLocaleString()}</div>
+                      </div>
                     </Col>
-                    <Col md={6}>
-                      <p><strong>Property Details:</strong></p>
-                      <p className="text-muted">{normalizedInvestment.propertyDescription || normalizedInvestment.description || 'N/A'}</p>
+                    <Col xs={6}>
+                      <div className="p-2 bg-light rounded">
+                        <div className="text-muted small">Target</div>
+                        <div className="fw-bold">${(Number(normalizedInvestment.targetAmount) || 0).toLocaleString()}</div>
+                      </div>
                     </Col>
                   </Row>
-                </Card.Body>
-              </Card>
-
-              <h5 className="mt-4">Investment Terms</h5>
-              <ListGroup>
-                <ListGroup.Item>
-                  <strong>Minimum Investment:</strong> ${(normalizedInvestment.minInvestment || 0).toLocaleString()}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <strong>Maximum Investment:</strong> ${(normalizedInvestment.maxInvestment || 0).toLocaleString()}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <strong>Risk Level:</strong> 
-                  <Badge bg={riskInfo.color} className="ms-2">{riskInfo.level}</Badge>
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <strong>Payment Schedule:</strong> {normalizedInvestment.paymentSchedule || 'N/A'}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <strong>Exit Strategy:</strong> {normalizedInvestment.exitStrategy || 'N/A'}
-                </ListGroup.Item>
-              </ListGroup>
-
-              {investment.legalDocuments && investment.legalDocuments.length > 0 && (
-                <>
-                  <h5 className="mt-4">Legal Documents</h5>
-                  <ListGroup>
-                    {investment.legalDocuments.map((doc, index) => (
-                      <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
-                        <span>{doc.name}</span>
-                        <Button 
-                          variant="outline-primary" 
-                          size="sm"
-                          href={doc.url}
-                          target="_blank"
-                        >
-                          View Document
-                        </Button>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                </>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={4}>
-          <Card className="sticky-top" style={{ top: '20px' }}>
-            <Card.Header>
-              <h5>Investment Summary</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="mb-3">
-                <h6>Expected Return</h6>
-                <p className="h4 text-success">${(parseFloat(investmentAmount || normalizedInvestment.minInvestment || 0) * ((normalizedInvestment.expectedROI || 0) / 100)).toLocaleString()}</p>
-                <small className="text-muted">Based on {normalizedInvestment.expectedROI || 0}% ROI</small>
-              </div>
-
-              <div className="mb-3">
-                <h6>Investment Term</h6>
-                <p>{normalizedInvestment.termMonths || 0} months</p>
-              </div>
-
-              <div className="mb-3">
-                <h6>Risk Assessment</h6>
-                <Badge bg={riskInfo.color}>{riskInfo.level} Risk</Badge>
-              </div>
-
-              {(vendor || investment.sponsor) && (
-                <div className="mb-4">
-                  <h6>Investment Company</h6>
-                  <p className="mb-1"><strong>{vendor?.companyName || investment.sponsor?.name || 'N/A'}</strong></p>
-                  <p className="text-muted small">{vendor?.email || 'N/A'}</p>
                 </div>
-              )}
+              </div>
 
+              {/* Action Button in Hero */}
               {investment.status === 'active' && user?.role === 'buyer' && (
-                <div>
+                <div className="mt-auto">
                   {escrowTransaction ? (
-                    <Alert variant="info">
-                      <h6>Investment in Progress</h6>
-                      <p className="mb-2">You have an active escrow transaction for this investment.</p>
-                      <Button 
-                        variant="primary" 
-                        onClick={() => navigate(`/escrow/${escrowTransaction.id}`)}
-                        className="w-100"
-                      >
-                        View Transaction
-                      </Button>
+                    <Alert variant="info" className="mb-0">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>Investment in Progress</strong>
+                          <div className="small">Active escrow transaction</div>
+                        </div>
+                        <Button 
+                          variant="primary" 
+                          size="sm"
+                          onClick={() => navigate(`/escrow/${escrowTransaction.id}`)}
+                        >
+                          View
+                        </Button>
+                      </div>
                     </Alert>
                   ) : (
                     <Button 
                       variant="success" 
                       size="lg" 
-                      className="w-100"
+                      className="w-100 fw-bold"
                       onClick={() => setShowInvestModal(true)}
                     >
                       Invest Now
@@ -359,16 +353,145 @@ const InvestmentDetail = () => {
                   )}
                 </div>
               )}
+            </div>
+          </Col>
+        </Row>
+      </div>
 
-              {investment.status === 'funded' && (
-                <Alert variant="info">
-                  This investment opportunity is fully funded.
-                </Alert>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <Container>
+        <Row>
+          <Col lg={8}>
+            {/* Investment Overview */}
+            <Card className="mb-4 border-0 shadow-sm">
+              <Card.Body className="p-4">
+                <h4 className="mb-3 fw-bold">About This Investment</h4>
+                <p className="lead mb-0" style={{ lineHeight: '1.8' }}>{investment.description}</p>
+              </Card.Body>
+            </Card>
+
+            {/* Property & Investment Details Combined */}
+            <Row className="g-4 mb-4">
+              <Col md={6}>
+                <Card className="h-100 border-0 shadow-sm">
+                  <Card.Body className="p-4">
+                    <h5 className="mb-3 fw-bold">Property Collateral</h5>
+                    <div className="mb-3">
+                      <div className="text-muted small mb-1">Property Type</div>
+                      <div className="fw-semibold">{normalizedInvestment.propertyType || 'N/A'}</div>
+                    </div>
+                    <div className="mb-3">
+                      <div className="text-muted small mb-1">Location</div>
+                      <div className="fw-semibold">{normalizedInvestment.propertyLocation || 'N/A'}</div>
+                    </div>
+                    <div className="mb-3">
+                      <div className="text-muted small mb-1">Estimated Value</div>
+                      <div className="h5 text-primary mb-0 fw-bold">${(Number(normalizedInvestment.propertyValue) || 0).toLocaleString()}</div>
+                    </div>
+                    {normalizedInvestment.propertyDescription && (
+                      <div>
+                        <div className="text-muted small mb-1">Details</div>
+                        <div className="text-muted small">{normalizedInvestment.propertyDescription}</div>
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={6}>
+                <Card className="h-100 border-0 shadow-sm">
+                  <Card.Body className="p-4">
+                    <h5 className="mb-3 fw-bold">Investment Terms</h5>
+                    <div className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span className="text-muted">Minimum Investment</span>
+                        <span className="fw-bold">${(Number(normalizedInvestment.minInvestment) || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span className="text-muted">Maximum Investment</span>
+                        <span className="fw-bold">${(Number(normalizedInvestment.maxInvestment) || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span className="text-muted">Payment Schedule</span>
+                        <span className="fw-bold">{normalizedInvestment.paymentSchedule || 'N/A'}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center py-2">
+                        <span className="text-muted">Exit Strategy</span>
+                        <span className="fw-bold">{normalizedInvestment.exitStrategy || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Legal Documents */}
+            {investment.legalDocuments && investment.legalDocuments.length > 0 && (
+              <Card className="mb-4 border-0 shadow-sm">
+                <Card.Body className="p-4">
+                  <h5 className="mb-3 fw-bold">Legal Documents</h5>
+                  <div className="d-flex flex-column gap-2">
+                    {investment.legalDocuments.map((doc, index) => (
+                      <div key={index} className="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <span className="fw-semibold">{doc.name}</span>
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          href={doc.url}
+                          target="_blank"
+                        >
+                          View
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card.Body>
+              </Card>
+            )}
+          </Col>
+
+          {/* Sidebar - Investment Summary */}
+          <Col lg={4}>
+            <div className="sticky-top" style={{ top: '20px' }}>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-primary text-white py-3">
+                  <h5 className="mb-0 fw-bold">Investment Summary</h5>
+                </Card.Header>
+                <Card.Body className="p-4">
+                  <div className="text-center mb-4 p-4 bg-light rounded">
+                    <div className="text-muted small mb-2">Expected Return</div>
+                    <h2 className="text-success mb-2 fw-bold">${(parseFloat(investmentAmount || normalizedInvestment.minInvestment || 0) * ((normalizedInvestment.expectedROI || 0) / 100) || 0).toLocaleString()}</h2>
+                    <div className="text-muted small">Based on {normalizedInvestment.expectedROI || 0}% ROI</div>
+                  </div>
+
+                  <div className="mb-3 pb-3 border-bottom">
+                    <div className="d-flex justify-content-between mb-2">
+                      <span className="text-muted">Investment Term</span>
+                      <strong>{normalizedInvestment.termMonths || 0} months</strong>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Risk Level</span>
+                      <Badge bg={riskInfo.color}>{riskInfo.level}</Badge>
+                    </div>
+                  </div>
+
+                  {(vendor || investment.sponsor) && (
+                    <div className="mb-3 pb-3 border-bottom">
+                      <div className="text-muted small mb-2">Investment Company</div>
+                      <div className="fw-bold mb-1">{vendor?.companyName || investment.sponsor?.name || 'N/A'}</div>
+                      <div className="text-muted small">{vendor?.email || 'N/A'}</div>
+                    </div>
+                  )}
+
+                  {investment.status === 'funded' && (
+                    <Alert variant="info" className="mb-0">
+                      This investment opportunity is fully funded.
+                    </Alert>
+                  )}
+                </Card.Body>
+              </Card>
+            </div>
+          </Col>
+        </Row>
+      </Container>
 
       {/* Investment Modal */}
       <Modal show={showInvestModal} onHide={() => setShowInvestModal(false)}>
@@ -387,21 +510,21 @@ const InvestmentDetail = () => {
                 onChange={(e) => setInvestmentAmount(e.target.value)}
                 min={normalizedInvestment.minInvestment}
                 max={normalizedInvestment.maxInvestment}
-                placeholder={`Minimum: $${(normalizedInvestment.minInvestment || 0).toLocaleString()}`}
+                placeholder={`Minimum: $${(Number(normalizedInvestment.minInvestment) || 0).toLocaleString()}`}
               />
               <Form.Text className="text-muted">
-                Minimum: ${(normalizedInvestment.minInvestment || 0).toLocaleString()} | 
-                Maximum: ${(normalizedInvestment.maxInvestment || 0).toLocaleString()}
+                Minimum: ${(Number(normalizedInvestment.minInvestment) || 0).toLocaleString()} | 
+                Maximum: ${(Number(normalizedInvestment.maxInvestment) || 0).toLocaleString()}
               </Form.Text>
             </Form.Group>
 
             <Alert variant="info">
               <h6>Investment Summary</h6>
               <p className="mb-1">
-                <strong>Amount:</strong> ${parseFloat(investmentAmount || 0).toLocaleString()}
+                <strong>Amount:</strong> ${(parseFloat(investmentAmount || 0) || 0).toLocaleString()}
               </p>
               <p className="mb-1">
-                <strong>Expected Return:</strong> ${(parseFloat(investmentAmount || 0) * ((normalizedInvestment.expectedROI || 0) / 100)).toLocaleString()}
+                <strong>Expected Return:</strong> ${(parseFloat(investmentAmount || 0) * ((normalizedInvestment.expectedROI || 0) / 100) || 0).toLocaleString()}
               </p>
               <p className="mb-0">
                 <strong>Term:</strong> {normalizedInvestment.termMonths || 0} months

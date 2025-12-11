@@ -52,6 +52,8 @@ const PropertyAlerts = lazy(() => import('./pages/PropertyAlerts'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Investment = lazy(() => import('./pages/Investment'));
 const Mortgage = lazy(() => import('./pages/Mortgage'));
+const MortgageApplications = lazy(() => import('./pages/MortgageApplications'));
+const MortgageApplicationDetail = lazy(() => import('./pages/MortgageApplicationDetail'));
 const HelpSupport = lazy(() => import('./pages/HelpSupport'));
 const BillingPayments = lazy(() => import('./pages/BillingPayments'));
 const EscrowPaymentFlow = lazy(() => import('./components/EscrowPaymentFlow'));
@@ -97,14 +99,12 @@ function App() {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
                   <Route path="/properties" element={
-                    <ProtectedRoute>
                     <div className="flex w-full">
                       <Sidebar />
                       <main id="main-content" className="flex-1 ml-0 lg:ml-64" role="main">
                         <Properties />
                       </main>
                     </div>
-                    </ProtectedRoute>
                   } />
                   <Route path="/my-inspections" element={
                     <ProtectedRoute>
@@ -142,6 +142,26 @@ function App() {
                         <Sidebar />
                         <main className="flex-1 ml-0 lg:ml-64">
                           <Mortgages />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgages/applications" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-0 lg:ml-64">
+                          <MortgageApplications />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mortgages/applications/:id" element={
+                    <ProtectedRoute>
+                      <div className="flex w-full">
+                        <Sidebar />
+                        <main className="flex-1 ml-0 lg:ml-64">
+                          <MortgageApplicationDetail />
                         </main>
                       </div>
                     </ProtectedRoute>

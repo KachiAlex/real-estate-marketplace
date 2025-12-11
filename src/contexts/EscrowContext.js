@@ -53,54 +53,104 @@ export const EscrowProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Load mock data
-    setEscrowTransactions(mockEscrowTransactions);
+    // Load escrow transactions from localStorage first, then add mock data if needed
+    const storedEscrows = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+    if (storedEscrows.length > 0) {
+      setEscrowTransactions(storedEscrows);
+    } else {
+      // Only use mock data if no stored transactions exist
+      setEscrowTransactions(mockEscrowTransactions);
+      localStorage.setItem('escrowTransactions', JSON.stringify(mockEscrowTransactions));
+    }
   }, []);
 
-  const createEscrowTransaction = async (propertyId, amount, buyerId, sellerId) => {
+  // Persist escrow transactions to localStorage and notify when they change
+  useEffect(() => {
+    if (escrowTransactions.length >= 0) {
+      localStorage.setItem('escrowTransactions', JSON.stringify(escrowTransactions));
+      // Dispatch event to notify dashboard and other components
+      window.dispatchEvent(new CustomEvent('escrowUpdated', {
+        detail: { transactions: escrowTransactions }
+      }));
+    }
+  }, [escrowTransactions]);
+
+  const createEscrowTransaction = async (itemId, amount, buyerId, sellerId, options = {}) => {
     try {
       if (!user) {
         toast.error('Please login to create escrow transaction');
         return { success: false };
       }
 
+      const { type = 'property', investmentData = null } = options;
+      const isInvestment = type === 'investment';
+      
       const escrowFee = Math.round(amount * 0.005); // 0.5% escrow fee
       const totalAmount = amount + escrowFee;
 
+      const transactionId = `ESC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      
       const newTransaction = {
-        id: Date.now().toString(),
-        propertyId,
-        propertyTitle: 'Property Transaction',
-        buyerId,
+        id: transactionId,
+        [isInvestment ? 'investmentId' : 'propertyId']: itemId,
+        propertyTitle: investmentData?.title || investmentData?.investmentTitle || 'Property Transaction',
+        investmentTitle: investmentData?.title || investmentData?.investmentTitle || null,
+        buyerId: buyerId || user.id || user.uid,
         buyerName: user.firstName + ' ' + user.lastName,
         buyerEmail: user.email,
-        sellerId,
-        sellerName: 'Property Owner',
-        sellerEmail: 'owner@example.com',
+        sellerId: sellerId || null,
+        sellerName: investmentData?.sponsor?.name || investmentData?.vendor || 'Property Owner',
+        sellerEmail: investmentData?.sponsor?.email || investmentData?.vendorEmail || 'owner@example.com',
+        vendorId: sellerId || investmentData?.vendorId || investmentData?.sponsorId || null,
         amount: parseInt(amount),
         currency: 'NGN',
-        status: 'pending',
-        type: 'sale',
+        status: 'pending_payment',
+        type: isInvestment ? 'investment' : 'sale',
         paymentMethod: 'card',
         createdAt: new Date().toISOString(),
         expectedCompletion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        documents: [
+        documents: isInvestment ? [
+          { name: 'Investment Agreement', status: 'pending' },
+          { name: 'Property Deed (Collateral)', status: 'awaiting_vendor_documents' },
+          { name: 'Title Documents', status: 'awaiting_vendor_documents' }
+        ] : [
           { name: 'Purchase Agreement', status: 'pending' },
           { name: 'Property Inspection Report', status: 'pending' },
           { name: 'Title Search', status: 'pending' }
         ],
-        milestones: [
+        milestones: isInvestment ? [
+          { name: 'Investment Payment', status: 'pending', date: null, amount: parseInt(amount) },
+          { name: 'Document Verification', status: 'pending', date: null, amount: 0 },
+          { name: 'Fund Release', status: 'pending', date: null, amount: 0 }
+        ] : [
           { name: 'Initial Payment', status: 'pending', date: null, amount: Math.round(amount * 0.1) },
           { name: 'Property Inspection', status: 'pending', date: null, amount: 0 },
           { name: 'Final Payment', status: 'pending', date: null, amount: Math.round(amount * 0.9) }
         ],
         escrowFee,
-        totalAmount
+        totalAmount,
+        // Investment-specific fields
+        ...(isInvestment && investmentData ? {
+          expectedROI: investmentData.expectedROI || investmentData.expectedReturn || 0,
+          lockPeriod: investmentData.lockPeriod || investmentData.termMonths || investmentData.duration || 0,
+          documentStatus: 'awaiting_vendor_documents',
+          collateralProperty: investmentData.propertyLocation || 'Property collateral pending verification'
+        } : {})
       };
 
-      setEscrowTransactions(prev => [...prev, newTransaction]);
+      const updatedTransactions = [...escrowTransactions, newTransaction];
+      setEscrowTransactions(updatedTransactions);
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
+      
+      // Dispatch event to notify dashboard
+      window.dispatchEvent(new CustomEvent('escrowUpdated', {
+        detail: { transactions: updatedTransactions }
+      }));
+      
       toast.success('Escrow transaction created successfully!');
-      return { success: true, data: newTransaction };
+      return { success: true, data: newTransaction, id: transactionId };
     } catch (error) {
       console.error('Error creating escrow transaction:', error);
       toast.error('Failed to create escrow transaction');
@@ -108,8 +158,25 @@ export const EscrowProvider = ({ children }) => {
     }
   };
 
-  const getEscrowTransaction = (id) => {
-    return escrowTransactions.find(t => t.id === id);
+  const getEscrowTransaction = async (id) => {
+    // First check in-memory state
+    let transaction = escrowTransactions.find(t => t.id === id || t.investmentId === id || t.propertyId === id);
+    
+    // If not found, check localStorage
+    if (!transaction) {
+      const storedEscrows = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+      transaction = storedEscrows.find(t => t.id === id || t.investmentId === id || t.propertyId === id);
+      
+      if (transaction) {
+        // Add to in-memory state
+        setEscrowTransactions(prev => {
+          const exists = prev.find(t => t.id === transaction.id);
+          return exists ? prev : [...prev, transaction];
+        });
+      }
+    }
+    
+    return transaction;
   };
 
   const getUserEscrowTransactions = () => {
@@ -119,11 +186,19 @@ export const EscrowProvider = ({ children }) => {
 
   const updateEscrowStatus = async (transactionId, status, notes = '') => {
     try {
-      setEscrowTransactions(prev => prev.map(t => 
+      const updatedTransactions = escrowTransactions.map(t => 
         t.id === transactionId 
           ? { ...t, status, notes, updatedAt: new Date().toISOString() }
           : t
-      ));
+      );
+      setEscrowTransactions(updatedTransactions);
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
+      
+      // Dispatch event to notify dashboard
+      window.dispatchEvent(new CustomEvent('escrowUpdated', {
+        detail: { transactions: updatedTransactions }
+      }));
+      
       toast.success('Escrow status updated successfully!');
       return { success: true };
     } catch (error) {
@@ -135,11 +210,19 @@ export const EscrowProvider = ({ children }) => {
 
   const releaseEscrowFunds = async (transactionId) => {
     try {
-      setEscrowTransactions(prev => prev.map(t => 
+      const updatedTransactions = escrowTransactions.map(t => 
         t.id === transactionId 
           ? { ...t, status: 'completed', completedAt: new Date().toISOString() }
           : t
-      ));
+      );
+      setEscrowTransactions(updatedTransactions);
+      localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
+      
+      // Dispatch event to notify dashboard
+      window.dispatchEvent(new CustomEvent('escrowUpdated', {
+        detail: { transactions: updatedTransactions }
+      }));
+      
       toast.success('Escrow funds released successfully!');
       return { success: true };
     } catch (error) {
