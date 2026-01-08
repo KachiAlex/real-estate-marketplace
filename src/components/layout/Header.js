@@ -172,7 +172,7 @@ const Header = () => {
         >
           Skip to main content
         </a>
-        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 lg:ml-64 lg:w-[calc(100%-16rem)]">
           <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex justify-end items-center h-14 py-2">
             {/* User Profile Icon Only */}

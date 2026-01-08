@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import AdminSidebar from '../components/layout/AdminSidebar';
+import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
 import BlogManagement from '../components/BlogManagement';
 import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
@@ -13,6 +13,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import AdminListingsStatusChart from '../components/AdminListingsStatusChart';
 import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
+import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ const AdminDashboard = () => {
     totalItems: 0,
     itemsPerPage: 20
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const loadAdminData = useCallback(async () => {
     const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
@@ -86,6 +88,7 @@ const AdminDashboard = () => {
     const params = new URLSearchParams(location.search);
     params.set('tab', tabId);
     navigate({ pathname: '/admin', search: params.toString() }, { replace: true });
+    setIsSidebarOpen(false);
   };
 
   // Load other admin data
@@ -431,97 +434,161 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Admin Sidebar */}
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      
+    <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* Desktop Sidebar */}
+      <AdminSidebar activeTab={activeTab} setActiveTab={handleSwitchTab} />
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <button
+            aria-label="Close admin menu"
+            className="flex-1 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          <div className="w-72 max-w-full h-full bg-white shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Admin Panel</p>
+                <p className="text-sm font-semibold text-gray-900">PropertyArk</p>
+              </div>
+              <button
+                aria-label="Close admin menu"
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <HiOutlineX className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {ADMIN_MENU_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSwitchTab(item.id)}
+                    className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      isActive ? 'bg-brand-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className="text-lg flex-shrink-0" />
+                    <div className="text-left">
+                      <span className="block">{item.label}</span>
+                      <span className={`text-xs leading-snug ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                        {item.description}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 ml-64">
-      {/* Breadcrumbs */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <Breadcrumbs items={breadcrumbItems} />
-      </div>
-      
-      {/* Header */}
-      <div className="bg-white shadow">
-          <div className="px-6 py-6">
-            <h1 className="text-3xl font-bold text-gray-900 capitalize">
+      <div className="flex-1 w-full lg:ml-64 flex flex-col">
+        {/* Mobile top bar */}
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between lg:hidden">
+          <button
+            aria-label="Open admin menu"
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-md border border-gray-200 text-gray-600"
+          >
+            <HiOutlineMenu className="w-5 h-5" />
+          </button>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-gray-900">Admin Dashboard</p>
+            <p className="text-xs text-gray-500 capitalize">{activeTab.replace('-', ' ')} Management</p>
+          </div>
+        </div>
+
+        {/* Breadcrumbs */}
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 hidden lg:block">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
+
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="px-4 sm:px-6 py-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 capitalize">
               {activeTab} Management
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-gray-600 text-sm sm:text-base">
               {activeTab === 'properties' && 'Property verification and management'}
               {activeTab === 'verification' && 'Property verification requests and approvals'}
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
-                             {activeTab === 'users' && 'User account management'}
-               {activeTab === 'blog' && 'Blog content management'}
-               {activeTab === 'mortgage-banks' && 'Mortgage bank verification and management'}
-             </p>
+              {activeTab === 'users' && 'User account management'}
+              {activeTab === 'blog' && 'Blog content management'}
+              {activeTab === 'mortgage-banks' && 'Mortgage bank verification and management'}
+            </p>
+          </div>
         </div>
-      </div>
 
         {/* Content Area */}
-        <div className="px-6 py-8">
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
 
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Properties</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Properties</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.pending || 0}</p>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.pending || 0}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100 text-green-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.approved || 0}</p>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.approved || 0}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-red-100 text-red-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.rejected || 0}</p>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-red-100 text-red-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Rejected</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.rejected || 0}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
 
         {/* Property status distribution chart (properties tab only) */}

@@ -1935,38 +1935,31 @@ export const PropertyProvider = ({ children }) => {
   const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
     setLoading(true);
     setError(null);
-    
-    try {
-      // Try Firestore first if authentication is ready
-      if (firebaseAuthReady && auth.currentUser) {
-        try {
-          const propertyRef = doc(db, 'properties', propertyId);
-          await updateDoc(propertyRef, {
-            verificationStatus: verificationStatus,
-            approvalStatus: verificationStatus, // Also set approvalStatus for compatibility
-            verificationNotes: verificationNotes || '',
-            isVerified: verificationStatus === 'approved',
-            verifiedAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
-          
-          toast.success(`Property ${verificationStatus} successfully`);
-          // Don't await here to avoid circular dependency - let component refresh
-          return true;
-        } catch (firestoreError) {
-          console.error('Firestore verification error:', firestoreError);
-          
-          // Check if it's a permission error
-          if (firestoreError.code === 'permission-denied') {
-            throw new Error('Permission denied. Please ensure you have admin privileges.');
-          }
-          
-          // For other errors, try API fallback
-          throw firestoreError;
+
+    const syncToFirestore = async () => {
+      if (!firebaseAuthReady || !auth.currentUser) return false;
+      try {
+        const propertyRef = doc(db, 'properties', propertyId);
+        await updateDoc(propertyRef, {
+          verificationStatus,
+          approvalStatus: verificationStatus,
+          verificationNotes: verificationNotes || '',
+          isVerified: verificationStatus === 'approved',
+          verifiedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        return true;
+      } catch (firestoreError) {
+        console.error('Firestore verification error:', firestoreError);
+        if (firestoreError.code === 'permission-denied') {
+          throw new Error('Permission denied. Please ensure you have admin privileges.');
         }
+        throw firestoreError;
       }
-      
-      // Fallback to API if Firestore not available
+    };
+
+    try {
+      // Attempt to update via API first so the backend data (used by admin tables) stays in sync
       try {
         const response = await fetch(getApiUrl(`/admin/properties/${propertyId}/verify`), {
           method: 'PUT',
@@ -1979,18 +1972,43 @@ export const PropertyProvider = ({ children }) => {
             verificationNotes
           })
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          toast.success(`Property ${verificationStatus} successfully`);
-          return true;
-        } else {
-          throw new Error(data.message || 'Failed to verify property');
+
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.warn('verifyProperty: Could not parse API response JSON', parseError);
         }
+
+        if (!response.ok || !data.success) {
+          const message = data?.message || `Failed to verify property (status ${response.status})`;
+          throw new Error(message);
+        }
+
+        toast.success(`Property ${verificationStatus} successfully`);
+
+        // Best-effort sync to Firestore for parity when docs exist there
+        syncToFirestore().catch(err => {
+          console.warn('verifyProperty: Firestore sync after API success failed', err);
+        });
+
+        return true;
       } catch (apiError) {
-        throw new Error('Failed to verify property via API: ' + apiError.message);
+        console.warn('verifyProperty: API verification failed, attempting Firestore fallback', apiError);
+        // Only fall back to Firestore if we have the right auth context
+        if (!firebaseAuthReady || !auth.currentUser) {
+          throw apiError;
+        }
       }
+
+      // Firestore fallback (or primary path when API unavailable)
+      const firestoreSuccess = await syncToFirestore();
+      if (firestoreSuccess) {
+        toast.success(`Property ${verificationStatus} successfully`);
+        return true;
+      }
+
+      throw new Error('Failed to verify property via Firestore');
     } catch (error) {
       setError('Failed to verify property');
       console.error('Error verifying property:', error);

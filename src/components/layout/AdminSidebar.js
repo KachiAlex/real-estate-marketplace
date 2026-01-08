@@ -1,22 +1,16 @@
 ﻿import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { 
   FaBuilding, 
   FaFileContract, 
   FaFileAlt, 
   FaUsers, 
-  FaCog,
   FaChartBar,
-  FaHome,
   FaBlog,
   FaCheckCircle,
   FaUniversity
 } from 'react-icons/fa';
 
-const AdminSidebar = ({ activeTab, setActiveTab }) => {
-  const location = useLocation();
-
-  const menuItems = [
+export const ADMIN_MENU_ITEMS = [
     { 
       id: 'properties', 
       label: 'Properties', 
@@ -61,12 +55,14 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     }
   ];
 
+const AdminSidebar = ({ activeTab, setActiveTab }) => {
+
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40">
+    <div className="hidden lg:flex lg:flex-col w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40">
       {/* Admin Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
@@ -81,9 +77,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       </div>
 
       {/* Navigation Menu */}
-      <div className="p-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-24">
         <nav className="space-y-1">
-          {menuItems.map((item) => {
+          {ADMIN_MENU_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
@@ -101,7 +97,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
                 <Icon className="text-lg flex-shrink-0" />
                 <div className="flex-1">
                   <span className="block">{item.label}</span>
-                  <span className={`text-xs ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <span className={`text-xs leading-snug ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
                     {item.description}
                   </span>
                 </div>
@@ -112,7 +108,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       </div>
 
       {/* Admin Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 bg-white">
         <div className="text-center">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">
             System Status
