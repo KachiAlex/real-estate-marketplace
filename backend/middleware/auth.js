@@ -1,5 +1,12 @@
 const jwt = require('jsonwebtoken');
+const admin = require('firebase-admin');
 const userService = require('../services/userService');
+
+const resolveUserForFirebaseClaims = async (claims) => {
+  const email = (claims && typeof claims.email === 'string') ? claims.email : null;
+  if (!email) return null;
+  return userService.findByEmail(email);
+};
 
 // Protect routes - verify token
 exports.protect = async (req, res, next) => {
@@ -20,12 +27,12 @@ exports.protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token
+      // Verify backend JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from token
       const user = await userService.findById(decoded.id);
-      
+
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -33,15 +40,31 @@ exports.protect = async (req, res, next) => {
         });
       }
 
-      // Remove password from user object
       delete user.password;
       req.user = user;
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
+      return next();
+    } catch (jwtError) {
+      // If backend JWT verification fails, try Firebase ID token (used by the frontend)
+      try {
+        const claims = await admin.auth().verifyIdToken(token);
+        const user = await resolveUserForFirebaseClaims(claims);
+
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            message: 'User not found'
+          });
+        }
+
+        delete user.password;
+        req.user = user;
+        return next();
+      } catch (firebaseError) {
+        return res.status(401).json({
+          success: false,
+          message: 'Not authorized to access this route'
+        });
+      }
     }
   } catch (error) {
     res.status(500).json({
