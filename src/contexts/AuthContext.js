@@ -12,6 +12,7 @@ import {
   createUserWithEmailAndPassword
 } from 'firebase/auth';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 // Generate unique user code (e.g., "PAK-A3X7K2") - PAK = PropertyArk
 const generateUserCode = () => {
@@ -644,7 +645,7 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUid && firebaseCredential) {
         // Firebase Auth succeeded - try to get user details from backend
         try {
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          const apiBaseUrl = getApiUrl();
           
           const headers = {
             'Content-Type': 'application/json',
@@ -733,7 +734,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // Firebase Auth failed - try backend API as fallback
         try {
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          const apiBaseUrl = getApiUrl();
           
           const headers = {
             'Content-Type': 'application/json'
@@ -868,7 +869,7 @@ export const AuthProvider = ({ children }) => {
       // After successful login, fetch user dashboard data with token (only if Firebase token exists)
       if (firebaseToken) {
         try {
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+          const apiBaseUrl = getApiUrl();
           
           const dashboardResponse = await fetch(`${apiBaseUrl}/dashboard/user`, {
             method: 'GET',
@@ -1085,7 +1086,7 @@ export const AuthProvider = ({ children }) => {
       // Step 1: Try backend API first (for real user registration)
       let backendUser = null;
       try {
-        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
+        const apiBaseUrl = getApiUrl();
         const response = await fetch(`${apiBaseUrl}/auth/register`, {
           method: 'POST',
           headers: {
