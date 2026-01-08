@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   FaCheck, 
   FaTimes, 
@@ -18,12 +18,99 @@ import {
   FaRuler,
   FaSearch,
   FaFilter,
-  FaInfoCircle
+  FaInfoCircle,
+  FaBuilding,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaFileAlt
 } from 'react-icons/fa';
+import { useProperty } from '../contexts/PropertyContext';
+import { getApiBaseUrl } from '../utils/apiConfig';
+
+const normalizeDateValue = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'number') return new Date(value).toISOString();
+  if (value.toDate) return value.toDate().toISOString();
+  if (value.seconds) return new Date(value.seconds * 1000).toISOString();
+  return null;
+};
+
+const normalizeImages = (images = []) => {
+  if (!Array.isArray(images)) return [];
+  return images
+    .map((img) => {
+      if (!img) return null;
+      if (typeof img === 'string') return img;
+      if (typeof img === 'object' && img.url) return img.url;
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const normalizeLocation = (property) => {
+  if (property.propertyLocation && typeof property.propertyLocation === 'object') {
+    return property.propertyLocation;
+  }
+  if (property.location && typeof property.location === 'object') {
+    return property.location;
+  }
+
+  const parts = typeof property.location === 'string' ? property.location.split(',').map((p) => p.trim()) : [];
+  const address = property.address || parts[0] || '';
+  const city = property.city || parts[1] || '';
+  const state = property.state || parts[2] || '';
+
+  return {
+    address,
+    city,
+    state
+  };
+};
+
+const mapPropertyToVerificationRequest = (property) => {
+  const status = (property.verificationStatus || property.approvalStatus || (property.isVerified ? 'approved' : 'pending') || 'pending')
+    .toString()
+    .toLowerCase();
+
+  const locationDetails = normalizeLocation(property);
+  const vendorName =
+    property.vendorName ||
+    property.owner?.name ||
+    (property.owner?.firstName || property.owner?.lastName ? `${property.owner?.firstName || ''} ${property.owner?.lastName || ''}`.trim() : '') ||
+    'Unknown Vendor';
+
+  return {
+    id: property.id,
+    propertyId: property.id,
+    vendorId: property.vendorId || property.ownerId || property.owner?.id || '',
+    vendorName,
+    vendorEmail: property.vendorEmail || property.ownerEmail || property.owner?.email || '',
+    propertyTitle: property.title || property.name || 'Untitled Property',
+    propertyDescription: property.description || property.summary || '',
+    propertyPrice: property.price || property.amount || 0,
+    propertyLocation: locationDetails,
+    propertyType: property.type || property.propertyType || property.listingType || 'Property',
+    bedrooms: property.bedrooms || property.details?.bedrooms || 0,
+    bathrooms: property.bathrooms || property.details?.bathrooms || 0,
+    area: property.area || property.details?.sqft || 0,
+    submittedAt: normalizeDateValue(property.verificationRequestedAt || property.createdAt) || new Date().toISOString(),
+    paymentCompletedAt: normalizeDateValue(property.verificationPaidAt || property.paymentCompletedAt || property.updatedAt) || null,
+    status,
+    verificationFee: property.verificationFee || property.fees?.verification || 0,
+    images: normalizeImages(property.images),
+    documents: property.documents || property.verificationDocuments || property.propertyDocuments || [],
+    raw: property
+  };
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const AdminPropertyVerification = () => {
+  const { properties, fetchAdminProperties, verifyProperty } = useProperty();
   const [verificationRequests, setVerificationRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -36,16 +123,36 @@ const AdminPropertyVerification = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+  const refreshRequests = useCallback(async () => {
+    setLoadingRequests(true);
+    setError('');
+    try {
+      await fetchAdminProperties('', '');
+    } catch (err) {
+      console.error('AdminPropertyVerification: Failed to fetch admin properties', err);
+      setError('Failed to load verification requests. Please try again.');
+    }
+  }, [fetchAdminProperties]);
 
   useEffect(() => {
-    loadVerificationRequests();
+    refreshRequests();
     loadAdminSettings();
-  }, []);
+  }, [refreshRequests]);
+
+  useEffect(() => {
+    if (!properties || properties.length === 0) {
+      setVerificationRequests([]);
+      setLoadingRequests(false);
+      return;
+    }
+
+    const mapped = properties.map(mapPropertyToVerificationRequest);
+    setVerificationRequests(mapped);
+    setLoadingRequests(false);
+  }, [properties]);
 
   const loadAdminSettings = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
@@ -67,112 +174,10 @@ const AdminPropertyVerification = () => {
     }
   };
 
-  const loadVerificationRequests = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Enhanced mock data with better structure
-      const mockVerificationRequests = [
-        {
-          id: '1',
-          propertyId: 'prop_001',
-          vendorId: 'user_001',
-          vendorName: 'John Doe',
-          vendorEmail: 'john@example.com',
-          propertyTitle: 'Luxury Villa in Lekki',
-          propertyDescription: 'A beautiful 5-bedroom luxury villa with modern amenities, swimming pool, and garden space.',
-          propertyPrice: 500000000,
-          propertyLocation: {
-            address: 'No. 15 Admiralty Way',
-            city: 'Lekki',
-            state: 'Lagos'
-          },
-          propertyType: 'House',
-          bedrooms: 5,
-          bathrooms: 4,
-          area: 350,
-          submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          paymentCompletedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'pending',
-          verificationFee: 50000,
-          images: ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800'],
-          documents: [
-            { type: 'title_deed', name: 'Title Deed', url: 'https://example.com/title.pdf' },
-            { type: 'survey_plan', name: 'Survey Plan', url: 'https://example.com/survey.pdf' }
-          ]
-        },
-        {
-          id: '2',
-          propertyId: 'prop_002',
-          vendorId: 'user_002',
-          vendorName: 'Jane Smith',
-          vendorEmail: 'jane@example.com',
-          propertyTitle: 'Modern Apartment in Victoria Island',
-          propertyDescription: 'A sleek 3-bedroom apartment in the heart of Victoria Island with stunning ocean views.',
-          propertyPrice: 120000000,
-          propertyLocation: {
-            address: 'Plot 25 Ozumba Mbadiwe',
-            city: 'Victoria Island',
-            state: 'Lagos'
-          },
-          propertyType: 'Apartment',
-          bedrooms: 3,
-          bathrooms: 2,
-          area: 180,
-          submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          paymentCompletedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'pending',
-          verificationFee: 50000,
-          images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
-          documents: [
-            { type: 'title_deed', name: 'Title Deed', url: 'https://example.com/title2.pdf' },
-            { type: 'c_of_o', name: 'C of O', url: 'https://example.com/coo.pdf' }
-          ]
-        }
-      ];
-      
-      setVerificationRequests(mockVerificationRequests);
-      console.log('AdminPropertyVerification: Using mock data (API unavailable)');
-    } catch (err) {
-      setError('Failed to load verification requests');
-      console.error('Error:', err);
-      setVerificationRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async (requestId) => {
-    setActionLoading(true);
-    setError('');
-
-    try {
-      // Simulate API call with local state update
-      console.log('AdminPropertyVerification: Approving property', requestId);
-      
-      // Update local state
-      setVerificationRequests(prev => 
-        prev.filter(req => req.id !== requestId)
-      );
-      
-      setShowModal(false);
-      setAdminNotes('');
-      
-      // Show success message
-      alert('Property approved successfully! (Mock)');
-      
-    } catch (err) {
-      setError('Failed to approve property. Please try again.');
-      console.error('Error:', err);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleReject = async (requestId) => {
-    if (!rejectionReason.trim()) {
-      setError('Please provide a rejection reason');
+  const handlePropertyDecision = async (status) => {
+    if (!selectedRequest) return;
+    if (status === 'rejected' && !rejectionReason.trim() && !adminNotes.trim()) {
+      setError('Please provide a rejection reason or admin notes.');
       return;
     }
 
@@ -180,24 +185,24 @@ const AdminPropertyVerification = () => {
     setError('');
 
     try {
-      // Simulate API call with local state update
-      console.log('AdminPropertyVerification: Rejecting property', requestId);
-      
-      // Update local state
-      setVerificationRequests(prev => 
-        prev.filter(req => req.id !== requestId)
-      );
-      
+      const notes =
+        status === 'rejected'
+          ? [rejectionReason.trim(), adminNotes.trim()].filter(Boolean).join('. ').trim()
+          : adminNotes.trim();
+
+      const success = await verifyProperty(selectedRequest.propertyId, status, notes);
+
+      if (!success) {
+        throw new Error(`Failed to ${status} property. Please try again.`);
+      }
+
       setShowModal(false);
       setRejectionReason('');
       setAdminNotes('');
-      
-      // Show success message
-      alert('Property rejected successfully! (Mock)');
-      
+      await refreshRequests();
     } catch (err) {
-      setError('Failed to reject property. Please try again.');
-      console.error('Error:', err);
+      console.error(`AdminPropertyVerification: Error ${status} property`, err);
+      setError(err.message || `Failed to ${status} property. Please try again.`);
     } finally {
       setActionLoading(false);
     }
@@ -212,14 +217,18 @@ const AdminPropertyVerification = () => {
   };
 
   const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return 'N/A';
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-NG', {
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'Not available';
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    if (Number.isNaN(date.getTime())) return 'Not available';
+    return date.toLocaleDateString('en-NG', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -292,7 +301,7 @@ const AdminPropertyVerification = () => {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  if (loadingRequests) {
     return (
       <div className="flex items-center justify-center h-64">
         <FaSpinner className="animate-spin text-2xl text-blue-600" />
@@ -322,7 +331,7 @@ const AdminPropertyVerification = () => {
             <div>
               <p className="text-yellow-100 text-sm font-medium">Pending Review</p>
               <p className="text-3xl font-bold mt-2">
-                {verificationRequests.filter(r => r.status === 'pending').length}
+                {verificationRequests.filter(r => r.status === 'payment_completed').length}
               </p>
             </div>
             <div className="bg-yellow-400 bg-opacity-30 rounded-full p-3">
@@ -663,7 +672,7 @@ const AdminPropertyVerification = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleReject(selectedRequest.id)}
+                  onClick={() => handlePropertyDecision('rejected')}
                   disabled={actionLoading}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
@@ -675,7 +684,7 @@ const AdminPropertyVerification = () => {
                   Reject
                 </button>
                 <button
-                  onClick={() => handleApprove(selectedRequest.id)}
+                  onClick={() => handlePropertyDecision('approved')}
                   disabled={actionLoading}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >

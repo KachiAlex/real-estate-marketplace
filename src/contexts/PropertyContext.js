@@ -4,6 +4,7 @@ import { db, auth } from '../config/firebase';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 const PropertyContext = createContext();
 
@@ -16,7 +17,7 @@ export const useProperty = () => {
 };
 
 // Use Firebase Firestore as the primary data source
-const API_URL = process.env.REACT_APP_API_URL || null;
+const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || null;
 
 // Standardized enums
 export const LISTING_TYPES = [
@@ -1475,6 +1476,15 @@ export const PropertyProvider = ({ children }) => {
   };
 
   // Admin functions
+  const getAuthHeaders = () => {
+    try {
+      const token = localStorage.getItem('token');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch (error) {
+      return {};
+    }
+  };
+
   const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
     setLoading(true);
     setError(null);
@@ -1486,7 +1496,14 @@ export const PropertyProvider = ({ children }) => {
       if (status) queryParams.append('status', status);
       if (verificationStatus) queryParams.append('verificationStatus', verificationStatus);
       
-      const response = await fetch(`/api/admin/properties?${queryParams.toString()}`);
+      const queryString = queryParams.toString();
+      const url = getApiUrl(`/admin/properties${queryString ? `?${queryString}` : ''}`);
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -1951,10 +1968,11 @@ export const PropertyProvider = ({ children }) => {
       
       // Fallback to API if Firestore not available
       try {
-        const response = await fetch(`/api/admin/properties/${propertyId}/verify`, {
+        const response = await fetch(getApiUrl(`/admin/properties/${propertyId}/verify`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders()
           },
           body: JSON.stringify({
             verificationStatus,
