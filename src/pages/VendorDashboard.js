@@ -475,12 +475,12 @@ const VendorDashboard = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content Area */}
-      <div className="w-full">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header with Profile and Notifications */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
             {/* Profile Picture */}
             <div className="w-12 h-12 bg-gradient-to-r from-brand-blue to-blue-600 rounded-full flex items-center justify-center">
               {user?.photoURL || user?.avatar ? (
@@ -504,7 +504,7 @@ const VendorDashboard = () => {
           </div>
           
           {/* Notification Icon */}
-          <div className="relative">
+          <div className="relative md:self-auto self-start">
             <NotificationDropdown />
           </div>
         </div>
@@ -618,7 +618,11 @@ const VendorDashboard = () => {
       {/* Tab Navigation */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav
+            className="flex overflow-x-auto no-scrollbar px-4 sm:px-6"
+            aria-label="Vendor dashboard sections"
+          >
+            <div className="flex min-w-max divide-x divide-transparent">
             {[
               { id: 'overview', label: 'Overview', icon: FaChartLine },
               { id: 'properties', label: 'My Properties', icon: FaHome },
@@ -632,7 +636,7 @@ const VendorDashboard = () => {
                   // Stay within the same component; avoid route changes that could reset auth
                   setActiveTab(tab.id);
                 }}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-brand-blue text-brand-blue'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -642,6 +646,7 @@ const VendorDashboard = () => {
                 <span>{tab.label}</span>
               </button>
             ))}
+            </div>
           </nav>
         </div>
 
@@ -768,9 +773,9 @@ const VendorDashboard = () => {
           {/* Properties Tab */}
           {activeTab === 'properties' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">My Properties</h3>
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <button 
                     onClick={fetchVendorProperties}
                     className="btn-secondary flex items-center space-x-2"
@@ -961,10 +966,10 @@ const VendorDashboard = () => {
           {/* Inquiries Tab */}
           {activeTab === 'inquiries' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Property Inquiries & Viewings</h3>
-                <div className="flex space-x-2">
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div className="flex flex-wrap gap-2">
+                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">
                     <option>All Inquiries</option>
                     <option>New</option>
                     <option>Contacted</option>
@@ -976,7 +981,7 @@ const VendorDashboard = () => {
               <div className="space-y-4">
                 {inquiries.map((inquiry) => (
                   <div key={inquiry.id} className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="font-semibold text-gray-900">{inquiry.buyerName}</h4>
@@ -1006,11 +1011,11 @@ const VendorDashboard = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex space-x-2 ml-4">
-                        <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
+                        <button className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors text-center">
                           Reply
                         </button>
-                        <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors">
+                        <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors text-center">
                           Mark as Contacted
                         </button>
                       </div>
@@ -1028,7 +1033,7 @@ const VendorDashboard = () => {
                   <div className="space-y-3">
                     {viewingRequests.map((req) => (
                       <div key={req.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-sm font-semibold text-gray-900">{req.userName || 'Buyer'}</span>
@@ -1039,11 +1044,13 @@ const VendorDashboard = () => {
                             <div className="mt-2 text-sm text-gray-700">
                               <p>Preferred: {req.preferredDate || '—'} {req.preferredTime || ''}</p>
                               {req.vendorProposalDate && (
-                                <p className="text-blue-700">Your proposal: {req.vendorProposalDate} {req.vendorProposalTime || ''}</p>
+                                <p className="text-blue-700">
+                                  Your proposal: {req.vendorProposalDate} {req.vendorProposalTime || ''}
+                                </p>
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-2 ml-4">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
                             <button
                               onClick={() => {
                                 setSelectedRequestId(req.id);

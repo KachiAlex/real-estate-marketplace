@@ -60,6 +60,44 @@ const AdminDashboard = () => {
     }
   }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
 
+  const getPropertyLocation = (property) => {
+    try {
+      if (typeof property.location === 'string') {
+        return property.location || 'Location not specified';
+      }
+      if (property.location && typeof property.location === 'object') {
+        const address = property.location.address || '';
+        const city = property.location.city || '';
+        const state = property.location.state || '';
+        const result = [address, city, state].filter(Boolean).join(', ');
+        return result || 'Location not specified';
+      }
+      return 'Location not specified';
+    } catch (error) {
+      console.error('Error rendering location:', error, property.location);
+      return 'Location not specified';
+    }
+  };
+
+  const formatPropertyDate = (property) => {
+    try {
+      const dateValue = property.createdAt || property.listedDate || property.datePosted;
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '-';
+
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, property);
+      return '-';
+    }
+  };
+
   useEffect(() => {
     console.log('AdminDashboard: User state:', user);
     console.log('AdminDashboard: User role:', user?.role);
@@ -434,7 +472,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row overflow-hidden">
       {/* Desktop Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={handleSwitchTab} />
 
@@ -488,7 +526,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 w-full lg:ml-64 flex flex-col">
+      <div className="flex-1 w-full lg:ml-64 flex flex-col min-h-screen">
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between lg:hidden">
           <button
@@ -643,7 +681,7 @@ const AdminDashboard = () => {
         {/* Properties Table */}
         {activeTab === 'properties' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-medium text-gray-900">Properties</h2>
             <span className="text-sm text-gray-500">
               Showing {properties.length} {properties.length === 1 ? 'property' : 'properties'}
@@ -660,160 +698,191 @@ const AdminDashboard = () => {
             <div className="p-6">
               <TableSkeleton rows={10} columns={6} />
             </div>
+          ) : properties.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500">
+              <p className="text-lg font-medium">No properties found</p>
+              <p className="text-sm mt-2">Try adjusting your filters or check if properties exist in Firestore.</p>
+            </div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Property
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vendor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Listed
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Approval Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {properties.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                      <p className="text-lg font-medium">No properties found</p>
-                      <p className="text-sm mt-2">Try adjusting your filters or check if properties exist in Firestore.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  properties.map((property) => (
-                  <tr key={property.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <img
-                            className="h-12 w-12 rounded-lg object-cover"
-                            src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
-                            alt={property.title}
-                          />
+            <>
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Property
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Vendor
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Listed
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Approval Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {properties.map((property) => (
+                      <tr key={property.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-12 w-12">
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover"
+                                src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
+                                alt={property.title}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {property.title}
+                              </div>
+                              <div className="text-sm text-gray-500">{getPropertyLocation(property)}</div>
+                              <div className="text-sm text-gray-500">
+                                ₦{Number(property.price || 0).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {(() => {
+                            if (property.owner && typeof property.owner === 'object') {
+                              const firstName = property.owner.firstName || '';
+                              const lastName = property.owner.lastName || '';
+                              return `${firstName} ${lastName}`.trim() || 'Unknown Owner';
+                            }
+                            return property.owner || 'Unknown Owner';
+                          })()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatPropertyDate(property)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            property.status === 'for-sale' ? 'bg-green-100 text-green-800' :
+                            property.status === 'for-rent' ? 'bg-blue-100 text-blue-800' :
+                            'bg-purple-100 text-purple-800'
+                          }`}>
+                            {property.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {(() => {
+                            const approvalStatus = property.approvalStatus || property.verificationStatus || 'pending';
+                            const badgeClass = approvalStatus === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : approvalStatus === 'rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800';
+                            const label = approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1);
+                            return (
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass}`}>
+                                {label}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => openPropertyModal(property)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
+                            View Details
+                          </button>
+                          {(property.approvalStatus || property.verificationStatus) === 'pending' && (
+                            <button
+                              onClick={() => openVerificationModal(property)}
+                              className="text-yellow-600 hover:text-yellow-900"
+                            >
+                              Quick Review
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="lg:hidden divide-y divide-gray-100">
+                {properties.map((property) => {
+                  const approvalStatus = property.approvalStatus || property.verificationStatus || 'pending';
+                  const approvalClass = approvalStatus === 'approved'
+                    ? 'text-green-700 bg-green-50'
+                    : approvalStatus === 'rejected'
+                      ? 'text-red-700 bg-red-50'
+                      : 'text-yellow-700 bg-yellow-50';
+                  return (
+                    <div key={property.id} className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
+                          alt={property.title}
+                          className="h-16 w-16 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{property.title}</p>
+                          <p className="text-sm text-gray-500">{getPropertyLocation(property)}</p>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {property.title}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {(() => {
-                              try {
-                                if (typeof property.location === 'string') {
-                                  return property.location;
-                                }
-                                if (property.location && typeof property.location === 'object') {
-                                  const address = property.location.address || '';
-                                  const city = property.location.city || '';
-                                  const state = property.location.state || '';
-                                  const result = [address, city, state].filter(Boolean).join(', ');
-                                  return result || 'Location not specified';
-                                }
-                                return 'Location not specified';
-                              } catch (error) {
-                                console.error('Error rendering location:', error, property.location);
-                                return 'Location not specified';
-                              }
-                            })()}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ${(property.price || 0).toLocaleString()}
-                          </div>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${approvalClass}`}>
+                          {approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Vendor</p>
+                          <p className="font-medium text-gray-900">
+                            {property.owner && typeof property.owner === 'object'
+                              ? `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() || 'Unknown Owner'
+                              : property.owner || 'Unknown Owner'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Listed</p>
+                          <p className="font-medium text-gray-900">{formatPropertyDate(property)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Status</p>
+                          <p className="font-medium capitalize">{property.status.replace('-', ' ')}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Price</p>
+                          <p className="font-medium text-gray-900">
+                            ₦{Number(property.price || 0).toLocaleString()}
+                          </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {(() => {
-                        if (property.owner && typeof property.owner === 'object') {
-                          const firstName = property.owner.firstName || '';
-                          const lastName = property.owner.lastName || '';
-                          return `${firstName} ${lastName}`.trim() || 'Unknown Owner';
-                        }
-                        return property.owner || 'Unknown Owner';
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {(() => {
-                        try {
-                          const dateValue = property.createdAt || property.listedDate || property.datePosted;
-                          if (!dateValue) return '-';
-                          
-                          const date = new Date(dateValue);
-                          // Check if date is valid
-                          if (isNaN(date.getTime())) return '-';
-                          
-                          // Format as MM/DD/YYYY or use toLocaleDateString
-                          return date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          });
-                        } catch (error) {
-                          console.error('Error formatting date:', error, property);
-                          return '-';
-                        }
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        property.status === 'for-sale' ? 'bg-green-100 text-green-800' :
-                        property.status === 'for-rent' ? 'bg-blue-100 text-blue-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
-                        {property.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {(() => {
-                        const approvalStatus = property.approvalStatus || property.verificationStatus || 'pending';
-                        const badgeClass = approvalStatus === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : approvalStatus === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800';
-                        const label = approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1);
-                        return (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass}`}>
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openPropertyModal(property)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        View Details
-                      </button>
-                      {(property.approvalStatus || property.verificationStatus) === 'pending' && (
+
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <button
-                          onClick={() => openVerificationModal(property)}
-                          className="text-yellow-600 hover:text-yellow-900"
+                          onClick={() => openPropertyModal(property)}
+                          className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-brand-blue border border-brand-blue rounded-md"
                         >
-                          Quick Review
+                          View Details
                         </button>
-                      )}
-                    </td>
-                  </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                        {(property.approvalStatus || property.verificationStatus) === 'pending' && (
+                          <button
+                            onClick={() => openVerificationModal(property)}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-brand-blue rounded-md"
+                          >
+                            Quick Review
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
         )}
@@ -832,214 +901,41 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {escrows.map(tx => (
-                    <tr key={tx.id}>
-                      <td className="px-6 py-4 text-sm">{tx.id}</td>
-                      <td className="px-6 py-4 text-sm">{tx.propertyTitle}</td>
-                      <td className="px-6 py-4 text-sm">{tx.buyerName}</td>
-                      <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
-                      <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
-                      <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
-                      <td className="px-6 py-4 text-sm space-x-2">
-                        <button onClick={() => handleResolveEscrow(tx.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
-                        <button onClick={() => handleResolveEscrow(tx.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        )}
-
-        {/* Disputes Tab */}
-        {activeTab === 'disputes' && (
-          <AdminDisputesManagement disputes={disputes} />
-        )}
-
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">User Management</h2>
-              <p className="text-sm text-gray-500 mt-1">Manage all users including buyers, vendors, and agents</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map(user => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <img
-                              className="h-10 w-10 rounded-full object-cover"
-                              src={user.avatar || 'https://picsum.photos/150/150'}
-                              alt={`${user.firstName} ${user.lastName}`}
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {user.firstName} {user.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">ID: {user.id}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email}</div>
-                        <div className="text-sm text-gray-500">{user.phone || 'No phone'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                          user.role === 'user' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.isActive ? 'Active' : 'Suspended'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          View
-                        </button>
-                        {user.role !== 'admin' && (
-                          <>
-                            {user.isActive ? (
-                              <button
-                                onClick={() => handleSuspendUser(user.id)}
-                                className="text-yellow-600 hover:text-yellow-900"
-                              >
-                                Suspend
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleActivateUser(user.id)}
-                                className="text-green-600 hover:text-green-900"
-                              >
-                                Activate
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to{' '}
-                    {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
-                    {pagination.totalItems} results
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => {
-                        if (pagination.currentPage > 1) {
-                          setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }));
-                          // Reload users with new page
-                          loadAdminData();
-                        }
-                      }}
-                      disabled={pagination.currentPage === 1}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                        const pageNum = i + 1;
-                        const isActive = pageNum === pagination.currentPage;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => {
-                              setPagination(prev => ({ ...prev, currentPage: pageNum }));
-                              loadAdminData();
-                            }}
-                            className={`px-3 py-1 text-sm border rounded-md ${
-                              isActive
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    
-                    <button
-                      onClick={() => {
-                        if (pagination.currentPage < pagination.totalPages) {
-                          setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }));
-                          // Reload users with new page
-                          loadAdminData();
-                        }
-                      }}
-                      disabled={pagination.currentPage === pagination.totalPages}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
               </div>
-            )}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {escrows.map(tx => (
+                      <tr key={tx.id}>
+                        <td className="px-6 py-4 text-sm">{tx.id}</td>
+                        <td className="px-6 py-4 text-sm">{tx.propertyTitle}</td>
+                        <td className="px-6 py-4 text-sm">{tx.buyerName}</td>
+                        <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
+                        <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
+                        <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
+                        <td className="px-6 py-4 text-sm space-x-2">
+                          <button onClick={() => handleResolveEscrow(tx.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
+                          <button onClick={() => handleResolveEscrow(tx.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
