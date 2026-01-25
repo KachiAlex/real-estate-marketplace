@@ -2,14 +2,7 @@
 const { protect, authorize } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
-const notificationService = require('../services/notificationService');
-
-// Payment providers
-const flutterwaveService = require('../services/flutterwaveService');
-const paystackService = require('../services/paystackService');
-const stripeService = require('../services/stripeService');
+const paymentService = require('../services/paymentService');
 
 const router = express.Router();
 
@@ -27,37 +20,20 @@ router.get('/',
   ]),
   async (req, res) => {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 20;
-      const skip = (page - 1) * limit;
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 20;
 
-      const options = {};
-      if (req.query.status) options.status = req.query.status;
-      if (req.query.paymentType) options.paymentType = req.query.paymentType;
-
-      const payments = await Payment.getUserPayments(req.user._id, options)
-        .skip(skip)
-        .limit(limit);
-
-      const total = await Payment.countDocuments({
-        userId: req.user._id,
-        isActive: true,
-        ...options
+      const result = await paymentService.listUserPayments({
+        userId: req.user.id,
+        status: req.query.status,
+        paymentType: req.query.paymentType,
+        page,
+        limit
       });
 
       res.json({
         success: true,
-        data: {
-          payments,
-          pagination: {
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            totalItems: total,
-            itemsPerPage: limit,
-            hasNextPage: page < Math.ceil(total / limit),
-            hasPrevPage: page > 1
-          }
-        }
+        data: result
       });
     } catch (error) {
       console.error('Get payments error:', error);
@@ -76,13 +52,11 @@ router.get('/:id',
   protect,
   sanitizeInput,
   validate([
-    param('id').isMongoId().withMessage('Valid payment ID is required')
+    param('id').isString().withMessage('Valid payment ID is required')
   ]),
   async (req, res) => {
     try {
-      const payment = await Payment.findById(req.params.id)
-        .populate('relatedEntity.id')
-        .populate('refund.processedBy', 'firstName lastName email');
+      const payment = await paymentService.getPaymentById(req.params.id);
 
       if (!payment) {
         return res.status(404).json({
@@ -92,7 +66,7 @@ router.get('/:id',
       }
 
       // Check if user has access to this payment
-      if (payment.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      if (payment.userId !== req.user.id && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'Not authorized to view this payment'
@@ -124,7 +98,7 @@ router.post('/initialize',
     body('paymentMethod').isIn(['flutterwave', 'paystack', 'stripe', 'bank_transfer']).withMessage('Invalid payment method'),
     body('paymentType').isIn(['property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'vendor_listing']).withMessage('Invalid payment type'),
     body('relatedEntity.type').isIn(['property', 'investment', 'escrow', 'subscription']).withMessage('Invalid related entity type'),
-    body('relatedEntity.id').isMongoId().withMessage('Valid related entity ID is required'),
+    body('relatedEntity.id').notEmpty().withMessage('Related entity ID is required'),
     body('description').trim().isLength({ min: 5, max: 500 }).withMessage('Description must be between 5 and 500 characters'),
     body('currency').optional().isIn(['NGN', 'USD', 'EUR', 'GBP']).withMessage('Invalid currency')
   ]),
@@ -187,108 +161,34 @@ router.post('/initialize',
         status: 'pending'
       };
 
-      const payment = await Payment.create(paymentData);
-
-      // Add to timeline
-      payment.addTimelineEvent('pending', 'Payment initialized', {
-        amount,
-        paymentMethod,
-        paymentType
-      });
-
-      // Initialize payment with provider
-      let paymentResult = {};
-
       try {
-        switch (paymentMethod) {
-          case 'flutterwave':
-            paymentResult = await flutterwaveService.initializePayment({
-              amount: amount + totalFees,
-              currency,
-              reference,
-              customer: {
-                email: req.user.email,
-                name: `${req.user.firstName} ${req.user.lastName}`,
-                phone: req.user.phone
-              },
-              description
-            });
-            break;
-
-          case 'paystack':
-            paymentResult = await paystackService.initializePayment({
-              amount: (amount + totalFees) * 100, // Convert to kobo
-              currency,
-              reference,
-              email: req.user.email,
-              metadata: {
-                paymentId: payment._id,
-                userId: req.user._id
-              }
-            });
-            break;
-
-          case 'stripe':
-            paymentResult = await stripeService.createPaymentIntent({
-              amount: Math.round((amount + totalFees) * 100), // Convert to cents
-              currency: currency.toLowerCase(),
-              metadata: {
-                paymentId: payment._id,
-                userId: req.user._id
-              }
-            });
-            break;
-
-          case 'bank_transfer':
-            paymentResult = {
-              success: true,
-              data: {
-                bankDetails: {
-                  bankName: 'PROPERTY ARK Bank',
-                  accountNumber: '1234567890',
-                  accountName: 'PROPERTY ARK Escrow Account'
-                },
-                reference,
-                amount: amount + totalFees
-              }
-            };
-            break;
-        }
-
-        if (paymentResult.success) {
-          // Update payment with provider data
-          payment.metadata[paymentMethod] = paymentResult.data;
-          payment.status = 'processing';
-          await payment.save();
-
-          payment.addTimelineEvent('processing', 'Payment processing initiated', {
-            provider: paymentMethod,
-            providerData: paymentResult.data
-          });
-
-          res.json({
-            success: true,
-            message: 'Payment initialized successfully',
-            data: {
-              payment,
-              paymentData: paymentResult.data
-            }
-          });
-        } else {
-          throw new Error(paymentResult.message || 'Failed to initialize payment');
-        }
-      } catch (providerError) {
-        payment.status = 'failed';
-        await payment.save();
-
-        payment.addTimelineEvent('failed', 'Payment initialization failed', {
-          error: providerError.message
+        const result = await paymentService.initializePayment({
+          user: {
+            id: req.user.id,
+            email: req.user.email,
+            phone: req.user.phone,
+            firstName: req.user.firstName,
+            lastName: req.user.lastName
+          },
+          amount,
+          paymentMethod,
+          paymentType,
+          relatedEntity,
+          description,
+          currency
         });
 
+        res.json({
+          success: true,
+          message: 'Payment initialized successfully',
+          data: result
+        });
+      } catch (error) {
+        console.error('Initialize payment error:', error);
         res.status(400).json({
           success: false,
           message: 'Failed to initialize payment',
-          error: providerError.message
+          error: error.message
         });
       }
     } catch (error) {
@@ -308,131 +208,28 @@ router.post('/:id/verify',
   protect,
   sanitizeInput,
   validate([
-    param('id').isMongoId().withMessage('Valid payment ID is required'),
+    param('id').isString().withMessage('Valid payment ID is required'),
     body('providerReference').optional().isString().withMessage('Provider reference must be a string')
   ]),
   async (req, res) => {
     try {
-      const payment = await Payment.findById(req.params.id);
+      const payment = await paymentService.verifyPayment({
+        paymentId: req.params.id,
+        userId: req.user.id,
+        providerReference: req.body.providerReference
+      });
 
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Payment not found'
-        });
-      }
-
-      // Check if user has access to this payment
-      if (payment.userId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to verify this payment'
-        });
-      }
-
-      if (payment.status !== 'processing') {
-        return res.status(400).json({
-          success: false,
-          message: 'Payment is not in processing status'
-        });
-      }
-
-      let verificationResult = {};
-
-      try {
-        switch (payment.paymentProvider) {
-          case 'flutterwave':
-            verificationResult = await flutterwaveService.verifyPayment(
-              req.body.providerReference || payment.metadata.flutterwave?.flwRef
-            );
-            break;
-
-          case 'paystack':
-            verificationResult = await paystackService.verifyPayment(
-              req.body.providerReference || payment.reference
-            );
-            break;
-
-          case 'stripe':
-            verificationResult = await stripeService.verifyPayment(
-              payment.metadata.stripe?.paymentIntentId
-            );
-            break;
-
-          case 'bank_transfer':
-            // For bank transfer, we'll assume it's verified if user confirms
-            verificationResult = {
-              success: true,
-              data: {
-                status: 'success',
-                amount: payment.amount + payment.fees.totalFees
-              }
-            };
-            break;
-        }
-
-        if (verificationResult.success && verificationResult.data.status === 'success') {
-          payment.status = 'completed';
-          payment.addTimelineEvent('completed', 'Payment verified and completed', {
-            provider: payment.paymentProvider,
-            verificationData: verificationResult.data
-          });
-
-          await payment.save();
-
-          // Send notification
-          await notificationService.createNotification({
-            recipient: payment.userId,
-            sender: null,
-            type: 'payment_received',
-            title: 'Payment Successful',
-            message: `Your payment of â‚¦${payment.amount.toLocaleString()} has been processed successfully`,
-            data: {
-              paymentId: payment._id,
-              amount: payment.amount,
-              paymentType: payment.paymentType
-            }
-          });
-
-          res.json({
-            success: true,
-            message: 'Payment verified successfully',
-            data: payment
-          });
-        } else {
-          payment.status = 'failed';
-          payment.addTimelineEvent('failed', 'Payment verification failed', {
-            provider: payment.paymentProvider,
-            verificationData: verificationResult.data
-          });
-
-          await payment.save();
-
-          res.status(400).json({
-            success: false,
-            message: 'Payment verification failed',
-            data: verificationResult.data
-          });
-        }
-      } catch (verificationError) {
-        payment.status = 'failed';
-        payment.addTimelineEvent('failed', 'Payment verification error', {
-          error: verificationError.message
-        });
-
-        await payment.save();
-
-        res.status(400).json({
-          success: false,
-          message: 'Payment verification failed',
-          error: verificationError.message
-        });
-      }
+      res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: payment
+      });
     } catch (error) {
+      const status = error.statusCode || 500;
       console.error('Verify payment error:', error);
-      res.status(500).json({
+      res.status(status).json({
         success: false,
-        message: 'Failed to verify payment'
+        message: error.message || 'Failed to verify payment'
       });
     }
   }
@@ -445,41 +242,16 @@ router.put('/:id/cancel',
   protect,
   sanitizeInput,
   validate([
-    param('id').isMongoId().withMessage('Valid payment ID is required'),
+    param('id').isString().withMessage('Valid payment ID is required'),
     body('reason').optional().isString().withMessage('Reason must be a string')
   ]),
   async (req, res) => {
     try {
-      const payment = await Payment.findById(req.params.id);
-
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Payment not found'
-        });
-      }
-
-      // Check if user has access to this payment
-      if (payment.userId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to cancel this payment'
-        });
-      }
-
-      if (!['pending', 'processing'].includes(payment.status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Payment cannot be cancelled in current status'
-        });
-      }
-
-      payment.status = 'cancelled';
-      payment.addTimelineEvent('cancelled', 'Payment cancelled by user', {
+      const payment = await paymentService.cancelPayment({
+        paymentId: req.params.id,
+        userId: req.user.id,
         reason: req.body.reason
       });
-
-      await payment.save();
 
       res.json({
         success: true,
@@ -487,10 +259,11 @@ router.put('/:id/cancel',
         data: payment
       });
     } catch (error) {
+      const status = error.statusCode || 500;
       console.error('Cancel payment error:', error);
-      res.status(500).json({
+      res.status(status).json({
         success: false,
-        message: 'Failed to cancel payment'
+        message: error.message || 'Failed to cancel payment'
       });
     }
   }
@@ -504,49 +277,17 @@ router.post('/:id/refund',
   authorize(['admin']),
   sanitizeInput,
   validate([
-    param('id').isMongoId().withMessage('Valid payment ID is required'),
+    param('id').isString().withMessage('Valid payment ID is required'),
     body('amount').isNumeric().isFloat({ min: 1 }).withMessage('Refund amount must be at least â‚¦1'),
     body('reason').trim().isLength({ min: 5, max: 500 }).withMessage('Reason must be between 5 and 500 characters')
   ]),
   async (req, res) => {
     try {
-      const payment = await Payment.findById(req.params.id);
-
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Payment not found'
-        });
-      }
-
-      if (payment.status !== 'completed') {
-        return res.status(400).json({
-          success: false,
-          message: 'Only completed payments can be refunded'
-        });
-      }
-
-      if (req.body.amount > payment.amount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Refund amount cannot exceed original payment amount'
-        });
-      }
-
-      await payment.processRefund(req.body.amount, req.body.reason, req.user._id);
-
-      // Send notification to user
-      await notificationService.createNotification({
-        recipient: payment.userId,
-        sender: req.user._id,
-        type: 'payment_failed',
-        title: 'Payment Refunded',
-        message: `Your payment of â‚¦${req.body.amount.toLocaleString()} has been refunded: ${req.body.reason}`,
-        data: {
-          paymentId: payment._id,
-          refundAmount: req.body.amount,
-          reason: req.body.reason
-        }
+      const payment = await paymentService.processRefund({
+        paymentId: req.params.id,
+        amount: req.body.amount,
+        reason: req.body.reason,
+        processedBy: req.user.id
       });
 
       res.json({
@@ -555,10 +296,11 @@ router.post('/:id/refund',
         data: payment
       });
     } catch (error) {
+      const status = error.statusCode || 500;
       console.error('Process refund error:', error);
-      res.status(500).json({
+      res.status(status).json({
         success: false,
-        message: 'Failed to process refund'
+        message: error.message || 'Failed to process refund'
       });
     }
   }
@@ -573,37 +315,11 @@ router.get('/stats/overview',
   sanitizeInput,
   async (req, res) => {
     try {
-      const stats = await Payment.getPaymentStats();
-
-      const monthlyStats = await Payment.aggregate([
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' },
-              month: { $month: '$createdAt' }
-            },
-            count: { $sum: 1 },
-            totalAmount: { $sum: '$amount' },
-            totalFees: { $sum: '$fees.totalFees' }
-          }
-        },
-        { $sort: { '_id.year': -1, '_id.month': -1 } },
-        { $limit: 12 }
-      ]);
+      const stats = await paymentService.getPaymentStats();
 
       res.json({
         success: true,
-        data: {
-          overview: stats[0] || {
-            totalPayments: 0,
-            totalAmount: 0,
-            totalFees: 0,
-            completedPayments: 0,
-            failedPayments: 0,
-            pendingPayments: 0
-          },
-          monthlyStats
-        }
+        data: stats
       });
     } catch (error) {
       console.error('Get payment stats error:', error);
@@ -628,77 +344,11 @@ router.post('/webhook/:provider',
       const { provider } = req.params;
       const webhookData = req.body;
 
-      // Verify webhook signature (implementation depends on provider)
-      let isValidWebhook = false;
-
-      switch (provider) {
-        case 'flutterwave':
-          isValidWebhook = flutterwaveService.verifyWebhook(req.headers, webhookData);
-          break;
-        case 'paystack':
-          isValidWebhook = paystackService.verifyWebhook(req.headers, webhookData);
-          break;
-        case 'stripe':
-          isValidWebhook = stripeService.verifyWebhook(req.headers, webhookData);
-          break;
-      }
-
-      if (!isValidWebhook) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid webhook signature'
-        });
-      }
-
-      // Process webhook based on provider
-      let payment = null;
-      let status = 'failed';
-
-      switch (provider) {
-        case 'flutterwave':
-          payment = await Payment.findOne({ reference: webhookData.tx_ref });
-          status = webhookData.status === 'successful' ? 'completed' : 'failed';
-          break;
-        case 'paystack':
-          payment = await Payment.findOne({ reference: webhookData.data.reference });
-          status = webhookData.data.status === 'success' ? 'completed' : 'failed';
-          break;
-        case 'stripe':
-          payment = await Payment.findOne({ 'metadata.stripe.paymentIntentId': webhookData.data.object.id });
-          status = webhookData.data.object.status === 'succeeded' ? 'completed' : 'failed';
-          break;
-      }
-
-      if (payment && payment.status === 'processing') {
-        payment.status = status;
-        payment.webhookData = webhookData;
-        payment.addTimelineEvent(status, `Payment ${status} via webhook`, {
-          provider,
-          webhookData
-        });
-
-        await payment.save();
-
-        // Send notification
-        const notificationType = status === 'completed' ? 'payment_received' : 'payment_failed';
-        const title = status === 'completed' ? 'Payment Successful' : 'Payment Failed';
-        const message = status === 'completed' 
-          ? `Your payment of â‚¦${payment.amount.toLocaleString()} has been processed successfully`
-          : `Your payment of â‚¦${payment.amount.toLocaleString()} failed to process`;
-
-        await notificationService.createNotification({
-          recipient: payment.userId,
-          sender: null,
-          type: notificationType,
-          title,
-          message,
-          data: {
-            paymentId: payment._id,
-            amount: payment.amount,
-            paymentType: payment.paymentType
-          }
-        });
-      }
+      await paymentService.processWebhook({
+        provider,
+        headers: req.headers,
+        payload: webhookData
+      });
 
       res.json({
         success: true,
@@ -706,13 +356,14 @@ router.post('/webhook/:provider',
       });
     } catch (error) {
       console.error('Webhook processing error:', error);
-      res.status(500).json({
+      const status = error.statusCode || 500;
+      res.status(status).json({
         success: false,
-        message: 'Webhook processing failed'
+        message: error.message || 'Webhook processing failed'
       });
     }
   }
 );
 
-module.exports = router; 
+module.exports = router;
 

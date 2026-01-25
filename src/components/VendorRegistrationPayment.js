@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaCreditCard, FaLock, FaCheckCircle, FaTimesCircle, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 const VendorRegistrationPayment = ({ vendorData, onPaymentSuccess, onCancel }) => {
   const [listingFee, setListingFee] = useState(100000);
@@ -13,8 +14,6 @@ const VendorRegistrationPayment = ({ vendorData, onPaymentSuccess, onCancel }) =
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-
   useEffect(() => {
     loadListingFee();
   }, []);
@@ -22,7 +21,7 @@ const VendorRegistrationPayment = ({ vendorData, onPaymentSuccess, onCancel }) =
   const loadListingFee = async () => {
     try {
       setLoadingFee(true);
-      const response = await fetch(`${API_BASE_URL}/api/admin/settings`);
+      const response = await fetch(getApiUrl('/admin/settings'));
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -49,7 +48,7 @@ const VendorRegistrationPayment = ({ vendorData, onPaymentSuccess, onCancel }) =
       const token = localStorage.getItem('token');
       
       // Initialize payment
-      const response = await fetch(`${API_BASE_URL}/api/payments/initialize`, {
+      const response = await fetch(getApiUrl('/payments/initialize'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

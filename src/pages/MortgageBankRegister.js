@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FaBuilding, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaFileUpload, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from '../utils/apiConfig';
 
 const MortgageBankRegister = () => {
   const navigate = useNavigate();
@@ -202,7 +201,7 @@ const MortgageBankRegister = () => {
       };
 
       const response = await axios.post(
-        `${API_BASE_URL}/api/mortgage-banks/register`,
+        getApiUrl('/mortgage-banks/register'),
         registrationData
       );
 

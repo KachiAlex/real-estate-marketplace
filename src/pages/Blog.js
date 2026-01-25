@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getApiUrl } from '../utils/apiConfig';
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
@@ -30,12 +31,7 @@ const Blog = () => {
         ...filters
       });
 
-      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      // Remove trailing /api if present to avoid double /api/api/
-      if (API_BASE_URL.endsWith('/api')) {
-        API_BASE_URL = API_BASE_URL.slice(0, -4);
-      }
-      const response = await fetch(`${API_BASE_URL}/api/blog?${params}`);
+      const response = await fetch(getApiUrl(`/blog?${params}`));
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -69,12 +65,7 @@ const Blog = () => {
 
   const loadFeaturedBlogs = async () => {
     try {
-      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      // Remove trailing /api if present to avoid double /api/api/
-      if (API_BASE_URL.endsWith('/api')) {
-        API_BASE_URL = API_BASE_URL.slice(0, -4);
-      }
-      const response = await fetch(`${API_BASE_URL}/api/blog/featured?limit=3`);
+      const response = await fetch(getApiUrl('/blog/featured?limit=3'));
       
       if (!response.ok) {
         console.warn('Featured blogs API not available');
@@ -104,12 +95,7 @@ const Blog = () => {
 
   const loadCategories = async () => {
     try {
-      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      // Remove trailing /api if present to avoid double /api/api/
-      if (API_BASE_URL.endsWith('/api')) {
-        API_BASE_URL = API_BASE_URL.slice(0, -4);
-      }
-      const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
+      const response = await fetch(getApiUrl('/blog/categories'));
       
       if (!response.ok) {
         console.warn('Categories API not available');

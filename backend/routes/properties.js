@@ -1,7 +1,7 @@
 const express = require('express');
-const { body, validationResult, query } = require('express-validator');
-const Property = require('../models/Property');
+const { body, validationResult, query, param } = require('express-validator');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
+const propertyService = require('../services/propertyService');
 
 const router = express.Router();
 
@@ -33,74 +33,28 @@ router.get('/', optionalAuth, [
     const {
       page = 1,
       limit = 12,
-      minPrice,
-      maxPrice,
-      type,
       status,
-      bedrooms,
-      bathrooms,
-      city,
-      state,
+      verificationStatus,
       search,
       sort = 'createdAt',
       order = 'desc'
     } = req.query;
 
-    // Build filter object
-    const filter = {};
-
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = parseFloat(minPrice);
-      if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
-    }
-
-    if (type) filter.type = type;
-    if (status) filter.status = status;
-    if (bedrooms) filter['details.bedrooms'] = { $gte: parseInt(bedrooms) };
-    if (bathrooms) filter['details.bathrooms'] = { $gte: parseInt(bathrooms) };
-    if (city) filter['location.city'] = new RegExp(city, 'i');
-    if (state) filter['location.state'] = new RegExp(state, 'i');
-
-    // Text search
-    if (search) {
-      filter.$text = { $search: search };
-    }
-
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Get properties with pagination
-    const properties = await Property.find(filter)
-      .populate('owner', 'firstName lastName email avatar')
-      .populate('agent', 'firstName lastName email avatar')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get total count for pagination
-    const total = await Property.countDocuments(filter);
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(total / parseInt(limit));
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const { properties, pagination, stats } = await propertyService.listProperties({
+      page,
+      limit,
+      status,
+      verificationStatus,
+      search,
+      sort,
+      order
+    });
 
     res.json({
       success: true,
       data: properties,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalItems: total,
-        itemsPerPage: parseInt(limit),
-        hasNextPage,
-        hasPrevPage
-      }
+      pagination,
+      stats
     });
   } catch (error) {
     console.error('Get properties error:', error);
@@ -116,21 +70,13 @@ router.get('/', optionalAuth, [
 // @access  Public
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id)
-      .populate('owner', 'firstName lastName email avatar phone')
-      .populate('agent', 'firstName lastName email avatar phone');
+    const property = await propertyService.getPropertyById(req.params.id);
 
     if (!property) {
       return res.status(404).json({
         success: false,
         message: 'Property not found'
       });
-    }
-
-    // Increment views if user is not the owner
-    if (req.user && req.user.id !== property.owner._id.toString()) {
-      property.views += 1;
-      await property.save();
     }
 
     res.json({
@@ -175,18 +121,20 @@ router.post('/', protect, [
 
     const propertyData = {
       ...req.body,
-      owner: req.user.id
+      owner: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email
+      }
     };
 
-    const property = await Property.create(propertyData);
-
-    const populatedProperty = await Property.findById(property._id)
-      .populate('owner', 'firstName lastName email avatar');
+    const property = await propertyService.createProperty(propertyData);
 
     res.status(201).json({
       success: true,
       message: 'Property created successfully',
-      data: populatedProperty
+      data: property
     });
   } catch (error) {
     console.error('Create property error:', error);
@@ -217,7 +165,7 @@ router.put('/:id', protect, [
       });
     }
 
-    const property = await Property.findById(req.params.id);
+    const property = await propertyService.getPropertyById(req.params.id);
 
     if (!property) {
       return res.status(404).json({
@@ -227,18 +175,14 @@ router.put('/:id', protect, [
     }
 
     // Check ownership
-    if (property.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (property.owner?.id && property.owner.id !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this property'
       });
     }
 
-    const updatedProperty = await Property.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).populate('owner', 'firstName lastName email avatar');
+    const updatedProperty = await propertyService.updateProperty(req.params.id, req.body);
 
     res.json({
       success: true,
@@ -259,7 +203,7 @@ router.put('/:id', protect, [
 // @access  Private
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id);
+    const property = await propertyService.getPropertyById(req.params.id);
 
     if (!property) {
       return res.status(404).json({
@@ -268,15 +212,14 @@ router.delete('/:id', protect, async (req, res) => {
       });
     }
 
-    // Check ownership
-    if (property.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (property.owner?.id && property.owner.id !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to delete this property'
       });
     }
 
-    await Property.findByIdAndDelete(req.params.id);
+    await propertyService.deleteProperty(req.params.id);
 
     res.json({
       success: true,
@@ -296,7 +239,7 @@ router.delete('/:id', protect, async (req, res) => {
 // @access  Private
 router.post('/:id/favorite', protect, async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id);
+    const property = await propertyService.toggleFavorite(req.params.id, req.user.id);
 
     if (!property) {
       return res.status(404).json({
@@ -305,24 +248,10 @@ router.post('/:id/favorite', protect, async (req, res) => {
       });
     }
 
-    const isFavorited = property.favorites.includes(req.user.id);
-
-    if (isFavorited) {
-      // Remove from favorites
-      property.favorites = property.favorites.filter(
-        id => id.toString() !== req.user.id
-      );
-    } else {
-      // Add to favorites
-      property.favorites.push(req.user.id);
-    }
-
-    await property.save();
-
     res.json({
       success: true,
-      message: isFavorited ? 'Removed from favorites' : 'Added to favorites',
-      isFavorited: !isFavorited
+      message: property.isFavorited ? 'Added to favorites' : 'Removed from favorites',
+      isFavorited: property.isFavorited
     });
   } catch (error) {
     console.error('Toggle favorite error:', error);

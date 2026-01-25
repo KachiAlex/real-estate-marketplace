@@ -24,13 +24,11 @@ const convertTimestamps = (doc) => {
     converted.lastLogin = converted.lastLogin.toDate();
   }
   if (converted.resetPasswordExpires) {
-    // Handle both Firestore Timestamp and number (timestamp)
     if (typeof converted.resetPasswordExpires === 'object' && converted.resetPasswordExpires.toDate) {
       converted.resetPasswordExpires = converted.resetPasswordExpires.toDate().getTime();
     } else if (converted.resetPasswordExpires instanceof Date) {
       converted.resetPasswordExpires = converted.resetPasswordExpires.getTime();
     }
-    // If it's already a number, keep it as is
   }
   if (converted.verificationExpires && converted.verificationExpires.toDate) {
     converted.verificationExpires = converted.verificationExpires.toDate();
@@ -48,6 +46,60 @@ const convertTimestamps = (doc) => {
   return converted;
 };
 
+// Ensure a Firestore user exists for a Firebase-authenticated account
+const ensureUserFromFirebase = async (claims) => {
+  try {
+    const db = getFirestore();
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
+
+    if (!claims || !claims.uid) {
+      throw new Error('Invalid Firebase claims');
+    }
+
+    const userId = claims.uid;
+    const userRef = db.collection(COLLECTION).doc(userId);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists) {
+      const email = (claims.email || '').toLowerCase();
+      const fullName = claims.name || email.split('@')[0] || 'User';
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || 'User';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const newUserDoc = {
+        firstName,
+        lastName,
+        email,
+        role: 'user',
+        roles: ['user'],
+        avatar: claims.picture || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        isVerified: true,
+        isActive: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastLogin: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      await userRef.set(newUserDoc, { merge: true });
+      return {
+        id: userId,
+        ...newUserDoc,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastLogin: new Date()
+      };
+    }
+
+    return convertTimestamps(userSnap);
+  } catch (error) {
+    console.error('Error ensuring Firebase user:', error);
+    throw error;
+  }
+};
+
 // Hash password
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(12);
@@ -57,6 +109,109 @@ const hashPassword = async (password) => {
 // Compare password
 const comparePassword = async (candidatePassword, hashedPassword) => {
   return await bcrypt.compare(candidatePassword, hashedPassword);
+};
+
+const sanitizeUserSortField = (field) => {
+  const allowed = ['createdAt', 'firstName', 'lastName', 'email', 'lastLogin'];
+  return allowed.includes(field) ? field : 'createdAt';
+};
+
+const toBooleanFilter = (value) => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+  return undefined;
+};
+
+const listUsers = async ({
+  role,
+  isVerified,
+  page = 1,
+  limit = 20,
+  search,
+  sort = 'createdAt',
+  order = 'desc'
+} = {}) => {
+  const db = getFirestore();
+  if (!db) {
+    throw new Error('Firestore not initialized');
+  }
+
+  let filterQuery = db.collection(COLLECTION);
+
+  if (role) {
+    filterQuery = filterQuery.where('role', '==', role);
+  }
+
+  const verifiedFilter = toBooleanFilter(isVerified);
+  if (verifiedFilter !== undefined) {
+    filterQuery = filterQuery.where('isVerified', '==', verifiedFilter);
+  }
+
+  const sortField = sanitizeUserSortField(sort);
+  const direction = order === 'asc' ? 'asc' : 'desc';
+  let query = filterQuery.orderBy(sortField, direction);
+
+  const skip = (Number(page) - 1) * Number(limit);
+  const snapshot = await query.offset(skip).limit(Number(limit)).get();
+
+  let users = snapshot.docs.map(convertTimestamps);
+
+  if (search) {
+    const lowerSearch = search.toLowerCase();
+    users = users.filter((user) => (
+      user.firstName?.toLowerCase().includes(lowerSearch) ||
+      user.lastName?.toLowerCase().includes(lowerSearch) ||
+      user.email?.toLowerCase().includes(lowerSearch)
+    ));
+  }
+
+  const totalSnap = await filterQuery.count().get();
+  const totalItems = totalSnap.data().count;
+  const totalPages = Math.ceil(totalItems / Number(limit)) || 1;
+
+  return {
+    users,
+    pagination: {
+      currentPage: Number(page),
+      totalPages,
+      totalItems,
+      itemsPerPage: Number(limit)
+    }
+  };
+};
+
+const getUserStats = async () => {
+  const db = getFirestore();
+  if (!db) {
+    throw new Error('Firestore not initialized');
+  }
+
+  const usersRef = db.collection(COLLECTION);
+  const [totalSnap, agentSnap, verifiedSnap, activeSnap] = await Promise.all([
+    usersRef.count().get(),
+    usersRef.where('role', '==', 'agent').count().get(),
+    usersRef.where('isVerified', '==', true).count().get(),
+    usersRef.where('isActive', '==', true).count().get()
+  ]);
+
+  return {
+    total: totalSnap.data().count,
+    agents: agentSnap.data().count,
+    verified: verifiedSnap.data().count,
+    active: activeSnap.data().count
+  };
+};
+
+const deleteUser = async (userId) => {
+  const db = getFirestore();
+  if (!db) {
+    throw new Error('Firestore not initialized');
+  }
+
+  await db.collection(COLLECTION).doc(userId).delete();
 };
 
 // Find user by email
@@ -252,6 +407,10 @@ module.exports = {
   findByResetToken,
   hashPassword,
   comparePassword,
-  convertTimestamps
+  convertTimestamps,
+  ensureUserFromFirebase,
+  listUsers,
+  getUserStats,
+  deleteUser
 };
 

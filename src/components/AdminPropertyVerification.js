@@ -25,7 +25,7 @@ import {
   FaFileAlt
 } from 'react-icons/fa';
 import { useProperty } from '../contexts/PropertyContext';
-import { getApiBaseUrl } from '../utils/apiConfig';
+import { getApiBaseUrl, getApiUrl } from '../utils/apiConfig';
 
 const normalizeDateValue = (value) => {
   if (!value) return null;
@@ -154,13 +154,22 @@ const AdminPropertyVerification = () => {
   const loadAdminSettings = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Admin authentication required. Using default fee settings.');
+        return;
+      }
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
+      const response = await fetch(getApiUrl('/admin/settings'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+      
+      if (response.status === 401) {
+        setError('Admin authentication expired. Using default fee settings.');
+        return;
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -171,6 +180,7 @@ const AdminPropertyVerification = () => {
       }
     } catch (error) {
       console.error('Error loading admin settings:', error);
+      setError('Unable to load admin settings. Using default values.');
     }
   };
 
@@ -257,10 +267,9 @@ const AdminPropertyVerification = () => {
   const handleSaveVerificationFee = async () => {
     try {
       setSavingFee(true);
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/settings`, {
+      const response = await fetch(getApiUrl('/admin/settings'), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

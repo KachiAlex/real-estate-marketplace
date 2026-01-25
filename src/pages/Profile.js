@@ -7,8 +7,7 @@ import storageService from '../services/storageService';
 import { db } from '../config/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth } from '../config/firebase';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from '../utils/apiConfig';
 
 const Profile = () => {
   const { user, updateUserProfile } = useAuth();
@@ -105,7 +104,7 @@ const Profile = () => {
       if (token) {
         try {
           const response = await axios.put(
-            `${API_BASE_URL}/api/auth/profile`,
+            getApiUrl('/auth/profile'),
             {
               firstName: formData.firstName,
               lastName: formData.lastName,
@@ -280,7 +279,7 @@ const Profile = () => {
       if (token) {
         try {
           await axios.put(
-            `${API_BASE_URL}/api/auth/profile`,
+            getApiUrl('/auth/profile'),
             { avatar: avatarUrl },
             {
               headers: {

@@ -566,11 +566,36 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  const exchangeFirebaseTokenForBackendToken = async (firebaseToken) => {
+    try {
+      if (!firebaseToken) return null;
+      const response = await fetch(getApiUrl('/auth/firebase-exchange'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firebaseToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: firebaseToken })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.message || `Firebase exchange failed with status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn('AuthContext: Firebase token exchange failed', error?.message || error);
+      return null;
+    }
+  };
+
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
     
     try {
+      let usedMockUser = false;
       let userWithoutPassword = null;
       let backendUser = null;
       
@@ -820,6 +845,7 @@ export const AuthProvider = ({ children }) => {
 
         const { password: _, ...mockUserWithoutPassword } = foundUser;
         userWithoutPassword = mockUserWithoutPassword;
+        usedMockUser = true;
         console.log('AuthContext: Mock user login successful for user:', userWithoutPassword.email);
       }
 
@@ -845,20 +871,94 @@ export const AuthProvider = ({ children }) => {
       const vendorCodeToUse = userWithoutPassword.vendorCode || generateVendorCode();
       
       // Update user object with Firebase UID and ensure codes exist
-      const finalUser = {
+      let finalUser = {
         ...userWithoutPassword,
         uid: firebaseUid, // Add Firebase UID
         id: userWithoutPassword.id, // Keep original ID for compatibility
         userCode: userCodeToUse,
-        vendorCode: vendorCodeToUse
+        vendorCode: vendorCodeToUse,
+        roles: userWithoutPassword.roles || [userWithoutPassword.role || 'user']
       };
+      
+      if (firebaseUid && db) {
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const userRef = doc(db, 'users', firebaseUid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const firestoreData = userSnap.data() || {};
+            const firestoreRoles = Array.isArray(firestoreData.roles) ? firestoreData.roles.filter(Boolean) : [];
+            if (firestoreData.isAdmin && !firestoreRoles.includes('admin')) {
+              firestoreRoles.push('admin');
+            }
+            let primaryRole = firestoreData.role || firestoreRoles[0] || finalUser.role || 'user';
+            if (firestoreData.isAdmin) {
+              primaryRole = 'admin';
+            }
+            finalUser = {
+              ...finalUser,
+              ...firestoreData,
+              role: primaryRole,
+              roles: firestoreRoles.length ? firestoreRoles : [primaryRole],
+              userCode: firestoreData.userCode || finalUser.userCode,
+              vendorCode: firestoreData.vendorCode || finalUser.vendorCode
+            };
+          }
+        } catch (firestoreError) {
+          console.warn('AuthContext: Failed to load Firestore user data:', firestoreError?.message || firestoreError);
+        }
+      }
       
       // Store Firebase token if available for future API calls
       if (firebaseToken) {
         localStorage.setItem('firebaseToken', firebaseToken);
-        localStorage.setItem('token', firebaseToken); // Also store as 'token' for backward compatibility
         finalUser.firebaseToken = firebaseToken;
-        finalUser.token = firebaseToken; // Also add to user object
+
+        let exchangeResult = null;
+        try {
+          exchangeResult = await exchangeFirebaseTokenForBackendToken(firebaseToken);
+        } catch (exchangeError) {
+          console.warn('AuthContext: Error exchanging Firebase token for backend token', exchangeError?.message || exchangeError);
+        }
+
+        if (exchangeResult?.token) {
+          localStorage.setItem('token', exchangeResult.token);
+          finalUser.token = exchangeResult.token;
+
+          if (exchangeResult.user) {
+            const exchangedUser = exchangeResult.user;
+            finalUser = {
+              ...finalUser,
+              role: exchangedUser.role || finalUser.role,
+              roles: Array.isArray(exchangedUser.roles) && exchangedUser.roles.length > 0
+                ? exchangedUser.roles
+                : finalUser.roles,
+              firstName: exchangedUser.firstName || finalUser.firstName,
+              lastName: exchangedUser.lastName || finalUser.lastName,
+              email: exchangedUser.email || finalUser.email,
+              avatar: exchangedUser.avatar || finalUser.avatar,
+              isVerified: exchangedUser.isVerified ?? finalUser.isVerified
+            };
+          }
+        } else {
+          localStorage.setItem('token', firebaseToken); // Fallback to Firebase token if exchange fails
+          finalUser.token = firebaseToken;
+        }
+      }
+
+      const hasAdminRole = finalUser.role === 'admin' || finalUser.roles?.includes('admin');
+      const resolvedActiveRole = hasAdminRole
+        ? 'admin'
+        : finalUser.activeRole || finalUser.role || (finalUser.roles?.[0]) || 'buyer';
+      finalUser.activeRole = resolvedActiveRole;
+
+      setActiveRole(resolvedActiveRole);
+      localStorage.setItem('activeRole', resolvedActiveRole);
+      
+      if (hasAdminRole && usedMockUser) {
+        localStorage.setItem('mockAdminAccess', 'true');
+      } else {
+        localStorage.removeItem('mockAdminAccess');
       }
       
       console.log('AuthContext [v2]: User codes - userCode:', userCodeToUse, 'vendorCode:', vendorCodeToUse);

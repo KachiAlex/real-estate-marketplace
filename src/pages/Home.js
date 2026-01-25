@@ -1858,12 +1858,6 @@ const Home = () => {
                   Experience immersive 3D tours of properties from the comfort of your home. 
                   Get a realistic feel of spaces before visiting in person.
                 </p>
-                <button 
-                  onClick={handleLearnMore}
-                  className="text-yellow-400 hover:text-yellow-300 font-medium"
-                >
-                  Learn More →
-                </button>
               </div>
 
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
@@ -1875,12 +1869,6 @@ const Home = () => {
                   Every property is verified by our expert team for authenticity and legal compliance. 
                   Buy with confidence knowing all details are accurate.
                 </p>
-                <button 
-                  onClick={handleLearnMore}
-                  className="text-yellow-400 hover:text-yellow-300 font-medium"
-                >
-                  Learn More →
-                </button>
               </div>
 
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
@@ -1892,12 +1880,6 @@ const Home = () => {
                   Access detailed market analysis and investment reports. 
                   Make informed decisions with comprehensive property data and trends.
                 </p>
-                <button 
-                  onClick={handleLearnMore}
-                  className="text-yellow-400 hover:text-yellow-300 font-medium"
-                >
-                  Learn More →
-                </button>
               </div>
             </div>
           </div>

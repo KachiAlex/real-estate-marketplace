@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiConfig';
 import { 
   calculateMonthlyPayment, 
   generatePaymentSchedule, 
@@ -11,8 +12,6 @@ import {
   getUpcomingPayments as getUpcomingPaymentsUtil 
 } from '../utils/mortgageCalculator';
 import { transformMortgagesArray } from '../utils/mortgageDataTransform';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
 
 const MortgageContext = createContext();
 
@@ -51,7 +50,7 @@ export const MortgageProvider = ({ children }) => {
         return;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/api/mortgages/active`, {
+      const response = await axios.get(getApiUrl('/mortgages/active'), {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -99,7 +98,7 @@ export const MortgageProvider = ({ children }) => {
         return;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/api/mortgages`, {
+      const response = await axios.get(getApiUrl('/mortgages'), {
         headers: {
           Authorization: `Bearer ${token}`
         },

@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { FaLock, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
 import { confirmPasswordReset, verifyPasswordResetCode, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { getApiUrl } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
 
 const ResetPassword = () => {
@@ -173,8 +174,7 @@ const ResetPassword = () => {
         // Step 3: Sync password to backend database
         let syncSuccess = false;
         try {
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
-          const syncResponse = await fetch(`${apiBaseUrl}/auth/sync-password`, {
+          const syncResponse = await fetch(getApiUrl('/auth/sync-password'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

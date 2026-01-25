@@ -4,8 +4,7 @@
  */
 
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from './apiConfig';
 
 /**
  * Upload mortgage documents to backend (which uploads to Cloudinary)
@@ -63,7 +62,7 @@ export const uploadMortgageDocuments = async (files, applicationId = null, onPro
 
     // Upload to backend
     const response = await axios.post(
-      `${API_BASE_URL}/api/upload/mortgage/documents`,
+      getApiUrl('/upload/mortgage/documents'),
       formData,
       {
         headers: {

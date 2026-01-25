@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaCheckCircle, FaCreditCard, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { getApiUrl } from '../utils/apiConfig';
 
 const PropertyVerification = ({ property, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -13,8 +14,6 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   });
   const [error, setError] = useState('');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-
   const verificationFee = 50000; // ₦50,000 default fee
 
   const handleRequestVerification = async () => {
@@ -22,7 +21,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/properties/${property.id}/request-verification`, {
+      const response = await fetch(getApiUrl(`/properties/${property.id}/request-verification`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +51,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/verification/${verificationRequest.id}/process-payment`, {
+      const response = await fetch(getApiUrl(`/verification/${verificationRequest.id}/process-payment`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

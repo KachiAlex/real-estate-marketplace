@@ -1,0 +1,242 @@
+[debug] [2026-01-08T08:40:12.093Z] ----------------------------------------------------------------------
+[debug] [2026-01-08T08:40:12.096Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\opdli\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions
+[debug] [2026-01-08T08:40:12.097Z] CLI Version:   15.1.0
+[debug] [2026-01-08T08:40:12.097Z] Platform:      win32
+[debug] [2026-01-08T08:40:12.097Z] Node Version:  v20.19.6
+[debug] [2026-01-08T08:40:12.098Z] Time:          Thu Jan 08 2026 09:40:12 GMT+0100 (Wẹ́st Áfríká Fíksd Taim)
+[debug] [2026-01-08T08:40:12.098Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-08T08:40:18.381Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-08T08:40:18.382Z] > authorizing via signed-in user (onyedika.akoma@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-01-08T08:40:18.425Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-08T08:40:18.426Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4402},{"address":"::1","family":"IPv6","port":4402}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4002},{"address":"::1","family":"IPv6","port":4002}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4502}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-01-08T08:40:18.444Z] Emulator locator file path: C:\Users\opdli\AppData\Local\Temp\hub-real-estate-marketplace-37544.json
+[debug] [2026-01-08T08:40:18.445Z] [hub] writing locator at C:\Users\opdli\AppData\Local\Temp\hub-real-estate-marketplace-37544.json
+[debug] [2026-01-08T08:40:18.505Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[warn] !  eventarc: Eventarc Emulator unable to start on port 9299, starting on 9300 instead. {"metadata":{"emulator":{"name":"eventarc"},"message":"Eventarc Emulator unable to start on port 9299, starting on 9300 instead."}}
+[debug] [2026-01-08T08:40:18.514Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[warn] !  tasks: Cloud Tasks Emulator unable to start on port 9499, starting on 9500 instead. {"metadata":{"emulator":{"name":"tasks"},"message":"Cloud Tasks Emulator unable to start on port 9499, starting on 9500 instead."}}
+[debug] [2026-01-08T08:40:18.515Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-08T08:40:18.515Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4402},{"address":"::1","family":"IPv6","port":4402}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4002},{"address":"::1","family":"IPv6","port":4002}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4502}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5003}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9300}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9500}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[warn] !  functions: Application Default Credentials detected. Non-emulated services will access production using these credentials. Be careful! {"metadata":{"emulator":{"name":"functions"},"message":"Application Default Credentials detected. Non-emulated services will access production using these credentials. Be careful!"}}
+[debug] [2026-01-08T08:40:18.618Z] Checked if tokens are valid: false, expires at: 1767862431900
+[debug] [2026-01-08T08:40:18.618Z] Checked if tokens are valid: false, expires at: 1767862431900
+[debug] [2026-01-08T08:40:18.619Z] > refreshing access token with scopes: []
+[debug] [2026-01-08T08:40:18.625Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-01-08T08:40:18.625Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-01-08T08:40:19.196Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-01-08T08:40:19.196Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-01-08T08:40:19.217Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544/adminSdkConfig [none]
+[debug] [2026-01-08T08:40:20.172Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544/adminSdkConfig 200
+[debug] [2026-01-08T08:40:20.173Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/real-estate-marketplace-37544/adminSdkConfig {"projectId":"real-estate-marketplace-37544","storageBucket":"real-estate-marketplace-37544.firebasestorage.app"}
+[info] i  functions: Watching "D:\real-estate-marketplace\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"D:\\real-estate-marketplace\\functions\" for Cloud Functions..."}}
+[debug] [2026-01-08T08:40:20.252Z] Validating nodejs source
+[debug] [2026-01-08T08:40:23.633Z] > [functions] package.json contents: {
+  "name": "functions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^8.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^7.0.2"
+  }
+}
+[debug] [2026-01-08T08:40:23.633Z] Building nodejs source
+[debug] [2026-01-08T08:40:23.634Z] Failed to find version of module node: reached end of search path D:\real-estate-marketplace\functions\node_modules
+[info] +  functions: Using node@20 from host. 
+[debug] [2026-01-08T08:40:23.641Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-01-08T08:40:23.656Z] Found firebase-functions binary at 'D:\real-estate-marketplace\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8680
+
+[error] !!  functions: Failed to load function definition from source: FirebaseError: User code failed to load. Cannot determine backend specification. Timeout after 10000. See https://firebase.google.com/docs/functions/tips#avoid_deployment_timeouts_during_initialization' {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: User code failed to load. Cannot determine backend specification. Timeout after 10000. See https://firebase.google.com/docs/functions/tips#avoid_deployment_timeouts_during_initialization'"}}
+[debug] [2026-01-08T08:40:38.299Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4002/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5003 │ http://127.0.0.1:4002/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4402
+  Other reserved ports: 4502
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-01-08T08:48:39.717Z] File D:\real-estate-marketplace\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File D:\\real-estate-marketplace\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-01-08T08:48:40.747Z] Validating nodejs source
+[debug] [2026-01-08T08:48:43.950Z] > [functions] package.json contents: {
+  "name": "functions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^8.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^7.0.2"
+  }
+}
+[debug] [2026-01-08T08:48:43.951Z] Building nodejs source
+[debug] [2026-01-08T08:48:43.952Z] Failed to find version of module node: reached end of search path D:\real-estate-marketplace\functions\node_modules
+[info] +  functions: Using node@20 from host. 
+[debug] [2026-01-08T08:48:43.975Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-01-08T08:48:43.994Z] Found firebase-functions binary at 'D:\real-estate-marketplace\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8781
+
+[error] D:\real-estate-marketplace\functions\index.js:242
+});
+   
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1464:18)
+    at Module._compile (node:internal/modules/cjs/loader:1495:20)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at loadModule (D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\runtime\loader.js:20:10)
+    at Object.loadStack (D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\runtime\loader.js:119:20)
+    at D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\bin\firebase-functions.js:76:48
+
+[debug] [2026-01-08T08:48:45.866Z] Got response code 400; body Failed to generate manifest from function source: Unexpected end of input
+[error] !!  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2026-01-08T08:50:39.053Z] File D:\real-estate-marketplace\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File D:\\real-estate-marketplace\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-01-08T08:50:39.118Z] File D:\real-estate-marketplace\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File D:\\real-estate-marketplace\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-01-08T08:50:40.127Z] Validating nodejs source
+[debug] [2026-01-08T08:50:47.144Z] > [functions] package.json contents: {
+  "name": "functions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^8.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^7.0.2"
+  }
+}
+[debug] [2026-01-08T08:50:47.147Z] Building nodejs source
+[debug] [2026-01-08T08:50:47.148Z] Failed to find version of module node: reached end of search path D:\real-estate-marketplace\functions\node_modules
+[info] +  functions: Using node@20 from host. 
+[debug] [2026-01-08T08:50:47.160Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-01-08T08:50:47.192Z] Found firebase-functions binary at 'D:\real-estate-marketplace\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8189
+
+[error] D:\real-estate-marketplace\functions\index.js:77
+  // Property rejection
+                       
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1464:18)
+    at Module._compile (node:internal/modules/cjs/loader:1495:20)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at loadModule (D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\runtime\loader.js:20:10)
+    at Object.loadStack (D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\runtime\loader.js:119:20)
+    at D:\real-estate-marketplace\functions\node_modules\firebase-functions\lib\bin\firebase-functions.js:76:48
+
+[debug] [2026-01-08T08:50:50.218Z] Got response code 400; body Failed to generate manifest from function source: Unexpected end of input
+[error] !!  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2026-01-08T08:51:54.408Z] File D:\real-estate-marketplace\functions\index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File D:\\real-estate-marketplace\\functions\\index.js changed, reloading triggers"}}
+[debug] [2026-01-08T08:51:55.463Z] Validating nodejs source
+[debug] [2026-01-08T08:52:02.486Z] > [functions] package.json contents: {
+  "name": "functions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^8.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^7.0.2"
+  }
+}
+[debug] [2026-01-08T08:52:02.486Z] Building nodejs source
+[debug] [2026-01-08T08:52:02.487Z] Failed to find version of module node: reached end of search path D:\real-estate-marketplace\functions\node_modules
+[info] +  functions: Using node@20 from host. 
+[debug] [2026-01-08T08:52:02.490Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-01-08T08:52:02.507Z] Found firebase-functions binary at 'D:\real-estate-marketplace\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8611
+
+[debug] [2026-01-08T08:52:11.839Z] Got response from /__/functions.yaml {"endpoints":{"api":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"api"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: api. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: api."}}
+[info] +  functions[us-central1-api]: http function initialized (http://127.0.0.1:5003/real-estate-marketplace-37544/us-central1/api). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5003/real-estate-marketplace-37544/us-central1/api)."}}
+[debug] [2026-01-08T09:07:25.786Z] Received signal SIGHUP 1
+[info]  
+[info] i  emulators: Received SIGHUP for the first time. Starting a clean shutdown. 
+[info] i  emulators: Please wait for a clean shutdown or send the SIGHUP signal again to stop right now. 
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  ui: Stopping Emulator UI {"metadata":{"emulator":{"name":"ui"},"message":"Stopping Emulator UI"}}
+[info] i  functions: Stopping Functions Emulator {"metadata":{"emulator":{"name":"functions"},"message":"Stopping Functions Emulator"}}
+[info] i  eventarc: Stopping Eventarc Emulator {"metadata":{"emulator":{"name":"eventarc"},"message":"Stopping Eventarc Emulator"}}
+[info] i  tasks: Stopping Cloud Tasks Emulator {"metadata":{"emulator":{"name":"tasks"},"message":"Stopping Cloud Tasks Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[debug] [2026-01-08T09:07:26.041Z] Emulator locator file path: C:\Users\opdli\AppData\Local\Temp\hub-real-estate-marketplace-37544.json

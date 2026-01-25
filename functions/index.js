@@ -3,235 +3,125 @@ const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
 
-const log = (stage) => {
-  console.log(`[bootstrap] ${new Date().toISOString()} - ${stage}`);
-};
+if (!admin.apps.length) {
+  admin.initializeApp();
+  functions.logger.info('[functions] Firebase Admin initialized');
+}
 
-let appInstance = null;
-let dbInstance = null;
+const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
 
-const getDb = () => {
-  if (!dbInstance) {
-    log('Initializing Firebase Admin SDK');
-    admin.initializeApp();
-    log('Firebase Admin initialized');
-    dbInstance = admin.firestore();
-    log('Firestore reference ready');
-  }
-  return dbInstance;
-};
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-const createApp = () => {
-  log('Creating Express app');
-  const app = express();
-  const db = getDb();
-
-  log('Registering middleware');
-  app.use(cors({ origin: true }));
-  app.use(express.json());
-
-  log('Registering GET /api/health');
-  app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'OK',
-      message: 'Real Estate API is running',
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  log('Registering GET /api/properties');
-  app.get('/api/properties', async (req, res) => {
-    try {
-      const snapshot = await db.collection('properties').get();
-      const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      res.json(properties);
-    } catch (error) {
-      console.error('Error fetching properties:', error);
-      res.status(500).json({ error: 'Failed to fetch properties' });
-    }
-  });
-
-  log('Registering PUT /api/properties/:id/approve');
-  app.put('/api/properties/:id/approve', async (req, res) => {
-    try {
-      const propertyId = req.params.id;
-      const propertyDoc = await db.collection('properties').doc(propertyId).get();
-      if (!propertyDoc.exists) {
-        return res.status(404).json({ error: 'Property not found' });
-      }
-      await db.collection('properties').doc(propertyId).update({
-        approvalStatus: 'approved',
-        isApproved: true,
-        approvedAt: new Date().toISOString()
-      });
-      res.json({ message: 'Property approved' });
-    } catch (error) {
-      console.error('Error approving property:', error);
-      res.status(500).json({ error: 'Failed to approve property' });
-    }
-  });
-
-  log('Registering PUT /api/properties/:id/reject');
-  app.put('/api/properties/:id/reject', async (req, res) => {
-    try {
-      const propertyId = req.params.id;
-      const { rejectionReason } = req.body;
-      const propertyDoc = await db.collection('properties').doc(propertyId).get();
-      if (!propertyDoc.exists) {
-        return res.status(404).json({ error: 'Property not found' });
-      }
-      await db.collection('properties').doc(propertyId).update({
-        approvalStatus: 'rejected',
-        isApproved: false,
-        rejectionReason: rejectionReason || '',
-        rejectedAt: new Date().toISOString()
-      });
-      res.json({ message: 'Property rejected' });
-    } catch (error) {
-      console.error('Error rejecting property:', error);
-      res.status(500).json({ error: 'Failed to reject property' });
-    }
-  });
-
-  log('Registering POST /api/notifications');
-  app.post('/api/notifications', async (req, res) => {
-    try {
-      const notification = {
-        ...req.body,
-        createdAt: new Date().toISOString(),
-        isRead: false
-      };
-      const docRef = await db.collection('notifications').add(notification);
-      res.json({ id: docRef.id, ...notification });
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      res.status(500).json({ error: 'Failed to send notification' });
-    }
-  });
-
-  log('Registering GET /api/notifications');
-  app.get('/api/notifications', async (req, res) => {
-    try {
-      const { userId } = req.query;
-      let ref = db.collection('notifications');
-      if (userId) ref = ref.where('userId', '==', userId);
-      const snapshot = await ref.orderBy('createdAt', 'desc').limit(50).get();
-      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      res.json(items);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ error: 'Failed to fetch notifications' });
-    }
-  });
-
-  log('Registering POST /api/chats/start');
-  app.post('/api/chats/start', async (req, res) => {
-    try {
-      const { buyerId, vendorId, propertyId, starterId, initialMessage } = req.body;
-      const chatData = {
-        buyerId,
-        vendorId,
-        propertyId,
-        starterId,
-        createdAt: new Date().toISOString(),
-        messages: [{
-          senderId: starterId,
-          message: initialMessage,
-          timestamp: new Date().toISOString()
-        }]
-      };
-      const docRef = await db.collection('chats').add(chatData);
-      res.json({ chatId: docRef.id, ...chatData });
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      res.status(500).json({ error: 'Failed to create chat' });
-    }
-  });
-
-  log('Registering POST /api/ratings');
-  app.post('/api/ratings', async (req, res) => {
-    try {
-      const rating = {
-        ...req.body,
-        createdAt: new Date().toISOString()
-      };
-      const docRef = await db.collection('ratings').add(rating);
-      res.json({ id: docRef.id, ...rating });
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-      res.status(500).json({ error: 'Failed to submit rating' });
-    }
-  });
-
-  log('Registering POST /api/inspection-requests');
-  app.post('/api/inspection-requests', async (req, res) => {
-    try {
-      const inspectionRequest = {
-        ...req.body,
-        createdAt: new Date().toISOString(),
-        status: 'pending_vendor'
-      };
-      const docRef = await db.collection('inspectionRequests').add(inspectionRequest);
-      res.json({ id: docRef.id, ...inspectionRequest });
-    } catch (error) {
-      console.error('Error creating inspection request:', error);
-      res.status(500).json({ error: 'Failed to create inspection request' });
-    }
-  });
-
-  log('Registering GET /api/inspection-requests');
-  app.get('/api/inspection-requests', async (req, res) => {
-    try {
-      const { vendorId, buyerId } = req.query;
-      let query = db.collection('inspectionRequests');
-
-      if (vendorId) {
-        query = query.where('vendorId', '==', vendorId);
-      } else if (buyerId) {
-        query = query.where('buyerId', '==', buyerId);
-      }
-
-      const snapshot = await query.orderBy('createdAt', 'desc').get();
-      const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      res.json(requests);
-    } catch (error) {
-      console.error('Error fetching inspection requests:', error);
-      res.status(500).json({ error: 'Failed to fetch inspection requests' });
-    }
-  });
-
-  log('Registering PUT /api/inspection-requests/:id');
-  app.put('/api/inspection-requests/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = {
-        ...req.body,
-        updatedAt: new Date().toISOString()
-      };
-
-      await db.collection('inspectionRequests').doc(id).update(updates);
-      res.json({ message: 'Inspection request updated successfully' });
-    } catch (error) {
-      console.error('Error updating inspection request:', error);
-      res.status(500).json({ error: 'Failed to update inspection request' });
-    }
-  });
-
-  log('Express app created');
-  return app;
-};
-
-const getApp = () => {
-  if (!appInstance) {
-    log('Instantiating Express app');
-    appInstance = createApp();
-    log('Express app ready');
-  }
-  return appInstance;
-};
-
-exports.api = functions.https.onRequest((req, res) => {
-  log('Incoming request received');
-  const app = getApp();
-  return app(req, res);
+const buildPropertyResponse = (doc) => ({
+  id: doc.id,
+  ...doc.data(),
+  createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt,
+  updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate().toISOString() : doc.data().updatedAt
 });
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Firebase Functions API is live',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/properties', async (req, res) => {
+  try {
+    const { status, verificationStatus } = req.query;
+    let query = db.collection('properties');
+
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+    if (verificationStatus) {
+      query = query.where('verificationStatus', '==', verificationStatus);
+    }
+
+    const snapshot = await query.orderBy('createdAt', 'desc').limit(50).get();
+    const properties = snapshot.docs.map(buildPropertyResponse);
+
+    res.json({ success: true, data: properties });
+  } catch (error) {
+    functions.logger.error('functions:properties:list', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch properties' });
+  }
+});
+
+app.put('/api/properties/:id/verify', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationStatus, verificationNotes } = req.body;
+
+    if (!['approved', 'rejected'].includes(verificationStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid verification status' });
+    }
+
+    const docRef = db.collection('properties').doc(id);
+    const snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      return res.status(404).json({ success: false, message: 'Property not found' });
+    }
+
+    await docRef.set({
+      verificationStatus,
+      approvalStatus: verificationStatus,
+      verificationNotes: verificationNotes || '',
+      isVerified: verificationStatus === 'approved',
+      verifiedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    const updated = await docRef.get();
+    res.json({ success: true, data: buildPropertyResponse(updated) });
+  } catch (error) {
+    functions.logger.error('functions:properties:verify', error);
+    res.status(500).json({ success: false, message: 'Failed to update property status' });
+  }
+});
+
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const payload = {
+      ...req.body,
+      createdAt: FieldValue.serverTimestamp(),
+      isRead: false
+    };
+
+    const docRef = await db.collection('notifications').add(payload);
+    res.json({ success: true, data: { id: docRef.id, ...payload } });
+  } catch (error) {
+    functions.logger.error('functions:notifications:create', error);
+    res.status(500).json({ success: false, message: 'Failed to create notification' });
+  }
+});
+
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    let query = db.collection('notifications');
+
+    if (userId) {
+      query = query.where('userId', '==', userId);
+    }
+
+    const snapshot = await query.orderBy('createdAt', 'desc').limit(50).get();
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    functions.logger.error('functions:notifications:list', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch notifications' });
+  }
+});
+
+app.use((_req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found in Firebase Functions API' });
+});
+
+exports.api = functions.https.onRequest(app);

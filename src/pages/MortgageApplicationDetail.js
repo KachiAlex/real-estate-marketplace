@@ -20,8 +20,7 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from '../utils/apiConfig';
 
 const MortgageApplicationDetail = () => {
   const { id } = useParams();
@@ -57,7 +56,7 @@ const MortgageApplicationDetail = () => {
           throw new Error('Authentication required');
         }
 
-        const response = await axios.get(`${API_BASE_URL}/api/mortgages/${id}`, {
+        const response = await axios.get(getApiUrl(`/mortgages/${id}`), {
           headers: {
             Authorization: `Bearer ${token}`
           }

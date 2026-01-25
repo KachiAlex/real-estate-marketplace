@@ -1,17 +1,55 @@
 const express = require('express');
-const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
 
 // Import configurations
-const connectDB = require('./config/database');
 const { initializeFirestore } = require('./config/firestore');
 const { securityConfig } = require('./config/security');
 const { createLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://propertyark.com',
+  'https://www.propertyark.com',
+  'https://real-estate-marketplace-37544.web.app',
+  'https://real-estate-marketplace-37544.firebaseapp.com'
+].filter(Boolean);
+
+// Global CORS middleware must run before any routes
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const isFirebaseHosting = origin && (origin.includes('.web.app') || origin.includes('.firebaseapp.com'));
+  const isAllowedOrigin = origin && (allowedOrigins.includes(origin) || isFirebaseHosting || process.env.NODE_ENV === 'development');
+
+  if (origin) {
+    if (!isAllowedOrigin) {
+      console.warn('⚠️ [CORS] Origin not explicitly allowed, temporarily permitting:', origin);
+    }
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
+  res.header('Access-Control-Max-Age', '600');
+
+  if (req.method === 'OPTIONS') {
+    console.log('✅ [CORS] Preflight handled for', req.originalUrl, 'origin:', origin || 'N/A');
+    return res.status(200).end();
+  }
+
+  next();
+});
 
 // ABSOLUTE FIRST ROUTE: Register forgot-password BEFORE ANYTHING ELSE
 // This ensures it works even if anything else fails
@@ -50,46 +88,20 @@ try {
   console.warn('📚 See backend/FIRESTORE_SETUP.md for setup instructions');
 }
 
-// Database connection (MongoDB - for other models that still use it)
-// Make MongoDB connection optional - server can run with Firestore only
-// Run this asynchronously - don't block server startup
-setImmediate(() => {
-  connectDB().then(async (conn) => {
-    if (conn) {
-      // Initialize admin settings only if MongoDB is connected
-      await initializeAdminSettings();
-      // Initialize notification templates
-      try {
-        const initializeNotificationTemplates = require('./scripts/initializeNotificationTemplates');
-        await initializeNotificationTemplates();
-      } catch (templateError) {
-        console.warn('⚠️ Notification templates initialization failed (non-fatal):', templateError.message);
-      }
-    } else {
-      console.warn('⚠️ MongoDB not connected - skipping MongoDB-dependent initializations');
-    }
-    // Initialize notification service with Socket.IO (works without MongoDB)
-    try {
-      notificationService.initializeSocketIO(io);
-    } catch (ioError) {
-      console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
-    }
-    // Verify email service connection
-    try {
-      const emailStatus = await emailService.verifyConnection();
-      infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
-    } catch (emailError) {
-      console.warn('⚠️ Email service verification failed:', emailError.message);
-    }
-  }).catch((error) => {
-    console.warn('⚠️ Database initialization error (non-fatal):', error.message);
-    // Initialize notification service even if MongoDB fails
-    try {
-      notificationService.initializeSocketIO(io);
-    } catch (ioError) {
-      console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
-    }
-  });
+// Initialize non-Mongo services immediately (Firestore-only mode)
+setImmediate(async () => {
+  try {
+    notificationService.initializeSocketIO(io);
+  } catch (ioError) {
+    console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
+  }
+
+  try {
+    const emailStatus = await emailService.verifyConnection();
+    infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
+  } catch (emailError) {
+    console.warn('⚠️ Email service verification failed:', emailError.message);
+  }
 });
 
 // Import models
@@ -115,44 +127,6 @@ const emailService = require('./services/emailService');
 
 // NOTE: forgot-password route is now registered at the VERY TOP of the file
 // (right after const app = express()) to ensure it's the first route
-
-// Middleware - CORS must be applied BEFORE other middleware
-// This ensures CORS headers are set even if errors occur
-app.use(cors(securityConfig.cors));
-
-// Additional CORS headers middleware to ensure they're always set
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Set CORS headers for all responses
-  if (origin) {
-    const isFirebaseHosting = origin.includes('.web.app') || origin.includes('.firebaseapp.com');
-    const allowedOrigins = [
-      process.env.FRONTEND_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://propertyark.com',
-      'https://www.propertyark.com',
-      'https://real-estate-marketplace-37544.web.app',
-      'https://real-estate-marketplace-37544.firebaseapp.com'
-    ].filter(Boolean);
-    
-    if (allowedOrigins.includes(origin) || isFirebaseHosting || process.env.NODE_ENV === 'development') {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-      res.header('Access-Control-Max-Age', '600');
-    }
-  }
-  
-  // Handle preflight requests - must set headers before sending response
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
 
 app.use(securityConfig.helmet);
 app.use(createLogger());
@@ -193,19 +167,19 @@ io.on('connection', (socket) => {
 // });
 // app.use(limiter);
 
-// Validate required environment variables
-const requiredEnvVars = ['JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+// Validate required environment variables (only critical secrets should be fatal)
+const essentialEnvVars = ['JWT_SECRET'];
+const missingEssential = essentialEnvVars.filter(envVar => !process.env[envVar]);
 
-if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
-  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+if (missingEssential.length > 0 && process.env.NODE_ENV === 'production') {
+  console.error('❌ Missing required environment variables:', missingEssential.join(', '));
   console.error('⚠️ Server will not start in production without these variables');
   process.exit(1);
 }
 
-// Warn if MongoDB URI is missing (but don't fail - Firestore is used for auth)
-if (!process.env.MONGODB_URI && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ MONGODB_URI not set - some features may not work (Firestore is used for auth)');
+// Warn if MongoDB URI is missing (but don't fail - Firestore now powers core flows)
+if (!process.env.MONGODB_URI) {
+  console.warn('⚠️ MONGODB_URI not set - Mongo-backed legacy features will be disabled');
 }
 
 // Warn about missing payment keys
@@ -315,11 +289,12 @@ try {
   console.error('Failed to load investments routes:', error.message);
 }
 
-try {
-  app.use('/api/mortgages', require('./routes/mortgages'));
-} catch (error) {
-  console.error('Failed to load mortgages routes:', error.message);
-}
+// Mortgage flow temporarily disabled
+// try {
+//   app.use('/api/mortgages', require('./routes/mortgages'));
+// } catch (error) {
+//   console.error('Failed to load mortgages routes:', error.message);
+// }
 
 try {
   app.use('/api/payments', require('./routes/payments'));
@@ -339,11 +314,11 @@ try {
   console.error('Failed to load admin routes:', error.message);
 }
 
-try {
-  app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
-} catch (error) {
-  console.error('Failed to load mortgage-banks routes:', error.message);
-}
+// try {
+//   app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
+// } catch (error) {
+//   console.error('Failed to load mortgage-banks routes:', error.message);
+// }
 
 try {
   app.use('/api/upload', require('./routes/upload'));

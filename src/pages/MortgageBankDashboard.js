@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaBuilding, FaFileAlt, FaChartLine, FaUsers, FaCheckCircle, FaTimesCircle, FaClock, FaPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from '../utils/apiConfig';
 
 const MortgageBankDashboard = () => {
   const { user } = useAuth();
@@ -64,7 +63,7 @@ const MortgageBankDashboard = () => {
       const token = localStorage.getItem('token');
       
       // Get bank profile
-      const response = await axios.get(`${API_BASE_URL}/api/mortgage-banks`, {
+      const response = await axios.get(getApiUrl('/mortgage-banks'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -92,7 +91,7 @@ const MortgageBankDashboard = () => {
   const loadApplications = async (currentBank) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/mortgages`, {
+      const response = await axios.get(getApiUrl('/mortgages'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -157,7 +156,7 @@ const MortgageBankDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `${API_BASE_URL}/api/mortgages/${selectedApplication._id}/review`,
+        getApiUrl(`/mortgages/${selectedApplication._id}/review`),
         {
           decision: reviewDecision,
           notes: reviewNotes.trim() || undefined,
@@ -201,7 +200,7 @@ const MortgageBankDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${API_BASE_URL}/api/mortgage-banks/${bank._id}/products`,
+        getApiUrl(`/mortgage-banks/${bank._id}/products`),
         {
           name: newProduct.name,
           description: newProduct.description,

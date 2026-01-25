@@ -1,11 +1,11 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
-const Property = require('../models/Property');
-const User = require('../models/User');
-const AdminSettings = require('../models/AdminSettings');
-const MortgageBank = require('../models/MortgageBank');
 const { protect, authorize } = require('../middleware/auth');
 const { adminValidation } = require('../middleware/validation');
+const propertyService = require('../services/propertyService');
+const userService = require('../services/userService');
+const adminSettingsService = require('../services/adminSettingsService');
+const mortgageBankService = require('../services/mortgageBankService');
 
 const router = express.Router();
 
@@ -18,39 +18,23 @@ router.use(authorize('admin'));
 // @access  Private (Admin only)
 router.get('/stats', async (req, res) => {
   try {
-    const totalProperties = await Property.countDocuments();
-    const pendingProperties = await Property.countDocuments({ verificationStatus: 'pending' });
-    const approvedProperties = await Property.countDocuments({ verificationStatus: 'approved' });
-    const rejectedProperties = await Property.countDocuments({ verificationStatus: 'rejected' });
-    const totalUsers = await User.countDocuments();
-    const totalAgents = await User.countDocuments({ role: 'agent' });
-    const verifiedUsers = await User.countDocuments({ isVerified: true });
+    const [propertyStats, userStats, recentProperties, recentUsersResult] = await Promise.all([
+      propertyService.getPropertyStats(),
+      userService.getUserStats(),
+      propertyService.listRecentProperties(5),
+      userService.listUsers({ page: 1, limit: 5, sort: 'createdAt', order: 'desc' })
+    ]);
 
-    // Get recent activity
-    const recentProperties = await Property.find()
-      .populate('owner', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    const recentUsers = await User.find()
-      .select('firstName lastName email role createdAt')
-      .sort({ createdAt: -1 })
-      .limit(5);
+    const recentUsers = (recentUsersResult?.users || []).map((user) => {
+      const { password, ...rest } = user;
+      return rest;
+    });
 
     res.json({
       success: true,
       data: {
-        properties: {
-          total: totalProperties,
-          pending: pendingProperties,
-          approved: approvedProperties,
-          rejected: rejectedProperties
-        },
-        users: {
-          total: totalUsers,
-          agents: totalAgents,
-          verified: verifiedUsers
-        },
+        properties: propertyStats,
+        users: userStats,
         recentActivity: {
           properties: recentProperties,
           users: recentUsers
@@ -95,55 +79,20 @@ router.get('/properties', [
       order = 'desc'
     } = req.query;
 
-    // Build filter object
-    const filter = {};
-
-    if (status) filter.status = status;
-    if (verificationStatus) filter.verificationStatus = verificationStatus;
-
-    // Text search
-    if (search) {
-      filter.$text = { $search: search };
-    }
-
-    // Build sort object
-    const sortObj = {};
-    sortObj[sort] = order === 'desc' ? -1 : 1;
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Get properties with pagination
-    const properties = await Property.find(filter)
-      .populate('owner', 'firstName lastName email avatar')
-      .populate('agent', 'firstName lastName email avatar')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get total count for pagination
-    const total = await Property.countDocuments(filter);
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(total / parseInt(limit));
-
-    // Get statistics
-    const stats = {
-      total: await Property.countDocuments(),
-      pending: await Property.countDocuments({ verificationStatus: 'pending' }),
-      approved: await Property.countDocuments({ verificationStatus: 'approved' }),
-      rejected: await Property.countDocuments({ verificationStatus: 'rejected' })
-    };
+    const { properties, pagination, stats } = await propertyService.listProperties({
+      status,
+      verificationStatus,
+      page: Number(page),
+      limit: Number(limit),
+      search,
+      sort,
+      order
+    });
 
     res.json({
       success: true,
       data: properties,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalItems: total,
-        itemsPerPage: parseInt(limit)
-      },
+      pagination,
       stats
     });
   } catch (error) {
@@ -174,7 +123,11 @@ router.put('/properties/:id/verify', [
 
     const { verificationStatus, verificationNotes } = req.body;
 
-    const property = await Property.findById(req.params.id);
+    const property = await propertyService.updatePropertyVerification(req.params.id, {
+      status: verificationStatus,
+      notes: verificationNotes,
+      adminId: req.user.id
+    });
 
     if (!property) {
       return res.status(404).json({
@@ -183,22 +136,10 @@ router.put('/properties/:id/verify', [
       });
     }
 
-    // Update property verification status
-    property.verificationStatus = verificationStatus;
-    property.verificationNotes = verificationNotes || '';
-    property.isVerified = verificationStatus === 'approved';
-    property.verifiedBy = req.user.id;
-    property.verifiedAt = new Date();
-
-    await property.save();
-
-    const populatedProperty = await Property.findById(property._id)
-      .populate('owner', 'firstName lastName email avatar');
-
     res.json({
       success: true,
       message: `Property ${verificationStatus} successfully`,
-      data: populatedProperty
+      data: property
     });
   } catch (error) {
     console.error('Admin verify property error:', error);
@@ -257,27 +198,25 @@ router.get('/users', [
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Get users with pagination
-    const users = await User.find(filter)
-      .select('-password')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(parseInt(limit));
+    const { users, pagination } = await userService.listUsers({
+      role,
+      isVerified,
+      page: Number(page),
+      limit: Number(limit),
+      search,
+      sort,
+      order
+    });
 
-    // Get total count for pagination
-    const total = await User.countDocuments(filter);
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(total / parseInt(limit));
+    const sanitizedUsers = users.map((user) => {
+      const { password, ...rest } = user;
+      return rest;
+    });
 
     res.json({
       success: true,
-      data: users,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalItems: total,
-        itemsPerPage: parseInt(limit)
-      }
+      data: sanitizedUsers,
+      pagination
     });
   } catch (error) {
     console.error('Admin get users error:', error);
@@ -307,7 +246,7 @@ router.put('/users/:id/verify', [
 
     const { isVerified, notes } = req.body;
 
-    const user = await User.findById(req.params.id);
+    const user = await userService.findById(req.params.id);
 
     if (!user) {
       return res.status(404).json({
@@ -316,18 +255,17 @@ router.put('/users/:id/verify', [
       });
     }
 
-    // Update user verification status
-    user.isVerified = isVerified;
-    user.verificationNotes = notes || '';
-    user.verifiedBy = req.user.id;
-    user.verifiedAt = new Date();
-
-    await user.save();
+    const updatedUser = await userService.updateUser(req.params.id, {
+      isVerified,
+      verificationNotes: notes || '',
+      verifiedBy: req.user.id,
+      verifiedAt: new Date()
+    });
 
     res.json({
       success: true,
       message: `User ${isVerified ? 'verified' : 'unverified'} successfully`,
-      data: user
+      data: updatedUser
     });
   } catch (error) {
     console.error('Admin verify user error:', error);
@@ -343,7 +281,7 @@ router.put('/users/:id/verify', [
 // @access  Private (Admin only)
 router.delete('/properties/:id', async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id);
+    const property = await propertyService.getPropertyById(req.params.id);
 
     if (!property) {
       return res.status(404).json({
@@ -352,7 +290,7 @@ router.delete('/properties/:id', async (req, res) => {
       });
     }
 
-    await Property.findByIdAndDelete(req.params.id);
+    await propertyService.deleteProperty(req.params.id);
 
     res.json({
       success: true,
@@ -380,7 +318,7 @@ router.delete('/users/:id', async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await userService.findById(req.params.id);
 
     if (!user) {
       return res.status(404).json({
@@ -389,11 +327,8 @@ router.delete('/users/:id', async (req, res) => {
       });
     }
 
-    // Delete user's properties first
-    await Property.deleteMany({ owner: req.params.id });
-
-    // Delete user
-    await User.findByIdAndDelete(req.params.id);
+    await propertyService.deletePropertiesByOwner(req.params.id);
+    await userService.deleteUser(req.params.id);
 
     res.json({
       success: true,
@@ -413,18 +348,7 @@ router.delete('/users/:id', async (req, res) => {
 // @access  Private (Admin only)
 router.get('/settings', async (req, res) => {
   try {
-    let settings = await AdminSettings.findOne();
-    
-    // If no settings exist, create default settings
-    if (!settings) {
-      settings = new AdminSettings({
-        verificationFee: 50000,
-        vendorListingFee: 100000,
-        escrowTimeoutDays: 7,
-        platformFee: 0.025
-      });
-      await settings.save();
-    }
+    const settings = await adminSettingsService.getSettings();
 
     res.json({
       success: true,
@@ -453,22 +377,7 @@ router.put('/settings', adminValidation.settings, async (req, res) => {
       });
     }
 
-    let settings = await AdminSettings.findOne();
-    
-    // If no settings exist, create new one
-    if (!settings) {
-      settings = new AdminSettings(req.body);
-    } else {
-      // Update existing settings
-      Object.keys(req.body).forEach(key => {
-        if (req.body[key] !== undefined) {
-          settings[key] = req.body[key];
-        }
-      });
-      settings.updatedAt = new Date();
-    }
-
-    await settings.save();
+    const settings = await adminSettingsService.updateSettings(req.body);
 
     res.json({
       success: true,
@@ -489,17 +398,13 @@ router.put('/settings', adminValidation.settings, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/mortgage-banks', async (req, res) => {
   try {
-    const { status } = req.query;
-    
-    let query = {};
-    if (status) {
-      query.verificationStatus = status;
-    }
+    const { status = 'all' } = req.query;
 
-    const banks = await MortgageBank.find(query)
-      .populate('userAccount', 'firstName lastName email role isActive')
-      .populate('verifiedBy', 'firstName lastName email')
-      .sort({ createdAt: -1 });
+    const banks = await mortgageBankService.listMortgageBanks({
+      isAdmin: true,
+      status,
+      includeDocuments: true
+    });
 
     res.json({
       success: true,
@@ -508,9 +413,9 @@ router.get('/mortgage-banks', async (req, res) => {
     });
   } catch (error) {
     console.error('Admin get mortgage banks error:', error);
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 });
@@ -532,7 +437,11 @@ router.put('/mortgage-banks/:id/verify', [
     }
 
     const { verificationStatus, verificationNotes } = req.body;
-    const bank = await MortgageBank.findById(req.params.id).populate('userAccount');
+    const bank = await mortgageBankService.updateMortgageBankVerification(req.params.id, {
+      verificationStatus,
+      verificationNotes,
+      adminId: req.user.id
+    });
 
     if (!bank) {
       return res.status(404).json({
@@ -541,39 +450,6 @@ router.put('/mortgage-banks/:id/verify', [
       });
     }
 
-    // Update bank verification status
-    bank.verificationStatus = verificationStatus;
-    bank.verifiedBy = req.user.id;
-    bank.verifiedAt = new Date();
-    bank.verificationNotes = verificationNotes || '';
-
-    if (verificationStatus === 'approved') {
-      bank.isActive = true;
-      // Activate the user account
-      if (bank.userAccount) {
-        bank.userAccount.isActive = true;
-        bank.userAccount.isVerified = true;
-        await bank.userAccount.save();
-      }
-    } else {
-      bank.isActive = false;
-      // Deactivate the user account
-      if (bank.userAccount) {
-        bank.userAccount.isActive = false;
-        await bank.userAccount.save();
-      }
-    }
-
-    await bank.save();
-
-    // Log admin action
-    await logAdminAction(req.user.id, 'verify_mortgage_bank', {
-      bankId: bank._id,
-      bankName: bank.name,
-      status: verificationStatus,
-      notes: verificationNotes
-    });
-
     res.json({
       success: true,
       message: `Mortgage bank ${verificationStatus === 'approved' ? 'approved' : 'rejected'} successfully`,
@@ -581,9 +457,9 @@ router.put('/mortgage-banks/:id/verify', [
     });
   } catch (error) {
     console.error('Admin verify mortgage bank error:', error);
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 });

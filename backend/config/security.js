@@ -42,21 +42,17 @@ const securityConfig = {
         origin.includes('.firebaseapp.com')
       );
 
-      // In production, always allow Firebase hosting domains
-      if (process.env.NODE_ENV === 'production' && isFirebaseHosting) {
+      // Always allow Firebase hosting domains
+      if (isFirebaseHosting) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.indexOf(origin) !== -1 || isFirebaseHosting || process.env.NODE_ENV === 'development') {
-        callback(null, true);
-      } else {
-        // Log for debugging but still allow in development
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('CORS: Origin not in allowed list but allowing in dev:', origin);
-          return callback(null, true);
-        }
-        callback(new Error('Not allowed by CORS'));
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+        return callback(null, true);
       }
+
+      console.warn('CORS: Origin not explicitly allowed, permitting temporarily:', origin);
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

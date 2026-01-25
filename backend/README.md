@@ -163,7 +163,29 @@ The server will start on `http://localhost:5000`
 npm start          # Start production server
 npm run dev        # Start development server with nodemon
 npm test           # Run tests (to be implemented)
+npm run seed:firestore   # Seed Firestore emulator with users + properties
+npm run test:notifications-escrow -- --baseUrl="http://localhost:5000/api" --userToken="<JWT>" --adminToken="<JWT>"
 ```
+
+### Firestore reset & integration workflow
+
+1. **Start services**
+   - Firestore emulator: `firebase emulators:start --only firestore`
+   - Backend API: `npm run dev`
+
+2. **Seed Firestore** (users + properties)
+   ```bash
+   npm run seed:firestore
+   ```
+
+3. **Obtain fresh JWTs** via `/api/auth/login` for buyer/admin users and set them as `$buyerToken` / `$adminToken` in your shell.
+
+4. **Run notifications & escrow integration test**
+   ```bash
+   npm run test:notifications-escrow -- --baseUrl="http://localhost:5000/api" --userToken="$buyerToken" --adminToken="$adminToken"
+   ```
+
+5. Verify the script prints `🎉 All targeted notification & escrow tests passed`.
 
 ### Project Structure
 

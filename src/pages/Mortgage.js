@@ -8,8 +8,7 @@ import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed,
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { uploadMortgageDocuments } from '../utils/mortgageDocumentUpload';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
+import { getApiUrl } from '../utils/apiConfig';
 
 const Mortgage = () => {
   const { user } = useAuth();
@@ -80,7 +79,7 @@ const Mortgage = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await axios.get(`${API_BASE_URL}/api/mortgage-banks`, {
+        const response = await axios.get(getApiUrl('/mortgage-banks'), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -190,7 +189,7 @@ const Mortgage = () => {
 
       // Submit prequalification request to backend
       const response = await axios.post(
-        `${API_BASE_URL}/api/mortgages/prequalify`,
+        getApiUrl('/mortgages/prequalify'),
         {
           mortgageBankId: selectedBankId,
           employmentDetails: employmentDetails,
@@ -361,7 +360,7 @@ const Mortgage = () => {
 
       // Submit to backend API only (no localStorage)
       const response = await axios.post(
-        `${API_BASE_URL}/api/mortgages/apply`,
+        getApiUrl('/mortgages/apply'),
         {
           propertyId: propertyId, // Proper ID format (id or _id)
           mortgageBankId: selectedBankId,

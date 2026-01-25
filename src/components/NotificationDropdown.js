@@ -17,6 +17,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 const NotificationDropdown = () => {
   const {
@@ -122,7 +123,6 @@ const NotificationDropdown = () => {
   };
 
   const handleSendMessage = async (notification) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
     try {
       const { data } = notification;
       const buyerId = data?.buyerId || user.id;
@@ -142,7 +142,7 @@ const NotificationDropdown = () => {
         initialMessage: `Hi, I'm interested in this property.`
       };
       
-      const res = await fetch(`${API_BASE_URL}/api/chats/start`, {
+      const res = await fetch(getApiUrl('/chats/start'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -182,9 +182,8 @@ const NotificationDropdown = () => {
       return;
     }
     
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
     try {
-      const res = await fetch(`${API_BASE_URL}/api/ratings`, {
+      const res = await fetch(getApiUrl('/ratings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

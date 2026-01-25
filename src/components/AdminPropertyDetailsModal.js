@@ -43,8 +43,6 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
     'Missing contact information'
   ];
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-
   useEffect(() => {
     if (isOpen) {
       setActiveTab('overview');

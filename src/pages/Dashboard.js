@@ -8,6 +8,7 @@ import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaU
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
 import { authenticatedFetch } from '../utils/authToken';
+import { getApiUrl } from '../utils/apiConfig';
 
 const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
@@ -438,10 +439,8 @@ const Dashboard = () => {
             return;
           }
 
-          const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
-          
           // Use authenticatedFetch which handles token refresh automatically
-          const res = await authenticatedFetch(`${apiBaseUrl}/dashboard/user`, {
+          const res = await authenticatedFetch(getApiUrl('/dashboard/user'), {
             method: 'GET'
           });
 

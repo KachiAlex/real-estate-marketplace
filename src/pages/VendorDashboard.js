@@ -14,6 +14,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import VendorViewsChart from '../components/VendorViewsChart';
 import VendorConversionChart from '../components/VendorConversionChart';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 const VendorDashboard = () => {
   const { user, firebaseAuthReady } = useAuth();
@@ -255,10 +256,9 @@ const VendorDashboard = () => {
       if (!user) return;
 
       try {
-        const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app/api';
         const token = localStorage.getItem('token');
 
-        const res = await fetch(`${apiBaseUrl}/dashboard/vendor`, {
+        const res = await fetch(getApiUrl('/dashboard/vendor'), {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {})

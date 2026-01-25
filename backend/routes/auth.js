@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const userService = require('../services/userService');
 const { protect } = require('../middleware/auth');
+const { admin } = require('../config/firestore');
 const emailService = require('../services/emailService');
 
 const router = express.Router();
@@ -15,13 +16,113 @@ const generateToken = (id) => {
   });
 };
 
+// @desc    Exchange Firebase ID token for backend JWT
+// @route   POST /api/auth/firebase-exchange
+// @access  Public (requires valid Firebase token)
+router.post('/firebase-exchange', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    let firebaseToken = null;
+
+    if (authHeader.startsWith('Bearer ')) {
+      firebaseToken = authHeader.split(' ')[1];
+    }
+
+    if (!firebaseToken && req.body && typeof req.body.token === 'string') {
+      firebaseToken = req.body.token;
+    }
+
+    if (!firebaseToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Firebase ID token is required'
+      });
+    }
+
+    const claims = await admin.auth().verifyIdToken(firebaseToken);
+
+    if (!claims || !claims.uid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Firebase token'
+      });
+    }
+
+    let user = await userService.findById(claims.uid);
+    if (!user) {
+      user = await userService.ensureUserFromFirebase(claims);
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unable to find or create user for Firebase token'
+      });
+    }
+
+    let roles = Array.isArray(user.roles) && user.roles.length > 0 ? [...user.roles] : [];
+    if (claims.admin && !roles.includes('admin')) {
+      roles.push('admin');
+    }
+    if (roles.length === 0) {
+      roles = [user.role || 'user'];
+    }
+
+    const primaryRole = roles.includes('admin') ? 'admin' : (user.role || roles[0]);
+
+    const updates = {};
+    if (user.role !== primaryRole) updates.role = primaryRole;
+    if (!user.roles || user.roles.length !== roles.length || user.roles.some((r, idx) => r !== roles[idx])) {
+      updates.roles = roles;
+    }
+    if (updates.role || updates.roles) {
+      try {
+        await userService.updateUser(user.id, updates);
+        user = { ...user, ...updates };
+      } catch (updateError) {
+        console.warn('firebase-exchange: failed to persist role updates', updateError.message);
+      }
+    }
+
+    const backendToken = generateToken(user.id);
+
+    res.json({
+      success: true,
+      token: backendToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: primaryRole,
+        roles,
+        avatar: user.avatar,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error('Firebase exchange error:', error);
+    const status = error?.code === 'auth/argument-error' ? 400 : 401;
+    res.status(status).json({
+      success: false,
+      message: 'Failed to verify Firebase token'
+    });
+  }
+});
+
+const emailNormalizeOptions = {
+  gmail_remove_dots: false,
+  gmail_remove_subaddress: false,
+  gmail_convert_googlemaildotcom: false
+};
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
 router.post('/register', [
   body('firstName').trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
   body('lastName').trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('phone').optional().matches(/^(\+0?1\s)?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
@@ -84,7 +185,7 @@ router.post('/register', [
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email'),
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
   try {

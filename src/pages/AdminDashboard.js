@@ -7,13 +7,15 @@ import BlogManagement from '../components/BlogManagement';
 import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
-import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
+// Mortgage flow temporarily disabled
+// import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 import TableSkeleton from '../components/TableSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
 import AdminListingsStatusChart from '../components/AdminListingsStatusChart';
 import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
+import { getApiUrl } from '../utils/apiConfig';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -52,11 +54,22 @@ const AdminDashboard = () => {
     itemsPerPage: 20
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [authWarning, setAuthWarning] = useState('');
 
   const loadAdminData = useCallback(async () => {
-    const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-    if (adminStats) {
-      setStats(adminStats);
+    try {
+      const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
+      if (adminStats) {
+        setStats(adminStats);
+      }
+      setAuthWarning('');
+    } catch (err) {
+      if (err?.code === 'AUTH_REQUIRED') {
+        setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@example.com / admin123) so localStorage.token is populated before reopening the dashboard.');
+        toast.error('Admin authentication required. Please log in again.');
+      } else {
+        toast.error(err?.message || 'Failed to load admin data');
+      }
     }
   }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
 
@@ -111,11 +124,21 @@ const AdminDashboard = () => {
     loadAdminData();
   }, [user, navigate, loadAdminData]);
 
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      return;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@example.com / admin123) so localStorage.token is populated before reopening the dashboard.');
+    }
+  }, [user]);
+
   // Initialize activeTab from URL once on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','verification','escrow','disputes','users','blog','mortgage-banks'].includes(t)) {
+    if (t && ['properties','verification','escrow','disputes','users','blog'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,15 +249,14 @@ const AdminDashboard = () => {
 
   const handleResolveEscrow = async (escrowId, decision) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      const res = await fetch(`${API_BASE_URL}/api/admin/escrow/${escrowId}/resolve`, {
+      const res = await fetch(getApiUrl(`/admin/escrow/${escrowId}/resolve`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ decision })
       });
       const data = await res.json();
       if (data.success) {
-        const esc = await fetch(`${API_BASE_URL}/api/admin/escrow`).then(r => r.json());
+        const esc = await fetch(getApiUrl('/admin/escrow')).then(r => r.json());
         if (esc.success) {
           setEscrows(esc.data || []);
           setDisputes((esc.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
@@ -339,8 +361,6 @@ const AdminDashboard = () => {
   // Send notification to vendor (simulated)
   const sendNotificationToVendor = async (propertyId, action, message) => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      
       // Find the property to get vendor info
       const property = properties.find(p => p.id === propertyId);
       if (!property) return;
@@ -360,7 +380,7 @@ const AdminDashboard = () => {
         }
       };
 
-      await fetch(`${API_BASE_URL}/api/notifications`, {
+      await fetch(getApiUrl('/notifications'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(notificationData)
@@ -560,7 +580,6 @@ const AdminDashboard = () => {
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
               {activeTab === 'blog' && 'Blog content management'}
-              {activeTab === 'mortgage-banks' && 'Mortgage bank verification and management'}
             </p>
           </div>
         </div>
@@ -947,11 +966,6 @@ const AdminDashboard = () => {
         {/* Property Verification Tab */}
         {activeTab === 'verification' && (
           <AdminPropertyVerification />
-        )}
-
-        {/* Mortgage Banks Tab */}
-        {activeTab === 'mortgage-banks' && (
-          <AdminMortgageBankVerification />
         )}
 
       </div>

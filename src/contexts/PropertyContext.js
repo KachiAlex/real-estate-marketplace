@@ -16,9 +16,6 @@ export const useProperty = () => {
   return context;
 };
 
-// Use Firebase Firestore as the primary data source
-const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || null;
-
 // Standardized enums
 export const LISTING_TYPES = [
   'for-sale',
@@ -1106,8 +1103,7 @@ export const PropertyProvider = ({ children }) => {
         
         // For other Firestore errors, attempt to post to backend mock API, then fallback to localStorage
         try {
-          const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-          const resp = await fetch(`${API_BASE_URL}/api/properties`, {
+          const resp = await fetch(getApiUrl('/properties'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(apiPayload)
@@ -1498,12 +1494,27 @@ export const PropertyProvider = ({ children }) => {
       
       const queryString = queryParams.toString();
       const url = getApiUrl(`/admin/properties${queryString ? `?${queryString}` : ''}`);
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        }
-      });
+      const headers = {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      };
+
+      if (!headers.Authorization) {
+        const authError = new Error('Admin authentication required');
+        authError.code = 'AUTH_REQUIRED';
+        setError('Admin authentication required. Showing cached data instead.');
+        throw authError;
+      }
+
+      const response = await fetch(url, { headers });
+
+      if (response.status === 401) {
+        const authError = new Error('Admin authentication required');
+        authError.code = 'AUTH_REQUIRED';
+        setError('Admin authentication required. Showing cached data instead.');
+        throw authError;
+      }
+
       const data = await response.json();
       
       if (data.success) {
@@ -1514,7 +1525,9 @@ export const PropertyProvider = ({ children }) => {
         throw new Error(data.message || 'Failed to fetch admin properties');
       }
     } catch (error) {
-      console.log('PropertyContext: API failed, trying Firestore...', error);
+      if (error?.code !== 'AUTH_REQUIRED') {
+        console.log('PropertyContext: API failed, trying Firestore...', error);
+      }
       
       // Try to fetch from Firestore as fallback
       // IMPORTANT: Start with mock data (7 properties)
@@ -1548,200 +1561,6 @@ export const PropertyProvider = ({ children }) => {
               createdAt: data.createdAt || data.createdAt?.toDate?.() || new Date()
             };
           });
-          
-          // Enrich properties with vendorCode if missing (same logic as fetchProperties)
-          try {
-            console.log('PropertyContext Admin: Enriching', firestoreProps.length, 'properties with vendorCode...');
-            
-            const ownerIdsToLookup = new Set();
-            firestoreProps.forEach(prop => {
-              const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
-              if (!hasAllVendorFields && prop.ownerId) {
-                ownerIdsToLookup.add(prop.ownerId);
-              }
-            });
-            
-            const ownerEmails = [...new Set(firestoreProps
-              .filter(p => {
-                const hasAllVendorFields = p.vendorCode && p.vendorName && p.vendorEmail && p.vendorId;
-                return !hasAllVendorFields && p.ownerEmail;
-              })
-              .map(p => p.ownerEmail.toLowerCase()))];
-            
-            console.log('PropertyContext Admin: Need to lookup vendorCode for', ownerIdsToLookup.size, 'owners by ID and', ownerEmails.length, 'by email');
-            
-            const userCodeMap = new Map(); // ownerId -> { vendorCode, vendorName, vendorEmail }
-            const emailToVendorCodeMap = new Map(); // email -> { vendorCode, vendorName, vendorEmail }
-            
-            if (ownerIdsToLookup.size > 0) {
-              await Promise.all(Array.from(ownerIdsToLookup).map(async (ownerId) => {
-                try {
-                  const userRef = doc(db, 'users', ownerId);
-                  const userSnap = await getDoc(userRef);
-                  if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    const vendorName = userData.firstName && userData.lastName 
-                      ? `${userData.firstName} ${userData.lastName}`.trim() 
-                      : userData.displayName || '';
-                    const vendorInfo = {
-                      vendorCode: userData.vendorCode || '',
-                      vendorName: vendorName,
-                      vendorEmail: userData.email || ''
-                    };
-                    
-                    if (userData.vendorCode) {
-                      userCodeMap.set(ownerId, vendorInfo);
-                      if (userData.email) {
-                        emailToVendorCodeMap.set(userData.email.toLowerCase(), vendorInfo);
-                      }
-                      console.log('PropertyContext Admin: Found vendor info for owner', ownerId, vendorInfo);
-                    }
-                  }
-                } catch (err) {
-                  console.warn('PropertyContext Admin: Could not fetch user', ownerId, err);
-                }
-              }));
-            }
-            
-            if (ownerEmails.length > 0) {
-              try {
-                const usersRef = collection(db, 'users');
-                await Promise.all(ownerEmails.map(async (email) => {
-                  try {
-                    const emailQuery = query(usersRef, where('email', '==', email));
-                    const emailSnap = await getDocs(emailQuery);
-                    if (!emailSnap.empty) {
-                      const userData = emailSnap.docs[0].data();
-                      const vendorName = userData.firstName && userData.lastName 
-                        ? `${userData.firstName} ${userData.lastName}`.trim() 
-                        : userData.displayName || '';
-                      const vendorInfo = {
-                        vendorCode: userData.vendorCode || '',
-                        vendorName: vendorName,
-                        vendorEmail: userData.email || email
-                      };
-                      if (userData.vendorCode) {
-                        emailToVendorCodeMap.set(email.toLowerCase(), vendorInfo);
-                        console.log('PropertyContext Admin: Found vendor info by email', email, vendorInfo);
-                      }
-                    }
-                  } catch (err) {
-                    console.warn('PropertyContext Admin: Could not query user by email', email, err);
-                  }
-                }));
-              } catch (err) {
-                console.warn('PropertyContext Admin: Error querying users by email:', err);
-              }
-            }
-            
-            firestoreProps = firestoreProps.map((prop) => {
-              // Check if property already has all vendor fields
-              const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
-              if (hasAllVendorFields) {
-                // Ensure owner object also has vendor info
-                if (prop.owner && !prop.owner.vendorCode) {
-                  prop.owner.vendorCode = prop.vendorCode;
-                  if (!prop.owner.name) {
-                    prop.owner.name = prop.vendorName;
-                  }
-                  if (!prop.owner.email) {
-                    prop.owner.email = prop.vendorEmail;
-                  }
-                }
-                return prop;
-              }
-              
-              let vendorCode = prop.vendorCode || null;
-              let vendorName = prop.vendorName || (prop.owner?.name || (prop.owner ? `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim() : ''));
-              let vendorEmail = prop.vendorEmail || prop.ownerEmail || prop.owner?.email || '';
-              let vendorId = prop.vendorId || prop.ownerId || prop.owner?.id || '';
-              
-              // Try ownerId first to get vendor info
-              let vendorInfo = null;
-              if (prop.ownerId && userCodeMap.has(prop.ownerId)) {
-                vendorInfo = userCodeMap.get(prop.ownerId);
-              }
-              // Fallback to email lookup
-              else if (prop.ownerEmail && emailToVendorCodeMap.has(prop.ownerEmail.toLowerCase())) {
-                vendorInfo = emailToVendorCodeMap.get(prop.ownerEmail.toLowerCase());
-              }
-              
-              // Use vendor info from lookup if available
-              if (vendorInfo) {
-                if (!vendorCode && vendorInfo.vendorCode) {
-                  vendorCode = vendorInfo.vendorCode;
-                }
-                if (!vendorName && vendorInfo.vendorName) {
-                  vendorName = vendorInfo.vendorName;
-                }
-                if (!vendorEmail && vendorInfo.vendorEmail) {
-                  vendorEmail = vendorInfo.vendorEmail;
-                }
-              }
-              
-              // Get vendor name from existing property data if still not available
-              if (!vendorName && prop.owner) {
-                if (prop.owner.firstName || prop.owner.lastName) {
-                  vendorName = `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim();
-                } else if (prop.owner.name) {
-                  vendorName = prop.owner.name;
-                }
-              }
-              
-              // Enrich property with vendor information
-              if (vendorCode || !hasAllVendorFields) {
-                if (vendorCode) {
-                  prop.vendorCode = vendorCode;
-                }
-                if (vendorName) {
-                  prop.vendorName = vendorName;
-                }
-                if (vendorEmail) {
-                  prop.vendorEmail = vendorEmail;
-                }
-                if (vendorId) {
-                  prop.vendorId = vendorId;
-                }
-                
-                // Also update owner object
-                if (!prop.owner) {
-                  prop.owner = {};
-                }
-                if (vendorCode && !prop.owner.vendorCode) {
-                  prop.owner.vendorCode = vendorCode;
-                }
-                if (vendorName && !prop.owner.name) {
-                  prop.owner.name = vendorName;
-                  if (!prop.owner.firstName) {
-                    prop.owner.firstName = vendorName.split(' ')[0];
-                  }
-                  if (!prop.owner.lastName && vendorName.split(' ').length > 1) {
-                    prop.owner.lastName = vendorName.split(' ').slice(1).join(' ');
-                  }
-                }
-                if (vendorEmail && !prop.owner.email) {
-                  prop.owner.email = vendorEmail;
-                }
-                if (vendorId && !prop.owner.id) {
-                  prop.owner.id = vendorId;
-                }
-                
-                console.log('PropertyContext Admin: Enriched property', prop.id, 'with vendor info:', {
-                  vendorCode: prop.vendorCode || 'N/A',
-                  vendorName: prop.vendorName || 'N/A',
-                  vendorEmail: prop.vendorEmail || 'N/A'
-                });
-              } else {
-                console.warn('PropertyContext Admin: Could not find vendorCode for property', prop.id);
-              }
-              return prop;
-            });
-            
-            console.log('PropertyContext Admin: Enrichment complete. Properties with vendorCode:', 
-              firestoreProps.filter(p => p.vendorCode).length);
-          } catch (err) {
-            console.error('PropertyContext Admin: Error enriching properties with vendorCode:', err);
-          }
           
           // Sort by createdAt if available (client-side)
           firestoreProps.sort((a, b) => {
@@ -1800,7 +1619,7 @@ export const PropertyProvider = ({ children }) => {
                   source: 'firestore'
                 });
                 addedFromFirestore++;
-          } else {
+              } else {
                 skippedDuplicates++;
                 console.log('PropertyContext Admin: Skipped duplicate ID:', fsProp.id, 'title:', fsProp.title);
               }

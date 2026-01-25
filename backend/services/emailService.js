@@ -1,14 +1,19 @@
 const nodemailer = require('nodemailer');
-const NotificationTemplate = require('../models/NotificationTemplate');
+const notificationTemplateService = require('./notificationTemplateService');
 
 class EmailService {
   constructor() {
     this.transporter = null;
+    this.isDisabled = String(process.env.DISABLE_EMAIL).toLowerCase() === 'true';
     this.initializeTransporter();
   }
 
   initializeTransporter() {
     try {
+      if (this.isDisabled) {
+        console.log('📪 Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.');
+        return;
+      }
       // Priority: SendGrid > Custom SMTP > Ethereal (development)
       
       // Check if SendGrid API key is configured
@@ -38,17 +43,11 @@ class EmailService {
         // Production but no email config - log warning
         console.warn('⚠️  No email service configured for production. Please set SENDGRID_API_KEY or EMAIL_SERVICE, EMAIL_USER, EMAIL_PASSWORD');
       } else {
-        // Development - use ethereal email for testing
+        // Development/testing fallback - use in-memory transport to avoid network calls
         this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.ETHEREAL_USER || 'ethereal.user@ethereal.email',
-            pass: process.env.ETHEREAL_PASSWORD || 'ethereal.password'
-          }
+          jsonTransport: true
         });
-        console.log('📧 Email service initialized with Ethereal (development/testing)');
+        console.log('📧 Email service initialized with JSON transport (development/testing mock).');
       }
     } catch (error) {
       console.error('❌ Failed to initialize email transporter:', error);
@@ -57,6 +56,14 @@ class EmailService {
 
   async sendEmail(to, subject, html, text, options = {}) {
     try {
+      if (this.isDisabled) {
+        console.log(`[Email disabled] Would send to ${to}: ${subject}`);
+        return {
+          success: true,
+          messageId: 'disabled',
+          response: 'Email sending disabled'
+        };
+      }
       if (!this.transporter) {
         throw new Error('Email transporter not initialized');
       }
@@ -101,28 +108,23 @@ class EmailService {
 
   async sendTemplateEmail(recipient, templateType, variables = {}) {
     try {
-      // Get the template
-      const template = await NotificationTemplate.getByType(templateType);
-      if (!template || !template.channels.email.enabled) {
+      const template = await notificationTemplateService.getTemplateByType(templateType);
+      if (!template || !template.channels?.email?.enabled) {
         throw new Error(`Email template not found or disabled for type: ${templateType}`);
       }
 
-      // Render the template with variables
-      const rendered = template.render(variables);
-      
+      const rendered = notificationTemplateService.renderTemplate(template, variables);
+
       if (!rendered.channels.email) {
         throw new Error('Email template not properly configured');
       }
 
-      // Send the email
-      const result = await this.sendEmail(
+      return await this.sendEmail(
         recipient.email,
         rendered.channels.email.subject,
         rendered.channels.email.htmlTemplate,
         rendered.channels.email.textTemplate
       );
-
-      return result;
     } catch (error) {
       console.error('Failed to send template email:', error);
       return {
@@ -581,6 +583,9 @@ PropertyArk Platform
 
   async verifyConnection() {
     try {
+      if (this.isDisabled) {
+        return { success: true, message: 'Email service disabled intentionally' };
+      }
       if (!this.transporter) {
         return { success: false, error: 'Transporter not initialized' };
       }

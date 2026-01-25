@@ -3,9 +3,15 @@ const { protect } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
 const notificationService = require('../services/notificationService');
-const Notification = require('../models/Notification');
 
 const router = express.Router();
+
+const getUserId = (user = {}) => user.id || user._id;
+const validateNotificationId = param('id')
+  .isString()
+  .trim()
+  .isLength({ min: 1 })
+  .withMessage('Valid notification ID is required');
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
@@ -30,7 +36,7 @@ router.get('/',
         priority: req.query.priority
       };
 
-      const result = await notificationService.getUserNotifications(req.user._id, options);
+      const result = await notificationService.getUserNotifications(getUserId(req.user), options);
       
       if (result.success) {
         res.json(result);
@@ -53,27 +59,16 @@ router.get('/',
 router.get('/:id',
   protect,
   sanitizeInput,
-  validate([
-    param('id').isMongoId().withMessage('Valid notification ID is required')
-  ]),
+  validate([validateNotificationId]),
   async (req, res) => {
     try {
-      const notification = await Notification.findOne({
-        _id: req.params.id,
-        recipient: req.user._id
-      }).populate('sender', 'firstName lastName email avatar');
+      const result = await notificationService.getNotificationById(req.params.id, getUserId(req.user));
 
-      if (!notification) {
-        return res.status(404).json({
-          success: false,
-          message: 'Notification not found'
-        });
+      if (!result.success) {
+        return res.status(result.message === 'Notification not found' ? 404 : 500).json(result);
       }
 
-      res.json({
-        success: true,
-        data: notification
-      });
+      res.json(result);
     } catch (error) {
       console.error('Get notification error:', error);
       res.status(500).json({
@@ -90,12 +85,10 @@ router.get('/:id',
 router.put('/:id/read',
   protect,
   sanitizeInput,
-  validate([
-    param('id').isMongoId().withMessage('Valid notification ID is required')
-  ]),
+  validate([validateNotificationId]),
   async (req, res) => {
     try {
-      const result = await notificationService.markAsRead(req.params.id, req.user._id);
+      const result = await notificationService.markAsRead(req.params.id, getUserId(req.user));
       
       if (result.success) {
         res.json(result);
@@ -120,7 +113,7 @@ router.put('/read-all',
   sanitizeInput,
   async (req, res) => {
     try {
-      const result = await notificationService.markAllAsRead(req.user._id);
+      const result = await notificationService.markAllAsRead(getUserId(req.user));
       
       if (result.success) {
         res.json(result);
@@ -143,12 +136,10 @@ router.put('/read-all',
 router.put('/:id/archive',
   protect,
   sanitizeInput,
-  validate([
-    param('id').isMongoId().withMessage('Valid notification ID is required')
-  ]),
+  validate([validateNotificationId]),
   async (req, res) => {
     try {
-      const result = await notificationService.archiveNotification(req.params.id, req.user._id);
+      const result = await notificationService.archiveNotification(req.params.id, getUserId(req.user));
       
       if (result.success) {
         res.json(result);
@@ -171,12 +162,10 @@ router.put('/:id/archive',
 router.delete('/:id',
   protect,
   sanitizeInput,
-  validate([
-    param('id').isMongoId().withMessage('Valid notification ID is required')
-  ]),
+  validate([validateNotificationId]),
   async (req, res) => {
     try {
-      const result = await notificationService.deleteNotification(req.params.id, req.user._id);
+      const result = await notificationService.deleteNotification(req.params.id, getUserId(req.user));
       
       if (result.success) {
         res.json(result);
@@ -201,8 +190,8 @@ router.get('/unread/count',
   sanitizeInput,
   async (req, res) => {
     try {
-      const unreadCount = await Notification.getUnreadCount(req.user._id);
-      
+      const unreadCount = await notificationService.getUnreadCount(getUserId(req.user));
+
       res.json({
         success: true,
         data: { unreadCount }
@@ -248,7 +237,8 @@ router.post('/test',
     body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required and must be less than 200 characters'),
     body('message').trim().isLength({ min: 1, max: 1000 }).withMessage('Message is required and must be less than 1000 characters'),
     body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority'),
-    body('data').optional().isObject().withMessage('Data must be an object')
+    body('data').optional().isObject().withMessage('Data must be an object'),
+    body('recipient').optional().isString().trim().isLength({ min: 1 }).withMessage('Recipient must be a valid ID')
   ]),
   async (req, res) => {
     try {
@@ -260,8 +250,9 @@ router.post('/test',
         });
       }
 
+      const recipientId = req.body.recipient || req.body.recipientId || getUserId(req.user);
       const notificationData = {
-        recipient: req.user._id, // Send to self for testing
+        recipient: recipientId,
         sender: null,
         type: req.body.type,
         title: req.body.title,

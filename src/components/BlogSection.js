@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getApiUrl } from '../utils/apiConfig';
 
 const BlogSection = () => {
   const [featuredBlogs, setFeaturedBlogs] = useState([]);
@@ -15,15 +16,9 @@ const BlogSection = () => {
     try {
       setLoading(true);
       
-      let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api-759115682573.us-central1.run.app';
-      // Remove trailing /api if present to avoid double /api/api/
-      if (API_BASE_URL.endsWith('/api')) {
-        API_BASE_URL = API_BASE_URL.slice(0, -4);
-      }
-      
       try {
         // Fetch featured blogs
-        const featuredResponse = await fetch(`${API_BASE_URL}/api/blog?featured=true&limit=3&sort=newest`);
+        const featuredResponse = await fetch(getApiUrl('/blog?featured=true&limit=3&sort=newest'));
         let featuredBlogsList = [];
         
         if (!featuredResponse.ok) {
@@ -45,7 +40,7 @@ const BlogSection = () => {
         setFeaturedBlogs(featuredBlogsList);
         
         // Fetch recent blogs
-        const recentResponse = await fetch(`${API_BASE_URL}/api/blog?limit=4&sort=newest`);
+        const recentResponse = await fetch(getApiUrl('/blog?limit=4&sort=newest'));
         
         if (!recentResponse.ok) {
           // API not available - silently continue

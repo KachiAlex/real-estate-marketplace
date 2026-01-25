@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://api-kzs3jdpe7a-uc-759115682573.us-central1.run.app';
+const DEFAULT_API_BASE_URL = 'https://real-estate-api-759115682573.us-central1.run.app';
 
 const normalizeBaseUrl = (base) => {
   if (!base) return DEFAULT_API_BASE_URL;
