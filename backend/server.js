@@ -39,7 +39,10 @@ app.use((req, res, next) => {
 
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Mock-User-Email, X-Mock-User'
+  );
   res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
   res.header('Access-Control-Max-Age', '600');
 
@@ -306,6 +309,18 @@ try {
   app.use('/api/escrow', require('./routes/escrow'));
 } catch (error) {
   console.error('Failed to load escrow routes:', error.message);
+}
+
+try {
+  app.use('/api/verification', require('./routes/verification'));
+} catch (error) {
+  console.error('Failed to load verification routes:', error.message);
+}
+
+try {
+  app.use('/api/disputes', require('./routes/disputes'));
+} catch (error) {
+  console.error('Failed to load disputes routes:', error.message);
 }
 
 try {
