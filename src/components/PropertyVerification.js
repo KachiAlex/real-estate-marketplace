@@ -1,89 +1,132 @@
-import React, { useState } from 'react';
-import { FaCheckCircle, FaCreditCard, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FaCheckCircle, FaSpinner, FaExclamationTriangle, FaShieldAlt } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
+import { useAuth } from '../contexts/AuthContext';
 
 const PropertyVerification = ({ property, onClose, onSuccess }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [verificationRequest, setVerificationRequest] = useState(null);
-  const [paymentDetails, setPaymentDetails] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardHolderName: ''
-  });
+  const [configLoading, setConfigLoading] = useState(true);
+  const [configError, setConfigError] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [config, setConfig] = useState(null);
+  const [formValues, setFormValues] = useState({
+    propertyName: '',
+    propertyUrl: '',
+    propertyLocation: '',
+    message: '',
+    preferredBadgeColor: ''
+  });
 
-  const verificationFee = 50000; // ₦50,000 default fee
+  const verificationFee = useMemo(() => {
+    if (config?.verificationFee) {
+      return Number(config.verificationFee);
+    }
+    return 50000;
+  }, [config?.verificationFee]);
 
-  const handleRequestVerification = async () => {
+  const badgePreviewColor = formValues.preferredBadgeColor || config?.verificationBadgeColor || '#10B981';
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        setConfigLoading(true);
+        const response = await fetch(getApiUrl('/verification/config'));
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Unable to load verification configuration');
+        }
+        setConfig(data.data);
+        setFormValues((prev) => ({
+          ...prev,
+          preferredBadgeColor: data.data?.verificationBadgeColor || prev.preferredBadgeColor
+        }));
+      } catch (err) {
+        console.warn('PropertyVerification: failed to load config', err);
+        setConfigError(err?.message || 'Failed to load verification configuration');
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!property) return;
+    const derivedLocation = (() => {
+      const location = property.location;
+      if (!location) return '';
+      if (typeof location === 'string') return location;
+      const parts = [location.address, location.city, location.state].filter(Boolean);
+      return parts.join(', ');
+    })();
+
+    setFormValues((prev) => ({
+      ...prev,
+      propertyName: property.title || property.name || prev.propertyName,
+      propertyUrl: property.shareUrl || property.listingUrl || prev.propertyUrl,
+      propertyLocation: derivedLocation || prev.propertyLocation
+    }));
+  }, [property]);
+
+  const handleRequestVerification = async (event) => {
+    event?.preventDefault();
+    const storedToken = localStorage.getItem('token');
+    const fallbackEmail = user?.email;
+
+    if (!user && !storedToken) {
+      setError('Please sign in as a vendor/agent before requesting verification.');
+      return;
+    }
+
+    if (!formValues.propertyName || !formValues.propertyLocation) {
+      setError('Property name and location are required.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
-      const response = await fetch(getApiUrl(`/properties/${property.id}/request-verification`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: property.ownerId || 'user_001', // This should come from auth context
-          verificationFee
-        }),
-      });
+      const token = user?.token || storedToken;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to create verification request');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      } else if (fallbackEmail) {
+        headers['X-Mock-User-Email'] = fallbackEmail;
       }
+
+      const response = await fetch(getApiUrl('/verification/applications'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          propertyId: property?.id,
+          propertyName: formValues.propertyName,
+          propertyUrl: formValues.propertyUrl,
+          propertyLocation: formValues.propertyLocation,
+          message: formValues.message || 'Kindly verify this property so it can display the PropertyArk verified badge.',
+          preferredBadgeColor: formValues.preferredBadgeColor || config?.verificationBadgeColor
+        })
+      });
 
       const data = await response.json();
-      setVerificationRequest(data.verificationRequest);
-    } catch (err) {
-      setError('Failed to create verification request. Please try again.');
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProcessPayment = async () => {
-    setPaymentLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(getApiUrl(`/verification/${verificationRequest.id}/process-payment`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentDetails: {
-            ...paymentDetails,
-            amount: verificationFee,
-            currency: 'NGN',
-            timestamp: new Date().toISOString()
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Payment processing failed');
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to submit verification request');
       }
 
-      // Simulate successful payment
-      setTimeout(() => {
-        setVerificationRequest(prev => ({
-          ...prev,
-          status: 'payment_completed'
-        }));
-        setPaymentLoading(false);
-        onSuccess?.('Verification request submitted successfully! Your property will be reviewed by our admin team.');
-      }, 2000);
-
+      setSuccessMessage('Verification request submitted successfully! Our admin team will review it soon.');
+      onSuccess?.('Verification request submitted successfully!');
     } catch (err) {
-      setError('Payment processing failed. Please try again.');
-      console.error('Error:', err);
-      setPaymentLoading(false);
+      console.error('PropertyVerification: submit error', err);
+      setError(err?.message || 'Failed to submit verification request. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,175 +165,130 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-2">{property.title}</h3>
               <p className="text-gray-600 mb-2">{property.description}</p>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-2xl font-bold text-green-600">
                   {formatCurrency(property.price)}
                 </span>
                 <span className="text-sm text-gray-500">
-                  {property.location?.city}, {property.location?.state}
+                  {formValues.propertyLocation || 'Location not specified'}
                 </span>
               </div>
             </div>
 
-            {/* Verification Process */}
-            {!verificationRequest ? (
-              <div className="text-center">
-                <div className="bg-blue-50 p-6 rounded-lg mb-4">
-                  <FaCheckCircle className="text-blue-500 text-4xl mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold mb-2">Verify Your Property</h3>
-                  <p className="text-gray-600 mb-4">
-                    Get your property verified by our admin team to increase visibility and trust.
-                  </p>
-                  <div className="bg-white p-4 rounded border">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Verification Fee:</span>
-                      <span className="text-xl font-bold text-green-600">
-                        {formatCurrency(verificationFee)}
-                      </span>
+            {configLoading ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-6 text-center text-gray-500">
+                Loading verification configuration...
+              </div>
+            ) : (
+              <form className="space-y-5" onSubmit={handleRequestVerification}>
+                <div className="bg-blue-50 p-4 rounded-lg flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <FaCheckCircle className="text-blue-500 text-3xl" />
+                    <div>
+                      <h3 className="text-lg font-semibold">Boost trust with a Verified badge</h3>
+                      <p className="text-sm text-blue-900/80">
+                        The badge highlights that your property has passed PropertyArk compliance checks.
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      One-time payment - no additional charges for re-submission
-                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 flex flex-col gap-2 border border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Verification Fee:</span>
+                      <span className="text-2xl font-bold text-green-600">{formatCurrency(verificationFee)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">One-time fee. Includes badge issuance & compliance review.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Property name *</label>
+                  <input
+                    type="text"
+                    value={formValues.propertyName}
+                    onChange={(event) => setFormValues((prev) => ({ ...prev, propertyName: event.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. Pearl Towers Ikoyi"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Listing URL</label>
+                  <input
+                    type="url"
+                    value={formValues.propertyUrl}
+                    onChange={(event) => setFormValues((prev) => ({ ...prev, propertyUrl: event.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://propertyark.com/property/..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Property location *</label>
+                  <input
+                    type="text"
+                    value={formValues.propertyLocation}
+                    onChange={(event) => setFormValues((prev) => ({ ...prev, propertyLocation: event.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Lekki Phase 1, Lagos"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Message to compliance team</label>
+                  <textarea
+                    rows={4}
+                    value={formValues.message}
+                    onChange={(event) => setFormValues((prev) => ({ ...prev, message: event.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Share any approvals, CAC documents or highlights here"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred badge color</label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={badgePreviewColor}
+                      onChange={(event) => setFormValues((prev) => ({ ...prev, preferredBadgeColor: event.target.value }))}
+                      className="h-12 w-16 rounded-md border border-gray-200 cursor-pointer"
+                    />
+                    <div className="text-sm text-gray-600">
+                      <p>Preview:</p>
+                      <div
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-white font-medium"
+                        style={{ backgroundColor: badgePreviewColor }}
+                      >
+                        <FaShieldAlt /> PropertyArk Verified
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <button
-                  onClick={handleRequestVerification}
+                  type="submit"
                   disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
                     <>
                       <FaSpinner className="animate-spin mr-2" />
-                      Creating Request...
+                      Submitting request...
                     </>
                   ) : (
-                    'Request Verification'
+                    `Pay ${formatCurrency(verificationFee)} & Submit`
                   )}
                 </button>
+              </form>
+            )}
+
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
+                {successMessage}
               </div>
-            ) : verificationRequest.status === 'pending_payment' ? (
-              <div>
-                <div className="bg-yellow-50 p-4 rounded-lg mb-4">
-                  <h3 className="font-semibold text-lg mb-2">Payment Required</h3>
-                  <p className="text-gray-600">
-                    Please complete the payment to submit your property for verification.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="1234 5678 9012 3456"
-                      value={paymentDetails.cardNumber}
-                      onChange={(e) => setPaymentDetails(prev => ({
-                        ...prev,
-                        cardNumber: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        value={paymentDetails.expiryDate}
-                        onChange={(e) => setPaymentDetails(prev => ({
-                          ...prev,
-                          expiryDate: e.target.value
-                        }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CVV
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="123"
-                        value={paymentDetails.cvv}
-                        onChange={(e) => setPaymentDetails(prev => ({
-                          ...prev,
-                          cvv: e.target.value
-                        }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Holder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="John Doe"
-                      value={paymentDetails.cardHolderName}
-                      onChange={(e) => setPaymentDetails(prev => ({
-                        ...prev,
-                        cardHolderName: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total Amount:</span>
-                      <span className="text-xl font-bold text-green-600">
-                        {formatCurrency(verificationFee)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleProcessPayment}
-                    disabled={paymentLoading || !paymentDetails.cardNumber || !paymentDetails.expiryDate || !paymentDetails.cvv || !paymentDetails.cardHolderName}
-                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {paymentLoading ? (
-                      <>
-                        <FaSpinner className="animate-spin mr-2" />
-                        Processing Payment...
-                      </>
-                    ) : (
-                      <>
-                        <FaCreditCard className="mr-2" />
-                        Pay {formatCurrency(verificationFee)}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : verificationRequest.status === 'payment_completed' ? (
-              <div className="text-center">
-                <div className="bg-green-50 p-6 rounded-lg">
-                  <FaCheckCircle className="text-green-500 text-4xl mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold mb-2">Payment Successful!</h3>
-                  <p className="text-gray-600 mb-4">
-                    Your property has been submitted for verification. Our admin team will review it within 24-48 hours.
-                  </p>
-                  <div className="bg-white p-4 rounded border">
-                    <p className="text-sm text-gray-500">
-                      Request ID: {verificationRequest.id}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Status: Pending Admin Review
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            )}
           </div>
 
           <div className="mt-6 flex justify-end">
