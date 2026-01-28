@@ -1,17 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
-import { useNotifications } from './NotificationContext';
+import React, { createContext, useContext, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-import { getApiUrl } from '../utils/apiConfig';
-import { 
-  calculateMonthlyPayment, 
-  generatePaymentSchedule, 
-  getNextPayment, 
-  getDaysUntilPayment,
-  getUpcomingPayments as getUpcomingPaymentsUtil 
-} from '../utils/mortgageCalculator';
-import { transformMortgagesArray } from '../utils/mortgageDataTransform';
 
 const MortgageContext = createContext();
 
@@ -24,17 +12,102 @@ export const useMortgage = () => {
 };
 
 export const MortgageProvider = ({ children }) => {
-  const { user } = useAuth();
-  const { createTestNotification } = useNotifications();
-  const [mortgages, setMortgages] = useState([]);
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [applicationsLoading, setApplicationsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const disabledValue = useMemo(() => {
+    const notifyDisabled = () => toast('Mortgage flow is currently disabled.', { icon: 'ℹ️' });
+
+    const disabledSummary = {
+      totalMortgages: 0,
+      activeMortgages: 0,
+      totalMonthlyPayments: 0,
+      totalPaid: 0
+    };
+
+    const noOpAsync = async () => undefined;
+
+    return {
+      mortgages: [],
+      applications: [],
+      loading: false,
+      applicationsLoading: false,
+      error: null,
+      getMortgageById: () => null,
+      getUserMortgages: () => [],
+      getUpcomingPayments: () => [],
+      makePayment: async () => {
+        notifyDisabled();
+        return { success: false, disabled: true };
+      },
+      getPaymentSummary: () => disabledSummary,
+      enableAutoPay: async () => {
+        notifyDisabled();
+        return { success: false, disabled: true };
+      },
+      disableAutoPay: async () => {
+        notifyDisabled();
+        return { success: false, disabled: true };
+      },
+      refreshMortgages: noOpAsync,
+      getUserApplications: () => [],
+      getApplicationById: () => null,
+      getApplicationsByStatus: () => [],
+      refreshApplications: noOpAsync
+    };
+  }, []);
+
+  return (
+    <MortgageContext.Provider value={disabledValue}>
+      {children}
+    </MortgageContext.Provider>
+  );
+};
+
+export default MortgageContext;
+
+  const mockMortgageData = [
+    buildMockMortgage({
+      id: 'mock-mg-001',
+      propertyTitle: 'Palmview Estates, Lekki',
+      propertyLocation: 'Lekki Phase 1, Lagos',
+      loanAmount: 65000000,
+      monthlyPayment: 410000,
+      paymentsMade: 32,
+      paymentsRemaining: 168
+    }),
+    buildMockMortgage({
+      id: 'mock-mg-002',
+      propertyTitle: 'Emerald Heights Duplex',
+      propertyLocation: 'Gwarinpa, Abuja',
+      loanAmount: 52000000,
+      monthlyPayment: 360000,
+      paymentsMade: 14,
+      paymentsRemaining: 226
+    })
+  ];
+
+  const mockApplicationsData = [
+    {
+      id: 'mock-app-001',
+      applicantName: 'Admin User',
+      property: 'Palmview Estates, Lekki',
+      status: 'pending',
+      loanAmount: 68000000,
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const handleMortgageApiError = (err, fallbackSetter) => {
+    const status = err?.response?.status;
+    if (status === 404 || status === 501) {
+      console.warn('MortgageContext: API route unavailable, using mock data');
+      fallbackSetter();
+      return true;
+    }
+    return false;
+  };
 
   // Fetch mortgages from backend API
   const fetchMortgages = useCallback(async () => {
-    if (!user) {
+    if (!MORTGAGE_FLOW_ENABLED || !user) {
       setMortgages([]);
       return;
     }
@@ -68,14 +141,14 @@ export const MortgageProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Error fetching mortgages:', err);
-      setError(err.response?.data?.message || 'Failed to load mortgages');
-      
-      // Don't show error toast if it's just no data (401/403 might be handled elsewhere)
-      if (err.response?.status !== 401 && err.response?.status !== 403) {
-        toast.error('Failed to load mortgages. Please try again later.');
+      const handled = handleMortgageApiError(err, () => setMortgages(transformMortgagesArray(mockMortgageData)));
+      if (!handled) {
+        setError(err.response?.data?.message || 'Failed to load mortgages');
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          toast.error('Failed to load mortgages. Please try again later.');
+        }
+        setMortgages([]);
       }
-      
-      setMortgages([]);
     } finally {
       setLoading(false);
     }
@@ -83,12 +156,11 @@ export const MortgageProvider = ({ children }) => {
 
   // Fetch mortgage applications from backend API
   const fetchApplications = useCallback(async () => {
-    if (!user) {
-      setApplications([]);
-      return;
-    }
-
     try {
+      if (!MORTGAGE_FLOW_ENABLED) {
+        toast('Auto-pay is currently disabled.', { icon: 'ℹ️' });
+        return { success: false, disabled: true };
+      }
       setApplicationsLoading(true);
       setError(null);
       
@@ -114,13 +186,14 @@ export const MortgageProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Error fetching mortgage applications:', err);
-      setError(err.response?.data?.message || 'Failed to load applications');
-      
-      if (err.response?.status !== 401 && err.response?.status !== 403) {
-        toast.error('Failed to load mortgage applications. Please try again later.');
+      const handled = handleMortgageApiError(err, () => setApplications(mockApplicationsData));
+      if (!handled) {
+        setError(err.response?.data?.message || 'Failed to load applications');
+        if (err.response?.status !== 401 && err.response?.status !== 403) {
+          toast.error('Failed to load mortgage applications. Please try again later.');
+        }
+        setApplications([]);
       }
-      
-      setApplications([]);
     } finally {
       setApplicationsLoading(false);
     }
@@ -128,8 +201,13 @@ export const MortgageProvider = ({ children }) => {
 
   // Load mortgages and applications when user changes
   useEffect(() => {
-    fetchMortgages();
-    fetchApplications();
+    if (MORTGAGE_FLOW_ENABLED) {
+      fetchMortgages();
+      fetchApplications();
+    } else {
+      setMortgages([]);
+      setApplications([]);
+    }
   }, [fetchMortgages, fetchApplications]);
 
   const getMortgageById = useCallback((mortgageId) => {

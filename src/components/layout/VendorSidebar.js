@@ -51,14 +51,38 @@ const VendorSidebar = () => {
     }
   };
 
+  const safeString = (value, fallback = '') => (typeof value === 'string' ? value : fallback);
+
   const getUserInitials = () => {
-    if (user?.displayName) {
-      return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+    const displayName = safeString(user?.displayName);
+    if (displayName) {
+      return displayName
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase();
     }
-    if (user?.email) {
-      return user.email[0].toUpperCase();
+
+    const email = safeString(user?.email);
+    if (email) {
+      return email[0].toUpperCase();
     }
+
     return 'U';
+  };
+
+  const getUserDisplayName = () => {
+    const displayName = safeString(user?.displayName);
+    if (displayName) return displayName;
+
+    const email = safeString(user?.email);
+    if (email) {
+      const [prefix] = email.split('@');
+      return prefix || 'Vendor Account';
+    }
+
+    return 'Vendor Account';
   };
 
   const getActiveSection = () => {
@@ -217,7 +241,7 @@ const VendorSidebar = () => {
             {!isCollapsed && (
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  {user?.displayName || user?.email?.split('@')[0] || 'Vendor Account'}
+                  {getUserDisplayName()}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {isAgent && (

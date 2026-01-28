@@ -200,12 +200,60 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Check if user exists (with password)
+    // Check if user exists
     const user = await userService.findByEmail(email);
-    if (!user || !user.password) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
+      });
+    }
+
+    const fallbackAdminEmail = (process.env.ADMIN_FALLBACK_EMAIL || '').trim().toLowerCase();
+    const fallbackAdminPassword = process.env.ADMIN_FALLBACK_PASSWORD;
+    const normalizedEmail = (user.email || '').trim().toLowerCase();
+    const isFallbackAdmin = fallbackAdminEmail && fallbackAdminPassword && normalizedEmail === fallbackAdminEmail;
+
+    // Handle fallback admin login (even if a password exists in Firestore)
+    if (isFallbackAdmin) {
+      if (password !== fallbackAdminPassword) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Ensure admin role flags are persisted for future checks
+      try {
+        const roles = Array.isArray(user.roles) && user.roles.length ? [...user.roles] : [];
+        if (!roles.includes('admin')) roles.push('admin');
+        await userService.updateUser(user.id, {
+          role: 'admin',
+          roles,
+          isAdmin: true,
+          lastLogin: new Date()
+        });
+        user.role = 'admin';
+        user.roles = roles;
+        user.isAdmin = true;
+      } catch (persistError) {
+        console.warn('auth/login: failed to persist fallback admin flags', persistError?.message || persistError);
+      }
+
+      const token = generateToken(user.id);
+
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: 'admin',
+          avatar: user.avatar
+        }
       });
     }
 

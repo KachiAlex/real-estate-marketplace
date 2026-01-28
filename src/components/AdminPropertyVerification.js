@@ -312,9 +312,15 @@ const AdminPropertyVerification = () => {
 
   if (loadingRequests) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <FaSpinner className="animate-spin text-2xl text-blue-600" />
-        <span className="ml-2">Loading verification requests...</span>
+      <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 px-4 py-8">
+        <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-100">
+          <div className="p-6">
+            <div className="flex items-center justify-center h-64">
+              <FaSpinner className="animate-spin text-2xl text-blue-600" />
+              <span className="ml-2">Loading verification requests...</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -322,7 +328,7 @@ const AdminPropertyVerification = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -380,7 +386,7 @@ const AdminPropertyVerification = () => {
 
       {/* Fee Settings Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Platform Fee Settings</h2>
             <p className="text-sm text-gray-600 mt-1">Configure platform fees</p>
@@ -389,7 +395,7 @@ const AdminPropertyVerification = () => {
             <FaMoneyBillWave className="text-blue-600 text-xl" />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Property Verification Fee (NGN)
@@ -432,7 +438,7 @@ const AdminPropertyVerification = () => {
 
       {/* Search and Filter */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -479,10 +485,10 @@ const AdminPropertyVerification = () => {
           {filteredRequests.map((request) => (
             <div key={request.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
               <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {/* Property Image and Details */}
                   <div className="lg:col-span-2">
-                    <div className="flex items-start space-x-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:space-x-4">
                       <div className="flex-shrink-0">
                         <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
                           <img 
@@ -520,7 +526,7 @@ const AdminPropertyVerification = () => {
                   </div>
 
                   {/* Verification Info and Actions */}
-                  <div className="border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-6">
+                  <div className="border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
                     <div className="space-y-3">
                       <div>
                         <p className="text-xs text-gray-500 mb-1">Vendor</p>
@@ -555,8 +561,8 @@ const AdminPropertyVerification = () => {
 
       {/* Review Modal */}
       {showModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 px-4 py-8">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-100">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-800">Property Review</h3>
@@ -574,7 +580,7 @@ const AdminPropertyVerification = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Property Details */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-lg">Property Information</h4>

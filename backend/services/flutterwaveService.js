@@ -6,6 +6,36 @@ class FlutterwaveService {
     this.publicKey = process.env.FLUTTERWAVE_PUBLIC_KEY;
     this.secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
     this.encryptionKey = process.env.FLUTTERWAVE_ENCRYPTION_KEY;
+    this.clientUrl = this.resolveClientUrl();
+  }
+
+  normalizeTransaction(transaction) {
+    if (!transaction) return null;
+
+    return {
+      status: transaction.status === 'successful' ? 'success' : transaction.status || 'failed',
+      amount: transaction.amount,
+      currency: transaction.currency,
+      reference: transaction.tx_ref,
+      flwRef: transaction.flw_ref,
+      transactionId: transaction.id?.toString?.() || `${transaction.id}`,
+      customer: transaction.customer
+    };
+  }
+
+  resolveClientUrl() {
+    const fallback = 'https://real-estate-marketplace-37544.web.app';
+    const configured = process.env.CLIENT_URL
+      || process.env.FRONTEND_URL
+      || process.env.PUBLIC_URL
+      || process.env.APP_URL;
+
+    return (configured || fallback).replace(/\/$/, '');
+  }
+
+  buildRedirectUrl(path = '/payment/callback') {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${this.clientUrl}${normalizedPath}`;
   }
 
   async initializePayment(paymentData) {
@@ -14,7 +44,7 @@ class FlutterwaveService {
         tx_ref: paymentData.reference,
         amount: paymentData.amount,
         currency: paymentData.currency,
-        redirect_url: `${process.env.CLIENT_URL}/payment/callback`,
+        redirect_url: this.buildRedirectUrl(paymentData.redirectPath),
         customer: {
           email: paymentData.customer.email,
           phonenumber: paymentData.customer.phone,
@@ -35,12 +65,14 @@ class FlutterwaveService {
       });
 
       if (response.data.status === 'success') {
+        const transaction = response.data.data;
         return {
           success: true,
           data: {
-            authorizationUrl: response.data.data.link,
-            flwRef: response.data.data.flw_ref,
-            txRef: response.data.data.tx_ref
+            authorizationUrl: transaction.link,
+            flwRef: transaction.flw_ref,
+            txRef: transaction.tx_ref,
+            transactionId: transaction.id?.toString?.() || `${transaction.id}`
           }
         };
       } else {
@@ -58,40 +90,52 @@ class FlutterwaveService {
     }
   }
 
-  async verifyPayment(transactionId) {
-    try {
-      const response = await axios.get(`${this.baseURL}/transactions/${transactionId}/verify`, {
-        headers: {
-          Authorization: `Bearer ${this.secretKey}`
-        }
-      });
+  async verifyPayment(identifier) {
+    const normalized = `${identifier || ''}`.trim();
 
-      if (response.data.status === 'success') {
-        const transaction = response.data.data;
-        return {
-          success: true,
-          data: {
-            status: transaction.status === 'successful' ? 'success' : 'failed',
-            amount: transaction.amount,
-            currency: transaction.currency,
-            reference: transaction.tx_ref,
-            flwRef: transaction.flw_ref,
-            customer: transaction.customer
-          }
-        };
-      } else {
+    if (!normalized) {
+      return {
+        success: false,
+        message: 'Transaction reference is required'
+      };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${this.secretKey}`
+    };
+
+    const attemptVerification = async (url) => {
+      try {
+        const response = await axios.get(url, { headers });
+        if (response.data.status === 'success') {
+          return {
+            success: true,
+            data: this.normalizeTransaction(response.data.data)
+          };
+        }
         return {
           success: false,
           message: response.data.message || 'Payment verification failed'
         };
+      } catch (error) {
+        console.error('Flutterwave payment verification attempt error:', error.response?.data || error.message);
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Payment verification failed'
+        };
       }
-    } catch (error) {
-      console.error('Flutterwave payment verification error:', error.response?.data || error.message);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Payment verification failed'
-      };
+    };
+
+    const isNumericReference = /^\d+$/.test(normalized);
+
+    if (isNumericReference) {
+      const byIdResult = await attemptVerification(`${this.baseURL}/transactions/${normalized}/verify`);
+      if (byIdResult.success) {
+        return byIdResult;
+      }
     }
+
+    return attemptVerification(`${this.baseURL}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(normalized)}`);
   }
 
   verifyWebhook(headers, payload) {

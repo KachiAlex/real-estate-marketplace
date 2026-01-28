@@ -961,8 +961,25 @@ export const PropertyProvider = ({ children }) => {
         throw new Error('Property not found');
       }
     } catch (error) {
-      setError('Failed to fetch property');
       console.error('Error fetching property:', error);
+      // Fallback: try to find in mock properties (useful when property only exists locally)
+      const mockFallback = mockProperties.find((p) => (
+        p.id === propertyId ||
+        p.numericId === propertyId ||
+        p.propertyId === propertyId
+      ));
+
+      if (mockFallback) {
+        toast((t) => (
+          <div>
+            <p className="font-semibold">Loaded mock property</p>
+            <p className="text-sm">Displaying mock data while live record is unavailable.</p>
+          </div>
+        ));
+        return mockFallback;
+      }
+
+      setError('Failed to fetch property');
       toast.error('Failed to load property');
       return null;
     } finally {
@@ -1494,9 +1511,10 @@ export const PropertyProvider = ({ children }) => {
       
       const queryString = queryParams.toString();
       const url = getApiUrl(`/admin/properties${queryString ? `?${queryString}` : ''}`);
+      const authHeaders = await getAuthHeaders();
       const headers = {
         'Content-Type': 'application/json',
-        ...getAuthHeaders()
+        ...authHeaders
       };
 
       if (!headers.Authorization) {
@@ -1775,23 +1793,12 @@ export const PropertyProvider = ({ children }) => {
         }
         throw firestoreError;
       }
-    };
 
-    try {
-      // Attempt to update via API first so the backend data (used by admin tables) stays in sync
+      let data = {};
       try {
-        const response = await fetch(getApiUrl(`/admin/properties/${propertyId}/verify`), {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-          },
-          body: JSON.stringify({
-            verificationStatus,
-            verificationNotes
-          })
-        });
-
+        data = await response.json();
+      } catch (parseError) {
+        console.warn('verifyProperty: Could not parse API response JSON', parseError);
         let data = {};
         try {
           data = await response.json();

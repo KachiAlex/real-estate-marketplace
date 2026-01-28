@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
 import BlogManagement from '../components/BlogManagement';
-import AdminPropertyVerification from '../components/AdminPropertyVerification';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
+import AdminVerificationCenter from '../components/AdminVerificationCenter';
 // Mortgage flow temporarily disabled
 // import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 import TableSkeleton from '../components/TableSkeleton';
@@ -16,6 +16,136 @@ import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 import { getApiUrl } from '../utils/apiConfig';
+
+const MOCK_USERS = [
+  {
+    id: '1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    phone: '+2348012345678',
+    role: 'buyer',
+    status: 'active',
+    isVerified: true,
+    createdAt: '2024-01-15',
+    lastLogin: '2024-02-02'
+  },
+  {
+    id: '2',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane@example.com',
+    phone: '+2348098765432',
+    role: 'vendor',
+    status: 'active',
+    isVerified: true,
+    createdAt: '2024-01-16',
+    lastLogin: '2024-02-04'
+  },
+  {
+    id: '3',
+    firstName: 'Michael',
+    lastName: 'Brown',
+    email: 'michael@example.com',
+    phone: '+2348076543210',
+    role: 'buyer',
+    status: 'active',
+    isVerified: false,
+    createdAt: '2024-01-17',
+    lastLogin: '2024-02-01'
+  },
+  {
+    id: '4',
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah@example.com',
+    phone: '+2348065432198',
+    role: 'vendor',
+    status: 'suspended',
+    isVerified: true,
+    isActive: false,
+    suspendedAt: '2024-01-25',
+    createdAt: '2024-01-18'
+  },
+  {
+    id: '5',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    phone: '+2348055555555',
+    role: 'admin',
+    status: 'active',
+    isVerified: true,
+    createdAt: '2024-01-01',
+    lastLogin: '2024-02-05'
+  },
+  {
+    id: '6',
+    firstName: 'Onyedikachi',
+    lastName: 'Akoma',
+    email: 'onyedika.akoma@gmail.com',
+    phone: '+2348044444444',
+    role: 'buyer',
+    status: 'active',
+    isVerified: true,
+    createdAt: '2024-01-20',
+    lastLogin: '2024-02-03'
+  }
+];
+
+const MOCK_ESCROWS = [
+  {
+    id: '1',
+    propertyId: '1',
+    propertyTitle: 'Luxury Villa in Lekki',
+    buyerId: '1',
+    buyerName: 'John Doe',
+    sellerId: '2',
+    sellerName: 'Jane Smith',
+    amount: 50000000,
+    status: 'active',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '2',
+    propertyId: '2',
+    propertyTitle: 'Modern Apartment in Victoria Island',
+    buyerId: '3',
+    buyerName: 'Michael Brown',
+    sellerId: '4',
+    sellerName: 'Sarah Johnson',
+    amount: 75000000,
+    status: 'disputed',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '3',
+    propertyId: '3',
+    propertyTitle: 'Penthouse in Ikoyi',
+    buyerId: '6',
+    buyerName: 'Onyedikachi Akoma',
+    sellerId: '1',
+    sellerName: 'John Doe',
+    amount: 120000000,
+    status: 'pending',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+const MOCK_DISPUTES = [
+  {
+    id: '2',
+    propertyId: '2',
+    propertyTitle: 'Modern Apartment in Victoria Island',
+    buyerId: '3',
+    buyerName: 'Michael Brown',
+    sellerId: '4',
+    sellerName: 'Sarah Johnson',
+    amount: 75000000,
+    status: 'disputed',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -44,6 +174,11 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [buyers, setBuyers] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [userStatusFilter, setUserStatusFilter] = useState('all');
+  const [userVerificationFilter, setUserVerificationFilter] = useState('all');
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [selectedPropertyForModal, setSelectedPropertyForModal] = useState(null);
@@ -55,6 +190,47 @@ const AdminDashboard = () => {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [authWarning, setAuthWarning] = useState('');
+  const [adminSettings, setAdminSettings] = useState(null);
+  const [loadingVerificationSettings, setLoadingVerificationSettings] = useState(false);
+
+  const contentWidthClasses = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16';
+
+  const normalizedSearch = userSearch.trim().toLowerCase();
+  const filteredUsers = useMemo(() => (
+    users.filter((u) => {
+      const matchesSearch = !normalizedSearch ||
+        `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().includes(normalizedSearch) ||
+        (u.email || '').toLowerCase().includes(normalizedSearch);
+      const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+      const userStatus = (u.status || (u.isActive === false ? 'suspended' : 'active'))?.toLowerCase();
+      const matchesStatus = userStatusFilter === 'all' || userStatus === userStatusFilter;
+      const isVerified = Boolean(u.isVerified);
+      const matchesVerification = userVerificationFilter === 'all' ||
+        (userVerificationFilter === 'verified' && isVerified) ||
+        (userVerificationFilter === 'unverified' && !isVerified);
+      return matchesSearch && matchesRole && matchesStatus && matchesVerification;
+    })
+  ), [users, normalizedSearch, userRoleFilter, userStatusFilter, userVerificationFilter]);
+
+  const disputeStats = useMemo(() => {
+    const stats = {
+      total: disputes.length,
+      open: 0,
+      awaiting_response: 0,
+      under_review: 0,
+      resolved: 0,
+      closed: 0
+    };
+
+    disputes.forEach((dispute) => {
+      const key = (dispute.status || 'open').toLowerCase();
+      if (stats[key] !== undefined) {
+        stats[key] += 1;
+      }
+    });
+
+    return stats;
+  }, [disputes]);
 
   const loadAdminData = useCallback(async () => {
     try {
@@ -72,6 +248,52 @@ const AdminDashboard = () => {
       }
     }
   }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
+
+  const fetchAdminSettings = useCallback(async () => {
+    if (loadingVerificationSettings) return;
+    try {
+      setLoadingVerificationSettings(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl('/admin/settings'), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to load admin settings');
+      }
+      const data = await response.json();
+      if (!data?.success || !data?.data) {
+        throw new Error(data?.message || 'Unable to load admin settings');
+      }
+      setAdminSettings(data.data);
+    } catch (error) {
+      console.warn('AdminDashboard: unable to fetch admin settings', error);
+      toast.error(error?.message || 'Failed to load verification settings');
+    } finally {
+      setLoadingVerificationSettings(false);
+    }
+  }, [loadingVerificationSettings]);
+
+  const fetchDisputesData = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(getApiUrl('/disputes'), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data?.success && Array.isArray(data.data)) {
+        setDisputes(data.data);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch disputes:', error?.message || error);
+    }
+  }, [user]);
 
   const getPropertyLocation = (property) => {
     try {
@@ -122,7 +344,8 @@ const AdminDashboard = () => {
       return;
     }
     loadAdminData();
-  }, [user, navigate, loadAdminData]);
+    fetchDisputesData();
+  }, [user, navigate, loadAdminData, fetchDisputesData]);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -143,6 +366,14 @@ const AdminDashboard = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'verification' && user?.role === 'admin') {
+      if (!adminSettings && !loadingVerificationSettings) {
+        fetchAdminSettings();
+      }
+    }
+  }, [activeTab, user, adminSettings, loadingVerificationSettings, fetchAdminSettings]);
 
   const handleSwitchTab = (tabId) => {
     setActiveTab(tabId);
@@ -459,6 +690,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleArchiveUser = (userId) => handleDeleteUser(userId);
+
+  const handleToggleUser = (userId, isSelected) => {
+    setSelectedUserIds((prev) => {
+      if (isSelected) {
+        return prev.includes(userId) ? prev : [...prev, userId];
+      }
+      return prev.filter((id) => id !== userId);
+    });
+  };
+
+  const handleToggleAllUsers = (selectAll) => {
+    if (selectAll) {
+      setSelectedUserIds(filteredUsers.map((u) => u.id));
+    } else {
+      setSelectedUserIds([]);
+    }
+  };
+
+  const handleBulkAction = (action) => {
+    if (!selectedUserIds.length) return;
+    const performAction = {
+      activate: handleActivateUser,
+      suspend: handleSuspendUser,
+      archive: handleArchiveUser
+    }[action];
+    if (!performAction) return;
+    selectedUserIds.forEach((userId) => performAction(userId));
+    setSelectedUserIds([]);
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -492,7 +754,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row overflow-x-hidden">
       {/* Desktop Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={handleSwitchTab} />
 
@@ -563,19 +825,21 @@ const AdminDashboard = () => {
         </div>
 
         {/* Breadcrumbs */}
-        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 hidden lg:block">
-          <Breadcrumbs items={breadcrumbItems} />
+        <div className="bg-white border-b border-gray-200 hidden lg:block">
+          <div className={`${contentWidthClasses} py-3`}>
+            <Breadcrumbs items={breadcrumbItems} />
+          </div>
         </div>
 
         {/* Header */}
         <div className="bg-white shadow">
-          <div className="px-4 sm:px-6 py-6">
+          <div className={`${contentWidthClasses} py-6`}>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 capitalize">
               {activeTab} Management
             </h1>
             <p className="mt-2 text-gray-600 text-sm sm:text-base">
               {activeTab === 'properties' && 'Property verification and management'}
-              {activeTab === 'verification' && 'Property verification requests and approvals'}
+              {activeTab === 'verification' && 'Badge pricing, applications, and approvals'}
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
@@ -585,12 +849,12 @@ const AdminDashboard = () => {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <main className={`flex-1 w-full ${contentWidthClasses} py-6 lg:py-10 space-y-8`}>
 
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -604,7 +868,7 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,9 +912,52 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Verification Tab */}
+        {activeTab === 'verification' && (
+          <div className="space-y-6">
+            {loadingVerificationSettings && !adminSettings ? (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-gray-500">
+                Loading verification settings...
+              </div>
+            ) : (
+              <AdminVerificationCenter
+                config={adminSettings}
+                onConfigChange={(updated) => setAdminSettings((prev) => ({
+                  ...(prev || {}),
+                  ...updated
+                }))}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Disputes Tab */}
+        {activeTab === 'disputes' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p className="text-sm text-gray-500">Open Disputes</p>
+                <p className="text-2xl font-semibold text-gray-900">{disputeStats.open + disputeStats.awaiting_response + disputeStats.under_review}</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p className="text-sm text-gray-500">Resolved</p>
+                <p className="text-2xl font-semibold text-green-600">{disputeStats.resolved}</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p className="text-sm text-gray-500">Closed</p>
+                <p className="text-2xl font-semibold text-gray-900">{disputeStats.closed}</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <AdminDisputesManagement disputes={disputes} />
+            </div>
+          </div>
+        )}
+
         {/* Property status distribution chart (properties tab only) */}
         {activeTab === 'properties' && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Listings by Approval Status</h2>
             <AdminListingsStatusChart
               total={stats.total}
@@ -663,7 +970,7 @@ const AdminDashboard = () => {
 
         {/* Filters (properties tab only) */}
         {activeTab === 'properties' && (
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -699,7 +1006,7 @@ const AdminDashboard = () => {
 
         {/* Properties Table */}
         {activeTab === 'properties' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-medium text-gray-900">Properties</h2>
             <span className="text-sm text-gray-500">
@@ -831,7 +1138,7 @@ const AdminDashboard = () => {
                 </table>
               </div>
 
-              <div className="lg:hidden divide-y divide-gray-100">
+              <div className="lg:hidden space-y-4">
                 {properties.map((property) => {
                   const approvalStatus = property.approvalStatus || property.verificationStatus || 'pending';
                   const approvalClass = approvalStatus === 'approved'
@@ -840,7 +1147,7 @@ const AdminDashboard = () => {
                       ? 'text-red-700 bg-red-50'
                       : 'text-yellow-700 bg-yellow-50';
                   return (
-                    <div key={property.id} className="p-4 space-y-3">
+                    <div key={property.id} className="p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
                       <div className="flex items-start gap-3">
                         <img
                           src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
@@ -909,21 +1216,21 @@ const AdminDashboard = () => {
         {/* Escrow Tab */}
         {activeTab === 'escrow' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
               <p className="mt-1 text-sm text-gray-500">Monitor all escrow transactions and resolve disputes.</p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Escrow Volume Over Time</h3>
               <AdminEscrowVolumeChart escrows={escrows} />
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
               </div>
-              <div className="overflow-x-auto">
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -954,27 +1261,337 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+              <div className="lg:hidden space-y-4">
+                {escrows.map((tx) => {
+                  const statusKey = (tx.status || 'pending').toLowerCase();
+                  const statusClass = statusKey === 'active'
+                    ? 'bg-green-50 text-green-700'
+                    : statusKey === 'disputed'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-yellow-50 text-yellow-700';
+                  const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
+                  return (
+                    <div key={tx.id} className="p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{tx.propertyTitle}</p>
+                          <p className="text-xs text-gray-500">ID: {tx.id}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Buyer</p>
+                          <p className="font-medium text-gray-900">{tx.buyerName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Seller</p>
+                          <p className="font-medium text-gray-900">{tx.sellerName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Amount</p>
+                          <p className="font-medium text-gray-900">₦{Number(tx.amount || 0).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Created</p>
+                          <p className="font-medium text-gray-900">
+                            {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          onClick={() => handleResolveEscrow(tx.id, 'approve')}
+                          className="inline-flex items-center justify-center rounded-md border border-green-600 px-4 py-2 text-sm font-medium text-green-700"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleResolveEscrow(tx.id, 'reject')}
+                          className="inline-flex items-center justify-center rounded-md border border-red-600 px-4 py-2 text-sm font-medium text-red-700"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Users Overview</h2>
+                  <p className="text-sm text-gray-500">Manage buyer, vendor, and admin accounts in one view.</p>
+                </div>
+                <div className="grid grid-cols-2 sm:flex gap-2 text-sm">
+                  <div className="px-3 py-2 bg-blue-50 rounded-lg text-blue-700">
+                    <p className="text-xs uppercase tracking-wide text-blue-400">Active</p>
+                    <p className="text-base font-semibold">{users.length}</p>
+                  </div>
+                  <div className="px-3 py-2 bg-emerald-50 rounded-lg text-emerald-700">
+                    <p className="text-xs uppercase tracking-wide text-emerald-400">Verified</p>
+                    <p className="text-base font-semibold">{users.filter(u => u.isVerified).length}</p>
+                  </div>
+                  <div className="px-3 py-2 bg-red-50 rounded-lg text-red-700">
+                    <p className="text-xs uppercase tracking-wide text-red-400">Suspended</p>
+                    <p className="text-base font-semibold">{users.filter(u => u.status === 'suspended' || u.isActive === false).length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Search name or email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="buyer">Buyer</option>
+                    <option value="vendor">Vendor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={userStatusFilter}
+                    onChange={(e) => setUserStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Verification</label>
+                  <select
+                    value={userVerificationFilter}
+                    onChange={(e) => setUserVerificationFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    <option value="all">All Users</option>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">All Users</h3>
+                  <p className="text-sm text-gray-500">{filteredUsers.length} users found</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    disabled={!selectedUserIds.length}
+                    onClick={() => handleBulkAction('activate')}
+                    className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium ${selectedUserIds.length ? 'border-green-600 text-green-700 hover:bg-green-50' : 'border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Activate
+                  </button>
+                  <button
+                    disabled={!selectedUserIds.length}
+                    onClick={() => handleBulkAction('suspend')}
+                    className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium ${selectedUserIds.length ? 'border-amber-500 text-amber-600 hover:bg-amber-50' : 'border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Suspend
+                  </button>
+                  <button
+                    disabled={!selectedUserIds.length}
+                    onClick={() => handleBulkAction('archive')}
+                    className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium ${selectedUserIds.length ? 'border-red-600 text-red-600 hover:bg-red-50' : 'border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Archive
+                  </button>
+                  <button
+                    disabled={!selectedUserIds.length}
+                    onClick={() => setSelectedUserIds(filteredUsers.map(u => u.id))}
+                    className={`inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium ${selectedUserIds.length ? 'text-gray-600 hover:bg-gray-50' : 'text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    disabled={!selectedUserIds.length}
+                    onClick={() => setSelectedUserIds([])}
+                    className={`inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium ${selectedUserIds.length ? 'text-gray-600 hover:bg-gray-50' : 'text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
+                          onChange={(e) => handleToggleAllUsers(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verification</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredUsers.map((u) => {
+                      const isSelected = selectedUserIds.includes(u.id);
+                      const statusLabel = u.status === 'suspended' || u.isActive === false ? 'Suspended' : 'Active';
+                      const statusClass = statusLabel === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                      const roleClass = u.role === 'admin' ? 'text-purple-600 bg-purple-50' : u.role === 'vendor' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50';
+                      return (
+                        <tr key={u.id} className={isSelected ? 'bg-blue-50/40' : undefined}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => handleToggleUser(u.id, e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                                {u.firstName?.[0]}{u.lastName?.[0]}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{u.firstName} {u.lastName}</p>
+                                <p className="text-xs text-gray-500">{u.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleClass}`}>
+                              {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${u.isVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {u.isVerified ? 'Verified' : 'Unverified'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                            <button onClick={() => setSelectedUser(u)} className="text-brand-blue hover:text-brand-blue/80">View</button>
+                            {statusLabel === 'Active' ? (
+                              <button onClick={() => handleSuspendUser(u.id)} className="text-amber-600 hover:text-amber-700">Suspend</button>
+                            ) : (
+                              <button onClick={() => handleActivateUser(u.id)} className="text-green-600 hover:text-green-700">Activate</button>
+                            )}
+                            <button onClick={() => handleArchiveUser(u.id)} className="text-red-600 hover:text-red-700">Archive</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="lg:hidden space-y-4">
+                {filteredUsers.map((u) => {
+                  const isSelected = selectedUserIds.includes(u.id);
+                  const badgeClass = u.status === 'suspended' || u.isActive === false ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700';
+                  return (
+                    <div key={u.id} className={`p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm ${isSelected ? 'ring-2 ring-brand-blue/50' : ''}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{u.firstName} {u.lastName}</p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => handleToggleUser(u.id, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 capitalize">{u.role}</span>
+                        <span className={`px-2 py-1 rounded-full ${badgeClass}`}>
+                          {u.status === 'suspended' || u.isActive === false ? 'Suspended' : 'Active'}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full ${u.isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {u.isVerified ? 'Verified' : 'Unverified'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p>Joined: {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}</p>
+                        {u.lastLogin && <p>Last login: {new Date(u.lastLogin).toLocaleDateString()}</p>}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <button onClick={() => setSelectedUser(u)} className="px-3 py-2 text-brand-blue border border-brand-blue rounded-md">View</button>
+                        {u.status === 'suspended' || u.isActive === false ? (
+                          <button onClick={() => handleActivateUser(u.id)} className="px-3 py-2 text-green-700 border border-green-600 rounded-md">Activate</button>
+                        ) : (
+                          <button onClick={() => handleSuspendUser(u.id)} className="px-3 py-2 text-amber-600 border border-amber-500 rounded-md">Suspend</button>
+                        )}
+                        <button onClick={() => handleArchiveUser(u.id)} className="col-span-2 px-3 py-2 text-red-600 border border-red-500 rounded-md">Archive</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
 
         {/* Blog Tab */}
         {activeTab === 'blog' && (
-          <BlogManagement />
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+            <BlogManagement />
+          </div>
         )}
 
-        {/* Property Verification Tab */}
-        {activeTab === 'verification' && (
-          <AdminPropertyVerification />
-        )}
-
-      </div>
+      </main>
 
       {/* Verification Modal */}
       {selectedProperty && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-gray-900/60 px-4 py-8">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div className="mt-1">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Verify Property: {selectedProperty.title}
               </h3>
@@ -1019,9 +1636,9 @@ const AdminDashboard = () => {
 
       {/* User Detail Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-gray-900/60 px-4 py-8">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div className="mt-1 space-y-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 User Details: {selectedUser.firstName} {selectedUser.lastName}
               </h3>

@@ -2,132 +2,138 @@ const express = require('express');
 const { protect } = require('../middleware/auth');
 const { sanitizeInput } = require('../middleware/validation');
 const { getFirestore } = require('../config/firestore');
+const { ensureSeedProperties } = require('../services/propertyService');
 
 const router = express.Router();
 
-// @desc    Get authenticated user's dashboard summary (buyer) - Firestore based
-// @route   GET /api/dashboard/user
-// @access  Private
-router.get('/user', protect, sanitizeInput, async (req, res) => {
-  try {
-    const db = getFirestore();
-    if (!db) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          totalProperties: 0,
-          savedProperties: 0,
-          escrow: { count: 0, totalAmount: 0, pendingPayments: 0, completed: 0 },
-          investments: { totalInvested: 0, totalDividends: 0, activeInvestments: 0, totalInvestments: 0, averageReturn: 0 }
+const buildZeroUserSummary = () => ({
+  totalProperties: 0,
+  savedProperties: 0,
+  escrow: { count: 0, totalAmount: 0, pendingPayments: 0, completed: 0 },
+  investments: { totalInvested: 0, totalDividends: 0, activeInvestments: 0, totalInvestments: 0, averageReturn: 0 }
+});
+
+const buildZeroVendorSummary = () => ({
+  totalProperties: 0,
+  activeListings: 0,
+  pendingListings: 0,
+  soldProperties: 0,
+  totalViews: 0,
+  totalInquiries: 0,
+  totalRevenue: 0,
+  conversionRate: 0
+});
+
+const normalizeValue = (value) => {
+  if (value === undefined || value === null) return null;
+  return String(value).trim().toLowerCase();
+};
+
+const buildIdentifierSet = (user = {}) => {
+  const possibleValues = [
+    user.id,
+    user._id,
+    user.uid,
+    user.userId,
+    user.userCode,
+    user.vendorCode,
+    user.email
+  ];
+
+  return new Set(
+    possibleValues
+      .map(normalizeValue)
+      .filter(Boolean)
+  );
+};
+
+const propertyMatchesUser = (property = {}, identifiers) => {
+  if (!property || identifiers.size === 0) return false;
+
+  const candidates = [
+    property.owner?.id,
+    property.owner?.email,
+    property.owner?.userCode,
+    property.owner?.vendorCode,
+    property.ownerId,
+    property.vendorCode,
+    property.ownerEmail,
+    property.agentId,
+    property.agent?.id,
+    property.agent?.email
+  ];
+
+  return candidates
+    .map(normalizeValue)
+    .filter(Boolean)
+    .some((value) => identifiers.has(value));
+};
+
+const aggregateVendorStats = (properties = []) => {
+  if (!properties.length) {
+    return buildZeroVendorSummary();
+  }
+
+  const stats = properties.reduce((acc, property) => {
+    acc.totalProperties += 1;
+
+    const verificationStatus = normalizeValue(property.verificationStatus);
+    const status = normalizeValue(property.status);
+
+    if (verificationStatus === 'pending') {
+      acc.pendingListings += 1;
+    }
+
+    if (verificationStatus === 'approved' && (status === 'for-sale' || status === 'for-rent')) {
+      acc.activeListings += 1;
+    }
+
+    if (status === 'sold' || status === 'rented') {
+      acc.soldProperties += 1;
+    }
+
+    acc.totalViews += Number(property.views) || 0;
+
+    if (Array.isArray(property.inquiries)) {
+      acc.totalInquiries += property.inquiries.length;
+    }
+
+    if (Array.isArray(property.escrowTransactions)) {
+      property.escrowTransactions.forEach((tx) => {
+        if (normalizeValue(tx?.status) === 'completed') {
+          acc.totalRevenue += Number(tx.amount) || 0;
         }
       });
     }
 
-    const userId = req.user.id || req.user.uid;
+    return acc;
+  }, buildZeroVendorSummary());
 
-    // For now, we don't have full Firestore-backed properties/escrow/investments
-    // so we return minimal stats and rely on frontend local calculations.
-    // This keeps the endpoint working and avoids 500s/401s.
-    res.json({
-      success: true,
-      data: {
-        totalProperties: 0,
-        savedProperties: 0,
-        escrow: {
-          count: 0,
-          totalAmount: 0,
-          pendingPayments: 0,
-          completed: 0
-        },
-        investments: {
-          totalInvested: 0,
-          totalDividends: 0,
-          activeInvestments: 0,
-          totalInvestments: 0,
-          averageReturn: 0
-        }
-      }
-    });
-  } catch (error) {
-    console.error('User dashboard summary error (Firestore):', error);
-    res.status(200).json({
-      success: true,
-      data: {
-        totalProperties: 0,
-        savedProperties: 0,
-        escrow: { count: 0, totalAmount: 0, pendingPayments: 0, completed: 0 },
-        investments: { totalInvested: 0, totalDividends: 0, activeInvestments: 0, totalInvestments: 0, averageReturn: 0 }
-      }
-    });
-  }
-});
-
-module.exports = router;
-
-const express = require('express');
-const { protect } = require('../middleware/auth');
-const { sanitizeInput } = require('../middleware/validation');
-const Property = require('../models/Property');
-const EscrowTransaction = require('../models/EscrowTransaction');
-const UserInvestment = require('../models/UserInvestment');
-
-const router = express.Router();
+  stats.conversionRate = stats.totalViews > 0 ? (stats.totalInquiries / stats.totalViews) * 100 : 0;
+  return stats;
+};
 
 // @desc    Get authenticated user's dashboard summary (buyer)
 // @route   GET /api/dashboard/user
 // @access  Private
 router.get('/user', protect, sanitizeInput, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const db = getFirestore();
+    if (!db) {
+      return res.json({ success: true, data: buildZeroUserSummary() });
+    }
 
-    const [
-      totalProperties,
-      escrowTransactions,
-      investmentSummaryAgg
-    ] = await Promise.all([
-      Property.countDocuments({}), // total properties in the system
-      EscrowTransaction.find({ buyerId: userId }).lean(),
-      UserInvestment.getUserInvestmentSummary(userId)
-    ]);
+    await ensureSeedProperties();
+    const snapshot = await db.collection('properties').get();
 
-    const investmentSummary = investmentSummaryAgg[0] || {
-      totalInvested: 0,
-      totalDividends: 0,
-      activeInvestments: 0,
-      totalInvestments: 0,
-      averageReturn: 0
-    };
+    const summary = buildZeroUserSummary();
+    summary.totalProperties = snapshot.size;
+    summary.savedProperties = Array.isArray(req.user?.favorites) ? req.user.favorites.length : 0;
 
-    const totalEscrowAmount = escrowTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const pendingPayments = escrowTransactions.filter(t => ['pending', 'in-progress', 'initiated', 'active'].includes(t.status)).length;
-    const completedEscrows = escrowTransactions.filter(t => t.status === 'completed').length;
-
-    res.json({
-      success: true,
-      data: {
-        totalProperties,
-        savedProperties: Array.isArray(req.user.favorites) ? req.user.favorites.length : 0,
-        escrow: {
-          count: escrowTransactions.length,
-          totalAmount: totalEscrowAmount,
-          pendingPayments,
-          completed: completedEscrows
-        },
-        investments: {
-          totalInvested: investmentSummary.totalInvested || 0,
-          totalDividends: investmentSummary.totalDividends || 0,
-          activeInvestments: investmentSummary.activeInvestments || 0,
-          totalInvestments: investmentSummary.totalInvestments || 0,
-          averageReturn: investmentSummary.averageReturn || 0
-        }
-      }
-    });
+    res.json({ success: true, data: summary });
   } catch (error) {
     console.error('User dashboard summary error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch dashboard summary'
-    });
+    res.status(200).json({ success: true, data: buildZeroUserSummary() });
   }
 });
 
@@ -136,50 +142,23 @@ router.get('/user', protect, sanitizeInput, async (req, res) => {
 // @access  Private
 router.get('/vendor', protect, sanitizeInput, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const db = getFirestore();
+    if (!db) {
+      return res.json({ success: true, data: buildZeroVendorSummary() });
+    }
 
-    // Vendor owns properties via `owner` or is set as `agent`
-    const properties = await Property.find({
-      $or: [
-        { owner: userId },
-        { agent: userId }
-      ]
-    }).lean();
+    await ensureSeedProperties();
+    const snapshot = await db.collection('properties').get();
+    const allProperties = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    const totalProperties = properties.length;
+    const identifiers = buildIdentifierSet(req.user || {});
+    const vendorProperties = allProperties.filter((property) => propertyMatchesUser(property, identifiers));
 
-    const activeListings = properties.filter(p => p.verificationStatus === 'approved' && (p.status === 'for-sale' || p.status === 'for-rent')).length;
-    const pendingListings = properties.filter(p => p.verificationStatus === 'pending').length;
-    const soldProperties = properties.filter(p => p.status === 'sold' || p.status === 'rented').length;
-
-    const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0);
-    const totalInquiries = properties.reduce((sum, p) => sum + (Array.isArray(p.inquiries) ? p.inquiries.length : 0), 0);
-
-    // Escrow transactions where this user is the seller
-    const escrows = await EscrowTransaction.find({ sellerId: userId }).lean();
-    const totalRevenue = escrows
-      .filter(e => e.status === 'completed')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    res.json({
-      success: true,
-      data: {
-        totalProperties,
-        activeListings,
-        pendingListings,
-        soldProperties,
-        totalViews,
-        totalInquiries,
-        totalRevenue,
-        conversionRate: totalViews > 0 ? (totalInquiries / totalViews) * 100 : 0
-      }
-    });
+    const stats = aggregateVendorStats(vendorProperties);
+    res.json({ success: true, data: stats });
   } catch (error) {
     console.error('Vendor dashboard summary error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch vendor dashboard summary'
-    });
+    res.status(200).json({ success: true, data: buildZeroVendorSummary() });
   }
 });
 

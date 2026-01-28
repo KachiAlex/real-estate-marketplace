@@ -5,6 +5,7 @@ const DOC_ID = 'global';
 
 const DEFAULT_SETTINGS = {
   verificationFee: 50000,
+  verificationBadgeColor: '#10B981',
   vendorListingFee: 100000,
   escrowTimeoutDays: 7,
   platformFee: 0.025,

@@ -9,9 +9,13 @@ const convertTimestamps = (doc) => {
   if (!doc) return null;
   
   const data = doc.data ? doc.data() : doc;
-  const id = doc.id || data.id || doc._id;
-  
-  const converted = { id, ...data };
+  const converted = { ...data };
+
+  // Always prefer the Firestore document ID so downstream auth uses the canonical id
+  const documentId = doc.id || data.id || data._id;
+  if (documentId) {
+    converted.id = documentId;
+  }
   
   // Convert Firestore Timestamp fields to JavaScript dates
   if (converted.createdAt && converted.createdAt.toDate) {

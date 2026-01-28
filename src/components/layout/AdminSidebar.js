@@ -21,7 +21,7 @@ export const ADMIN_MENU_ITEMS = [
       id: 'verification', 
       label: 'Verification', 
       icon: FaCheckCircle,
-      description: 'Review property verification requests'
+      description: 'Handle badge applications and pricing'
     },
     { 
       id: 'escrow', 
@@ -47,12 +47,12 @@ export const ADMIN_MENU_ITEMS = [
       icon: FaBlog,
       description: 'Manage blog posts and content'
     },
-    { 
-      id: 'mortgage-banks', 
-      label: 'Mortgage Banks', 
-      icon: FaUniversity,
-      description: 'Verify and manage mortgage banks'
-    }
+    // { 
+    //   id: 'mortgage-banks', 
+    //   label: 'Mortgage Banks', 
+    //   icon: FaUniversity,
+    //   description: 'Verify and manage mortgage banks'
+    // }
   ];
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {

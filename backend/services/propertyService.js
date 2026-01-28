@@ -179,6 +179,8 @@ const updatePropertyVerification = async (propertyId, { status, notes, adminId }
   const db = getFirestore();
   if (!db) throw new Error('Firestore not initialized');
 
+  await ensureSeedProperties();
+
   const docRef = db.collection(COLLECTION).doc(propertyId);
   const existing = await docRef.get();
   if (!existing.exists) {
@@ -289,5 +291,6 @@ module.exports = {
   getPropertyStats,
   deletePropertiesByOwner,
   listRecentProperties,
-  toggleFavorite
+  toggleFavorite,
+  ensureSeedProperties
 };

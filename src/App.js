@@ -70,6 +70,7 @@ const VendorContracts = lazy(() => import('./pages/VendorContracts'));
 const VendorProfile = lazy(() => import('./pages/VendorProfile'));
 const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
 const VendorHelp = lazy(() => import('./pages/VendorHelp'));
+const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 
 function App() {
   return (

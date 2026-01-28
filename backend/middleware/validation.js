@@ -59,6 +59,72 @@ exports.validate = (validations) => {
   };
 };
 
+exports.verificationValidation = {
+  application: [
+    body('propertyName')
+      .trim()
+      .notEmpty()
+      .withMessage('Property name is required')
+      .isLength({ min: 3, max: 150 })
+      .withMessage('Property name must be between 3 and 150 characters'),
+
+    body('propertyUrl')
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage('Property URL must be a valid link'),
+
+    body('propertyLocation')
+      .optional()
+      .isString()
+      .withMessage('Property location must be a string'),
+
+    body('verificationPaymentId')
+      .trim()
+      .notEmpty()
+      .withMessage('Verification payment ID is required'),
+
+    body('message')
+      .optional()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage('Message cannot exceed 1000 characters'),
+
+    body('attachments')
+      .optional()
+      .isArray({ max: 5 })
+      .withMessage('Attachments must be an array of up to 5 URLs'),
+
+    body('attachments.*')
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage('Each attachment must be a valid URL'),
+
+    body('preferredBadgeColor')
+      .optional()
+      .matches(/^#(?:[0-9a-fA-F]{3}){1,2}$/)
+      .withMessage('Preferred badge color must be a valid hex color')
+  ],
+
+  decision: [
+    body('status')
+      .isIn(['pending', 'approved', 'rejected'])
+      .withMessage('Status must be pending, approved, or rejected'),
+
+    body('adminNotes')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Admin notes cannot exceed 500 characters'),
+
+    body('badgeColor')
+      .optional()
+      .matches(/^#(?:[0-9a-fA-F]{3}){1,2}$/)
+      .withMessage('Badge color must be a valid hex color')
+  ]
+};
+
 // Common validation rules
 exports.userValidation = {
   create: [
@@ -243,6 +309,11 @@ exports.adminValidation = {
       .optional()
       .isFloat({ min: 0, max: 1 })
       .withMessage('Platform fee must be between 0 and 1'),
+    
+    body('verificationBadgeColor')
+      .optional()
+      .matches(/^#(?:[0-9a-fA-F]{3}){1,2}$/)
+      .withMessage('Verification badge color must be a valid hex color'),
     
     body('maxFileSize')
       .optional()

@@ -595,6 +595,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
+      const apiBaseUrl = getApiUrl();
       let usedMockUser = false;
       let userWithoutPassword = null;
       let backendUser = null;
@@ -605,6 +606,51 @@ export const AuthProvider = ({ children }) => {
       let firebaseCredential = null;
       let firebaseError = null; // Store Firebase error for later use
       
+      const ensureBackendToken = async (userObj) => {
+        if (!userObj || userObj.token || !email || !password) {
+          return userObj;
+        }
+
+        try {
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+
+          if (firebaseToken) {
+            headers['Authorization'] = `Bearer ${firebaseToken}`;
+          }
+
+          const response = await fetch(`${apiBaseUrl}/auth/login`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ email, password })
+          });
+
+          if (!response.ok) {
+            return userObj;
+          }
+
+          const data = await response.json();
+          if (data.success && data.token) {
+            localStorage.setItem('token', data.token);
+            const updatedUser = {
+              ...userObj,
+              token: data.token,
+              role: data.user?.role || userObj.role,
+              roles: Array.isArray(data.user?.roles) && data.user.roles.length
+                ? data.user.roles
+                : (userObj.roles || [userObj.role || 'user'])
+            };
+            return updatedUser;
+          }
+
+          return userObj;
+        } catch (tokenError) {
+          console.warn('AuthContext: Failed to ensure backend token', tokenError?.message || tokenError);
+          return userObj;
+        }
+      };
+
       try {
         // Validate inputs before attempting Firebase Auth
         if (!email || !email.trim()) {
@@ -670,8 +716,6 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUid && firebaseCredential) {
         // Firebase Auth succeeded - try to get user details from backend
         try {
-          const apiBaseUrl = getApiUrl();
-          
           const headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${firebaseToken}`
@@ -759,8 +803,6 @@ export const AuthProvider = ({ children }) => {
       } else {
         // Firebase Auth failed - try backend API as fallback
         try {
-          const apiBaseUrl = getApiUrl();
-          
           const headers = {
             'Content-Type': 'application/json'
           };
@@ -951,6 +993,15 @@ export const AuthProvider = ({ children }) => {
         ? 'admin'
         : finalUser.activeRole || finalUser.role || (finalUser.roles?.[0]) || 'buyer';
       finalUser.activeRole = resolvedActiveRole;
+
+      // Absolute guarantee: attempt backend login once more if token is still missing
+      if (!finalUser.token) {
+        finalUser = await ensureBackendToken(finalUser);
+      }
+
+      if (finalUser.token) {
+        localStorage.setItem('token', finalUser.token);
+      }
 
       setActiveRole(resolvedActiveRole);
       localStorage.setItem('activeRole', resolvedActiveRole);

@@ -49,12 +49,26 @@ const convertPaymentDoc = (doc) => {
   };
 };
 
+const sanitizeFirestoreData = (value, fallback = null) => {
+  const target = value ?? fallback;
+  return JSON.parse(JSON.stringify(target));
+};
+
 const buildTimelineEvent = (status, description, metadata = {}) => ({
   status,
   description,
   metadata,
-  timestamp: admin.firestore.FieldValue.serverTimestamp()
+  timestamp: admin.firestore.Timestamp.now()
 });
+
+const resolveFlutterwaveIdentifier = (payment, overrideReference) => {
+  const flutterwaveMetadata = payment.metadata?.flutterwave || {};
+  return overrideReference
+    || flutterwaveMetadata.txRef
+    || flutterwaveMetadata.flwRef
+    || flutterwaveMetadata.transactionId
+    || payment.reference;
+};
 
 const generateId = (prefix) => `${prefix}${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
@@ -176,13 +190,15 @@ const initializePayment = async ({
     fees,
     status: 'pending',
     metadata: {},
-    timeline: [buildTimelineEvent('pending', 'Payment initialized', { amount, paymentMethod, paymentType })],
+    timeline: [],
     isActive: true,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
   await docRef.set(paymentDoc);
+
+  await addTimelineEvent(docRef, buildTimelineEvent('pending', 'Payment initialized', { amount, paymentMethod, paymentType }));
 
   let providerResult = {};
 
@@ -246,7 +262,8 @@ const initializePayment = async ({
     }
 
     const providerMetadata = { ...paymentDoc.metadata };
-    providerMetadata[paymentMethod] = providerResult.data;
+    const cleanedProviderData = sanitizeFirestoreData(providerResult.data, {});
+    providerMetadata[paymentMethod] = cleanedProviderData;
 
     await docRef.update({
       metadata: providerMetadata,
@@ -254,9 +271,11 @@ const initializePayment = async ({
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
+    const providerDataForTimeline = sanitizeFirestoreData(providerResult.data, {});
+
     await addTimelineEvent(docRef, buildTimelineEvent('processing', 'Payment processing initiated', {
       provider: paymentMethod,
-      providerData: providerResult.data
+      providerData: providerDataForTimeline
     }));
 
     const updated = await docRef.get();
@@ -297,18 +316,18 @@ const verifyPayment = async ({
     throw Object.assign(new Error('Not authorized to verify this payment'), { statusCode: 403 });
   }
 
-  if (payment.status !== 'processing') {
-    throw Object.assign(new Error('Payment is not in processing status'), { statusCode: 400 });
+  if (!['processing', 'pending'].includes(payment.status)) {
+    throw Object.assign(new Error('Payment is not in a verifiable status'), { statusCode: 400 });
   }
 
   let verificationResult = {};
 
   switch (payment.paymentProvider) {
-    case 'flutterwave':
-      verificationResult = await flutterwaveService.verifyPayment(
-        providerReference || payment.metadata.flutterwave?.flwRef
-      );
+    case 'flutterwave': {
+      const identifier = resolveFlutterwaveIdentifier(payment, providerReference);
+      verificationResult = await flutterwaveService.verifyPayment(identifier);
       break;
+    }
     case 'paystack':
       verificationResult = await paystackService.verifyPayment(
         providerReference || payment.reference
@@ -332,17 +351,49 @@ const verifyPayment = async ({
       throw new Error('Unsupported payment provider');
   }
 
-  const isSuccess = verificationResult.success && verificationResult.data.status === 'success';
-  const newStatus = isSuccess ? 'completed' : 'failed';
+  if (!verificationResult.success) {
+    await addTimelineEvent(docRef, buildTimelineEvent(payment.status, 'Payment verification attempt failed', {
+      provider: payment.paymentProvider,
+      error: verificationResult.message || 'Unknown verification error'
+    }));
 
-  await docRef.update({
-    status: newStatus,
+    throw Object.assign(new Error(verificationResult.message || 'Failed to verify payment'), { statusCode: 400 });
+  }
+
+  const providerStatusRaw = verificationResult.data?.status || '';
+  const providerStatus = providerStatusRaw.toString().toLowerCase();
+  const isSuccess = ['success', 'successful', 'completed'].includes(providerStatus);
+  const isPending = ['pending', 'processing'].includes(providerStatus);
+
+  const verificationDataForTimeline = sanitizeFirestoreData(verificationResult.data, {});
+
+  let targetStatus = payment.status;
+  let timelineDescription = 'Payment verification result received';
+
+  if (isSuccess) {
+    targetStatus = 'completed';
+    timelineDescription = 'Payment verified and completed';
+  } else if (isPending) {
+    targetStatus = 'processing';
+    timelineDescription = 'Payment still processing with provider';
+  } else {
+    targetStatus = 'failed';
+    timelineDescription = 'Payment verification failed';
+  }
+
+  const updatePayload = {
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+  };
 
-  await addTimelineEvent(docRef, buildTimelineEvent(newStatus, isSuccess ? 'Payment verified and completed' : 'Payment verification failed', {
+  if (targetStatus !== payment.status) {
+    updatePayload.status = targetStatus;
+  }
+
+  await docRef.update(updatePayload);
+
+  await addTimelineEvent(docRef, buildTimelineEvent(targetStatus, timelineDescription, {
     provider: payment.paymentProvider,
-    verificationData: verificationResult.data
+    verificationData: verificationDataForTimeline
   }));
 
   if (isSuccess) {
@@ -361,7 +412,13 @@ const verifyPayment = async ({
   }
 
   const updated = await docRef.get();
-  return convertPaymentDoc(updated);
+  const updatedPayment = convertPaymentDoc(updated);
+
+  if (isSuccess || isPending) {
+    return updatedPayment;
+  }
+
+  throw Object.assign(new Error('Payment was not successful on Flutterwave'), { statusCode: 400 });
 };
 
 const cancelPayment = async ({ paymentId, userId, reason }) => {

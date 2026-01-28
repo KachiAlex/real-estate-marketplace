@@ -177,22 +177,27 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{property.title}</h2>
-            <div className="flex items-center gap-4 mt-2">
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center p-4 sm:p-6 border-b">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{property.title}</h2>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-sm">
               {getStatusBadge(property.status)}
               {getApprovalStatusBadge(property.approvalStatus || property.verificationStatus)}
               {property.isVerified && getVerificationStatusBadge('verified')}
-              <span className="text-2xl font-bold text-blue-600">{formatPrice(property.price)}</span>
+              <span className="text-lg sm:text-2xl font-bold text-blue-600 whitespace-nowrap">{formatPrice(property.price)}</span>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="self-start md:self-auto text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close property details"
           >
             <FaTimes className="w-6 h-6" />
           </button>
@@ -200,26 +205,28 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
 
         {/* Tabs */}
         <div className="border-b">
-          <nav className="flex space-x-8 px-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
+          <nav className="flex overflow-x-auto no-scrollbar px-4 sm:px-6" aria-label="Property detail sections">
+            <div className="flex min-w-max space-x-6 sm:space-x-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-96 overflow-y-auto">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
@@ -229,7 +236,7 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Details</h3>
                   <div className="space-y-3">
@@ -327,7 +334,7 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Images</h3>
               {property.images && property.images.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {property.images.map((image, index) => (
                     <div key={index} className="relative group">
                       <img
@@ -359,7 +366,7 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Videos</h3>
               {property.videos && property.videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {property.videos.map((video, index) => (
                     <div key={index} className="relative">
                       <video
@@ -422,7 +429,7 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
                     {property.location?.address || 'Address not provided'}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <span className="font-medium text-gray-700">City:</span>
                     <p className="text-gray-600">{property.location?.city || 'N/A'}</p>
@@ -449,9 +456,9 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
         </div>
 
         {/* Footer with Actions */}
-        <div className="border-t p-6 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <div className="flex-1 mr-4">
+        <div className="border-t p-4 sm:p-6 bg-gray-50">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Notes (Optional)
               </label>
@@ -463,7 +470,7 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
                 placeholder="Add internal notes for this property..."
               />
             </div>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 sm:flex sm:flex-row sm:flex-wrap lg:flex-nowrap gap-3 w-full lg:w-auto">
               <button
                 onClick={onClose}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"

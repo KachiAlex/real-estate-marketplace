@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -65,6 +65,8 @@ const VendorDashboard = () => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [verificationRequests, setVerificationRequests] = useState([]);
+  const [verificationRequestsLoading, setVerificationRequestsLoading] = useState(false);
 
 
   // Sync tab with route
@@ -243,12 +245,49 @@ const VendorDashboard = () => {
     }
   }, [user]);
 
+  const fetchVerificationRequests = useCallback(async () => {
+    if (!user) {
+      setVerificationRequests([]);
+      return;
+    }
+
+    try {
+      setVerificationRequestsLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl('/verification/applications/mine'), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setVerificationRequests(Array.isArray(data.data) ? data.data : []);
+      } else {
+        console.warn('VendorDashboard: Failed to load verification requests', data?.message);
+      }
+    } catch (error) {
+      console.error('VendorDashboard: Error fetching verification requests', error);
+    } finally {
+      setVerificationRequestsLoading(false);
+    }
+  }, [user]);
+
   // Load vendor's properties when user or auth state changes
   useEffect(() => {
     if (firebaseAuthReady) {
       fetchVendorProperties();
     }
   }, [firebaseAuthReady, fetchVendorProperties]);
+
+  useEffect(() => {
+    if (!user) {
+      setVerificationRequests([]);
+      return;
+    }
+    fetchVerificationRequests();
+  }, [user, fetchVerificationRequests]);
 
   // Load vendor analytics summary from backend
   useEffect(() => {
@@ -398,6 +437,17 @@ const VendorDashboard = () => {
     }
   }, []);
 
+  const handleVerificationCtaClick = (property) => {
+    const verificationState = getPropertyVerificationState(property);
+
+    if (verificationState === 'pending') {
+      toast('Verification already requested for this property.', { icon: 'ℹ️' });
+      return;
+    }
+
+    handleRequestVerification(property);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
@@ -427,18 +477,130 @@ const VendorDashboard = () => {
     }
   };
 
-  const handleVerificationSuccess = (message) => {
-    toast.success(message || 'Verification updated');
+  const handleVerificationSuccess = (result) => {
+    const payload = typeof result === 'string' ? { message: result } : result || {};
+    const successMessage = payload.message || 'Verification request submitted successfully!';
+    const application = payload.application;
+
+    toast.success(successMessage);
     setShowVerificationModal(false);
     setSelectedProperty(null);
-    // Refresh properties list from Firestore
+
+    if (application) {
+      setVerificationRequests((prev = []) => {
+        if (!Array.isArray(prev)) return [application];
+        const exists = prev.some((request) => request.id === application.id);
+        if (exists) {
+          return prev.map((request) => (request.id === application.id ? application : request));
+        }
+        return [...prev, application];
+      });
+
+      if (application.propertyId) {
+        setProperties((prev = []) =>
+          prev.map((property) => {
+            if (!property) return property;
+            const identifiers = [
+              property.id,
+              property.propertyId,
+              property.numericId,
+              property.referenceCode
+            ]
+              .filter((value) => value !== undefined && value !== null)
+              .map((value) => value.toString());
+
+            if (!identifiers.includes(application.propertyId.toString())) {
+              return property;
+            }
+
+            return {
+              ...property,
+              verificationStatus: application.status || 'pending',
+              isVerified: application.status === 'approved'
+            };
+          })
+        );
+      }
+    }
+
+    // Refresh data from backend to keep everything in sync
     fetchVendorProperties();
+    fetchVerificationRequests();
   };
 
   const handleRequestVerification = (property) => {
     setSelectedProperty(property);
     setShowVerificationModal(true);
   };
+
+  const verificationStatusByProperty = useMemo(() => {
+    const statusMap = {};
+    verificationRequests.forEach((request) => {
+      const propertyKey =
+        request.propertyId ??
+        request.property?.id ??
+        request.property?.propertyId ??
+        request.property?.propertyRef;
+
+      if (propertyKey === undefined || propertyKey === null) {
+        return;
+      }
+
+      statusMap[propertyKey.toString()] = request.status || 'pending';
+    });
+    return statusMap;
+  }, [verificationRequests]);
+
+  const getPropertyVerificationState = useCallback(
+    (property) => {
+      if (!property) return 'not_requested';
+      if (property.isVerified) return 'approved';
+
+      const candidateKeys = [
+        property.id,
+        property.propertyId,
+        property.numericId,
+        property.referenceCode
+      ]
+        .filter((value) => value !== undefined && value !== null)
+        .map((value) => value.toString());
+
+      for (const key of candidateKeys) {
+        if (verificationStatusByProperty[key]) {
+          return verificationStatusByProperty[key];
+        }
+      }
+
+      return property.verificationStatus || 'not_requested';
+    },
+    [verificationStatusByProperty]
+  );
+
+  const getVerificationBadgeMeta = useCallback((status) => {
+    switch (status) {
+      case 'approved':
+        return { label: '✓ Verified', badgeClass: 'bg-green-100 text-green-800' };
+      case 'pending':
+        return { label: 'Verification requested', badgeClass: 'bg-yellow-100 text-yellow-800' };
+      case 'rejected':
+        return { label: 'Verification rejected', badgeClass: 'bg-red-100 text-red-800' };
+      default:
+        return { label: 'Not verified', badgeClass: 'bg-gray-100 text-gray-800' };
+    }
+  }, []);
+
+  const getVerificationCtaMeta = useCallback((status) => {
+    if (status === 'approved') {
+      return { show: false };
+    }
+    if (status === 'pending') {
+      return { show: true, label: 'Verification requested', disabled: true };
+    }
+    if (status === 'rejected') {
+      return { show: true, label: 'Resubmit verification', disabled: false };
+    }
+    return { show: true, label: 'Get Verified', disabled: false };
+  }, []);
 
   const handleDeleteProperty = async (propertyId) => {
     if (!user) {
@@ -734,21 +896,6 @@ const VendorDashboard = () => {
                       title="Add new property"
                   >
                     <div className="p-2 bg-blue-100 rounded-full">
-                      <FaPlus className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Add New Property</p>
-                      <p className="text-sm text-gray-500">List a new property</p>
-                    </div>
-                  </button>
-                  <button
-                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    title="Update existing listings"
-                  >
-                    <div className="p-2 bg-green-100 rounded-full">
-                      <FaEdit className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div className="text-left">
                       <p className="font-medium text-gray-900">Update Listings</p>
                       <p className="text-sm text-gray-500">Edit property details</p>
                     </div>
@@ -825,7 +972,12 @@ const VendorDashboard = () => {
               {/* Properties Grid */}
               {!propertiesLoading && properties.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {properties.map((property) => (
+                {properties.map((property) => {
+                  const verificationState = getPropertyVerificationState(property);
+                  const badgeMeta = getVerificationBadgeMeta(verificationState);
+                  const ctaMeta = getVerificationCtaMeta(verificationState);
+
+                  return (
                   <div key={property.id} className="property-card">
                     <div className="relative">
                       <img
@@ -925,39 +1077,30 @@ const VendorDashboard = () => {
                         {/* Verification Status and Button */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              property.isVerified 
-                                ? 'bg-green-100 text-green-800' 
-                                : property.verificationStatus === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : property.verificationStatus === 'rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {property.isVerified 
-                                ? '✓ Verified' 
-                                : property.verificationStatus === 'pending'
-                                ? '⏳ Pending Review'
-                                : property.verificationStatus === 'rejected'
-                                ? '✗ Rejected'
-                                : '⚠️ Not Verified'
-                              }
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${badgeMeta.badgeClass}`}>
+                              {badgeMeta.label}
                             </span>
                           </div>
-                          
-                          {!property.isVerified && (
+
+                          {ctaMeta.show && (
                             <button
-                              onClick={() => handleRequestVerification(property)}
-                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                              onClick={() => handleVerificationCtaClick(property)}
+                              disabled={ctaMeta.disabled}
+                              className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                                ctaMeta.disabled
+                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
                             >
-                              {property.verificationStatus === 'pending' ? 'View Status' : 'Get Verified'}
+                              {ctaMeta.label}
                             </button>
                           )}
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               )}
             </div>
