@@ -153,8 +153,10 @@ router.put('/properties/:id/verify', [
 // @desc    Get all users for admin management
 // @route   GET /api/admin/users
 // @access  Private (Admin only)
+const ALLOWED_USER_ROLES = ['buyer', 'vendor', 'admin', 'agent', 'user'];
+
 router.get('/users', [
-  query('role').optional().isIn(['user', 'agent', 'admin']).withMessage('Invalid role'),
+  query('role').optional().isIn(ALLOWED_USER_ROLES).withMessage('Invalid role'),
   query('isVerified').optional().isBoolean().withMessage('isVerified must be boolean'),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
