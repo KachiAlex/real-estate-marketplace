@@ -237,6 +237,33 @@ class NotificationService {
     }
   }
 
+  async createInspectionNotifications(notifications = []) {
+    try {
+      if (!notifications.length) {
+        return { success: false, message: 'No notifications to persist' };
+      }
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return { success: false, message: 'Missing auth token' };
+      }
+
+      const response = await fetch('/api/notifications/inspection', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ notifications })
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error creating inspection notifications:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async getUnreadCount() {
     try {
       const token = localStorage.getItem('token');

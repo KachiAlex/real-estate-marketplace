@@ -162,6 +162,35 @@ const NotificationDropdown = () => {
     }
   };
 
+  const getInspectionTargetPath = (notification) => {
+    const role = notification?.data?.recipientRoles?.[0] || notification?.data?.role;
+    if (role === 'vendor') {
+      return '/vendor/inspections';
+    }
+    if (role === 'buyer') {
+      return '/buyer/inspections';
+    }
+    // fallback by current user role
+    if (user?.role === 'vendor' || user?.roles?.includes('vendor')) {
+      return '/vendor/inspections';
+    }
+    return '/buyer/inspections';
+  };
+
+  const handleOpenInspection = (notification) => {
+    const path = getInspectionTargetPath(notification);
+    const params = new URLSearchParams();
+    if (notification?.data?.requestId) {
+      params.set('inspectionId', notification.data.requestId);
+    }
+    if (notification?.data?.propertyTitle) {
+      params.set('property', notification.data.propertyTitle);
+    }
+    const target = params.toString() ? `${path}?${params.toString()}` : path;
+    setIsOpen(false);
+    navigate(target);
+  };
+
   const handleRate = (notification) => {
     const { data } = notification;
     const rateeId = data?.vendorId || data?.buyerId;
@@ -380,6 +409,17 @@ const NotificationDropdown = () => {
                         
                         {/* Actions */}
                         <div className="flex items-center flex-wrap gap-2 mt-3">
+                          {/* Inspection deep links */}
+                          {notification.type?.startsWith('inspection_') && (
+                            <button
+                              onClick={() => handleOpenInspection(notification)}
+                              className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
+                            >
+                              <FaInfoCircle className="mr-1" />
+                              View inspection
+                            </button>
+                          )}
+
                           {/* Send Message for inquiry/payment */}
                           {(notification.type === 'property_inquiry' || notification.type === 'payment_received') && (
                             <button

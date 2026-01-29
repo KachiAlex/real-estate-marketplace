@@ -16,6 +16,7 @@ import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 import { getApiUrl } from '../utils/apiConfig';
+import { authenticatedFetch, hasAuthToken } from '../utils/authToken';
 
 const MOCK_USERS = [
   {
@@ -192,10 +193,42 @@ const AdminDashboard = () => {
   const [authWarning, setAuthWarning] = useState('');
   const [adminSettings, setAdminSettings] = useState(null);
   const [loadingVerificationSettings, setLoadingVerificationSettings] = useState(false);
+  const [hasAdminToken, setHasAdminToken] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const contentWidthClasses = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16';
 
   const normalizedSearch = userSearch.trim().toLowerCase();
+  const propertyAnalytics = useMemo(() => {
+    const fallbackTotals = {
+      total: properties.length,
+      pending: properties.filter((p) => (p.approvalStatus || p.verificationStatus || 'pending') === 'pending').length,
+      approved: properties.filter((p) => (p.approvalStatus || p.verificationStatus) === 'approved').length,
+      rejected: properties.filter((p) => (p.approvalStatus || p.verificationStatus) === 'rejected').length
+    };
+
+    const total = stats.total || fallbackTotals.total || 0;
+    const pending = stats.pending ?? fallbackTotals.pending;
+    const approved = stats.approved ?? fallbackTotals.approved;
+    const rejected = stats.rejected ?? fallbackTotals.rejected;
+    const reviewed = approved + rejected;
+
+    const approvalRate = total ? Math.round((approved / total) * 100) : 0;
+    const rejectionRate = total ? Math.round((rejected / total) * 100) : 0;
+    const reviewCompletion = total ? Math.round((reviewed / total) * 100) : 0;
+    const pendingRate = total ? Math.round((pending / total) * 100) : 0;
+
+    return {
+      total,
+      pending,
+      approved,
+      rejected,
+      approvalRate,
+      rejectionRate,
+      reviewCompletion,
+      pendingRate
+    };
+  }, [stats.total, stats.pending, stats.approved, stats.rejected, properties]);
   const filteredUsers = useMemo(() => (
     users.filter((u) => {
       const matchesSearch = !normalizedSearch ||
@@ -249,32 +282,101 @@ const AdminDashboard = () => {
     }
   }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
 
-  const fetchAdminSettings = useCallback(async () => {
+  const loadVerificationConfig = useCallback(async () => {
     if (loadingVerificationSettings) return;
     try {
       setLoadingVerificationSettings(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/admin/settings'), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+
+      let mergedConfig = null;
+
+      try {
+        const configResponse = await fetch(getApiUrl('/verification/config'));
+        const configPayload = await configResponse.json().catch(() => ({}));
+        if (configResponse.ok && configPayload?.success && configPayload?.data) {
+          mergedConfig = configPayload.data;
         }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to load admin settings');
+      } catch (configError) {
+        console.warn('AdminDashboard: verification config fetch failed', configError?.message || configError);
       }
-      const data = await response.json();
-      if (!data?.success || !data?.data) {
-        throw new Error(data?.message || 'Unable to load admin settings');
+
+      const tokenAvailable = await hasAuthToken();
+      setHasAdminToken(Boolean(tokenAvailable));
+
+      if (tokenAvailable) {
+        try {
+          const adminResponse = await authenticatedFetch(getApiUrl('/admin/settings'));
+          const adminPayload = await adminResponse.json().catch(() => ({}));
+          if (adminResponse.ok && adminPayload?.success && adminPayload?.data) {
+            mergedConfig = { ...(mergedConfig || {}), ...adminPayload.data };
+          } else if (adminResponse.status === 401) {
+            setHasAdminToken(false);
+            setAuthWarning('Admin authentication expired. Please log in again to manage verification settings.');
+          }
+        } catch (adminError) {
+          console.warn('AdminDashboard: admin settings fetch failed', adminError?.message || adminError);
+        }
       }
-      setAdminSettings(data.data);
+
+      if (!mergedConfig) {
+        throw new Error('Unable to load verification settings');
+      }
+
+      setAdminSettings(mergedConfig);
     } catch (error) {
-      console.warn('AdminDashboard: unable to fetch admin settings', error);
+      console.warn('AdminDashboard: unable to load verification settings', error);
       toast.error(error?.message || 'Failed to load verification settings');
     } finally {
       setLoadingVerificationSettings(false);
     }
   }, [loadingVerificationSettings]);
+
+  const loadUsersFromApi = useCallback(async ({ page = 1, limit = 100, role } = {}) => {
+    if (!user || user.role !== 'admin' || loadingUsers) return;
+    setLoadingUsers(true);
+    try {
+      const tokenAvailable = await hasAuthToken();
+      setHasAdminToken(Boolean(tokenAvailable));
+      if (!tokenAvailable) {
+        setAuthWarning('Admin authentication required. Please log in with an admin account so protected endpoints can be accessed.');
+        throw new Error('Missing admin authentication');
+      }
+
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (role) {
+        params.set('role', role);
+      }
+      const response = await authenticatedFetch(`${getApiUrl(`/admin/users?${params.toString()}`)}`);
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.success) {
+        const message = payload?.message || 'Failed to load users';
+        throw new Error(message);
+      }
+
+      const fetchedUsers = Array.isArray(payload.data) ? payload.data : [];
+      setUsers(fetchedUsers);
+      setVendors(fetchedUsers.filter((u) => u.role === 'vendor'));
+      setBuyers(fetchedUsers.filter((u) => u.role === 'buyer'));
+      if (payload.pagination) {
+        setPagination((prev) => ({
+          ...prev,
+          ...payload.pagination
+        }));
+      }
+      setAuthWarning('');
+    } catch (error) {
+      console.warn('AdminDashboard: Failed to fetch users', error);
+      if (!hasAdminToken) {
+        setAuthWarning('Admin authentication required. Please log in with an admin account so protected endpoints can be accessed.');
+      }
+      toast.error(error?.message || 'Unable to load users. Showing sample data.');
+      setUsers(role ? MOCK_USERS.filter((u) => u.role === role) : MOCK_USERS);
+      setVendors(MOCK_USERS.filter((u) => u.role === 'vendor'));
+      setBuyers(MOCK_USERS.filter((u) => u.role === 'buyer'));
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [user, hasAdminToken, loadingUsers]);
 
   const fetchDisputesData = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
@@ -349,12 +451,27 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
+      setHasAdminToken(false);
       return;
     }
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@example.com / admin123) so localStorage.token is populated before reopening the dashboard.');
-    }
+
+    let isMounted = true;
+    const verifyTokenState = async () => {
+      const tokenExists = await hasAuthToken();
+      if (!isMounted) return;
+      setHasAdminToken(Boolean(tokenExists));
+      if (!tokenExists) {
+        setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@propertyark.com / Admin#2026!) so protected endpoints can be accessed.');
+      } else {
+        setAuthWarning('');
+      }
+    };
+
+    verifyTokenState();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   // Initialize activeTab from URL once on mount
@@ -370,10 +487,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'verification' && user?.role === 'admin') {
       if (!adminSettings && !loadingVerificationSettings) {
-        fetchAdminSettings();
+        loadVerificationConfig();
       }
     }
-  }, [activeTab, user, adminSettings, loadingVerificationSettings, fetchAdminSettings]);
+  }, [activeTab, user, adminSettings, loadingVerificationSettings, loadVerificationConfig]);
 
   const handleSwitchTab = (tabId) => {
     setActiveTab(tabId);
@@ -383,6 +500,11 @@ const AdminDashboard = () => {
     setIsSidebarOpen(false);
   };
 
+  useEffect(() => {
+    const roleParam = userRoleFilter !== 'all' ? userRoleFilter : undefined;
+    loadUsersFromApi({ role: roleParam });
+  }, [loadUsersFromApi, userRoleFilter]);
+
   // Load other admin data
   useEffect(() => {
     const load = async () => {
@@ -391,12 +513,12 @@ const AdminDashboard = () => {
         
         // Mock users data
         const mockUsers = [
-          { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'user', isVerified: true, createdAt: '2024-01-15' },
-          { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'user', isVerified: true, createdAt: '2024-01-16' },
-          { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', role: 'user', isVerified: true, createdAt: '2024-01-17' },
-          { id: '4', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', role: 'user', isVerified: true, createdAt: '2024-01-18' },
+          { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'buyer', isVerified: true, createdAt: '2024-01-15' },
+          { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'vendor', isVerified: true, createdAt: '2024-01-16' },
+          { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', role: 'buyer', isVerified: true, createdAt: '2024-01-17' },
+          { id: '4', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', role: 'vendor', isVerified: true, createdAt: '2024-01-18' },
           { id: '5', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', isVerified: true, createdAt: '2024-01-01' },
-          { id: '6', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'user', isVerified: true, createdAt: '2024-01-20' }
+          { id: '6', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'buyer', isVerified: true, createdAt: '2024-01-20' }
         ];
 
         // Mock escrow data with full details
@@ -458,13 +580,6 @@ const AdminDashboard = () => {
         // Set mock data
         setEscrows(mockEscrows);
         setDisputes(mockDisputes);
-        setUsers(mockUsers);
-        
-        // Set vendors as users with 'user' role
-        setVendors(mockUsers.filter(u => u.role === 'user'));
-        
-        // Set buyers as users with 'user' role
-        setBuyers(mockUsers.filter(u => u.role === 'user'));
         
         console.log('AdminDashboard: Data loaded successfully');
       } catch (error) {
@@ -477,24 +592,6 @@ const AdminDashboard = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  const handleResolveEscrow = async (escrowId, decision) => {
-    try {
-      const res = await fetch(getApiUrl(`/admin/escrow/${escrowId}/resolve`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision })
-      });
-      const data = await res.json();
-      if (data.success) {
-        const esc = await fetch(getApiUrl('/admin/escrow')).then(r => r.json());
-        if (esc.success) {
-          setEscrows(esc.data || []);
-          setDisputes((esc.data || []).filter(e => (e.status || '').toLowerCase() === 'disputed'));
-        }
-      }
-    } catch (_) {}
-  };
 
   const handleStatusFilter = (status) => {
     setSelectedStatus(status);
@@ -912,6 +1009,46 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Property analytics detail cards */}
+        {activeTab === 'properties' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-sm font-medium text-gray-600">Review Completion</p>
+              <div className="flex items-end justify-between mt-2">
+                <p className="text-3xl font-semibold text-gray-900">{propertyAnalytics.reviewCompletion}%</p>
+                <span className="text-xs text-gray-500">{propertyAnalytics.approved + propertyAnalytics.rejected} of {propertyAnalytics.total} reviewed</span>
+              </div>
+              <div className="mt-4 h-2 rounded-full bg-gray-100">
+                <div
+                  className="h-full bg-blue-600 rounded-full"
+                  style={{ width: `${propertyAnalytics.reviewCompletion}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-sm font-medium text-gray-600">Approval Rate</p>
+              <div className="flex items-end justify-between mt-2">
+                <p className="text-3xl font-semibold text-green-600">{propertyAnalytics.approvalRate}%</p>
+                <span className="text-xs text-gray-500">{propertyAnalytics.approved} approved listings</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">{propertyAnalytics.pending} pending · {propertyAnalytics.rejected} rejected</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-sm font-medium text-gray-600">Pending Backlog</p>
+              <div className="flex items-end justify-between mt-2">
+                <p className="text-3xl font-semibold text-amber-600">{propertyAnalytics.pendingRate}%</p>
+                <span className="text-xs text-gray-500">{propertyAnalytics.pending} listings awaiting review</span>
+              </div>
+              <div className="mt-4 text-xs text-gray-500 space-y-1">
+                <p>Approved today: {stats.approved || 0}</p>
+                <p>Rejected today: {stats.rejected || 0}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Verification Tab */}
         {activeTab === 'verification' && (
           <div className="space-y-6">
@@ -922,6 +1059,11 @@ const AdminDashboard = () => {
             ) : (
               <AdminVerificationCenter
                 config={adminSettings}
+                isAuthenticated={hasAdminToken}
+                onRequireAdminAuth={() => {
+                  setHasAdminToken(false);
+                  setAuthWarning('Admin authentication required. Please log in again to manage verification settings.');
+                }}
                 onConfigChange={(updated) => setAdminSettings((prev) => ({
                   ...(prev || {}),
                   ...updated
@@ -1240,7 +1382,7 @@ const AdminDashboard = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Update</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -1252,9 +1394,8 @@ const AdminDashboard = () => {
                         <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
                         <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
                         <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
-                        <td className="px-6 py-4 text-sm space-x-2">
-                          <button onClick={() => handleResolveEscrow(tx.id, 'approve')} className="text-green-600 hover:text-green-800">Approve</button>
-                          <button onClick={() => handleResolveEscrow(tx.id, 'reject')} className="text-red-600 hover:text-red-800">Reject</button>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : '—'}
                         </td>
                       </tr>
                     ))}
@@ -1303,19 +1444,8 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <button
-                          onClick={() => handleResolveEscrow(tx.id, 'approve')}
-                          className="inline-flex items-center justify-center rounded-md border border-green-600 px-4 py-2 text-sm font-medium text-green-700"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleResolveEscrow(tx.id, 'reject')}
-                          className="inline-flex items-center justify-center rounded-md border border-red-600 px-4 py-2 text-sm font-medium text-red-700"
-                        >
-                          Reject
-                        </button>
+                      <div className="text-xs text-gray-500">
+                        Updated {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : 'recently'}
                       </div>
                     </div>
                   );
