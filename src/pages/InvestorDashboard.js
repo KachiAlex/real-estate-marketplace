@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaChartLine, FaDollarSign, FaBuilding, FaPercentage, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import getApiUrl from '../utils/apiConfig';
 
 const InvestorDashboard = () => {
   const { user } = useAuth();
@@ -12,7 +13,7 @@ const InvestorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('portfolio');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = getApiUrl();
 
   useEffect(() => {
     fetchData();
@@ -25,7 +26,7 @@ const InvestorDashboard = () => {
       console.log('InvestorDashboard: API_BASE_URL:', API_BASE_URL);
       
       // Fetch investment opportunities
-      const opportunitiesResponse = await fetch(`${API_BASE_URL}/api/investments`);
+      const opportunitiesResponse = await fetch(getApiUrl('/investments'));
       const opportunitiesData = await opportunitiesResponse.json();
       console.log('InvestorDashboard: Opportunities response:', opportunitiesData);
       
@@ -34,7 +35,7 @@ const InvestorDashboard = () => {
       }
 
       // Fetch user investments
-      const userInvestmentsResponse = await fetch(`${API_BASE_URL}/api/user/investments?userId=${user?.id}`);
+      const userInvestmentsResponse = await fetch(getApiUrl(`/user/investments?userId=${user?.id}`));
       const userInvestmentsData = await userInvestmentsResponse.json();
       console.log('InvestorDashboard: User investments response:', userInvestmentsData);
       
@@ -51,7 +52,7 @@ const InvestorDashboard = () => {
 
   const handleInvest = async (investmentId, amount) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/investments/${investmentId}/invest`, {
+      const response = await fetch(getApiUrl(`/investments/${investmentId}/invest`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

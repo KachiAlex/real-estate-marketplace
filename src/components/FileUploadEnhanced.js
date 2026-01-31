@@ -2,8 +2,9 @@ import React, { useState, useRef, useCallback } from 'react';
 import { FiUpload, FiX, FiFile, FiImage, FiVideo, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = getApiBaseUrl();
 
 /**
  * Enhanced File Upload Component

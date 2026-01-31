@@ -1,4 +1,5 @@
 import io from 'socket.io-client';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 class NotificationService {
   constructor() {
@@ -23,7 +24,7 @@ class NotificationService {
     }
 
     // Connect to Socket.IO server
-    this.socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+    this.socket = io(getApiBaseUrl(), {
       auth: {
         token: token,
         userId: userId
