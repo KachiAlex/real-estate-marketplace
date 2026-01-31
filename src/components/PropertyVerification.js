@@ -45,6 +45,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [resumePaymentEntry, setResumePaymentEntry] = useState(null);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   const CALLBACK_STORAGE_KEY = 'propertyVerificationPayments';
 
@@ -240,34 +241,48 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   };
 
   const handleInitializePayment = async () => {
+    console.log('🔥 handleInitializePayment called');
+    console.log('🔥 User:', user);
+    console.log('🔥 Verification fee:', verificationFee);
+    
     const headers = buildAuthHeaders();
+    console.log('🔥 Headers:', headers);
 
     if (!headers) {
+      console.log('❌ No headers - authentication required');
       setPaymentError('Please sign in as a vendor/agent before paying the verification fee.');
       return;
     }
 
     setIsPaymentInitializing(true);
     setPaymentError('');
+    console.log('🚀 Starting payment initialization...');
 
     try {
+      const payload = {
+        amount: verificationFee,
+        paymentMethod: 'flutterwave',
+        paymentType: 'property_verification',
+        relatedEntity: {
+          type: 'verification',
+          id: property?.id || property?.slug || property?.propertyCode || 'property-verification'
+        },
+        description: `Property verification fee for ${formValues.propertyName || property?.title || 'selected property'}`,
+        currency: 'NGN'
+      };
+      
+      console.log('🔥 API Payload:', payload);
+      console.log('🔥 API URL:', getApiUrl('/payments/initialize'));
+      
       const response = await fetch(getApiUrl('/payments/initialize'), {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          amount: verificationFee,
-          paymentMethod: 'flutterwave',
-          paymentType: 'property_verification',
-          relatedEntity: {
-            type: 'verification',
-            id: property?.id || property?.slug || property?.propertyCode || 'property-verification'
-          },
-          description: `Property verification fee for ${formValues.propertyName || property?.title || 'selected property'}`,
-          currency: 'NGN'
-        })
+        body: JSON.stringify(payload)
       });
 
+      console.log('🔥 Response status:', response.status);
       const data = await response.json();
+      console.log('🔥 Response data:', data);
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Failed to initialize verification payment');
       }
@@ -310,7 +325,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
 
   const handleOpenCheckout = () => {
     if (!checkoutUrl || typeof window === 'undefined') return;
-    window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+    setShowCheckoutModal(true);
   };
 
   const handleVerifyPayment = async () => {
@@ -745,6 +760,35 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
           </div>
         </div>
       </div>
+
+      {/* Flutterwave Checkout Modal */}
+      {showCheckoutModal && checkoutUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
+              <button
+                onClick={() => setShowCheckoutModal(false)}
+                className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors"
+                aria-label="Close checkout"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={checkoutUrl}
+                title="Flutterwave Checkout"
+                className="w-full h-full border-none"
+                allow="payment"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

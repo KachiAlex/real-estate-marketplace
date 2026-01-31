@@ -150,7 +150,7 @@ const EscrowPaymentFlow = ({
   const [loading, setLoading] = useState(!(providedProperty || providedInvestment));
   const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
   const [paymentData, setPaymentData] = useState({
-    paymentMethod: 'card',
+    paymentMethod: 'flutterwave',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -163,6 +163,7 @@ const EscrowPaymentFlow = ({
   const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
   const [activeEscrowId, setActiveEscrowId] = useState(null);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   const propertyId = providedProperty?.id || providedProperty?.propertyId || propertyIdFromParams;
   const investmentId = providedInvestment?.id || investmentIdFromParams;
@@ -194,6 +195,19 @@ const EscrowPaymentFlow = ({
       setStep((prev) => (prev < 2 ? 2 : prev));
     }
   }, [property?.id, investment?.id, activeEscrowId]);
+
+  useEffect(() => {
+    console.log('🔥 EscrowPaymentFlow: Component mounting...');
+    console.log('🔥 EscrowPaymentFlow: providedProperty:', providedProperty);
+    console.log('🔥 EscrowPaymentFlow: providedInvestment:', providedInvestment);
+    
+    if (providedProperty || providedInvestment) {
+      console.log('🔥 EscrowPaymentFlow: Data already provided, setting loading to false');
+      setLoading(false);
+    } else {
+      console.log('🔥 EscrowPaymentFlow: No data provided, will fetch from params');
+    }
+  }, [providedProperty, providedInvestment]);
 
   useEffect(() => {
     if (providedProperty || providedInvestment) {
@@ -374,10 +388,9 @@ const EscrowPaymentFlow = ({
       toast.error('Checkout link unavailable. Please re-initialize payment.');
       return;
     }
-    const popup = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!popup) {
-      toast.error('Popup blocked. Please allow popups or use the launch button again.');
-    }
+    
+    // Display checkout in a centered modal with iframe instead of popup
+    setShowCheckoutModal(true);
   };
 
   const handleOpenCheckout = () => {
@@ -440,32 +453,53 @@ const EscrowPaymentFlow = ({
   };
 
   const handleProcessPayment = async () => {
+    console.log('🔥 EscrowPaymentFlow: handleProcessPayment called');
+    console.log('🔥 User:', user);
+    console.log('🔥 Payment data:', paymentData);
+    console.log('🔥 Property:', property);
+    console.log('🔥 Investment:', investment);
+    
     try {
+      console.log('🔥 EscrowPaymentFlow: Starting validation...');
+      
       // Validate payment data if card payment
       if (paymentData.paymentMethod === 'card') {
+        console.log('🔥 EscrowPaymentFlow: Validating card payment...');
+        console.log('🔥 EscrowPaymentFlow: Card details:', paymentData);
         if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
+          console.log('❌ EscrowPaymentFlow: Card validation failed');
           toast.error('Please fill in all payment details');
           return;
         }
+      } else {
+        console.log('🔥 EscrowPaymentFlow: Using Flutterwave payment, skipping card validation');
       }
 
+      console.log('🔥 EscrowPaymentFlow: Setting loading state...');
       setLoading(true);
       setPaymentError('');
 
       // Step 1: Create escrow transaction using EscrowContext
       const currentItem = property || investment;
+      console.log('🔥 EscrowPaymentFlow: Current item:', currentItem);
+      
       const itemPriceValue = currentItem ? (property ? property.price : (investment?.minInvestment || investment?.minimumInvestment || 0)) : 0;
       const itemTitleValue = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
       const itemId = property ? property.id : investment?.id;
+      
+      console.log('🔥 EscrowPaymentFlow: Item details:', { itemId, itemPriceValue, itemTitleValue });
 
       if (!itemId || !itemPriceValue || itemPriceValue <= 0) {
+        console.log('❌ EscrowPaymentFlow: Invalid item or price');
         toast.error('Invalid item or price');
         setLoading(false);
         return;
       }
 
       const sellerId = property?.owner?.id || property?.ownerId || investment?.vendorId || investment?.sponsorId || null;
+      console.log('🔥 EscrowPaymentFlow: Seller ID:', sellerId);
       
+      console.log('🔥 EscrowPaymentFlow: Creating escrow transaction...');
       // Create escrow transaction using the context function
       const escrowResult = await createEscrowTransaction(
         itemId,
@@ -492,6 +526,8 @@ const EscrowPaymentFlow = ({
         }
       );
 
+      console.log('🔥 EscrowPaymentFlow: Escrow result:', escrowResult);
+
       if (!escrowResult.success) {
         toast.error(escrowResult.error || 'Failed to create escrow transaction');
         setLoading(false);
@@ -516,29 +552,41 @@ const EscrowPaymentFlow = ({
 
       try {
         setIsInitializingPayment(true);
+        console.log('🚀 EscrowPaymentFlow: Starting payment initialization...');
+
+        const payload = {
+          amount: itemPriceValue,
+          paymentMethod: 'flutterwave',
+          paymentType: 'escrow',
+          relatedEntity: {
+            type: transactionType === 'investment' ? 'investment' : 'property',
+            id: escrowId,
+            metadata: {
+              escrowId,
+              propertyId: property?.id || null,
+              investmentId: investment?.id || null
+            }
+          },
+          description: buildPaymentDescription(itemTitleValue, transactionType),
+          currency: 'NGN'
+        };
+        
+        console.log('🔥 EscrowPaymentFlow: API Payload:', payload);
+        console.log('🔥 EscrowPaymentFlow: API URL:', getApiUrl('/payments/initialize'));
+        console.log('🔥 EscrowPaymentFlow: Headers:', headers);
+        console.log('🔥 EscrowPaymentFlow: Cache busting with timestamp:', Date.now());
 
         const response = await fetch(getApiUrl('/payments/initialize'), {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            amount: itemPriceValue,
-            paymentMethod: 'flutterwave',
-            paymentType: 'escrow',
-            relatedEntity: {
-              type: transactionType === 'investment' ? 'investment' : 'property',
-              id: escrowId,
-              metadata: {
-                escrowId,
-                propertyId: property?.id || null,
-                investmentId: investment?.id || null
-              }
-            },
-            description: buildPaymentDescription(itemTitleValue, transactionType),
-            currency: 'NGN'
-          })
+          body: JSON.stringify(payload),
+          cache: 'no-store'
         });
 
+        console.log('🔥 EscrowPaymentFlow: Response status:', response.status);
         const data = await response.json();
+        console.log('🔥 EscrowPaymentFlow: Response data:', data);
+
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Failed to initialize payment');
         }
@@ -584,7 +632,9 @@ const EscrowPaymentFlow = ({
         setIsInitializingPayment(false);
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('❌ EscrowPaymentFlow: Payment error:', error);
+      console.error('❌ EscrowPaymentFlow: Error details:', error.message);
+      console.error('❌ EscrowPaymentFlow: Error stack:', error.stack);
       toast.error(`Payment failed: ${error.message || 'An error occurred'}`);
     } finally {
       setLoading(false);
@@ -757,7 +807,13 @@ const EscrowPaymentFlow = ({
 
             <button
               type="button"
-              onClick={handleProcessPayment}
+              onClick={() => {
+                console.log('🔥 EscrowPaymentFlow: Button clicked!');
+                console.log('🔥 EscrowPaymentFlow: loading:', loading);
+                console.log('🔥 EscrowPaymentFlow: isInitializingPayment:', isInitializingPayment);
+                console.log('🔥 EscrowPaymentFlow: step:', step);
+                handleProcessPayment();
+              }}
               disabled={loading || isInitializingPayment}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
             >
@@ -917,17 +973,50 @@ const EscrowPaymentFlow = ({
 
   if (isModal) {
     return (
-      <div className="bg-white rounded-2xl shadow-2xl p-4 md:p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          aria-label="Close payment flow"
-        >
-          &times;
-        </button>
-        <div className="max-h-[80vh] overflow-y-auto pr-2">
-          {content}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
+            aria-label="Close payment flow"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            {content}
+          </div>
         </div>
+
+        {/* Flutterwave Checkout Modal */}
+        {showCheckoutModal && checkoutUrl && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
+                <button
+                  onClick={() => setShowCheckoutModal(false)}
+                  className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors"
+                  aria-label="Close checkout"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <iframe
+                  src={checkoutUrl}
+                  title="Flutterwave Checkout"
+                  className="w-full h-full border-none"
+                  allow="payment"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -935,6 +1024,35 @@ const EscrowPaymentFlow = ({
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       {content}
+      
+      {/* Flutterwave Checkout Modal - Full Page */}
+      {showCheckoutModal && checkoutUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
+              <button
+                onClick={() => setShowCheckoutModal(false)}
+                className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors"
+                aria-label="Close checkout"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={checkoutUrl}
+                title="Flutterwave Checkout"
+                className="w-full h-full border-none"
+                allow="payment"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
