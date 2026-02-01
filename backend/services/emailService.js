@@ -611,6 +611,39 @@ PropertyArk Platform
       return null;
     }
   }
+
+  /**
+   * Send admin notification for new chat conversation
+   */
+  async sendNewChatNotificationEmail(adminEmail, contactInfo, conversationId, category, priority, propertyInfo = null) {
+    try {
+      const subject = `[${priority.toUpperCase()}] New ${category.replace(/_/g, ' ')} from ${contactInfo.name}`;
+      
+      const dashboardLink = `${process.env.FRONTEND_URL || 'https://propertyark.com'}/admin/chat/${conversationId}`;
+      
+      const html = `
+        <h2>New Support Chat Request</h2>
+        <p>You have received a new chat from:</p>
+        <ul>
+          <li><strong>Name:</strong> ${contactInfo.name}</li>
+          <li><strong>Email:</strong> ${contactInfo.email}</li>
+          <li><strong>Category:</strong> ${category.replace(/_/g, ' ')}</li>
+          <li><strong>Priority:</strong> <span style="color: ${priority === 'urgent' ? 'red' : priority === 'high' ? 'orange' : 'green'}; font-weight: bold;">${priority.toUpperCase()}</span></li>
+          ${contactInfo.phone ? `<li><strong>Phone:</strong> ${contactInfo.phone}</li>` : ''}
+          ${propertyInfo ? `<li><strong>Property:</strong> ${propertyInfo.title}</li>` : ''}
+        </ul>
+        <p><a href="${dashboardLink}" style="background-color: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Chat</a></p>
+        <p>Please respond as soon as possible.</p>
+      `;
+
+      const text = `New support chat from ${contactInfo.name} (${contactInfo.email}). Category: ${category}. Priority: ${priority}. Visit ${dashboardLink} to respond.`;
+
+      return await this.sendEmail(adminEmail, subject, html, text);
+    } catch (error) {
+      console.error('Error sending new chat notification email:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Create and export singleton instance

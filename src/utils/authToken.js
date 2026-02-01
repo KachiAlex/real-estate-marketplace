@@ -12,14 +12,34 @@ import { auth } from '../config/firebase';
  * @returns {Promise<string|null>} The token or null if not available
  */
 export const getAuthToken = async (forceRefresh = false) => {
+  let tokenSource = null;
+
   try {
-    // First, try to get a fresh token from Firebase auth
-    if (auth.currentUser) {
+    tokenSource = localStorage.getItem('tokenSource');
+  } catch (storageError) {
+    console.warn('getAuthToken: Could not read tokenSource from storage:', storageError);
+  }
+
+  if (tokenSource === 'backend') {
+    try {
+      const backendToken = localStorage.getItem('token');
+      if (backendToken) {
+        return backendToken;
+      }
+    } catch (storageError) {
+      console.warn('getAuthToken: Failed to read backend token from storage:', storageError);
+    }
+  }
+
+  try {
+    // Only attempt Firebase token refresh when backend tokens are not explicitly preferred
+    if (auth.currentUser && tokenSource !== 'backend') {
       const token = await auth.currentUser.getIdToken(forceRefresh);
       if (token) {
-        // Update localStorage with fresh token
+        // Update localStorage with fresh token and mark its source
         localStorage.setItem('token', token);
         localStorage.setItem('firebaseToken', token);
+        localStorage.setItem('tokenSource', 'firebase');
         return token;
       }
     }
@@ -28,9 +48,13 @@ export const getAuthToken = async (forceRefresh = false) => {
   }
 
   // Fallback to stored tokens
-  const storedToken = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
-  if (storedToken) {
-    return storedToken;
+  try {
+    const storedToken = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
+    if (storedToken) {
+      return storedToken;
+    }
+  } catch (storageError) {
+    console.warn('getAuthToken: Failed to read stored token:', storageError);
   }
 
   // Try to get token from user object in localStorage

@@ -248,7 +248,7 @@ const mockUsers = [
     id: '2',
     firstName: 'Admin',
     lastName: 'User',
-    email: 'admin@example.com',
+    email: 'admin@propertyark.com',
     password: 'admin123',
     role: 'admin',
     userCode: 'PAK-ADM002',
@@ -569,6 +569,14 @@ export const AuthProvider = ({ children }) => {
   const exchangeFirebaseTokenForBackendToken = async (firebaseToken) => {
     try {
       if (!firebaseToken) return null;
+      
+      // Check if we're in development and backend might not be available
+      if (window.location.hostname === 'localhost') {
+        console.log('AuthContext: Skipping backend token exchange in development mode');
+        // Return a mock token for development
+        return 'mock-admin-token';
+      }
+      
       const response = await fetch(getApiUrl('/auth/firebase-exchange'), {
         method: 'POST',
         headers: {
@@ -580,6 +588,11 @@ export const AuthProvider = ({ children }) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.warn('AuthContext: Backend token exchange failed:', errorData);
+        // Return mock token for development instead of throwing error
+        if (window.location.hostname === 'localhost') {
+          return 'mock-admin-token';
+        }
         throw new Error(errorData?.message || `Firebase exchange failed with status ${response.status}`);
       }
 
@@ -633,6 +646,7 @@ export const AuthProvider = ({ children }) => {
           const data = await response.json();
           if (data.success && data.token) {
             localStorage.setItem('token', data.token);
+            localStorage.setItem('tokenSource', 'backend');
             const updatedUser = {
               ...userObj,
               token: data.token,
@@ -845,6 +859,7 @@ export const AuthProvider = ({ children }) => {
               // Store token for API calls
               if (data.token) {
                 localStorage.setItem('token', data.token);
+                localStorage.setItem('tokenSource', 'backend');
               }
               
               console.log('AuthContext: Backend API login successful for user:', backendUser.email);
@@ -967,6 +982,8 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('token', exchangeResult.token);
           finalUser.token = exchangeResult.token;
 
+          localStorage.setItem('tokenSource', 'backend');
+
           if (exchangeResult.user) {
             const exchangedUser = exchangeResult.user;
             finalUser = {
@@ -984,6 +1001,7 @@ export const AuthProvider = ({ children }) => {
           }
         } else {
           localStorage.setItem('token', firebaseToken); // Fallback to Firebase token if exchange fails
+          localStorage.setItem('tokenSource', 'firebase');
           finalUser.token = firebaseToken;
         }
       }
@@ -1001,6 +1019,9 @@ export const AuthProvider = ({ children }) => {
 
       if (finalUser.token) {
         localStorage.setItem('token', finalUser.token);
+        if (!localStorage.getItem('tokenSource')) {
+          localStorage.setItem('tokenSource', usedMockUser ? 'firebase' : 'backend');
+        }
       }
 
       setActiveRole(resolvedActiveRole);
@@ -1020,34 +1041,33 @@ export const AuthProvider = ({ children }) => {
       // After successful login, fetch user dashboard data with token (only if Firebase token exists)
       if (firebaseToken) {
         try {
-          const apiBaseUrl = getApiUrl();
-          
-          const dashboardResponse = await fetch(`${apiBaseUrl}/dashboard/user`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${firebaseToken}`,
-              'Content-Type': 'application/json'
+          // Skip dashboard API call in development mode
+          if (window.location.hostname === 'localhost') {
+            console.log('AuthContext: Skipping dashboard API call in development mode');
+          } else {
+            const apiBaseUrl = getApiUrl();
+            
+            const dashboardResponse = await fetch(`${apiBaseUrl}/dashboard/user`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${firebaseToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (dashboardResponse.ok) {
+              const dashboardData = await dashboardResponse.json();
+              console.log('AuthContext: Dashboard data fetched successfully');
+              // Optionally merge dashboard data with user object
+            } else {
+              console.warn('AuthContext: Dashboard data fetch failed:', dashboardResponse.status);
             }
-          });
-          
-          if (dashboardResponse.ok) {
-            const dashboardData = await dashboardResponse.json();
-            console.log('AuthContext: Dashboard data fetched successfully');
-            // Optionally merge dashboard data with user object
-          } else if (dashboardResponse.status === 401) {
-            // Suppress 401 for non-Firebase users (expected)
-            console.log('AuthContext: Dashboard API returned 401 - using local data');
-            // Non-fatal - user can still use the app
           }
         } catch (dashboardError) {
-          // Suppress errors for mock users
-          console.log('AuthContext: Failed to fetch dashboard data (using local data)');
-          // Non-fatal - continue with login
+          console.warn('AuthContext: Dashboard API call failed', dashboardError?.message || dashboardError);
+          // Don't fail the login process if dashboard call fails
         }
-      } else {
-        // No Firebase token (mock user) - skip API call
-        console.log('AuthContext: No Firebase token, skipping dashboard API call');
-      }
+      } 
       
       // Handle redirect after login
       const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
@@ -1270,6 +1290,7 @@ export const AuthProvider = ({ children }) => {
           // Store token for API calls
           if (data.token) {
             localStorage.setItem('token', data.token);
+            localStorage.setItem('tokenSource', 'backend');
           }
           
           console.log('AuthContext: Backend API registration successful for user:', backendUser.email);
@@ -1421,6 +1442,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('currentUser');
       localStorage.removeItem('activeRole');
       localStorage.removeItem('token'); // Clear backend API token
+      localStorage.removeItem('tokenSource');
       localStorage.removeItem('authRedirectUrl');
       // Sign out from Firebase if signed in
       if (auth.currentUser) {

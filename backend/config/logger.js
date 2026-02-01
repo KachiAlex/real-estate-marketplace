@@ -34,8 +34,26 @@ const prodFormat = JSON.stringify({
   timestamp: ':date[iso]'
 });
 
-// Create logger middleware based on environment
-const createLogger = () => {
+// Create logger object with methods
+const createLogger = (moduleName = 'App') => {
+  return {
+    info: (message, data = {}) => {
+      infoLogger(`[${moduleName}] ${message}`, data);
+    },
+    error: (message, data = {}) => {
+      errorLogger(new Error(message), null, { ...data, module: moduleName });
+    },
+    warn: (message, data = {}) => {
+      warnLogger(`[${moduleName}] ${message}`, data);
+    },
+    security: (action, userId, details = {}) => {
+      securityLogger(`[${moduleName}] ${action}`, userId, details);
+    }
+  };
+};
+
+// Create morgan middleware based on environment
+const createMorganLogger = () => {
   if (process.env.NODE_ENV === 'production') {
     // In production, log to console in JSON format (for log aggregation services)
     return morgan(prodFormat);
@@ -123,6 +141,7 @@ const warnLogger = (message, data = {}) => {
 
 module.exports = {
   createLogger,
+  createMorganLogger,
   securityLogger,
   errorLogger,
   infoLogger,

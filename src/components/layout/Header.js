@@ -2,9 +2,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { FaHome, FaBars, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaHome, FaBars, FaTimes, FaSearch, FaUser, FaShieldAlt } from 'react-icons/fa';
 import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
+import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 
 // Ensure Sign In button is always visible - browser extension resistant
@@ -36,6 +37,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showVendorRegistrationModal, setShowVendorRegistrationModal] = useState(false);
+  const [showAdminProfileModal, setShowAdminProfileModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const { isSearchOpen, openSearch, closeSearch, handleResultClick } = useGlobalSearch();
   
@@ -58,7 +60,17 @@ const Header = () => {
   
   // Detect if we're in vendor context to route profile correctly
   const isVendorContext = location.pathname.startsWith('/vendor');
-  const profilePath = isVendorContext ? '/vendor/profile' : '/profile';
+  const isAdminContext = location.pathname.startsWith('/admin') || user?.role === 'admin';
+  const profilePath = isVendorContext ? '/vendor/profile' : (isAdminContext ? '#' : '/profile');
+  
+  // Debug logging
+  console.log('Header Debug:', {
+    pathname: location.pathname,
+    userRole: user?.role,
+    isAdminContext,
+    isVendorContext,
+    profilePath
+  });
 
   // Quick Filters with sublinks
   const quickFilters = {
@@ -108,6 +120,14 @@ const Header = () => {
         navigate('/vendor/dashboard', { replace: true });
       }
     }
+  };
+
+  const handleAdminProfileClick = (e) => {
+    console.log('Admin profile clicked!', { e, showAdminProfileModal });
+    e.preventDefault();
+    e.stopPropagation();
+    setShowAdminProfileModal(true);
+    setIsUserMenuOpen(false);
   };
 
   // Keyboard shortcut for global search (Ctrl+K or Cmd+K)
@@ -237,32 +257,41 @@ const Header = () => {
                         </div>
                       )}
                     </div>
-                    <Link
-                      to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsUserMenuOpen(false);
-                      }}
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      to={profilePath}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsUserMenuOpen(false);
-                      }}
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                    >
-                      Profile
-                    </Link>
-                    {user.role === 'admin' && (
+                    {/* Admin Profile Link - Only show for admin context */}
+                    {isAdminContext && (
+                      <button
+                        onClick={handleAdminProfileClick}
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      >
+                        <FaUser className="inline mr-2" />
+                        Profile
+                      </button>
+                    )}
+                    
+                    {/* Regular Profile Link - Only show for non-admin */}
+                    {!isAdminContext && (
+                      <Link
+                        to={profilePath}
+                        onClick={(e) => {
+                          console.log('Regular profile clicked', { profilePath, isAdminContext });
+                          e.stopPropagation();
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      >
+                        <FaUser className="inline mr-2" />
+                        Profile
+                      </Link>
+                    )}
+                    
+                    {/* Admin Panel Link - Only show for admin users not in admin context */}
+                    {user.role === 'admin' && !isAdminContext && (
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
                       >
+                        <FaShieldAlt className="inline mr-2" />
                         Admin Panel
                       </Link>
                     )}
@@ -759,13 +788,25 @@ const Header = () => {
                       {user.firstName} {user.lastName}
                     </span>
                   </div>
-                  <Link
-                    to={profilePath}
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
+                  {isAdminContext ? (
+                    <button
+                      onClick={(e) => {
+                        handleAdminProfileClick(e);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="block w-full text-left text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                    >
+                      Profile
+                    </button>
+                  ) : (
+                    <Link
+                      to={profilePath}
+                      className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                  )}
                   <Link
                     to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
@@ -864,6 +905,12 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Admin Profile Modal */}
+      <AdminProfileModal
+        isOpen={showAdminProfileModal}
+        onClose={() => setShowAdminProfileModal(false)}
+      />
 
       {/* Global Search Modal */}
       {isSearchOpen && (

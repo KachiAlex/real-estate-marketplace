@@ -1793,41 +1793,9 @@ export const PropertyProvider = ({ children }) => {
         }
         throw firestoreError;
       }
+    };
 
-      let data = {};
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        console.warn('verifyProperty: Could not parse API response JSON', parseError);
-        let data = {};
-        try {
-          data = await response.json();
-        } catch (parseError) {
-          console.warn('verifyProperty: Could not parse API response JSON', parseError);
-        }
-
-        if (!response.ok || !data.success) {
-          const message = data?.message || `Failed to verify property (status ${response.status})`;
-          throw new Error(message);
-        }
-
-        toast.success(`Property ${verificationStatus} successfully`);
-
-        // Best-effort sync to Firestore for parity when docs exist there
-        syncToFirestore().catch(err => {
-          console.warn('verifyProperty: Firestore sync after API success failed', err);
-        });
-
-        return true;
-      } catch (apiError) {
-        console.warn('verifyProperty: API verification failed, attempting Firestore fallback', apiError);
-        // Only fall back to Firestore if we have the right auth context
-        if (!firebaseAuthReady || !auth.currentUser) {
-          throw apiError;
-        }
-      }
-
-      // Firestore fallback (or primary path when API unavailable)
+    try {
       const firestoreSuccess = await syncToFirestore();
       if (firestoreSuccess) {
         toast.success(`Property ${verificationStatus} successfully`);

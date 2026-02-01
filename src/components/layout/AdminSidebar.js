@@ -7,8 +7,10 @@ import {
   FaChartBar,
   FaBlog,
   FaCheckCircle,
-  FaUniversity
+  FaUniversity,
+  FaComments
 } from 'react-icons/fa';
+import ChatNotificationBadge from '../ChatNotificationBadge';
 
 export const ADMIN_MENU_ITEMS = [
     { 
@@ -47,6 +49,12 @@ export const ADMIN_MENU_ITEMS = [
       icon: FaBlog,
       description: 'Manage blog posts and content'
     },
+    { 
+      id: 'chat-support', 
+      label: 'Chat Support', 
+      icon: FaComments,
+      description: 'Handle buyer and vendor chat requests'
+    },
     // { 
     //   id: 'mortgage-banks', 
     //   label: 'Mortgage Banks', 
@@ -55,7 +63,7 @@ export const ADMIN_MENU_ITEMS = [
     // }
   ];
 
-const AdminSidebar = ({ activeTab, setActiveTab }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0, urgent: 0 } }) => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -94,7 +102,16 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
                 }`}
                 title={item.description}
               >
-                <Icon className="text-lg flex-shrink-0" />
+                <div className="relative">
+                  <Icon className="text-lg flex-shrink-0" />
+                  {/* Show notification badge for chat support */}
+                  {item.id === 'chat-support' && (chatNotifications.unread > 0 || chatNotifications.urgent > 0) && (
+                    <ChatNotificationBadge 
+                      unreadCount={chatNotifications.unread} 
+                      urgentCount={chatNotifications.urgent} 
+                    />
+                  )}
+                </div>
                 <div className="flex-1">
                   <span className="block">{item.label}</span>
                   <span className={`text-xs leading-snug ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>

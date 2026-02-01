@@ -159,6 +159,7 @@ const EscrowPaymentFlow = ({
   const [pendingPayment, setPendingPayment] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [paymentError, setPaymentError] = useState('');
+  const [providerLimit, setProviderLimit] = useState(null);
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
   const [activeEscrowId, setActiveEscrowId] = useState(null);
@@ -588,6 +589,26 @@ const EscrowPaymentFlow = ({
         console.log('🔥 EscrowPaymentFlow: Response data:', data);
 
         if (!response.ok || !data.success) {
+          // Try to extract a provider-reported maximum charge or friendly message
+          const pd = data.data?.providerData || data.providerData || data.error?.providerData || data.error?.meta || {};
+          const rawMsg = data.message || pd?.message || data.error?.message || '';
+          // look for numeric max in several possible keys
+          const maxCandidates = [pd?.maximum_amount, pd?.maximumAmount, pd?.max_amount, pd?.maxAmount, pd?.max_charge, pd?.maxCharge];
+          const foundMax = maxCandidates.find(v => Number.isFinite(Number(v))) || null;
+          if (foundMax) {
+            setProviderLimit(Number(foundMax));
+            setPaymentError(`Charge amount must not exceed ${formatCurrency(Number(foundMax))}. Try Bank Transfer or split the payment.`);
+            setIsInitializingPayment(false);
+            return;
+          }
+
+          // fallback: inspect message text for 'exceed' patterns
+          if (/exceed|maximum|max/i.test(rawMsg)) {
+            setPaymentError(rawMsg || 'Charge amount exceeds provider limit. Try another payment method.');
+            setIsInitializingPayment(false);
+            return;
+          }
+
           throw new Error(data.message || 'Failed to initialize payment');
         }
 
@@ -624,11 +645,11 @@ const EscrowPaymentFlow = ({
         if (investmentId) {
           localStorage.setItem('pendingInvestmentProject', JSON.stringify(investment));
         }
-      } catch (initError) {
-        console.error('EscrowPaymentFlow: payment initialization error', initError);
-        setPaymentError(initError.message || 'Unable to initialize payment.');
-        toast.error(initError.message || 'Failed to initialize payment');
-      } finally {
+        } catch (initError) {
+          console.error('EscrowPaymentFlow: payment initialization error', initError);
+          setPaymentError(initError.message || 'Unable to initialize payment.');
+          toast.error(initError.message || 'Failed to initialize payment');
+        } finally {
         setIsInitializingPayment(false);
       }
     } catch (error) {
@@ -884,6 +905,11 @@ const EscrowPaymentFlow = ({
                 {paymentError}
               </div>
             )}
+            {providerLimit && (
+              <div className="mt-3 text-sm text-gray-700">
+                Suggested actions: split the payment into smaller amounts, or use Bank Transfer which supports larger transfers.
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg shadow p-6 space-y-4">
@@ -992,7 +1018,7 @@ const EscrowPaymentFlow = ({
         {/* Flutterwave Checkout Modal */}
         {showCheckoutModal && checkoutUrl && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-5xl lg:max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
                 <button
@@ -1009,7 +1035,7 @@ const EscrowPaymentFlow = ({
                 <iframe
                   src={checkoutUrl}
                   title="Flutterwave Checkout"
-                  className="w-full h-full border-none"
+                  className="w-full h-[75vh] min-h-[640px] border-none"
                   allow="payment"
                   sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                 />
@@ -1028,7 +1054,7 @@ const EscrowPaymentFlow = ({
       {/* Flutterwave Checkout Modal - Full Page */}
       {showCheckoutModal && checkoutUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-5xl lg:max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
               <button
@@ -1045,7 +1071,7 @@ const EscrowPaymentFlow = ({
               <iframe
                 src={checkoutUrl}
                 title="Flutterwave Checkout"
-                className="w-full h-full border-none"
+                className="w-full h-[75vh] min-h-[640px] border-none"
                 allow="payment"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
               />

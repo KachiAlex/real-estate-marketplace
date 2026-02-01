@@ -6,13 +6,15 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { db, auth } from '../config/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaPlus, FaEdit, FaTrash, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaPhone, FaCheck, FaTimes, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-import PropertyVerification from '../components/PropertyVerification';
+import PropertyVerification from '../components/PropertyVerificationNew';
+import { getVerificationStatus, isVerificationRequested, isVerificationApproved, getVerificationButtonText, getVerificationButtonClass } from '../utils/verificationStatus';
 import VendorInspectionRequests from '../components/VendorInspectionRequests';
 import NotificationDropdown from '../components/NotificationDropdown';
 import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
 import VendorViewsChart from '../components/VendorViewsChart';
 import VendorConversionChart from '../components/VendorConversionChart';
+import AdminChatButton from '../components/AdminChatButton';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
@@ -239,12 +241,12 @@ const VendorDashboard = () => {
     } catch (error) {
       console.error('VendorDashboard: Error fetching properties:', error);
       toast.error('Failed to load properties');
-      setProperties([]);
     } finally {
       setPropertiesLoading(false);
     }
   }, [user]);
 
+  // Load verification requests when user or auth state changes
   const fetchVerificationRequests = useCallback(async () => {
     if (!user) {
       setVerificationRequests([]);
@@ -438,14 +440,19 @@ const VendorDashboard = () => {
   }, []);
 
   const handleVerificationCtaClick = (property) => {
-    const verificationState = getPropertyVerificationState(property);
-
-    if (verificationState === 'pending') {
+    // Check if verification is already requested or approved
+    if (isVerificationApproved(property.id)) {
+      toast('This property is already verified!', { icon: '✅' });
+      return;
+    }
+    
+    if (isVerificationRequested(property.id)) {
       toast('Verification already requested for this property.', { icon: 'ℹ️' });
       return;
     }
 
-    handleRequestVerification(property);
+    setSelectedProperty(property);
+    setShowVerificationModal(true);
   };
 
   const getStatusColor = (status) => {
@@ -973,9 +980,10 @@ const VendorDashboard = () => {
               {!propertiesLoading && properties.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {properties.map((property) => {
-                  const verificationState = getPropertyVerificationState(property);
-                  const badgeMeta = getVerificationBadgeMeta(verificationState);
-                  const ctaMeta = getVerificationCtaMeta(verificationState);
+                  const verificationStatus = getVerificationStatus(property.id);
+                  const buttonText = getVerificationButtonText(property.id);
+                  const buttonClass = getVerificationButtonClass(property.id);
+                  const isDisabled = isVerificationApproved(property.id) || isVerificationRequested(property.id);
 
                   return (
                   <div key={property.id} className="property-card">
@@ -1077,24 +1085,31 @@ const VendorDashboard = () => {
                         {/* Verification Status and Button */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${badgeMeta.badgeClass}`}>
-                              {badgeMeta.label}
-                            </span>
+                            {verificationStatus && (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                verificationStatus.status === 'approved' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : verificationStatus.status === 'requested'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {verificationStatus.status === 'approved' 
+                                  ? '✓ Verified'
+                                  : verificationStatus.status === 'requested'
+                                  ? '⏳ Verification Requested'
+                                  : 'Not Verified'
+                                }
+                              </span>
+                            )}
                           </div>
 
-                          {ctaMeta.show && (
-                            <button
-                              onClick={() => handleVerificationCtaClick(property)}
-                              disabled={ctaMeta.disabled}
-                              className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                                ctaMeta.disabled
-                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                              }`}
-                            >
-                              {ctaMeta.label}
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleVerificationCtaClick(property)}
+                            disabled={isDisabled}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${buttonClass}`}
+                          >
+                            {buttonText}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1332,11 +1347,24 @@ const VendorDashboard = () => {
           property={selectedProperty}
           onClose={() => {
             setShowVerificationModal(false);
-            setSelectedProperty(null);
+            // Refresh the properties to show updated verification status
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
           }}
-          onSuccess={handleVerificationSuccess}
+          onSuccess={() => {
+            setShowVerificationModal(false);
+            toast.success('Verification request submitted successfully!', { icon: '✅' });
+            // Refresh the properties to show updated verification status
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }}
         />
       )}
+      
+      {/* Admin Chat Support Button */}
+      <AdminChatButton category="vendor_support" />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ require('dotenv').config();
 // Import configurations
 const { initializeFirestore } = require('./config/firestore');
 const { securityConfig } = require('./config/security');
-const { createLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
+const { createLogger, createMorganLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -100,6 +100,14 @@ setImmediate(async () => {
   }
 
   try {
+    const chatService = require('./services/chatService');
+    chatService.initializeSocketIO(io);
+    console.log('✅ Chat service initialized');
+  } catch (chatError) {
+    console.warn('⚠️ Chat service initialization failed:', chatError.message);
+  }
+
+  try {
     const emailStatus = await emailService.verifyConnection();
     infoLogger('Email service status', { status: emailStatus.success ? 'Ready' : 'Failed' });
   } catch (emailError) {
@@ -132,7 +140,7 @@ const emailService = require('./services/emailService');
 // (right after const app = express()) to ensure it's the first route
 
 app.use(securityConfig.helmet);
-app.use(createLogger());
+app.use(createMorganLogger());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -357,6 +365,43 @@ try {
   app.use('/api/dashboard', require('./routes/dashboard'));
 } catch (error) {
   console.error('Failed to load dashboard routes:', error.message);
+}
+
+// Rate limiting for chat routes (prevent spam)
+const chatRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per 15 minutes
+  message: 'Too many chat messages, please try again later',
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => req.user && req.user.role === 'admin' // Don't rate limit admins
+});
+
+const chatConversationRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 new conversations per hour
+  message: 'Too many new conversations, please wait before starting another',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+try {
+  const chatRouter = require('./routes/chat');
+  // Apply rate limiting via middleware on the router itself
+  chatRouter.use('/conversations', chatConversationRateLimit);
+  chatRouter.use('/send', chatRateLimit);
+  app.use('/api/chat', chatRouter);
+  infoLogger('Chat routes loaded successfully');
+} catch (error) {
+  errorLogger(error);
+}
+
+try {
+  const adminChatRouter = require('./routes/adminChat');
+  app.use('/api/admin/chat', adminChatRouter);
+  infoLogger('Admin chat routes loaded successfully');
+} catch (error) {
+  errorLogger(error);
 }
 
 // API Routes

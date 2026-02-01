@@ -12,7 +12,8 @@ import {
   FaEye,
   FaTimes,
   FaCheckCircle,
-  FaSpinner
+  FaSpinner,
+  FaGavel
 } from 'react-icons/fa';
 import PropertyConfirmation from './PropertyConfirmation';
 import AdminDisputeResolution from './AdminDisputeResolution';
@@ -175,6 +176,14 @@ const EscrowDashboard = ({ userRole = 'buyer' }) => {
               const timer = getEscrowTimer(transaction.confirmationDeadline);
               const canAction = canTakeAction(transaction);
               
+              const confirmationDeadline = transaction.confirmationDeadline ? new Date(transaction.confirmationDeadline) : null;
+              const buyerTimelineMessage = confirmationDeadline
+                ? `Buyer must confirm possession or file a dispute by ${confirmationDeadline.toLocaleDateString()} (${confirmationDeadline.toLocaleTimeString()})`
+                : 'Buyer must confirm possession or file a dispute within 7 days of funding.';
+              const sellerTimelineMessage = confirmationDeadline
+                ? `Seller receives funds automatically after ${confirmationDeadline.toLocaleDateString()} if the buyer takes no action.`
+                : 'Seller funds auto-release after the buyer window closes (7 days).';
+
               return (
                 <div key={transaction.id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
@@ -232,10 +241,36 @@ const EscrowDashboard = ({ userRole = 'buyer' }) => {
                               <span className="text-red-600">Confirmation deadline expired</span>
                             </div>
                           )}
+                          <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50">
+                              <div className="flex items-center space-x-2 text-blue-800 font-semibold">
+                                <FaClock className="h-4 w-4" />
+                                <span>Escrow Timeline</span>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-700 font-medium">Buyer</p>
+                              <p className="text-sm text-gray-600">{buyerTimelineMessage}</p>
+                              <p className="mt-2 text-sm text-gray-700 font-medium">Seller</p>
+                              <p className="text-sm text-gray-600">{sellerTimelineMessage}</p>
+                            </div>
+                            <div className="p-4 rounded-2xl border border-rose-100 bg-rose-50">
+                              <div className="flex items-center space-x-2 text-rose-900 font-semibold">
+                                <FaGavel className="h-4 w-4" />
+                                <span>Dispute Guidance</span>
+                              </div>
+                              <ul className="mt-2 space-y-2 text-sm text-gray-700">
+                                <li>
+                                  <strong>Buyer:</strong> File a dispute from the confirmation modal with details/evidence before the 7-day window ends to pause fund release.
+                                </li>
+                                <li>
+                                  <strong>Seller:</strong> You will be notified immediately if a dispute is filed—respond promptly so admins can resolve and release or refund appropriately.
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+
                         </div>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={() => setSelectedTransaction(transaction)}

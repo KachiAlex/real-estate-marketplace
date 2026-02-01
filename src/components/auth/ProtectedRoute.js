@@ -25,7 +25,18 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdmin && !isAdminRoute) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (!isAdmin && isAdminRoute) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

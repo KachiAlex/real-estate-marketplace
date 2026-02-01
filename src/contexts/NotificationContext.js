@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import notificationService from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
@@ -18,6 +18,7 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState({ connected: false });
+  const tempIdRef = useRef(0);
 
   // Initialize notification service when user is available
   useEffect(() => {
@@ -69,6 +70,37 @@ export const NotificationProvider = ({ children }) => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+  }, []);
+
+  // Funnel local inspection events into notification center
+  useEffect(() => {
+    const handleInspectionNotification = (event) => {
+      const detail = event.detail;
+      if (!detail?.notifications || !Array.isArray(detail.notifications)) return;
+      const mapped = detail.notifications.map((entry) => ({
+        _id: `local-inspection-${Date.now()}-${tempIdRef.current++}`,
+        type: entry.type,
+        title: entry.title,
+        message: entry.message,
+        priority: entry.priority || 'medium',
+        status: 'unread',
+        createdAt: new Date().toISOString(),
+        data: {
+          requestId: entry.metadata?.requestId,
+          propertyTitle: entry.metadata?.propertyTitle,
+          buyerName: entry.metadata?.buyerName,
+          vendorName: entry.metadata?.vendorName,
+          recipientRoles: entry.roles,
+          source: 'local_inspection'
+        }
+      }));
+      if (!mapped.length) return;
+      setNotifications((prev) => [...mapped, ...prev]);
+      setUnreadCount((prev) => prev + mapped.length);
+    };
+
+    window.addEventListener('inspectionNotification', handleInspectionNotification);
+    return () => window.removeEventListener('inspectionNotification', handleInspectionNotification);
   }, []);
 
   const loadNotifications = useCallback(async (options = {}) => {

@@ -1949,7 +1949,6 @@ const Home = () => {
                 <li><Link to="/mortgage" className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</Link></li>
                 <li><Link to="/investment" className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
-                <li><Link to="/help" className="text-gray-400 hover:text-white transition-colors">Help & Support</Link></li>
               </ul>
             </div>
 

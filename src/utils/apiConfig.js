@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://api-kzs3jdpe7a-uc-759115682573.us-central1.run.app';
+const DEFAULT_API_BASE_URL = 'https://api-kzs3jdpe7a-uc.a.run.app'; // Deployed Firebase Functions
 
 const normalizeBaseUrl = (base) => {
   if (!base) return DEFAULT_API_BASE_URL;
@@ -13,30 +13,19 @@ const normalizeBaseUrl = (base) => {
 };
 
 export const getApiBaseUrl = () => {
-  return normalizeBaseUrl(
-    process.env.REACT_APP_API_URL ||
-      process.env.REACT_APP_API_BASE_URL ||
-      DEFAULT_API_BASE_URL
-  );
+  // Always use the deployed Firebase Functions API
+  return DEFAULT_API_BASE_URL;
 };
 
 export const getApiUrl = (path = '') => {
   const base = getApiBaseUrl();
-  if (!path) return `${base}/api`;
-
-  if (path.startsWith('http')) {
-    return path;
-  }
-
-  if (path.startsWith('/api')) {
-    return `${base}${path}`;
-  }
-
-  if (path.startsWith('/')) {
-    return `${base}/api${path}`;
-  }
-
-  return `${base}/api/${path}`;
+  const fullUrl = !path ? `${base}/api` :
+    path.startsWith('http') ? path :
+    path.startsWith('/api') ? `${base}${path}` :
+    path.startsWith('/') ? `${base}/api${path}` :
+    `${base}/api/${path}`;
+  
+  return fullUrl;
 };
 
 export default getApiBaseUrl;

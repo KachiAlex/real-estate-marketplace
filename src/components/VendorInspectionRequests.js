@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaCalendar, FaClock, FaMapMarkerAlt, FaUser, FaPhone, FaEnvelope, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaEye } from 'react-icons/fa';
-import { listInspectionRequestsByVendor, updateInspectionRequest } from '../services/inspectionService';
+import { listInspectionRequestsByVendor, updateInspectionRequest, getInspectionAnalytics } from '../services/inspectionService';
 import toast from 'react-hot-toast';
 
 const VendorInspectionRequests = () => {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -19,11 +20,31 @@ const VendorInspectionRequests = () => {
     loadInspectionRequests();
   }, [user]);
 
+  useEffect(() => {
+    if (!user?.id && !user?.email) {
+      setAnalytics(null);
+      return;
+    }
+    setAnalytics(getInspectionAnalytics({ role: 'vendor', vendorId: user?.id, vendorEmail: user?.email }));
+
+    const handleAnalyticsUpdate = (event) => {
+      const detail = event.detail || event;
+      if (detail?.vendorId && detail.vendorId !== user?.id) return;
+      setAnalytics(getInspectionAnalytics({ role: 'vendor', vendorId: user?.id, vendorEmail: user?.email }));
+    };
+
+    window.addEventListener('inspectionAnalyticsUpdated', handleAnalyticsUpdate);
+    return () => window.removeEventListener('inspectionAnalyticsUpdated', handleAnalyticsUpdate);
+  }, [user?.id, user?.email]);
+
   const loadInspectionRequests = async () => {
     try {
       setLoading(true);
       const data = await listInspectionRequestsByVendor(user?.id, user?.email);
       setRequests(data);
+      if (user?.id || user?.email) {
+        setAnalytics(getInspectionAnalytics({ role: 'vendor', vendorId: user?.id, vendorEmail: user?.email }));
+      }
     } catch (error) {
       console.error('Error loading inspection requests:', error);
       toast.error('Failed to load inspection requests');
@@ -32,12 +53,13 @@ const VendorInspectionRequests = () => {
     }
   };
 
-  const handleRespondToRequest = (request) => {
+  const handleRespondToRequest = (request, initialType = 'accept') => {
     setSelectedRequest(request);
     setShowResponseModal(true);
     setProposedDate(request.preferredDate);
     setProposedTime(request.preferredTime);
     setVendorMessage('');
+    setResponseType(initialType);
   };
 
   const handleSubmitResponse = async () => {
@@ -92,7 +114,10 @@ const VendorInspectionRequests = () => {
       'pending_vendor': { color: 'bg-yellow-100 text-yellow-800', text: 'Pending Response' },
       'accepted': { color: 'bg-green-100 text-green-800', text: 'Accepted' },
       'proposed_new_time': { color: 'bg-blue-100 text-blue-800', text: 'New Time Proposed' },
-      'declined': { color: 'bg-red-100 text-red-800', text: 'Declined' }
+      'declined': { color: 'bg-red-100 text-red-800', text: 'Declined' },
+      'buyer_rescheduled': { color: 'bg-purple-100 text-purple-800', text: 'Buyer Rescheduled' },
+      'cancelled_by_buyer': { color: 'bg-gray-200 text-gray-700', text: 'Cancelled by Buyer' },
+      'cancelled_by_vendor': { color: 'bg-gray-200 text-gray-700', text: 'Cancelled by You' }
     };
     
     const badge = badges[status] || badges['pending_vendor'];
@@ -110,6 +135,37 @@ const VendorInspectionRequests = () => {
       return dateObj.toLocaleDateString() + ' at ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
       return `${date} at ${time}`;
+    }
+  };
+
+  const handleAcceptBuyerReschedule = async (request) => {
+    const ok = await updateInspectionRequest(request.id, {
+      status: 'accepted',
+      confirmedDate: request.preferredDate,
+      confirmedTime: request.preferredTime,
+      vendorMessage: 'Buyer reschedule accepted'
+    });
+    if (ok) {
+      toast.success('Rescheduled inspection confirmed');
+      loadInspectionRequests();
+    } else {
+      toast.error('Failed to confirm reschedule');
+    }
+  };
+
+  const handleVendorCancel = async (request) => {
+    const confirmCancel = window.confirm('Cancel this inspection? The buyer will be notified.');
+    if (!confirmCancel) return;
+    const ok = await updateInspectionRequest(request.id, {
+      status: 'cancelled_by_vendor',
+      vendorMessage: 'Vendor cancelled the appointment',
+      cancelledAt: new Date().toISOString()
+    });
+    if (ok) {
+      toast.success('Inspection cancelled');
+      loadInspectionRequests();
+    } else {
+      toast.error('Failed to cancel inspection');
     }
   };
 
@@ -133,6 +189,27 @@ const VendorInspectionRequests = () => {
           Refresh
         </button>
       </div>
+
+      {analytics && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p className="text-sm text-blue-600">Pending Responses</p>
+            <p className="text-3xl font-semibold text-blue-900">{analytics.pendingResponses}</p>
+          </div>
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <p className="text-sm text-green-600">Confirmed</p>
+            <p className="text-3xl font-semibold text-green-900">{analytics.confirmed}</p>
+          </div>
+          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+            <p className="text-sm text-purple-600">Buyer Reschedules</p>
+            <p className="text-3xl font-semibold text-purple-900">{analytics.buyerReschedules}</p>
+          </div>
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+            <p className="text-sm text-red-600">Buyer Cancellations</p>
+            <p className="text-3xl font-semibold text-red-900">{analytics.cancelledByBuyer}</p>
+          </div>
+        </div>
+      )}
 
       {requests.length === 0 ? (
         <div className="text-center py-12">
@@ -198,6 +275,14 @@ const VendorInspectionRequests = () => {
                 </div>
               )}
 
+              {request.buyerMessage && (
+                <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>Buyer update:</strong> {request.buyerMessage}
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <span className="flex items-center">
@@ -217,6 +302,48 @@ const VendorInspectionRequests = () => {
                   >
                     Respond
                   </button>
+                )}
+
+                {request.status === 'buyer_rescheduled' && (
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => handleAcceptBuyerReschedule(request)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Accept New Time
+                    </button>
+                    <button
+                      onClick={() => handleRespondToRequest(request, 'propose')}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Propose Another Time
+                    </button>
+                  </div>
+                )}
+
+                {request.status === 'accepted' && (
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => handleRespondToRequest(request, 'propose')}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      onClick={() => handleVendorCancel(request)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {request.status === 'cancelled_by_buyer' && (
+                  <span className="text-sm text-gray-500">Buyer cancelled this appointment</span>
+                )}
+
+                {request.status === 'cancelled_by_vendor' && (
+                  <span className="text-sm text-gray-500">You cancelled this appointment</span>
                 )}
               </div>
             </div>

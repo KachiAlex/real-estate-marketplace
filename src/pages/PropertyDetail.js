@@ -6,6 +6,8 @@ import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, 
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
+import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
+import AdminChatButton from '../components/AdminChatButton';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -383,17 +385,6 @@ const PropertyDetail = () => {
     }
   };
 
-  const handleProceedToEscrow = () => {
-    if (!user) {
-      toast.error('Please login to proceed with purchase');
-      // User can continue viewing the property without being forced to login
-      return;
-    }
-
-    // Navigate to escrow payment flow
-    navigate(`/escrow/create?propertyId=${property?.id || property?.propertyId || id}&type=purchase`);
-  };
-
   const handleCallVendor = () => {
     if (!user) {
       toast.error('Please login to call property vendor');
@@ -764,13 +755,10 @@ const PropertyDetail = () => {
               </div>
               
               <div className="mt-4 space-y-2">
-                <button
-                  onClick={handleProceedToEscrow}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center font-semibold shadow-md"
-                >
-                  <FaLock className="mr-2" />
-                  Proceed to Purchase (Escrow)
-                </button>
+                <PropertyPurchaseButton
+                  property={property}
+                  className="bg-green-600 hover:bg-green-700"
+                />
               </div>
             </div>
 
@@ -942,8 +930,11 @@ const PropertyDetail = () => {
           </div>
         </div>
       )}
+      
+      {/* Admin Chat Support Button */}
+      <AdminChatButton propertyId={property?.id} category="property_inquiry" />
     </div>
   );
 };
 
-export default PropertyDetail; 
+export default PropertyDetail;

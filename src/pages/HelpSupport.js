@@ -495,7 +495,7 @@ const HelpSupport = () => {
     setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
   };
 
-  const handleSendChatMessage = (e) => {
+  const handleSendChatMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
     
@@ -507,18 +507,48 @@ const HelpSupport = () => {
     };
     
     setChatMessages([...chatMessages, userMessage]);
+    const messageText = chatInput;
     setChatInput('');
     
-    // Simulate bot response
-    setTimeout(() => {
-      const botMessage = {
+    // Send message to real admin chat system via API
+    try {
+      const response = await fetch(process.env.REACT_APP_API_URL + '/api/chat/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          userId: user?.uid,
+          message: messageText,
+          category: 'general_inquiry',
+          propertyId: null
+        })
+      });
+      
+      if (response.ok) {
+        const confirmMessage = {
+          id: Date.now() + 1,
+          text: '✓ Your message has been sent to our support team. You will receive a response shortly.',
+          sender: 'bot',
+          timestamp: new Date(),
+          isConfirmation: true
+        };
+        setChatMessages(prev => [...prev, confirmMessage]);
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = {
         id: Date.now() + 1,
-        text: 'Thank you for your message! Our support team will respond shortly. In the meantime, you can browse our FAQ section or video tutorials for quick answers.',
+        text: 'Error sending message. Please try again or contact support directly at support@propertyark.com',
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        isError: true
       };
-      setChatMessages(prev => [...prev, botMessage]);
-    }, 1000);
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const filteredVideos = selectedVideoCategory === 'all' 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaShoppingCart, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
 import EscrowPaymentFlow from './EscrowPaymentFlow';
@@ -6,6 +6,18 @@ import EscrowPaymentFlow from './EscrowPaymentFlow';
 const PropertyPurchaseButton = ({ property, className = '' }) => {
   const { user } = useAuth();
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+
+  useEffect(() => {
+    if (showPaymentFlow) {
+      const { style } = document.body;
+      const previousOverflow = style.overflow;
+      style.overflow = 'hidden';
+      return () => {
+        style.overflow = previousOverflow;
+      };
+    }
+    return undefined;
+  }, [showPaymentFlow]);
 
   const handlePurchaseClick = () => {
     if (!user) {
@@ -31,6 +43,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
         <EscrowPaymentFlow
           property={property}
           onClose={() => setShowPaymentFlow(false)}
+          isModal={true}
         />
       )}
     </>

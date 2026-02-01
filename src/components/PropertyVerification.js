@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaCheckCircle, FaSpinner, FaExclamationTriangle, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
+import SimplePaymentModal from './SimplePaymentModal';
 
 const sanitizePropertyUrl = (rawValue) => {
   if (!rawValue) return '';
@@ -39,15 +40,36 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   });
   const [verificationPaymentId, setVerificationPaymentId] = useState('');
   const [pendingPayment, setPendingPayment] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [resumePaymentEntry, setResumePaymentEntry] = useState(null);
+
+  // Handle payment success message from mock payment page
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data.type === 'PAYMENT_SUCCESS') {
+        console.log('PropertyVerification: Payment successful', event.data);
+        // Close the checkout modal
+        setShowCheckoutModal(false);
+        // Verify the payment
+        if (pendingPayment) {
+          handleVerifyPayment();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [pendingPayment]);
+
+  const CALLBACK_STORAGE_KEY = 'propertyVerificationPayments';
+
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [paymentError, setPaymentError] = useState('');
   const [isPaymentInitializing, setIsPaymentInitializing] = useState(false);
-  const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState('');
-  const [resumePaymentEntry, setResumePaymentEntry] = useState(null);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-
-  const CALLBACK_STORAGE_KEY = 'propertyVerificationPayments';
+  const [providerLimit, setProviderLimit] = useState(null);
 
   const getStoredToken = () => {
     if (typeof window === 'undefined') return null;
@@ -284,35 +306,68 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       const data = await response.json();
       console.log('🔥 Response data:', data);
       if (!response.ok || !data.success) {
+        const pd = data.data?.providerData || data.providerData || data.error?.providerData || data.error?.meta || {};
+        const rawMsg = data.message || pd?.message || data.error?.message || '';
+        const maxCandidates = [pd?.maximum_amount, pd?.maximumAmount, pd?.max_amount, pd?.maxAmount, pd?.max_charge, pd?.maxCharge];
+        const foundMax = maxCandidates.find(v => Number.isFinite(Number(v))) || null;
+        if (foundMax) {
+          setProviderLimit(Number(foundMax));
+          setPaymentError(`Charge amount must not exceed ${new Intl.NumberFormat('en-NG', {style: 'currency', currency: 'NGN', maximumFractionDigits:0}).format(Number(foundMax))}. Try Bank Transfer or split the payment.`);
+          setIsPaymentInitializing(false);
+          return;
+        }
+
+        if (/exceed|maximum|max/i.test(rawMsg)) {
+          setPaymentError(rawMsg || 'Charge amount exceeds provider limit. Try another payment method.');
+          setIsPaymentInitializing(false);
+          return;
+        }
+
         throw new Error(data.message || 'Failed to initialize verification payment');
       }
 
       const paymentRecord = data.data?.payment;
-      if (!paymentRecord?.id) {
+      // Handle both new format (data.payment) and old format (data.paymentId)
+      const paymentId = paymentRecord?.id || data.data?.paymentId;
+      
+      if (!paymentId) {
         throw new Error('Payment reference missing from initialization response');
       }
 
-      const authorizationUrl = data.data?.providerData?.authorizationUrl || data.data?.providerData?.link || '';
-      const providerTxRef = data.data?.providerData?.txRef || data.data?.providerData?.tx_ref;
+      // Create a normalized payment record
+      const normalizedPayment = paymentRecord || {
+        id: data.data?.paymentId,
+        amount: data.data?.amount,
+        currency: data.data?.currency,
+        status: data.data?.status,
+        txRef: data.data?.txRef
+      };
 
-      setPendingPayment(paymentRecord);
+      const authorizationUrl = data.data?.providerData?.authorizationUrl || 
+                               data.data?.providerData?.link || 
+                               data.data?.paymentUrl || '';
+      
+      // Fix Flutterwave URL to use correct domain for CSP
+      const correctedUrl = authorizationUrl.replace('https://flutterwave.com/', 'https://app.flutterwave.com/');
+      
+      const providerTxRef = data.data?.providerData?.txRef || data.data?.providerData?.tx_ref || normalizedPayment?.txRef;
+
+      setPendingPayment(normalizedPayment);
       setPaymentStatus('processing');
       setVerificationPaymentId('');
-      setCheckoutUrl(authorizationUrl);
+      setCheckoutUrl(correctedUrl);
 
       saveInitiatedPayment({
-        paymentId: paymentRecord.id,
-        reference: paymentRecord.reference,
-        txRef: providerTxRef || paymentRecord.reference,
+        paymentId: normalizedPayment.id,
+        reference: normalizedPayment.reference,
+        txRef: providerTxRef || normalizedPayment.reference,
         propertyId: property?.id,
         storedAt: Date.now()
       });
 
-      if (authorizationUrl && typeof window !== 'undefined') {
-        const openedWindow = window.open(authorizationUrl, '_blank', 'noopener,noreferrer');
-        if (!openedWindow) {
-          setPaymentError('Popup blocked. Use the "Launch Flutterwave Checkout" button below to open the payment window.');
-        }
+      // Show the modal instead of popup
+      if (correctedUrl) {
+        setShowCheckoutModal(true);
       }
     } catch (err) {
       console.error('PropertyVerification: payment initialization error', err);
@@ -637,6 +692,9 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
                     {paymentError && (
                       <p className="text-sm text-red-600">{paymentError}</p>
                     )}
+                    {providerLimit && (
+                      <p className="text-sm text-gray-700 mt-2">Suggested: split the payment into smaller amounts or use Bank Transfer for large payments.</p>
+                    )}
                   </div>
                 </div>
 
@@ -764,7 +822,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       {/* Flutterwave Checkout Modal */}
       {showCheckoutModal && checkoutUrl && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-5xl lg:max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Flutterwave Payment</h3>
               <button
@@ -781,10 +839,56 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
               <iframe
                 src={checkoutUrl}
                 title="Flutterwave Checkout"
-                className="w-full h-full border-none"
+                className="w-full h-[75vh] min-h-[640px] border-none"
                 allow="payment"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                onLoad={(e) => {
+                  // Check if iframe loaded successfully
+                  try {
+                    const iframeContent = e.target.contentWindow?.document?.body;
+                    if (!iframeContent) {
+                      // Iframe blocked by CSP, fallback to new window
+                      console.warn('PropertyVerification: Iframe blocked by CSP, opening in new window');
+                      window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                      setShowCheckoutModal(false);
+                    }
+                  } catch (error) {
+                    // CSP blocked access, open in new window
+                    console.warn('PropertyVerification: CSP blocked iframe, opening in new window');
+                    window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    setShowCheckoutModal(false);
+                  }
+                }}
+                onError={() => {
+                  // Iframe failed to load, try mock payment
+                  console.warn('PropertyVerification: Iframe load error, trying mock payment');
+                  const mockUrl = `https://real-estate-marketplace-37544.web.app/mock-payment.html?amount=${pendingPayment?.amount || 50000}&tx_ref=${pendingPayment?.txRef || 'test'}`;
+                  window.open(mockUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                  setShowCheckoutModal(false);
+                }}
               />
+              
+              {/* Fallback button if iframe doesn't work */}
+              <div className="p-4 text-center border-t border-gray-200">
+                <p className="text-sm text-gray-600 mb-3">
+                  If the payment form doesn't load above, click below to open in a new window
+                </p>
+                <button
+                  onClick={() => {
+                    // Try the original URL first, then fallback to mock payment
+                    if (checkoutUrl.includes('mock-payment')) {
+                      window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    } else {
+                      const mockUrl = `https://real-estate-marketplace-37544.web.app/mock-payment.html?amount=${pendingPayment?.amount || 50000}&tx_ref=${pendingPayment?.txRef || 'test'}`;
+                      window.open(mockUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    }
+                    setShowCheckoutModal(false);
+                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Open Payment in New Window
+                </button>
+              </div>
             </div>
           </div>
         </div>

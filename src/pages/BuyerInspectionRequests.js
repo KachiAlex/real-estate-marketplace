@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { updateInspectionRequest } from '../services/inspectionService';
+import { updateInspectionRequest, getInspectionAnalytics } from '../services/inspectionService';
 import { FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -11,7 +11,13 @@ const BuyerInspectionRequests = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const prevStatusRef = useRef({});
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleRequest, setRescheduleRequest] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleNote, setRescheduleNote] = useState('');
 
   const ensureNotificationPermission = async () => {
     try {
@@ -133,10 +139,16 @@ const BuyerInspectionRequests = () => {
           showWebNotification('Vendor proposed a new time', { body: `${r.projectName}: ${r.proposedDate} ${r.proposedTime}` });
         } else if (r.status === 'declined') {
           showWebNotification('Inspection declined', { body: `${r.projectName}` });
+        } else if (r.status === 'cancelled_by_vendor') {
+          showWebNotification('Vendor cancelled inspection', { body: `${r.projectName} was cancelled by vendor` });
+          toast.error(`Vendor cancelled inspection for ${r.projectName}`);
         }
       }
     }
     prevStatusRef.current = Object.fromEntries(newRequests.map(x => [x.id, x.status]));
+    if (user?.id) {
+      setAnalytics(getInspectionAnalytics({ role: 'buyer', userId: user.id }));
+    }
   };
 
   useEffect(() => {
@@ -173,7 +185,16 @@ const BuyerInspectionRequests = () => {
       updateRequests(updatedRequests);
     };
 
+    const handleAnalyticsUpdate = (event) => {
+      if (!user?.id) return;
+      const detail = event.detail || event;
+      if (detail?.buyerId && detail.buyerId !== user.id) return;
+      const data = getInspectionAnalytics({ role: 'buyer', userId: user.id });
+      setAnalytics(data);
+    };
+
     window.addEventListener('viewingsUpdated', handleViewingsUpdate);
+    window.addEventListener('inspectionAnalyticsUpdated', handleAnalyticsUpdate);
     window.addEventListener('storage', (e) => {
       if (e.key === 'viewingRequests') {
         handleViewingsUpdate();
@@ -183,7 +204,16 @@ const BuyerInspectionRequests = () => {
     return () => {
       if (firestoreUnsub) firestoreUnsub();
       window.removeEventListener('viewingsUpdated', handleViewingsUpdate);
+      window.removeEventListener('inspectionAnalyticsUpdated', handleAnalyticsUpdate);
     };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setAnalytics(null);
+      return;
+    }
+    setAnalytics(getInspectionAnalytics({ role: 'buyer', userId: user.id }));
   }, [user?.id]);
 
   const acceptProposal = async (r) => {
@@ -204,6 +234,46 @@ const BuyerInspectionRequests = () => {
     if (ok) toast.success('Proposal declined'); else toast.error('Failed to decline');
   };
 
+  const handleCancelRequest = async (r) => {
+    const confirm = window.confirm('Cancel this inspection request? Vendors will be notified.');
+    if (!confirm) return;
+    const ok = await updateInspectionRequest(r.id, { status: 'cancelled_by_buyer', cancelledAt: new Date().toISOString() });
+    if (ok) toast.success('Inspection cancelled'); else toast.error('Failed to cancel');
+  };
+
+  const openReschedule = (r) => {
+    setRescheduleRequest(r);
+    setRescheduleDate(r.preferredDate || '');
+    setRescheduleTime(r.preferredTime || '');
+    setRescheduleNote('');
+    setShowRescheduleModal(true);
+  };
+
+  const submitReschedule = async () => {
+    if (!rescheduleRequest || !rescheduleDate || !rescheduleTime) {
+      toast.error('Select your new date and time');
+      return;
+    }
+    const ok = await updateInspectionRequest(rescheduleRequest.id, {
+      status: 'buyer_rescheduled',
+      preferredDate: rescheduleDate,
+      preferredTime: rescheduleTime,
+      buyerMessage: rescheduleNote || '',
+      proposedDate: null,
+      proposedTime: null
+    });
+    if (ok) {
+      toast.success('Reschedule request sent to vendor');
+      setShowRescheduleModal(false);
+      setRescheduleRequest(null);
+      setRescheduleDate('');
+      setRescheduleTime('');
+      setRescheduleNote('');
+    } else {
+      toast.error('Failed to reschedule');
+    }
+  };
+
   const handleViewProperty = (request) => {
     // Try to get propertyId from the request
     const propertyId = request.propertyId || request.projectId;
@@ -221,6 +291,46 @@ const BuyerInspectionRequests = () => {
         <h1 className="text-2xl font-bold text-gray-900">My Inspection Requests</h1>
         <p className="text-gray-600">Track and respond to vendor proposals</p>
       </div>
+
+      {analytics && (
+        <div className="space-y-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <p className="text-sm text-blue-600">Pending Responses</p>
+              <p className="text-3xl font-semibold text-blue-900">{analytics.pendingResponses}</p>
+            </div>
+            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+              <p className="text-sm text-green-600">Confirmed</p>
+              <p className="text-3xl font-semibold text-green-900">{analytics.confirmed}</p>
+            </div>
+            <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+              <p className="text-sm text-purple-600">Vendor Reschedules</p>
+              <p className="text-3xl font-semibold text-purple-900">{analytics.vendorProposals}</p>
+            </div>
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+              <p className="text-sm text-red-600">Vendor Cancellations</p>
+              <p className="text-3xl font-semibold text-red-900">{analytics.cancelledByVendor}</p>
+            </div>
+          </div>
+
+          {analytics.timeline?.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">Last 7 days activity</h3>
+                <span className="text-xs text-gray-500">{analytics.totalRequests} total requests</span>
+              </div>
+              <div className="flex gap-3 overflow-x-auto text-sm">
+                {analytics.timeline.map((item) => (
+                  <div key={item.date} className="flex-1 min-w-[90px] text-center">
+                    <p className="text-gray-500 text-xs">{new Date(item.date).toLocaleDateString()}</p>
+                    <p className="text-lg font-semibold text-gray-900">{item.count}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b border-gray-200 text-sm text-gray-600">{requests.length} request(s)</div>
@@ -273,11 +383,65 @@ const BuyerInspectionRequests = () => {
                     <button onClick={() => downloadICS(r)} className="px-3 py-1 border rounded">Download .ics</button>
                   </>
                 )}
+                {r.status !== 'cancelled_by_buyer' && r.status !== 'declined' && (
+                  <>
+                    <button onClick={() => openReschedule(r)} className="px-3 py-1 bg-blue-600 text-white rounded">Reschedule</button>
+                    <button onClick={() => handleCancelRequest(r)} className="px-3 py-1 bg-red-100 text-red-700 rounded border border-red-300">Cancel</button>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {showRescheduleModal && rescheduleRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Reschedule Inspection</h3>
+                <p className="text-sm text-gray-500">{rescheduleRequest.projectName}</p>
+              </div>
+              <button onClick={() => setShowRescheduleModal(false)} className="text-gray-500 hover:text-gray-700">×</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New time</label>
+                <input
+                  type="time"
+                  value={rescheduleTime}
+                  onChange={(e) => setRescheduleTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message to vendor (optional)</label>
+                <textarea
+                  value={rescheduleNote}
+                  onChange={(e) => setRescheduleNote(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Share context for the new time"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between mt-6">
+              <button onClick={() => setShowRescheduleModal(false)} className="px-5 py-2 border rounded-lg">Close</button>
+              <button onClick={submitReschedule} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Send Update</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

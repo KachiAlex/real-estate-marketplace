@@ -165,4 +165,8 @@ exports.optionalAuth = async (req, res, next) => {
     req.user = null;
     next();
   }
-}; 
+};
+
+// Export aliases for compatibility with route imports
+exports.authenticateToken = exports.protect;
+exports.requireAdmin = exports.authorize('admin');

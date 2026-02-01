@@ -123,5 +123,18 @@ service cloud.firestore {
       allow update: if isBuyer() || isVendor() || (request.auth != null && request.auth.token.role == 'admin');
       allow delete: if false;
     }
+
+    // Payments collection - allow authenticated users to create and read their own payments
+    match /payments/{paymentId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.role == 'admin'
+      );
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.role == 'admin'
+      );
+    }
   }
 }
