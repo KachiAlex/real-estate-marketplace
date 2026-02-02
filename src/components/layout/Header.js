@@ -60,7 +60,7 @@ const Header = () => {
   
   // Detect if we're in vendor context to route profile correctly
   const isVendorContext = location.pathname.startsWith('/vendor');
-  const isAdminContext = location.pathname.startsWith('/admin') || user?.role === 'admin';
+  const isAdminContext = user?.role === 'admin'; // Only check actual role, not pathname
   const profilePath = isVendorContext ? '/vendor/profile' : (isAdminContext ? '#' : '/profile');
   
   // Debug logging

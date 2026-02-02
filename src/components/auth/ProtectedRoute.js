@@ -28,12 +28,15 @@ const ProtectedRoute = ({ children }) => {
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
   const isAdminRoute = location.pathname.startsWith('/admin');
 
-  if (isAdmin && !isAdminRoute) {
-    return <Navigate to="/admin" replace />;
+  // CRITICAL: Block non-admin users from accessing /admin routes
+  if (isAdminRoute && !isAdmin) {
+    console.warn('Access denied: Non-admin user attempted to access admin route:', location.pathname);
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (!isAdmin && isAdminRoute) {
-    return <Navigate to="/login" replace />;
+  // Redirect admins to admin dashboard if they're not already there
+  if (isAdmin && !isAdminRoute) {
+    return <Navigate to="/admin" replace />;
   }
 
   return children;

@@ -330,52 +330,7 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   );
 };
 
-export default AdminVerificationCenter;
-      handleAuthFailure('Admin authentication required. Please log in again.');
-      throw new Error('Admin authentication required');
-    }
-
-    const response = await authenticatedFetch(getApiUrl(path), options);
-
-    if (response.status === 401) {
-      handleAuthFailure('Admin authentication expired. Please log in again.');
-      throw new Error('Admin authentication required');
-    }
-
-    return response;
-  };
-
-  const fetchApplications = async () => {
-    // Prevent multiple simultaneous calls
-    if (loadingApplications) {
-      return;
-    }
-    
-    setLoadingApplications(true);
-    setApplicationsError('');
-    try {
-      if (!hasAdminAccess) {
-        setApplicationsError('Admin authentication required. Showing mock applications.');
-        setApplications(MOCK_APPLICATIONS);
-        return;
-      }
-
-      const response = await requestWithAdminAuth('/verification/applications');
-      if (!response.ok) {
-        throw new Error('Unable to load verification applications');
-      }
-      const data = await response.json();
-      setApplications(Array.isArray(data.data) ? data.data : []);
-    } catch (error) {
-      console.warn('AdminVerificationCenter: failed to fetch applications', error);
-      setApplicationsError('Live applications unavailable, showing mock data.');
-      setApplications(MOCK_APPLICATIONS);
-    } finally {
-      setLoadingApplications(false);
-    }
-  };
-
-  useEffect(() => {
+export default AdminVerificationCenter;  useEffect(() => {
     // Only fetch when we have admin access and haven't fetched yet
     if (hasAdminAccess !== null && hasAdminAccess && !hasFetchedRef.current) {
       hasFetchedRef.current = true;
