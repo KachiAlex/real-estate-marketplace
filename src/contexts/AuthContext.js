@@ -1013,6 +1013,13 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('tokenSource', 'firebase');
           finalUser.token = firebaseToken;
         }
+      } else if (usedMockUser) {
+        // For mock users (when Firebase auth fails), create a mock JWT token for API calls
+        console.log('AuthContext: Mock user detected, creating mock token for API calls');
+        const mockToken = 'mock-' + btoa(JSON.stringify({ email: userWithoutPassword.email, role: userWithoutPassword.role, time: Date.now() })).slice(0, 100);
+        localStorage.setItem('token', mockToken);
+        localStorage.setItem('tokenSource', 'mock');
+        finalUser.token = mockToken;
       }
 
       const hasAdminRole = finalUser.role === 'admin' || finalUser.roles?.includes('admin');
