@@ -39,7 +39,36 @@ const attachMockUserFromHeaders = (req) => {
 const resolveUserForFirebaseClaims = async (claims) => {
   const email = (claims && typeof claims.email === 'string') ? claims.email : null;
   if (!email) return null;
-  return userService.findByEmail(email);
+  
+  // Try to find existing user
+  let user = await userService.findByEmail(email);
+  
+  // If user doesn't exist, create them from Firebase claims
+  if (!user) {
+    console.log('[auth] Creating new user from Firebase claims for email:', email);
+    try {
+      // Extract name from Firebase display name or claim name
+      const displayName = claims.name || email.split('@')[0];
+      const [firstName, ...lastNameParts] = displayName.split(' ');
+      const lastName = lastNameParts.join(' ') || 'User';
+      
+      user = await userService.createUser({
+        firstName: firstName || 'Firebase',
+        lastName: lastName || 'User',
+        email: email,
+        // Firebase users don't have passwords - they use Firebase auth
+        password: Math.random().toString(36).slice(-8),
+        firebaseUid: claims.uid,
+        emailVerified: claims.email_verified || false
+      });
+      console.log('[auth] User created successfully from Firebase claims:', user.id);
+    } catch (createError) {
+      console.error('[auth] Failed to create user from Firebase claims:', createError?.message);
+      return null;
+    }
+  }
+  
+  return user;
 };
 
 // Protect routes - verify token
