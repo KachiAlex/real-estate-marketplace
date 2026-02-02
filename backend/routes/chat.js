@@ -9,20 +9,20 @@ const logger = createLogger('ChatRoutes');
 // Middleware to validate request body
 const validateRequestBody = (requiredFields) => {
   return (req, res, next) => {
-    console.log('[Chat] Request body validation - required fields:', requiredFields);
-    console.log('[Chat] Actual request body:', JSON.stringify(req.body));
-    console.log('[Chat] Body keys:', Object.keys(req.body || {}));
     const missingFields = requiredFields.filter(field => {
       const value = req.body?.[field];
-      const isMissing = !value && value !== 0 && value !== false;
-      console.log(`[Chat] Field '${field}': value="${value}", isMissing=${isMissing}`);
-      return isMissing;
+      return !value && value !== 0 && value !== false;
     });
     if (missingFields.length > 0) {
-      console.warn('[Chat] Missing fields:', missingFields);
+      // Return detailed error with actual body for debugging
       return res.status(400).json({
         success: false,
-        error: `Missing required fields: ${missingFields.join(', ')}`
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        debug: {
+          expected: requiredFields,
+          received: Object.keys(req.body || {}),
+          body: req.body
+        }
       });
     }
     next();
