@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaVideo, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaPlay, FaTimes, FaArrowLeft, FaYoutube } from 'react-icons/fa';
+import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const HelpSupport = () => {
@@ -8,10 +8,10 @@ const HelpSupport = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-  const [activeResource, setActiveResource] = useState(null); // 'videos', 'guide', 'docs', 'chat'
-  const [selectedVideoCategory, setSelectedVideoCategory] = useState('all');
+  const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'chat'
   const [selectedGuideSection, setSelectedGuideSection] = useState(null);
   const [selectedDocCategory, setSelectedDocCategory] = useState('all');
+  const [selectedVideoCategory, setSelectedVideoCategory] = useState('all');
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [contactForm, setContactForm] = useState({
@@ -152,13 +152,6 @@ const HelpSupport = () => {
   // Support resources
   const supportResources = [
     {
-      id: 'videos',
-      icon: FaVideo,
-      title: 'Video Tutorials',
-      description: 'Step-by-step video guides',
-      count: '25+ videos'
-    },
-    {
       id: 'guide',
       icon: FaBook,
       title: 'User Guide',
@@ -179,94 +172,6 @@ const HelpSupport = () => {
       description: 'Chat with support agents',
       count: '24/7 available'
     }
-  ];
-
-  // Video Tutorials Data
-  const videoTutorials = [
-    {
-      id: 1,
-      title: 'Getting Started with PropertyArk',
-      category: 'getting-started',
-      duration: '5:32',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Getting+Started',
-      description: 'Learn how to create an account, navigate the platform, and set up your profile.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 2,
-      title: 'How to Search for Properties',
-      category: 'search',
-      duration: '4:15',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Search+Properties',
-      description: 'Master the search filters and find your perfect property quickly.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 3,
-      title: 'Saving and Managing Favorites',
-      category: 'favorites',
-      duration: '3:28',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Favorites',
-      description: 'Learn how to save properties and organize your favorites list.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 4,
-      title: 'Understanding Property Investment',
-      category: 'investment',
-      duration: '7:45',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Investment',
-      description: 'Complete guide to investing in real estate through our platform.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 5,
-      title: 'Mortgage Application Process',
-      category: 'mortgage',
-      duration: '6:12',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Mortgage',
-      description: 'Step-by-step guide to applying for a mortgage on PropertyArk.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 6,
-      title: 'Escrow Payment System Explained',
-      category: 'payments',
-      duration: '5:50',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Escrow',
-      description: 'Understand how our secure escrow system protects your transactions.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 7,
-      title: 'Scheduling Property Viewings',
-      category: 'viewings',
-      duration: '4:30',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Viewings',
-      description: 'Learn how to schedule and manage property inspection requests.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 8,
-      title: 'Using the Dashboard',
-      category: 'dashboard',
-      duration: '6:20',
-      thumbnail: 'https://via.placeholder.com/320x180?text=Dashboard',
-      description: 'Navigate your dashboard and understand all available features.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    }
-  ];
-
-  const videoCategories = [
-    { id: 'all', name: 'All Videos' },
-    { id: 'getting-started', name: 'Getting Started' },
-    { id: 'search', name: 'Search & Browse' },
-    { id: 'favorites', name: 'Favorites' },
-    { id: 'investment', name: 'Investment' },
-    { id: 'mortgage', name: 'Mortgage' },
-    { id: 'payments', name: 'Payments & Escrow' },
-    { id: 'viewings', name: 'Viewings' },
-    { id: 'dashboard', name: 'Dashboard' }
   ];
 
   // User Guide Sections
@@ -551,10 +456,6 @@ const HelpSupport = () => {
     }
   };
 
-  const filteredVideos = selectedVideoCategory === 'all' 
-    ? videoTutorials 
-    : videoTutorials.filter(v => v.category === selectedVideoCategory);
-
   const filteredDocs = selectedDocCategory === 'all'
     ? documentationArticles
     : documentationArticles.filter(d => d.category === selectedDocCategory);
@@ -625,7 +526,6 @@ const HelpSupport = () => {
           <button
             onClick={() => {
               setActiveResource(null);
-              setSelectedVideoCategory('all');
               setSelectedGuideSection(null);
               setSelectedDocCategory('all');
             }}
@@ -634,65 +534,6 @@ const HelpSupport = () => {
             <FaArrowLeft />
             <span>Back to Support Resources</span>
           </button>
-
-          {/* Video Tutorials Section */}
-          {activeResource === 'videos' && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Video Tutorials</h2>
-              
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-3 mb-6">
-                {videoCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedVideoCategory(cat.id)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedVideoCategory === cat.id
-                        ? 'bg-brand-blue text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Video Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredVideos.map((video) => (
-                  <div key={video.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="relative">
-                      <img 
-                        src={video.thumbnail} 
-                        alt={video.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-40 transition-opacity">
-                        <FaPlay className="text-white text-4xl" />
-                      </div>
-                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-                        {video.duration}
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">{video.title}</h3>
-                      <p className="text-gray-600 text-sm mb-3">{video.description}</p>
-                      <button
-                        onClick={() => {
-                          // Open video in modal or new page
-                          window.open(video.videoUrl, '_blank');
-                        }}
-                        className="text-brand-blue hover:text-brand-blue-dark text-sm font-medium flex items-center space-x-1"
-                      >
-                        <FaYoutube />
-                        <span>Watch on YouTube</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* User Guide Section */}
           {activeResource === 'guide' && (

@@ -26,7 +26,7 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
       setLoading(true);
       setError('');
       
-      const response = await authenticatedFetch(getApiUrl('/admin/verification-applications'));
+      const response = await authenticatedFetch(getApiUrl('/verification/applications'));
       
       if (!response.ok) {
         throw new Error('Failed to fetch verification applications');
@@ -71,12 +71,13 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   // Handle application approval/rejection
   const handleApplicationAction = async (applicationId, action, badgeColor = null) => {
     try {
-      const response = await authenticatedFetch(getApiUrl(`/admin/verification-applications/${applicationId}/${action}`), {
-        method: 'POST',
+      const response = await authenticatedFetch(getApiUrl(`/verification/applications/${applicationId}/status`), {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          status: action,
           badgeColor: badgeColor
         })
       });
