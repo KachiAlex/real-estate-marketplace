@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaEnvelope, FaSearch, FaPaperPlane, FaPhone, FaVideo, FaReply, FaArchive, FaTrash, FaStar, FaCircle, FaCheck, FaCheckDouble, FaImage, FaFile, FaSmile, FaUserShield, FaExclamationTriangle, FaClock, FaFilter, FaSortAmountDown } from 'react-icons/fa';
+import { FaEnvelope, FaSearch, FaPaperPlane, FaPhone, FaVideo, FaReply, FaArchive, FaTrash, FaStar, FaCircle, FaCheck, FaCheckDouble, FaImage, FaFile, FaSmile, FaUserShield, FaExclamationTriangle, FaClock, FaFilter, FaSortAmountDown, FaCircleNotch, FaUserTie, FaUser } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
@@ -16,8 +16,12 @@ const AdminChatSupport = () => {
   const [sortBy, setSortBy] = useState('recent');
   const [socket, setSocket] = useState(null);
   const [typingUsers, setTypingUsers] = useState(new Set());
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const pollIntervalRef = useRef(null);
 
   // Initialize Socket.IO connection
   useEffect(() => {
@@ -160,12 +164,15 @@ const AdminChatSupport = () => {
         },
         body: JSON.stringify({
           conversationId: selectedConversation.id,
-          message: newMessage.trim()
+          message: newMessage.trim(),
+          userId: selectedConversation.userId,
+          userType: selectedConversation.type
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send message');
       }
 
       const data = await response.json();
@@ -183,6 +190,18 @@ const AdminChatSupport = () => {
         }
       }));
 
+      // Emit via socket for real-time delivery if available
+      if (socket?.connected) {
+        socket.emit('send-message', {
+          conversationId: selectedConversation.id,
+          message: newMessage.trim(),
+          isAdmin: true,
+          userId: selectedConversation.userId,
+          userType: selectedConversation.type,
+          adminName: localStorage.getItem('userName') || 'Admin Support'
+        });
+      }
+
       setNewMessage('');
       
       // Auto-scroll to bottom
@@ -190,9 +209,9 @@ const AdminChatSupport = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
 
-      toast.success('Message sent successfully');
+      toast.success('Message sent to customer', { duration: 2 });
     } catch (error) {
-      toast.error('Failed to send message');
+      toast.error(error.message || 'Failed to send message');
       console.error('Error sending message:', error);
     } finally {
       setSendingMessage(false);
@@ -490,42 +509,58 @@ const AdminChatSupport = () => {
           {selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <img
                         src={selectedConversation.contact.avatar}
                         alt={selectedConversation.contact.name}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover"
                       />
-                      {selectedConversation.contact.isOnline && (
-                        <FaCircle className="absolute bottom-0 right-0 text-green-500 text-xs" />
+                      {onlineUsers.has(selectedConversation.userId) ? (
+                        <FaCircle className="absolute bottom-0 right-0 text-green-500 text-sm" />
+                      ) : (
+                        <FaCircle className="absolute bottom-0 right-0 text-gray-400 text-sm" />
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 flex items-center">
                         {selectedConversation.contact.name}
+                        {selectedConversation.type === 'vendor_support' && <FaUserTie className="ml-2 text-orange-600 text-sm" />}
+                        {selectedConversation.type === 'buyer_support' && <FaUser className="ml-2 text-blue-600 text-sm" />}
                       </h3>
                       <p className="text-sm text-gray-600">
                         {selectedConversation.contact.role} • {selectedConversation.contact.email}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {onlineUsers.has(selectedConversation.userId) ? '🟢 Online' : '⚪ Offline'}
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(selectedConversation.priority)}`}>
-                      {selectedConversation.priority}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded ${getCategoryColor(selectedConversation.category)}`}>
-                      {selectedConversation.category.replace('_', ' ')}
-                    </span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200">
-                      <FaPhone />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200">
-                      <FaVideo />
-                    </button>
+                  <div className="flex flex-col items-end space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${getPriorityColor(selectedConversation.priority)}`}>
+                        {selectedConversation.priority.toUpperCase()}
+                      </span>
+                      <span className={`text-xs px-3 py-1 rounded font-medium ${getCategoryColor(selectedConversation.category)}`}>
+                        {selectedConversation.category.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-600">
+                      {socketConnected ? (
+                        <>
+                          <FaCircleNotch className="text-green-500 animate-pulse" />
+                          <span>Live</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaCircleNotch className="text-yellow-500 animate-pulse" />
+                          <span>Polling</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -586,15 +621,15 @@ const AdminChatSupport = () => {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200">
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-end space-x-2">
+                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200 transition">
                     <FaImage />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200">
+                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200 transition">
                     <FaFile />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200">
+                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200 transition">
                     <FaSmile />
                   </button>
                   
@@ -603,24 +638,36 @@ const AdminChatSupport = () => {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Type your response as admin..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent resize-none"
-                      rows="1"
+                      placeholder="Type your message here... (Shift+Enter for new line)"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-medium"
+                      rows="2"
                       disabled={sendingMessage}
                     />
+                    {newMessage.trim() && (
+                      <span className="text-xs text-gray-500 mt-1">{newMessage.length} characters</span>
+                    )}
                   </div>
                   
                   <button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sendingMessage}
-                    className="p-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`p-3 rounded-lg transition flex items-center justify-center ${
+                      sendingMessage || !newMessage.trim()
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    title="Send message to customer"
                   >
                     {sendingMessage ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <FaCircleNotch className="animate-spin" />
                     ) : (
                       <FaPaperPlane />
                     )}
                   </button>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                  <span>💬 Communicating with {selectedConversation.contact.name}</span>
+                  {socketConnected && <span className="text-green-600 font-medium">✓ Messages sent live</span>}
                 </div>
               </div>
             </>

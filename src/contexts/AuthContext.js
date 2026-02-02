@@ -165,8 +165,8 @@ const mockUsers = [
     password: 'dikaoliver2660',
     userCode: 'PAK-ONA011',
     vendorCode: 'VND-ONA011',
-    role: 'admin',
-    roles: ['admin', 'buyer', 'vendor'],
+    role: 'user',
+    roles: ['buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   },
   // Vendor Accounts
@@ -344,6 +344,42 @@ export const AuthProvider = ({ children }) => {
         }
         if (!userData.vendorCode) {
           userData.vendorCode = generateVendorCode();
+          needsUpdate = true;
+        }
+
+        // Normalize role/roles/activeRole based on mock user definitions (prevents stale admin access)
+        const matchingMockUser = mockUsers.find((mockUser) =>
+          mockUser.email?.toLowerCase() === userData.email?.toLowerCase()
+        );
+        if (matchingMockUser) {
+          const normalizedRoles = Array.isArray(matchingMockUser.roles) && matchingMockUser.roles.length
+            ? matchingMockUser.roles
+            : [matchingMockUser.role || 'user'];
+
+          if (userData.role !== matchingMockUser.role) {
+            userData.role = matchingMockUser.role || 'user';
+            needsUpdate = true;
+          }
+
+          if (JSON.stringify(userData.roles || []) !== JSON.stringify(normalizedRoles)) {
+            userData.roles = normalizedRoles;
+            needsUpdate = true;
+          }
+
+          if (!userData.activeRole || !normalizedRoles.includes(userData.activeRole)) {
+            userData.activeRole = normalizedRoles[0] || userData.role || 'buyer';
+            localStorage.setItem('activeRole', userData.activeRole);
+            needsUpdate = true;
+          }
+        }
+
+        // Final safeguard: ensure activeRole is within roles
+        const allowedRoles = Array.isArray(userData.roles) && userData.roles.length
+          ? userData.roles
+          : [userData.role || 'user'];
+        if (!userData.activeRole || !allowedRoles.includes(userData.activeRole)) {
+          userData.activeRole = allowedRoles[0] || userData.role || 'buyer';
+          localStorage.setItem('activeRole', userData.activeRole);
           needsUpdate = true;
         }
         // Save updated user data back to localStorage
@@ -610,6 +646,23 @@ export const AuthProvider = ({ children }) => {
         user: null
       };
     }
+  };
+
+  const sanitizeRedirectUrl = (url, userObj) => {
+    if (!url) return null;
+
+    const isAdmin = userObj?.role === 'admin' || userObj?.roles?.includes('admin');
+    const isMortgageBank = userObj?.role === 'mortgage_bank' || userObj?.roles?.includes('mortgage_bank');
+
+    if (url.startsWith('/admin') && !isAdmin) {
+      return '/dashboard';
+    }
+
+    if (url.startsWith('/mortgage-bank') && !isMortgageBank) {
+      return '/dashboard';
+    }
+
+    return url;
   };
 
   const login = async (email, password) => {
@@ -1086,7 +1139,8 @@ export const AuthProvider = ({ children }) => {
       } 
       
       // Handle redirect after login
-      const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      const redirectToRaw = redirectUrl || localStorage.getItem('authRedirectUrl');
+      const redirectTo = sanitizeRedirectUrl(redirectToRaw, finalUser);
       console.log('AuthContext: Login successful, checking redirect...');
       console.log('AuthContext: redirectUrl state:', redirectUrl);
       console.log('AuthContext: localStorage authRedirectUrl:', localStorage.getItem('authRedirectUrl'));
@@ -1211,7 +1265,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('activeRole', googleUser.activeRole);
       
       // Handle redirect after login
-      const redirectTo = redirectUrl || localStorage.getItem('authRedirectUrl');
+      const redirectToRaw = redirectUrl || localStorage.getItem('authRedirectUrl');
+      const redirectTo = sanitizeRedirectUrl(redirectToRaw, googleUser);
       if (redirectTo) {
         setRedirectUrl(null);
         localStorage.removeItem('authRedirectUrl');

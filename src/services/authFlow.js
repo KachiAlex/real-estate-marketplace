@@ -5,6 +5,23 @@
 
 import toast from 'react-hot-toast';
 
+const sanitizeRedirectUrl = (url, user) => {
+  if (!url) return null;
+
+  const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
+  const isMortgageBank = user?.role === 'mortgage_bank' || user?.roles?.includes('mortgage_bank');
+
+  if (url.startsWith('/admin') && !isAdmin) {
+    return '/dashboard';
+  }
+
+  if (url.startsWith('/mortgage-bank') && !isMortgageBank) {
+    return '/dashboard';
+  }
+
+  return url;
+};
+
 /**
  * Handle post-authentication flow
  * Centralizes role selection, redirects, and navigation logic
@@ -16,16 +33,18 @@ export const handlePostAuth = (result, navigate, setLoggedInUser, setShowRoleSel
 
   const { user, redirectUrl } = result;
 
+  const safeRedirectUrl = sanitizeRedirectUrl(redirectUrl, user);
+
   // Check if user is admin - redirect directly to admin dashboard
   if (user && user.role === 'admin') {
-    const next = redirectUrl || '/admin';
+    const next = safeRedirectUrl || '/admin';
     navigate(next, { replace: true });
     return { handled: true, redirect: next };
   }
 
   // Check if user is mortgage bank - redirect directly to mortgage bank dashboard
   if (user && user.role === 'mortgage_bank') {
-    const next = redirectUrl || '/mortgage-bank/dashboard';
+    const next = safeRedirectUrl || '/mortgage-bank/dashboard';
     navigate(next, { replace: true });
     return { handled: true, redirect: next };
   }
@@ -40,7 +59,7 @@ export const handlePostAuth = (result, navigate, setLoggedInUser, setShowRoleSel
   }
 
   // Single role or no roles, proceed with normal redirect
-  const defaultPath = redirectUrl || '/dashboard';
+  const defaultPath = safeRedirectUrl || '/dashboard';
   navigate(defaultPath, { replace: true });
   return { handled: true, redirect: defaultPath };
 };
@@ -191,8 +210,9 @@ export const handleGoogleAuth = async (
  * Get default redirect path based on user role
  */
 export const getDefaultRedirectPath = (user, redirectUrl) => {
-  if (redirectUrl) {
-    return redirectUrl;
+  const safeRedirectUrl = sanitizeRedirectUrl(redirectUrl, user);
+  if (safeRedirectUrl) {
+    return safeRedirectUrl;
   }
 
   if (!user) {

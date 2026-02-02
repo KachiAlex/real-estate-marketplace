@@ -98,7 +98,7 @@ router.get('/conversations/:id', authenticateToken, requireAdmin, async (req, re
  */
 router.post('/send', authenticateToken, requireAdmin, validateRequestBody(['conversationId', 'message']), async (req, res) => {
   try {
-    const { conversationId, message } = req.body;
+    const { conversationId, message, userId, userType } = req.body;
     const adminId = req.user.id;
     const adminName = req.user.firstName ? `${req.user.firstName} ${req.user.lastName}`.trim() : 'Admin Support';
 
@@ -112,10 +112,42 @@ router.post('/send', authenticateToken, requireAdmin, validateRequestBody(['conv
     );
     
     if (result.success) {
+      // Log successful send
+      logger.info('Admin message sent successfully', {
+        conversationId,
+        adminId,
+        adminName,
+        userId,
+        userType,
+        timestamp: new Date().toISOString()
+      });
+
+      // Attempt to send email notification to customer
+      if (userId) {
+        try {
+          const emailResult = await chatService.notifyUserOfNewMessage(
+            userId,
+            conversationId,
+            message,
+            adminName
+          ).catch(err => {
+            logger.warn('Failed to send email notification', err);
+            // Don't fail the response if email fails
+            return { success: false };
+          });
+          
+          if (emailResult.success) {
+            logger.info('Email notification sent to user', { userId });
+          }
+        } catch (emailErr) {
+          logger.warn('Email notification error', emailErr);
+        }
+      }
+
       res.json({
         success: true,
         data: result.data,
-        message: 'Message sent successfully'
+        message: 'Message sent successfully to customer'
       });
     } else {
       res.status(500).json({
