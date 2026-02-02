@@ -110,6 +110,20 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Check if this is a mock token (created by frontend for mock user login)
+    if (token && token.startsWith('mock-')) {
+      console.log('[protect] Mock token detected, checking mock user headers');
+      if (attachMockUserFromHeaders(req)) {
+        console.log('[protect] Mock token verified with mock user from headers');
+        return next();
+      }
+      console.warn('[protect] Mock token present but no mock user header found');
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    }
+
     try {
       // Verify backend JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
