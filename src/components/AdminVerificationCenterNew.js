@@ -6,7 +6,8 @@ import {
   FaClipboardList,
   FaClock,
   FaSpinner,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaEdit
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
@@ -17,6 +18,9 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
+  const [statusChangeApp, setStatusChangeApp] = useState(null); // For status change modal
+  const [newStatus, setNewStatus] = useState(''); // New status being selected
+  const [changing, setChanging] = useState(false); // Loading state for status change
 
   // Fetch verification applications
   const fetchApplications = async () => {
@@ -97,6 +101,45 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     } catch (err) {
       console.error(`AdminVerificationCenter: Error ${action}ing application`, err);
       toast.error(err.message || `Failed to ${action} application`);
+    }
+  };
+
+  // Handle status change for approved/rejected applications
+  const handleStatusChange = async () => {
+    if (!statusChangeApp || !newStatus) return;
+    
+    try {
+      setChanging(true);
+      const response = await authenticatedFetch(getApiUrl(`/verification/applications/${statusChangeApp.id}/status`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          badgeColor: newStatus === 'approved' ? statusChangeApp.badgeColor : null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to change application status');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Application status changed to ${newStatus}`);
+        setStatusChangeApp(null);
+        setNewStatus('');
+        fetchApplications(); // Refresh the list
+      } else {
+        throw new Error(data.message || 'Failed to change status');
+      }
+    } catch (err) {
+      console.error('AdminVerificationCenter: Error changing status', err);
+      toast.error(err.message || 'Failed to change application status');
+    } finally {
+      setChanging(false);
     }
   };
 
@@ -303,6 +346,20 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
                         </button>
                       </div>
                     )}
+                    {(application.status === 'approved' || application.status === 'rejected') && (
+                      <div className="ml-6">
+                        <button
+                          onClick={() => {
+                            setStatusChangeApp(application);
+                            setNewStatus('');
+                          }}
+                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          <FaEdit className="inline mr-2" />
+                          Change Status
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Badge Preview */}
@@ -322,6 +379,61 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
               );
             })
           )}
+        </div>
+      )}
+
+      {/* Status Change Modal */}
+      {statusChangeApp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Application Status</h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Current status: <span className="font-medium capitalize">{statusChangeApp.status}</span>
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              {['pending', 'approved', 'rejected'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setNewStatus(status)}
+                  className={`w-full p-3 rounded-lg text-sm font-medium transition-colors ${
+                    newStatus === status
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {status === 'pending' && <FaClock className="inline mr-2" />}
+                  {status === 'approved' && <FaCheckCircle className="inline mr-2" />}
+                  {status === 'rejected' && <FaTimesCircle className="inline mr-2" />}
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setStatusChangeApp(null);
+                  setNewStatus('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusChange}
+                disabled={!newStatus || changing}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium ${
+                  !newStatus || changing
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {changing ? 'Changing...' : 'Change Status'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
