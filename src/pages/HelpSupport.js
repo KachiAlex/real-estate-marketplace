@@ -2,6 +2,8 @@
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
+import { authenticatedFetch } from '../utils/authToken';
 
 const HelpSupport = () => {
   const { user } = useAuth();
@@ -11,7 +13,6 @@ const HelpSupport = () => {
   const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'chat'
   const [selectedGuideSection, setSelectedGuideSection] = useState(null);
   const [selectedDocCategory, setSelectedDocCategory] = useState('all');
-  const [selectedVideoCategory, setSelectedVideoCategory] = useState('all');
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [contactForm, setContactForm] = useState({
@@ -403,6 +404,19 @@ const HelpSupport = () => {
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
+
+    // Check if user is authenticated
+    if (!user || !user.uid) {
+      const errorMessage = {
+        id: Date.now(),
+        text: 'You must be logged in to use live chat. Please log in to your account first.',
+        sender: 'bot',
+        timestamp: new Date(),
+        isError: true
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+      return;
+    }
     
     const userMessage = {
       id: Date.now(),
@@ -417,14 +431,12 @@ const HelpSupport = () => {
     
     // Send message to real admin chat system via API
     try {
-      const response = await fetch(process.env.REACT_APP_API_URL + '/api/chat/conversations', {
+      const response = await authenticatedFetch(getApiUrl('/api/chat/conversations'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userId: user?.uid,
           message: messageText,
           category: 'general_inquiry',
           propertyId: null
@@ -440,14 +452,16 @@ const HelpSupport = () => {
           isConfirmation: true
         };
         setChatMessages(prev => [...prev, confirmMessage]);
+      } else if (response.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
       } else {
-        throw new Error('Failed to send message');
+        throw new Error(`Server error: ${response.status}`);
       }
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Error sending message. Please try again or contact support directly at support@propertyark.com',
+        text: `Error: ${error.message || 'Failed to send message'}. Please contact support at support@propertyark.com`,
         sender: 'bot',
         timestamp: new Date(),
         isError: true
@@ -690,23 +704,29 @@ const HelpSupport = () => {
                 </div>
 
                 {/* Chat Input */}
-                <form onSubmit={handleSendChatMessage} className="border-t border-gray-200 p-4 bg-white">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Type your message..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                    />
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-dark transition-colors"
-                    >
-                      Send
-                    </button>
+                {user && user.uid ? (
+                  <form onSubmit={handleSendChatMessage} className="border-t border-gray-200 p-4 bg-white">
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type your message..."
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      />
+                      <button
+                        type="submit"
+                        className="px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-dark transition-colors"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="border-t border-gray-200 p-4 bg-gray-50">
+                    <p className="text-gray-600 text-center">Please log in to your account to use live chat support.</p>
                   </div>
-                </form>
+                )}
               </div>
             </div>
           )}

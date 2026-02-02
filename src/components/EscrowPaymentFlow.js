@@ -453,6 +453,104 @@ const EscrowPaymentFlow = ({
     }
   };
 
+  const handleProcessTestPayment = async () => {
+    console.log('🔥 EscrowPaymentFlow: handleProcessTestPayment called');
+    
+    try {
+      setLoading(true);
+      setPaymentError('');
+
+      const currentItem = property || investment;
+      const itemPriceValue = currentItem ? (property ? property.price : (investment?.minInvestment || investment?.minimumInvestment || 0)) : 0;
+      const itemTitleValue = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
+      const itemId = property ? property.id : investment?.id;
+
+      if (!itemId || !itemPriceValue || itemPriceValue <= 0) {
+        toast.error('Invalid item or price');
+        setLoading(false);
+        return;
+      }
+
+      const sellerId = property?.owner?.id || property?.ownerId || investment?.vendorId || investment?.sponsorId || null;
+      
+      console.log('🔥 EscrowPaymentFlow: Creating escrow transaction for test payment...');
+      const escrowResult = await createEscrowTransaction(
+        itemId,
+        itemPriceValue,
+        user.uid || user.id,
+        sellerId,
+        {
+          type: transactionType === 'investment' ? 'investment' : 'property',
+          investmentData: investment ? {
+            ...investment,
+            title: investment.title || investment.investmentTitle,
+            investmentTitle: investment.investmentTitle || investment.title,
+            expectedROI: investment.expectedROI || investment.expectedReturn || 0,
+            expectedReturn: investment.expectedReturn || investment.expectedROI || 0,
+            lockPeriod: investment.lockPeriod || investment.termMonths || investment.duration || 0,
+            termMonths: investment.termMonths || investment.duration || investment.lockPeriod || 0,
+            duration: investment.duration || investment.termMonths || investment.lockPeriod || 0,
+            vendorId: investment.vendorId || investment.sponsorId,
+            sponsorId: investment.sponsorId || investment.vendorId,
+            sponsor: investment.sponsor || investment.vendor,
+            vendor: investment.vendor || investment.sponsor,
+            propertyLocation: investment.propertyLocation || (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A')
+          } : null
+        }
+      );
+
+      if (!escrowResult.success) {
+        toast.error(escrowResult.error || 'Failed to create escrow transaction');
+        setLoading(false);
+        return;
+      }
+
+      const escrowId = escrowResult.id || escrowResult.data?.id;
+      if (!escrowId) {
+        toast.error('Failed to get escrow transaction ID');
+        setLoading(false);
+        return;
+      }
+
+      // Simulate successful test payment
+      console.log('✅ EscrowPaymentFlow: Simulating test payment completion...');
+      
+      const testReference = `TEST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      markEscrowTransactionFunded(escrowId, testReference, 'test');
+      
+      const entryToSave = {
+        escrowId,
+        paymentId: `test_${escrowId}`,
+        reference: testReference,
+        txRef: testReference,
+        propertyId: property?.id,
+        investmentId: investment?.id,
+        status: 'completed',
+        checkoutUrl: '',
+        storedAt: Date.now(),
+        isTestPayment: true
+      };
+
+      saveEscrowPaymentEntry(entryToSave);
+      setPendingPayment(entryToSave);
+      setPaymentStatus('completed');
+      setStep(3);
+
+      toast.success('Test payment completed successfully!');
+
+      if (investmentId) {
+        localStorage.setItem('pendingInvestmentProject', JSON.stringify(investment));
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ EscrowPaymentFlow: Test payment error:', error);
+      toast.error(`Test payment failed: ${error.message || 'An error occurred'}`);
+      setLoading(false);
+    }
+  };
+
   const handleProcessPayment = async () => {
     console.log('🔥 EscrowPaymentFlow: handleProcessPayment called');
     console.log('🔥 User:', user);
@@ -472,6 +570,10 @@ const EscrowPaymentFlow = ({
           toast.error('Please fill in all payment details');
           return;
         }
+      } else if (paymentData.paymentMethod === 'test') {
+        console.log('🔥 EscrowPaymentFlow: Using test payment method');
+        handleProcessTestPayment();
+        return;
       } else {
         console.log('🔥 EscrowPaymentFlow: Using Flutterwave payment, skipping card validation');
       }
@@ -821,35 +923,104 @@ const EscrowPaymentFlow = ({
       {step === 2 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Flutterwave Checkout</h2>
-              <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
+            {/* Payment Method Selection */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-900">Payment Method</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'flutterwave' }))}
+                  className={`p-4 border-2 rounded-lg transition ${
+                    paymentData.paymentMethod === 'flutterwave'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <FaCreditCard className="mx-auto text-xl mb-2 text-blue-600" />
+                    <p className="font-medium text-gray-900 text-sm">Flutterwave</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'test' }))}
+                  className={`p-4 border-2 rounded-lg transition ${
+                    paymentData.paymentMethod === 'test'
+                      ? 'border-green-600 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <FaCheck className="mx-auto text-xl mb-2 text-green-600" />
+                    <p className="font-medium text-gray-900 text-sm">Test Payment</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                console.log('🔥 EscrowPaymentFlow: Button clicked!');
-                console.log('🔥 EscrowPaymentFlow: loading:', loading);
-                console.log('🔥 EscrowPaymentFlow: isInitializingPayment:', isInitializingPayment);
-                console.log('🔥 EscrowPaymentFlow: step:', step);
-                handleProcessPayment();
-              }}
-              disabled={loading || isInitializingPayment}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
-            >
-              {isInitializingPayment ? (
-                <>
-                  <FaCreditCard className="animate-spin" />
-                  <span>Initializing Flutterwave...</span>
-                </>
-              ) : (
-                <>
-                  <FaCreditCard />
-                  <span>Re-launch Flutterwave Checkout</span>
-                </>
-              )}
-            </button>
+            {paymentData.paymentMethod === 'flutterwave' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Flutterwave Checkout</h2>
+                  <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('🔥 EscrowPaymentFlow: Button clicked!');
+                    console.log('🔥 EscrowPaymentFlow: loading:', loading);
+                    console.log('🔥 EscrowPaymentFlow: isInitializingPayment:', isInitializingPayment);
+                    console.log('🔥 EscrowPaymentFlow: step:', step);
+                    handleProcessPayment();
+                  }}
+                  disabled={loading || isInitializingPayment}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
+                >
+                  {isInitializingPayment ? (
+                    <>
+                      <FaCreditCard className="animate-spin" />
+                      <span>Initializing Flutterwave...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCreditCard />
+                      <span>Re-launch Flutterwave Checkout</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {paymentData.paymentMethod === 'test' && (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-900 font-semibold">Test Payment Mode</p>
+                  <p className="text-xs text-green-800 mt-1">This will simulate a successful payment for testing purposes.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentData(prev => ({ ...prev, paymentMethod: 'test' }));
+                    handleProcessPayment();
+                  }}
+                  disabled={loading}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70 hover:bg-green-700 transition"
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      <span>Processing Test Payment...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck />
+                      <span>Complete Test Payment</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {checkoutUrl && (
               <button

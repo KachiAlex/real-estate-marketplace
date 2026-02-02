@@ -6,7 +6,7 @@ import {
   FaEnvelope, 
   FaComments, 
   FaBook, 
-  FaVideo, 
+  FaHome,
   FaDownload,
   FaChevronDown,
   FaChevronUp
@@ -62,7 +62,7 @@ const VendorHelp = () => {
     },
     {
       title: "Property Management",
-      icon: FaVideo,
+      icon: FaHome,
       topics: [
         "Adding Properties",
         "Managing Listings",
@@ -215,13 +215,6 @@ const VendorHelp = () => {
             <div>
               <p className="font-medium text-gray-900">Vendor Guide PDF</p>
               <p className="text-sm text-gray-600">Complete guide to using our platform</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <FaVideo className="text-gray-400 h-5 w-5" />
-            <div>
-              <p className="font-medium text-gray-900">Video Tutorials</p>
-              <p className="text-sm text-gray-600">Step-by-step video guides</p>
             </div>
           </div>
         </div>

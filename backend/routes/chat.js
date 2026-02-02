@@ -25,18 +25,12 @@ const validateRequestBody = (requiredFields) => {
  * @desc    Create new conversation (for when buyer/vendor initiates chat)
  * @access  Private
  */
-router.post('/conversations', authenticateToken, validateRequestBody(['userId', 'message', 'category']), async (req, res) => {
+router.post('/conversations', authenticateToken, validateRequestBody(['message', 'category']), async (req, res) => {
   try {
-    const { userId, message, category, propertyId } = req.body;
+    const { message, category, propertyId } = req.body;
+    // Use authenticated user's ID, not the one from request body
+    const userId = req.user.id || req.user.uid || req.user.email;
     const userType = req.user.role || 'buyer';
-    
-    // Verify user is creating conversation for themselves
-    if (userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'You can only create conversations for yourself'
-      });
-    }
 
     const result = await chatService.createConversation(userId, message, category, propertyId, userType);
     

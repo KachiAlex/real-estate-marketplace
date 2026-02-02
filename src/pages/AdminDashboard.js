@@ -444,9 +444,14 @@ const AdminDashboard = () => {
       console.log('AdminDashboard: Skipping users API call in development mode');
       // Set mock data for development
       const mockUsersData = role ? MOCK_USERS.filter((u) => u.role === role) : MOCK_USERS;
-      setUsers(mockUsersData);
-      setVendors(mockUsersData.filter((u) => u.role === 'vendor'));
-      setBuyers(mockUsersData.filter((u) => u.role === 'buyer'));
+      // Normalize: treat undefined isActive as true (active)
+      const normalizedMockUsers = mockUsersData.map(u => ({
+        ...u,
+        isActive: u.isActive !== false
+      }));
+      setUsers(normalizedMockUsers);
+      setVendors(normalizedMockUsers.filter((u) => u.role === 'vendor'));
+      setBuyers(normalizedMockUsers.filter((u) => u.role === 'buyer'));
       return;
     }
     
@@ -478,9 +483,16 @@ const AdminDashboard = () => {
       }
 
       const fetchedUsers = Array.isArray(payload.data) ? payload.data : [];
-      setUsers(fetchedUsers);
-      setVendors(fetchedUsers.filter((u) => u.role === 'vendor'));
-      setBuyers(fetchedUsers.filter((u) => u.role === 'buyer'));
+      
+      // Normalize user data: treat undefined isActive as true (active)
+      const normalizedUsers = fetchedUsers.map(u => ({
+        ...u,
+        isActive: u.isActive !== false // Treat undefined/null as true (active)
+      }));
+      
+      setUsers(normalizedUsers);
+      setVendors(normalizedUsers.filter((u) => u.role === 'vendor'));
+      setBuyers(normalizedUsers.filter((u) => u.role === 'buyer'));
       if (payload.pagination) {
         setPagination((prev) => ({
           ...prev,
@@ -494,9 +506,15 @@ const AdminDashboard = () => {
         setAuthWarning('Admin authentication required. Please log in with an admin account so protected endpoints can be accessed.');
       }
       toast.error(error?.message || 'Unable to load users. Showing sample data.');
-      setUsers(role ? MOCK_USERS.filter((u) => u.role === role) : MOCK_USERS);
-      setVendors(MOCK_USERS.filter((u) => u.role === 'vendor'));
-      setBuyers(MOCK_USERS.filter((u) => u.role === 'buyer'));
+      // Normalize mock data: treat undefined isActive as true (active)
+      const normalizedFallback = MOCK_USERS.map(u => ({
+        ...u,
+        isActive: u.isActive !== false
+      }));
+      const roleFilteredFallback = role ? normalizedFallback.filter((u) => u.role === role) : normalizedFallback;
+      setUsers(roleFilteredFallback);
+      setVendors(normalizedFallback.filter((u) => u.role === 'vendor'));
+      setBuyers(normalizedFallback.filter((u) => u.role === 'buyer'));
     } finally {
       setLoadingUsers(false);
     }
@@ -1700,8 +1718,8 @@ const AdminDashboard = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredUsers.map((u) => {
                       const isSelected = selectedUserIds.includes(u.id);
-                      const statusLabel = u.status === 'suspended' || u.isActive === false ? 'Suspended' : 'Active';
-                      const statusClass = statusLabel === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                      const statusLabel = (u.status === 'suspended' || u.isActive === false) ? 'Suspended' : 'Active';
+                      const statusClass = statusLabel === 'Suspended' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
                       const roleClass = u.role === 'admin' ? 'text-purple-600 bg-purple-50' : u.role === 'vendor' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50';
                       return (
                         <tr key={u.id} className={isSelected ? 'bg-blue-50/40' : undefined}>

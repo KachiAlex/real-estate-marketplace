@@ -228,19 +228,27 @@ const SavedProperties = () => {
   };
 
   const handleBuyProperty = (property) => {
+    console.log('🔥 SavedProperties: handleBuyProperty called with property:', property);
+    
     if (!user) {
+      console.warn('🔥 SavedProperties: No user logged in');
       toast.error('Please login to purchase properties');
       navigate('/login');
       return;
     }
     
     if (property.status === 'sold') {
+      console.warn('🔥 SavedProperties: Property already sold');
       toast.error('This property has already been sold');
       return;
     }
     
     // Navigate to escrow process for purchase
-    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
+    const escrowUrl = `/escrow/create?propertyId=${property.id}&type=purchase`;
+    console.log('🔥 SavedProperties: Navigating to:', escrowUrl);
+    console.log('🔥 SavedProperties: Property ID:', property.id, 'Type:', typeof property.id);
+    
+    navigate(escrowUrl);
   };
 
   const handleScheduleViewing = (property) => {
@@ -667,9 +675,16 @@ const SavedProperties = () => {
                   
                   <div className="space-y-2">
                     {/* Primary action based on property type and status */}
+                    {console.log('🔥 SavedProperties: Rendering buttons for property:', { 
+                      id: property.id, 
+                      type: property.type, 
+                      status: property.status,
+                      showBuyButton: property.type === 'sale' && property.status === 'available'
+                    })}
                     {property.type === 'sale' && property.status === 'available' && (
                       <button 
                         onClick={(e) => {
+                          console.log('🔥 SavedProperties: Buy button clicked!', { property });
                           e.stopPropagation();
                           handleBuyProperty(property);
                         }}
