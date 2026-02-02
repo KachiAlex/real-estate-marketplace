@@ -326,6 +326,12 @@ try {
 }
 
 try {
+  app.use('/api/debug', require('./routes/debug'));
+} catch (error) {
+  console.error('Failed to load debug routes:', error.message);
+}
+
+try {
   app.use('/api/disputes', require('./routes/disputes'));
 } catch (error) {
   console.error('Failed to load disputes routes:', error.message);
