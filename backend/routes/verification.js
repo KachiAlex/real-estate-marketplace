@@ -9,13 +9,24 @@ const router = express.Router();
 router.get('/config', async (req, res) => {
   try {
     const settings = await adminSettingsService.getSettings();
-    return res.json({
+
+    const payload = {
       success: true,
       data: {
         verificationFee: settings.verificationFee || 50000,
         verificationBadgeColor: settings.verificationBadgeColor || '#10B981'
       }
-    });
+    };
+
+    // Temporary debug: if caller adds ?debug_headers=1, include received headers
+    if (req.query && String(req.query.debug_headers) === '1') {
+      payload.debug = {
+        headers: req.headers,
+        authorization: req.headers.authorization || null
+      };
+    }
+
+    return res.json(payload);
   } catch (error) {
     console.error('Verification config error:', error);
     return res.status(500).json({ success: false, message: 'Failed to load verification settings' });
