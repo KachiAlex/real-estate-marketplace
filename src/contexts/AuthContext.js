@@ -577,6 +577,7 @@ export const AuthProvider = ({ children }) => {
         return 'mock-admin-token';
       }
       
+      console.log('[AuthContext] Attempting Firebase token exchange...');
       const response = await fetch(getApiUrl('/auth/firebase-exchange'), {
         method: 'POST',
         headers: {
@@ -588,18 +589,26 @@ export const AuthProvider = ({ children }) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.warn('AuthContext: Backend token exchange failed:', errorData);
-        // Return mock token for development instead of throwing error
-        if (window.location.hostname === 'localhost') {
-          return 'mock-admin-token';
-        }
-        throw new Error(errorData?.message || `Firebase exchange failed with status ${response.status}`);
+        console.warn('[AuthContext] Backend token exchange failed:', errorData);
+        console.log('[AuthContext] Will use Firebase token directly for API calls');
+        // Return the Firebase token itself as fallback
+        return {
+          token: firebaseToken,
+          user: null
+        };
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('[AuthContext] Firebase token exchange successful');
+      return result;
     } catch (error) {
-      console.warn('AuthContext: Firebase token exchange failed', error?.message || error);
-      return null;
+      console.warn('[AuthContext] Firebase token exchange error', error?.message || error);
+      console.log('[AuthContext] Falling back to Firebase token for API calls');
+      // Return Firebase token as fallback
+      return {
+        token: firebaseToken,
+        user: null
+      };
     }
   };
 
