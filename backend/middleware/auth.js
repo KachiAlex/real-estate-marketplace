@@ -52,9 +52,15 @@ exports.protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
     }
 
+    // DEBUG: Log what we received
+    console.log('[protect] DEBUG - Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+    console.log('[protect] DEBUG - Token extracted:', token ? `Yes (${token.length} chars)` : 'No');
+
     // Check if token exists
     if (!token) {
+      console.warn('[protect] No token in request, checking mock user headers');
       if (attachMockUserFromHeaders(req)) {
+        console.log('[protect] Mock user authenticated from headers');
         return next();
       }
       return res.status(401).json({
@@ -66,6 +72,7 @@ exports.protect = async (req, res, next) => {
     try {
       // Verify backend JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('[protect] Backend JWT verified successfully for user:', decoded.id);
 
       // Get user from token
       const user = await userService.findById(decoded.id);
@@ -86,13 +93,16 @@ exports.protect = async (req, res, next) => {
       return next();
     } catch (jwtError) {
       console.warn('[protect] JWT verification failed:', jwtError?.message || jwtError);
+      console.log('[protect] Attempting Firebase ID token verification...');
       // If backend JWT verification fails, try Firebase ID token (used by the frontend)
       try {
         const claims = await admin.auth().verifyIdToken(token);
+        console.log('[protect] Firebase token verified for email:', claims?.email);
         const user = await resolveUserForFirebaseClaims(claims);
 
         if (!user) {
           console.warn('[protect] Firebase token resolved but user not found for email:', claims?.email);
+          console.log('[protect] Creating/syncing user from Firebase claims...');
           if (!attachMockUserFromHeaders(req)) {
             return res.status(401).json({
               success: false,

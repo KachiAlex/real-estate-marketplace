@@ -91,6 +91,27 @@ try {
   console.warn('📚 See backend/FIRESTORE_SETUP.md for setup instructions');
 }
 
+// Import models FIRST (before setImmediate)
+const User = require('./models/User');
+const Property = require('./models/Property');
+const AdminSettings = require('./models/AdminSettings');
+const EscrowTransaction = require('./models/EscrowTransaction');
+const AuditLog = require('./models/AuditLog');
+const Notification = require('./models/Notification');
+const Blog = require('./models/Blog');
+const NotificationTemplate = require('./models/NotificationTemplate');
+
+// Import middleware
+const { protect, authorize } = require('./middleware/auth');
+const { validate, sanitizeInput, adminValidation } = require('./middleware/validation');
+const { logAdminAction } = require('./middleware/audit');
+const sanitizeMiddleware = require('./middleware/sanitize');
+const { requireRole, requireAnyRole, checkOwnership } = require('./middleware/roleValidation');
+
+// Import services (needed by setImmediate below)
+const notificationService = require('./services/notificationService');
+const emailService = require('./services/emailService');
+
 // Initialize non-Mongo services immediately (Firestore-only mode)
 setImmediate(async () => {
   try {
@@ -114,27 +135,6 @@ setImmediate(async () => {
     console.warn('⚠️ Email service verification failed:', emailError.message);
   }
 });
-
-// Import models
-const User = require('./models/User');
-const Property = require('./models/Property');
-const AdminSettings = require('./models/AdminSettings');
-const EscrowTransaction = require('./models/EscrowTransaction');
-const AuditLog = require('./models/AuditLog');
-const Notification = require('./models/Notification');
-const Blog = require('./models/Blog');
-const NotificationTemplate = require('./models/NotificationTemplate');
-
-// Import middleware
-const { protect, authorize } = require('./middleware/auth');
-const { validate, sanitizeInput, adminValidation } = require('./middleware/validation');
-const { logAdminAction } = require('./middleware/audit');
-const sanitizeMiddleware = require('./middleware/sanitize');
-const { requireRole, requireAnyRole, checkOwnership } = require('./middleware/roleValidation');
-
-// Import services
-const notificationService = require('./services/notificationService');
-const emailService = require('./services/emailService');
 
 // NOTE: forgot-password route is now registered at the VERY TOP of the file
 // (right after const app = express()) to ensure it's the first route

@@ -132,6 +132,16 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setError('');
     
     try {
+      // DEBUG: Check token before sending
+      const token = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
+      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      console.log('DEBUG: Verification submission', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        userEmail: user?.email,
+        userId: user?.uid
+      });
+
       const applicationData = {
         propertyId: property?.id,
         propertyName: formValues.propertyName || property?.title,

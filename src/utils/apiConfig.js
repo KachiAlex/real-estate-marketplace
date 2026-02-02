@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://api-kzs3jdpe7a-uc.a.run.app'; // Deployed Firebase Functions
+const DEFAULT_API_BASE_URL = 'https://real-estate-marketplace-1-k8jp.onrender.com'; // Render backend
 
 const normalizeBaseUrl = (base) => {
   if (!base) return DEFAULT_API_BASE_URL;
