@@ -117,20 +117,28 @@ export const hasAuthToken = async () => {
  * @returns {Promise<Response>} The fetch response
  */
 export const authenticatedFetch = async (url, options = {}, retryOn401 = true) => {
-  // Check if we have a token before making the request
-  const hasToken = await hasAuthToken();
-  if (!hasToken) {
-    // No token available (e.g., mock user) - return a mock 401 response to prevent errors
-    console.log('authenticatedFetch: No auth token available (likely mock user), skipping API call');
+  // Get initial headers (may include Authorization)
+  let headers = await getAuthHeaders();
+
+  // If there is no Authorization header but a Firebase user exists, force refresh once
+  try {
+    if (!headers.Authorization && auth && auth.currentUser) {
+      console.log('authenticatedFetch: No Authorization header present, forcing token refresh');
+      headers = await getAuthHeaders(true);
+    }
+  } catch (e) {
+    console.warn('authenticatedFetch: Error while refreshing token:', e?.message || e);
+  }
+
+  // If still no Authorization header and no Firebase user, return 401 to avoid unauthenticated calls
+  if (!headers.Authorization && (!auth || !auth.currentUser)) {
+    console.log('authenticatedFetch: No auth token available and no Firebase user, skipping API call');
     return new Response(JSON.stringify({ error: 'No authentication token' }), {
       status: 401,
       statusText: 'Unauthorized',
       headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  // Get initial token
-  const headers = await getAuthHeaders();
   const initialOptions = {
     ...options,
     headers: {
@@ -139,12 +147,14 @@ export const authenticatedFetch = async (url, options = {}, retryOn401 = true) =
     }
   };
 
+  console.log('authenticatedFetch: Request headers:', initialOptions.headers);
+
   let response = await fetch(url, initialOptions);
 
   // If 401 and retry is enabled, try once with refreshed token
   // But only if we actually have auth.currentUser (Firebase user)
   if (response.status === 401 && retryOn401) {
-    const canRefresh = auth.currentUser !== null;
+    const canRefresh = auth && auth.currentUser !== null;
     if (canRefresh) {
       console.log('authenticatedFetch: Got 401, refreshing token and retrying...');
       const refreshedHeaders = await getAuthHeaders(true); // Force refresh
@@ -155,6 +165,7 @@ export const authenticatedFetch = async (url, options = {}, retryOn401 = true) =
           ...(options.headers || {})
         }
       };
+      console.log('authenticatedFetch: Retry request headers:', retryOptions.headers);
       response = await fetch(url, retryOptions);
     } else {
       // No Firebase user, so token refresh won't help
