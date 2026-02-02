@@ -410,6 +410,14 @@ try {
   errorLogger(error);
 }
 
+try {
+  const supportRouter = require('./routes/support');
+  app.use('/api/support', supportRouter);
+  infoLogger('Support routes loaded successfully');
+} catch (error) {
+  errorLogger(error);
+}
+
 // API Routes
 // Health check
 app.get('/api/health', (req, res) => {

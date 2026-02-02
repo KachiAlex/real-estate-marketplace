@@ -165,8 +165,8 @@ const mockUsers = [
     password: 'dikaoliver2660',
     userCode: 'PAK-ONA011',
     vendorCode: 'VND-ONA011',
-    role: 'user',
-    roles: ['buyer', 'vendor'],
+    role: 'admin',
+    roles: ['admin', 'buyer', 'vendor'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
   },
   // Vendor Accounts

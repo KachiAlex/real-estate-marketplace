@@ -429,17 +429,16 @@ const HelpSupport = () => {
     const messageText = chatInput;
     setChatInput('');
     
-    // Send message to real admin chat system via API
+    // Send message to support inquiry system
     try {
-      const response = await authenticatedFetch(getApiUrl('/api/chat/conversations'), {
+      const response = await authenticatedFetch(getApiUrl('/api/support/inquiry'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           message: messageText,
-          category: 'general_inquiry',
-          propertyId: null
+          category: 'general_inquiry'
         })
       });
       
@@ -455,7 +454,8 @@ const HelpSupport = () => {
       } else if (response.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
       } else {
-        throw new Error(`Server error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
     } catch (error) {
       console.error('Error sending message:', error);
