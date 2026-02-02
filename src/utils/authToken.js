@@ -139,6 +139,20 @@ export const authenticatedFetch = async (url, options = {}, retryOn401 = true) =
       headers: { 'Content-Type': 'application/json' }
     });
   }
+
+  // If using a mock token, also send x-mock-user-email header so backend can verify it
+  if (headers.Authorization && headers.Authorization.includes('mock-')) {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.email) {
+        headers['x-mock-user-email'] = currentUser.email;
+        console.log('authenticatedFetch: Mock token detected, adding x-mock-user-email header');
+      }
+    } catch (e) {
+      console.warn('authenticatedFetch: Error reading currentUser for mock header:', e?.message || e);
+    }
+  }
+
   const initialOptions = {
     ...options,
     headers: {
