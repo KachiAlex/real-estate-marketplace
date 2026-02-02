@@ -35,7 +35,9 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
       const data = await response.json();
       
       if (data.success) {
-        setApplications(data.data.applications || []);
+        // Backend returns data as an array directly, not nested in .applications
+        const applications = Array.isArray(data.data) ? data.data : (data.data?.applications || []);
+        setApplications(applications);
       } else {
         throw new Error(data.message || 'Failed to load applications');
       }
