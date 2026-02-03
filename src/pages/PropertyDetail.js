@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
-import AdminChatButton from '../components/AdminChatButton';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -930,9 +929,6 @@ const PropertyDetail = () => {
           </div>
         </div>
       )}
-      
-      {/* Admin Chat Support Button */}
-      <AdminChatButton propertyId={property?.id} category="property_inquiry" />
     </div>
   );
 };

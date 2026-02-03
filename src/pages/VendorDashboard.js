@@ -14,9 +14,9 @@ import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
 import VendorViewsChart from '../components/VendorViewsChart';
 import VendorConversionChart from '../components/VendorConversionChart';
-import AdminChatButton from '../components/AdminChatButton';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+import { authenticatedFetch } from '../utils/authToken';
 
 const VendorDashboard = () => {
   const { user, firebaseAuthReady } = useAuth();
@@ -255,11 +255,9 @@ const VendorDashboard = () => {
 
     try {
       setVerificationRequestsLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl('/verification/applications/mine'), {
+      const response = await authenticatedFetch(getApiUrl('/verification/applications/mine'), {
         headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Content-Type': 'application/json'
         }
       });
 
@@ -297,12 +295,9 @@ const VendorDashboard = () => {
       if (!user) return;
 
       try {
-        const token = localStorage.getItem('token');
-
-        const res = await fetch(getApiUrl('/dashboard/vendor'), {
+        const res = await authenticatedFetch(getApiUrl('/dashboard/vendor'), {
           headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
+            'Content-Type': 'application/json'
           }
         });
 
@@ -1362,9 +1357,6 @@ const VendorDashboard = () => {
           }}
         />
       )}
-      
-      {/* Admin Chat Support Button */}
-      <AdminChatButton category="vendor_support" />
       </div>
     </div>
   );

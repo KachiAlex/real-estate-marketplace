@@ -10,7 +10,6 @@ import {
   FaUniversity,
   FaComments
 } from 'react-icons/fa';
-import ChatNotificationBadge from '../ChatNotificationBadge';
 
 export const ADMIN_MENU_ITEMS = [
     { 
@@ -104,13 +103,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0
               >
                 <div className="relative">
                   <Icon className="text-lg flex-shrink-0" />
-                  {/* Show notification badge for chat support */}
-                  {item.id === 'chat-support' && (chatNotifications.unread > 0 || chatNotifications.urgent > 0) && (
-                    <ChatNotificationBadge 
-                      unreadCount={chatNotifications.unread} 
-                      urgentCount={chatNotifications.urgent} 
-                    />
-                  )}
                 </div>
                 <div className="flex-1">
                   <span className="block">{item.label}</span>

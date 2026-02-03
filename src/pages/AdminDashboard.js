@@ -8,7 +8,6 @@ import BlogManagement from '../components/BlogManagement';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
-import AdminChatSupport from '../components/AdminChatSupport';
 // Mortgage flow temporarily disabled
 // import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 import TableSkeleton from '../components/TableSkeleton';
@@ -197,10 +196,6 @@ const AdminDashboard = () => {
   const [loadingVerificationSettings, setLoadingVerificationSettings] = useState(false);
   const [hasAdminToken, setHasAdminToken] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [chatNotifications, setChatNotifications] = useState({
-    unread: 0,
-    urgent: 0
-  });
   const usersLoadedRef = useRef(false);
 
   // Early return for non-admin users
@@ -230,51 +225,6 @@ const AdminDashboard = () => {
       </div>
     );
   }
-
-  // Fetch chat statistics
-  useEffect(() => {
-    const fetchChatStats = async () => {
-      // Skip API calls in development mode to prevent 401 errors
-      if (window.location.hostname === 'localhost') {
-        console.log('AdminDashboard: Skipping chat stats API call in development mode');
-        // Set mock data for development
-        setChatNotifications({
-          unread: 0,
-          urgent: 0
-        });
-        return;
-      }
-      
-      try {
-        const response = await authenticatedFetch(getApiUrl('/admin/chat/stats'));
-        if (response.ok) {
-          const data = await response.json();
-          setChatNotifications({
-            unread: data.data.unread || 0,
-            urgent: data.data.urgent || 0
-          });
-        } else if (response.status !== 401) {
-          // Don't show error for unauthorized, just log it
-          console.warn('Failed to fetch chat stats:', response.status);
-        }
-      } catch (error) {
-        // Silently fail for chat stats to not break the dashboard
-        console.error('Error fetching chat stats:', error);
-      }
-    };
-
-    fetchChatStats();
-    
-    // Set up polling for real-time updates (only in production)
-    let interval;
-    if (window.location.hostname !== 'localhost') {
-      interval = setInterval(fetchChatStats, 30000); // Update every 30 seconds
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, []);
 
   const contentWidthClasses = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16';
 
@@ -955,7 +905,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} chatNotifications={chatNotifications} />
+        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <div className="flex-1 ml-64 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -1057,7 +1007,6 @@ const AdminDashboard = () => {
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
               {activeTab === 'blog' && 'Blog content management'}
-              {activeTab === 'chat-support' && 'Buyer and vendor chat support'}
             </p>
           </div>
         </div>
@@ -1828,13 +1777,6 @@ const AdminDashboard = () => {
         {activeTab === 'blog' && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <BlogManagement />
-          </div>
-        )}
-
-        {/* Chat Support Tab */}
-        {activeTab === 'chat-support' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <AdminChatSupport />
           </div>
         )}
 
