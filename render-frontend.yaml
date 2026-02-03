@@ -6,7 +6,7 @@ services:
     runtime: node
     rootDir: ./
     buildCommand: npm install && npm run build
-    startCommand: npm run frontend:serve
+    startCommand: npx serve -s build
     staticPublishPath: build
     routes:
       - type: rewrite
