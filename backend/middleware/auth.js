@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
 const userService = require('../services/userService');
 const mockUsers = require('../data/mockUsers');
+const jwtUtils = require('../utils/jwt');
 
 const ALLOW_MOCK_AUTH = process.env.ALLOW_MOCK_AUTH !== 'false';
 
@@ -230,6 +231,74 @@ exports.optionalAuth = async (req, res, next) => {
     req.user = null;
     next();
   }
+};
+
+/**
+ * JWT Authentication Middleware (for PostgreSQL migration)
+ * Verifies JWT tokens instead of Firebase tokens
+ */
+exports.authenticateJWT = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        error: 'No authorization header provided',
+        code: 'AUTH_MISSING'
+      });
+    }
+
+    const decoded = jwtUtils.verifyToken(authHeader);
+    
+    if (!decoded) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired token',
+        code: 'AUTH_INVALID'
+      });
+    }
+
+    // Attach user info to request
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error('JWT Authentication error:', error);
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication failed',
+      code: 'AUTH_ERROR'
+    });
+  }
+};
+
+/**
+ * Authorize based on role (for PostgreSQL migration)
+ */
+exports.authorizeRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+        code: 'AUTH_MISSING'
+      });
+    }
+
+    const userRole = req.user.activeRole || req.user.role;
+    
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        code: 'AUTH_FORBIDDEN',
+        requiredRoles: allowedRoles,
+        userRole
+      });
+    }
+
+    next();
+  };
 };
 
 // Export aliases for compatibility with route imports
