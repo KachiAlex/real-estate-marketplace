@@ -1201,30 +1201,59 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
+      // Check if Firebase is properly initialized
+      if (!auth) {
+        throw new Error('Firebase authentication is not properly initialized. Please check your Firebase configuration.');
+      }
+      
+      console.log('[AuthContext] Starting Google sign-in...');
+      console.log('[AuthContext] Auth instance:', auth.currentUser ? 'authenticated' : 'not authenticated');
+      
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: 'select_account'
       });
+      
+      console.log('[AuthContext] GoogleAuthProvider created and configured');
       
       let result;
       let fbUser;
       
       if (useRedirect) {
         // Use redirect method (for mobile or when popup is blocked)
+        console.log('[AuthContext] Using redirect method for Google sign-in');
         await signInWithRedirect(auth, provider);
         return { success: true, redirecting: true };
       } else {
         // Try popup first (default)
         try {
+          console.log('[AuthContext] Attempting popup-based Google sign-in...');
           result = await signInWithPopup(auth, provider);
           fbUser = result.user;
+          console.log('[AuthContext] Google popup sign-in successful');
+          console.log('[AuthContext] User:', { uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName });
         } catch (popupError) {
+          console.warn('[AuthContext] Google popup sign-in failed:', { code: popupError.code, message: popupError.message });
+          
           // If popup is blocked, fall back to redirect
           if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-            console.log('Popup blocked, using redirect method...');
+            console.log('[AuthContext] Popup blocked/closed, using redirect method...');
             await signInWithRedirect(auth, provider);
             return { success: true, redirecting: true };
           }
+          
+          // Check for common configuration errors
+          if (popupError.code === 'auth/operation-not-allowed') {
+            console.error('[AuthContext] CRITICAL: Google sign-in provider NOT ENABLED in Firebase Console');
+            throw new Error('Google sign-in is not enabled. Please enable it in Firebase Console > Authentication > Sign-in method.');
+          }
+          
+          if (popupError.code === 'auth/unauthorized-domain') {
+            console.error('[AuthContext] CRITICAL: Current domain is not authorized for Google sign-in');
+            console.error('[AuthContext] Current domain:', window.location.hostname);
+            throw new Error('This domain is not authorized for Google sign-in. Please add it to Firebase Console > Authentication > Authorized domains.');
+          }
+          
           throw popupError;
         }
       }
@@ -1233,6 +1262,8 @@ export const AuthProvider = ({ children }) => {
       const nameParts = fbUser.displayName?.split(' ') || [];
       const firstName = nameParts[0] || 'User';
       const lastName = nameParts.slice(1).join(' ') || '';
+      
+      console.log('[AuthContext] Creating Google user object...');
       
       // Create user object
       const googleUser = {
@@ -1250,6 +1281,7 @@ export const AuthProvider = ({ children }) => {
       // Check if this email exists in mock users
       const existingMockUser = mockUsers.find(u => u.email === fbUser.email);
       if (existingMockUser) {
+        console.log('[AuthContext] Google user matches existing mock user:', fbUser.email);
         // Use existing user's roles and role
         googleUser.role = existingMockUser.role;
         googleUser.roles = existingMockUser.roles;
@@ -1258,11 +1290,15 @@ export const AuthProvider = ({ children }) => {
         if (fbUser.photoURL) {
           await updateProfile(fbUser, { photoURL: fbUser.photoURL });
         }
+      } else {
+        console.log('[AuthContext] Google user is new (no matching mock user):', fbUser.email);
       }
       
       setUser(googleUser);
       localStorage.setItem('currentUser', JSON.stringify(googleUser));
       localStorage.setItem('activeRole', googleUser.activeRole);
+      
+      console.log('[AuthContext] Google user saved to localStorage');
       
       // Handle redirect after login
       const redirectToRaw = redirectUrl || localStorage.getItem('authRedirectUrl');
@@ -1287,12 +1323,16 @@ export const AuthProvider = ({ children }) => {
         console.warn('FCM registration skipped or failed:', e?.message || e);
       }
       
+      console.log('[AuthContext] Google sign-in completed successfully');
       return { success: true, user: googleUser, redirectUrl: redirectTo };
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error('[AuthContext] Google sign-in error:', error);
+      console.error('[AuthContext] Error details:', { code: error.code, message: error.message });
       
       // Provide user-friendly error messages
       let errorMessage = 'Failed to sign in with Google';
+      let debugInfo = '';
+      
       if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = 'An account already exists with this email. Please sign in with your existing method.';
       } else if (error.code === 'auth/popup-blocked') {
@@ -1303,16 +1343,20 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         return { success: false, error: errorMessage, cancelled: true };
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = 'This domain is not authorized for Google sign-in. Please contact support.';
+        errorMessage = 'This domain is not authorized for Google sign-in.';
+        debugInfo = `\nAuthorized domain issue detected. Current domain: ${window.location.hostname}`;
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Google sign-in is not enabled. Please contact support.';
+        errorMessage = 'Google sign-in is not enabled in Firebase Console.';
+        debugInfo = '\nPlease ensure Google provider is enabled in Firebase Console > Authentication > Sign-in method.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return { success: false, error: errorMessage };
+      const fullError = errorMessage + debugInfo;
+      
+      setError(fullError);
+      toast.error(fullError);
+      return { success: false, error: fullError };
     } finally {
       setLoading(false);
     }

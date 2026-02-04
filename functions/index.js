@@ -34,6 +34,36 @@ exports.verificationConfig = functions.https.onRequest((req, res) => {
 // In-memory storage for verification applications
 let verificationApplications = [];
 
+// Verification applications submission endpoint
+exports.verificationApplications = functions.https.onRequest((req, res) => {
+  if (req.method === 'POST') {
+    const applicationData = {
+      id: 'app_' + Date.now(),
+      ...req.body,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    verificationApplications.push(applicationData);
+
+    console.log('Verification application submitted:', applicationData);
+
+    res.json({
+      success: true,
+      data: {
+        applicationId: applicationData.id,
+        status: 'pending',
+        propertyId: req.body.propertyId,
+        submittedAt: applicationData.submittedAt
+      },
+      message: 'Verification application submitted successfully'
+    });
+  } else {
+    res.status(405).json({ success: false, message: 'Method not allowed' });
+  }
+});
+
 // Admin verification applications function
 exports.adminVerificationApplications = functions.https.onRequest((req, res) => {
   if (req.method === 'GET') {

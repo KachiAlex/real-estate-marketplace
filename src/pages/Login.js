@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaHome } from 'react-icons/fa';
 import { handleEmailPasswordAuth, handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
+import { runFirebaseConfigDiagnostics, checkGoogleAuthError } from '../utils/firebaseConfigDiagnostics';
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -275,10 +276,26 @@ const Login = () => {
                   
                   if (!result.handled && result.error && !result.cancelled) {
                     setErrors({ general: result.error });
+                    // Run diagnostics on error to help users troubleshoot
+                    console.log('[Login] Google auth failed, running diagnostics...');
+                    checkGoogleAuthError({ code: result.errorCode, message: result.error });
+                    // Also offer to run full diagnostics
+                    setTimeout(() => {
+                      if (result.error?.includes('not enabled') || result.error?.includes('not authorized')) {
+                        console.log('[Login] Suggesting user run full diagnostics');
+                        const shouldDiagnose = window.confirm(
+                          'Google authentication is not working. Would you like to run a configuration check? (Results will be in the browser console)'
+                        );
+                        if (shouldDiagnose) {
+                          runFirebaseConfigDiagnostics();
+                        }
+                      }
+                    }, 500);
                   }
                 } catch (error) {
                   console.error('Google sign-in error:', error);
                   setErrors({ general: 'Failed to sign in with Google' });
+                  checkGoogleAuthError(error);
                 } finally {
                   setLoading(false);
                 }
