@@ -17,6 +17,7 @@ const allowedOrigins = [
   'http://localhost:3001',
   'https://propertyark.com',
   'https://www.propertyark.com',
+  'https://propertyark.netlify.app',
   'https://real-estate-marketplace-37544.web.app',
   'https://real-estate-marketplace-37544.firebaseapp.com'
 ].filter(Boolean);
