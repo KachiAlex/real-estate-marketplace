@@ -8,6 +8,7 @@ const { initializeFirestore } = require('./config/firestore');
 const { securityConfig } = require('./config/security');
 const { createLogger, createMorganLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
 const rateLimit = require('express-rate-limit');
+const { initializeDatabase, isModuleAvailable } = require('./config/postgresqlSetup');
 
 const app = express();
 
@@ -75,11 +76,22 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 console.log('🚀 Starting server...');
 console.log(`📌 Port: ${PORT}`);
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+// Initialize PostgreSQL (if available)
+setImmediate(async () => {
+  const dbInit = await initializeDatabase();
+  if (dbInit.isConnected) {
+    console.log('✅ PostgreSQL initialized and connected');
+  } else {
+    console.log('ℹ️ PostgreSQL not available:', dbInit.error);
+    console.log('💡 To enable PostgreSQL, install: npm install sequelize pg pg-hstore');
+  }
+});
 
 // Initialize Firestore (Firebase)
 try {
@@ -121,13 +133,7 @@ setImmediate(async () => {
     console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
   }
 
-  try {
-    const chatService = require('./services/chatService');
-    chatService.initializeSocketIO(io);
-    console.log('✅ Chat service initialized');
-  } catch (chatError) {
-    console.warn('⚠️ Chat service initialization failed:', chatError.message);
-  }
+  // Chat service removed - chat functionality disabled
 
   try {
     const emailStatus = await emailService.verifyConnection();
@@ -374,42 +380,7 @@ try {
   console.error('Failed to load dashboard routes:', error.message);
 }
 
-// Rate limiting for chat routes (prevent spam)
-const chatRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 requests per 15 minutes
-  message: 'Too many chat messages, please try again later',
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  skip: (req) => req.user && req.user.role === 'admin' // Don't rate limit admins
-});
-
-const chatConversationRateLimit = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 new conversations per hour
-  message: 'Too many new conversations, please wait before starting another',
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-try {
-  const chatRouter = require('./routes/chat');
-  // Apply rate limiting via middleware on the router itself
-  chatRouter.use('/conversations', chatConversationRateLimit);
-  chatRouter.use('/send', chatRateLimit);
-  app.use('/api/chat', chatRouter);
-  infoLogger('Chat routes loaded successfully');
-} catch (error) {
-  errorLogger(error);
-}
-
-try {
-  const adminChatRouter = require('./routes/adminChat');
-  app.use('/api/admin/chat', adminChatRouter);
-  infoLogger('Admin chat routes loaded successfully');
-} catch (error) {
-  errorLogger(error);
-}
+// Chat routes removed - chat functionality disabled
 
 try {
   const supportRouter = require('./routes/support');
