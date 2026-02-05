@@ -868,15 +868,6 @@ const Register = () => {
             </div>
           </form>
 
-          {/* Sign In Link */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
-                Sign in here
-              </Link>
-            </p>
-          </div>
         </div>
 
       {/* Terms of Use Modal */}

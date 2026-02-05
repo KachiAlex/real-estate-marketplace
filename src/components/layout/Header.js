@@ -8,27 +8,6 @@ import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 
-// Ensure Sign In button is always visible - browser extension resistant
-const SignInLink = ({ to, className, children, ...props }) => {
-  return (
-    <Link
-      to={to}
-      className={className}
-      style={{ 
-        display: 'inline-block',
-        visibility: 'visible',
-        opacity: 1,
-        pointerEvents: 'auto',
-        position: 'relative',
-        zIndex: 10
-      }}
-      {...props}
-    >
-      {children}
-    </Link>
-  );
-};
-
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
   const location = useLocation();
@@ -316,14 +295,6 @@ const Header = () => {
                   </div>
                 )}
               </div>
-            ) : (
-              <SignInLink
-                to="/login"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium text-sm sign-in-link"
-                aria-label="Sign in to your account"
-              >
-                Sign In
-              </SignInLink>
             )}
           </div>
         </div>
@@ -693,16 +664,6 @@ const Header = () => {
                 )}
               </div>
               </>
-            ) : (
-              <div className="flex items-center space-x-2 xl:space-x-4">
-                <SignInLink
-                  to="/login"
-                  className="text-gray-700 hover:text-brand-orange transition-colors duration-300 font-medium text-xs xl:text-sm whitespace-nowrap sign-in-link"
-                  aria-label="Sign in to your account"
-                >
-                  Sign In
-                </SignInLink>
-              </div>
             )}
           </div>
 
@@ -831,17 +792,6 @@ const Header = () => {
                   >
                     Sign Out
                   </button>
-                </div>
-              ) : (
-                <div className="pt-4 border-t border-gray-200">
-                  <SignInLink
-                    to="/login"
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2 sign-in-link"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    aria-label="Sign in to your account"
-                  >
-                    Sign In
-                  </SignInLink>
                 </div>
               )}
             </nav>

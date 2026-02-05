@@ -194,8 +194,8 @@ const SavedProperties = () => {
 
   const handleRemoveFromSaved = async (propertyId) => {
     if (!user) {
-      toast.error('Please login to manage saved properties');
-      navigate('/login');
+      toast.error('Please register to manage saved properties');
+      navigate('/register');
       return;
     }
 
@@ -232,8 +232,8 @@ const SavedProperties = () => {
     
     if (!user) {
       console.warn('🔥 SavedProperties: No user logged in');
-      toast.error('Please login to purchase properties');
-      navigate('/login');
+      toast.error('Please register to purchase properties');
+      navigate('/register');
       return;
     }
     
@@ -253,8 +253,8 @@ const SavedProperties = () => {
 
   const handleScheduleViewing = (property) => {
     if (!user) {
-      toast.error('Please login to schedule viewings');
-      navigate('/login');
+      toast.error('Please register to schedule viewings');
+      navigate('/register');
       return;
     }
     
@@ -367,8 +367,8 @@ const SavedProperties = () => {
     console.log('Contact Agent clicked, property:', property, 'user:', user);
     
     if (!user) {
-      toast.error('Please login to contact agents');
-      navigate('/login');
+      toast.error('Please register to contact agents');
+      navigate('/register');
       return;
     }
     

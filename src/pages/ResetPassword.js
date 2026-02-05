@@ -15,10 +15,10 @@ const ResetPassword = () => {
         </p>
         <div className="space-y-3">
           <Link
-            to="/login"
+            to="/"
             className="inline-flex items-center justify-center w-full py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700"
           >
-            Back to Login
+            Back to Home
           </Link>
           <Link
             to="/forgot-password"

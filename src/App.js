@@ -21,7 +21,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Eagerly load critical pages (shown immediately on load)
 import Home from './pages/Home';
-import LoginNew from './pages/LoginNew';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -94,7 +93,6 @@ function App() {
                 }>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<LoginNew />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
