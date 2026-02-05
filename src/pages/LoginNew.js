@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getGoogleUserInfo } from '../config/googleOAuth';
 import toast from 'react-hot-toast';
 
 const LoginNew = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,9 +17,35 @@ const LoginNew = () => {
     confirmPassword: ''
   });
 
-  const { login, register } = useAuth();
+  const { login, register, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Render Google Sign-In button when component mounts
+  useEffect(() => {
+    if (googleButtonRef.current && window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignIn
+        });
+
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            type: 'standard',
+            size: 'large',
+            text: 'signin_with',
+            locale: 'en_US',
+            theme: 'outline',
+            width: '100%'
+          }
+        );
+      } catch (error) {
+        console.warn('Failed to render Google button:', error);
+      }
+    }
+  }, [handleGoogleSignIn]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -97,6 +125,36 @@ const LoginNew = () => {
       confirmPassword: ''
     });
   };
+
+  // Handle Google Sign-In callback
+  const handleGoogleSignIn = useCallback(async (response) => {
+    try {
+      setLoading(true);
+      if (!response.credential) {
+        toast.error('No credentials received from Google');
+        return;
+      }
+
+      // Get user info from token
+      const userInfo = getGoogleUserInfo(response.credential);
+      if (!userInfo) {
+        toast.error('Failed to decode Google token');
+        return;
+      }
+
+      // Send token to backend for JWT exchange
+      await signInWithGoogle(response.credential);
+
+      // Navigate to dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from);
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [signInWithGoogle, navigate, location]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
@@ -184,6 +242,27 @@ const LoginNew = () => {
           </button>
         </form>
 
+        {/* Divider */}
+        <div className="mt-6 mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Google Sign-In Button */}
+        {process.env.REACT_APP_GOOGLE_CLIENT_ID && (
+          <div
+            ref={googleButtonRef}
+            className="mb-6"
+            style={{ display: 'flex', justifyContent: 'center' }}
+          />
+        )}
+
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
@@ -201,7 +280,7 @@ const LoginNew = () => {
           <p className="font-semibold mb-2">Test Account:</p>
           <p><strong>Email:</strong> test@example.com</p>
           <p><strong>Password:</strong> test123</p>
-          <p className="text-xs text-gray-500 mt-2">Or create a new account</p>
+          <p className="text-xs text-gray-500 mt-2">Or create a new account / sign in with Google</p>
         </div>
       </div>
     </div>

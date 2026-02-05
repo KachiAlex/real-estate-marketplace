@@ -277,6 +277,115 @@ router.get('/me', verifyToken, async (req, res) => {
   }
 });
 
+// @desc    Exchange Google OAuth token for JWT
+// @route   POST /api/auth/jwt/google
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { googleToken } = req.body;
+
+    if (!googleToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google token is required'
+      });
+    }
+
+    // Verify Google token with Google's token endpoint
+    const axios = require('axios');
+    const { OAuth2Client } = require('google-auth-library');
+
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    let ticket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: googleToken,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+    } catch (tokenError) {
+      console.error('Google token verification failed:', tokenError.message);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired Google token'
+      });
+    }
+
+    const payload = ticket.getPayload();
+    const googleId = payload['sub'];
+    const email = payload['email'];
+    const firstName = payload['given_name'] || '';
+    const lastName = payload['family_name'] || '';
+    const picture = payload['picture'] || null;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google account must have an email'
+      });
+    }
+
+    // Find or create user
+    let user = await User.findOne({ where: { email: email.toLowerCase() } });
+
+    if (!user) {
+      // Create new user from Google data
+      user = await User.create({
+        email: email.toLowerCase(),
+        firstName: firstName || 'User',
+        lastName: lastName || 'Account',
+        avatar: picture,
+        provider: 'google',
+        isVerified: payload['email_verified'] || false,
+        isActive: true,
+        role: 'user',
+        roles: ['user']
+      });
+
+      console.log(`[Google Auth] New user created: ${email}`);
+    } else {
+      // Update existing user with Google info
+      const updates = {};
+      if (!user.avatar && picture) updates.avatar = picture;
+      if (user.provider === 'email') updates.provider = 'google'; // Switch to Google provider
+      if (updates) {
+        await user.update(updates);
+      }
+    }
+
+    // Generate JWT tokens
+    const accessToken = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Update last login
+    await user.update({ lastLogin: new Date() });
+
+    res.json({
+      success: true,
+      message: 'Google authentication successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar,
+        role: user.role,
+        roles: user.roles,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error('Google authentication error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Google authentication failed',
+      error: error.message
+    });
+  }
+});
+
 // @desc    Logout (client-side: delete tokens from localStorage)
 // @route   POST /api/auth/logout
 // @access  Private

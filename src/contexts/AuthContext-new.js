@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+import { initializeGoogleOAuth } from '../config/googleOAuth';
 
 const AuthContext = createContext();
 
@@ -10,25 +11,17 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
 
-  // Initialize auth from localStorage on mount
+  // Initialize Google OAuth on mount
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const refresh = localStorage.getItem('refreshToken');
-    const userStr = localStorage.getItem('currentUser');
-
-    if (token && userStr) {
+    const initGoogle = async () => {
       try {
-        setAccessToken(token);
-        setRefreshToken(refresh);
-        setCurrentUser(JSON.parse(userStr));
+        await initializeGoogleOAuth();
+        console.log('✅ Google OAuth initialized');
       } catch (error) {
-        console.error('Failed to restore auth state:', error);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('currentUser');
+        console.warn('⚠️ Failed to initialize Google OAuth:', error.message);
       }
-    }
-    setLoading(false);
+    };
+    initGoogle();
   }, []);
 
   // Register new user
@@ -156,6 +149,49 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken]);
 
+  // Sign in with Google
+  const signInWithGoogle = useCallback(async (googleToken) => {
+    try {
+      setLoading(true);
+
+      if (!googleToken) {
+        throw new Error('No Google token provided');
+      }
+
+      const response = await fetch(`${getApiUrl()}/api/auth/jwt/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ googleToken })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google authentication failed');
+      }
+
+      // Store tokens and user info
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setCurrentUser(data.user);
+
+      toast.success('Signed in with Google!');
+      return data.user;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'Google sign-in failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Refresh access token
   const refreshAccessToken = useCallback(async () => {
     try {
@@ -233,6 +269,7 @@ export const AuthProvider = ({ children }) => {
     refreshToken,
     register,
     login,
+    signInWithGoogle,
     logout,
     refreshAccessToken,
     fetchCurrentUser
