@@ -1,8 +1,8 @@
 ﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
-import { handleGoogleAuth, handleRoleSelection } from '../services/authFlow';
+import { useAuth } from '../contexts/AuthContext-new';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaHome, FaBuilding, FaShoppingCart } from 'react-icons/fa';
+import { handleRoleSelection } from '../services/authFlow';
 import VendorRegistrationPayment from '../components/VendorRegistrationPayment';
 import RoleSelectionModal from '../components/auth/RoleSelectionModal';
 
@@ -36,7 +36,7 @@ const Register = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [pendingVendorData, setPendingVendorData] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const { register, signInWithGoogle, setUser, registerAsVendor } = useAuth();
+  const { register, setUser, registerAsVendor } = useAuth();
   const navigate = useNavigate();
 
   // Generate captcha question
@@ -867,50 +867,6 @@ const Register = () => {
               </button>
             </div>
           </form>
-
-          {/* Divider */}
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Login Buttons */}
-          <div className="mt-6">
-            <button 
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  const result = await handleGoogleAuth(
-                    signInWithGoogle,
-                    navigate,
-                    setLoggedInUser,
-                    setShowRoleSelection
-                  );
-                  
-                  // Handle errors if authentication failed
-                  if (!result.success && result.error && !result.cancelled) {
-                    setErrors({ general: result.error });
-                  }
-                } catch (error) {
-                  console.error('Google sign-in error:', error);
-                  setErrors({ general: 'Failed to sign in with Google' });
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaGoogle className="text-red-500 mr-2" />
-              Google
-            </button>
-          </div>
 
           {/* Sign In Link */}
           <div className="mt-8 text-center">

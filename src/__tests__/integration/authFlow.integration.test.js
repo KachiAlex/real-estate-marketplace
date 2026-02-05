@@ -5,50 +5,11 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '../../contexts/AuthContext';
-import Login from '../../pages/Login';
+import { AuthProvider } from '../../contexts/AuthContext-new';
+import LoginNew from '../../pages/LoginNew';
 
-// Mock Firebase
-jest.mock('../../config/firebase', () => ({
-  auth: {
-    currentUser: null,
-    onAuthStateChanged: jest.fn((callback) => {
-      callback(null);
-      return jest.fn();
-    }),
-    signInWithPopup: jest.fn(),
-    signOut: jest.fn(),
-  },
-  db: {},
-}));
-
-jest.mock('firebase/auth', () => {
-  return {
-    ...jest.requireActual('firebase/auth'),
-    getRedirectResult: jest.fn().mockResolvedValue(null),
-    onAuthStateChanged: jest.fn((auth, callback) => {
-      // Create a new unsubscribe function for each call
-      const mockUnsub = jest.fn(() => {});
-      
-      // Call callback asynchronously
-      setTimeout(() => {
-        try {
-          callback(null);
-        } catch (e) {
-          // Ignore errors
-        }
-      }, 0);
-      return mockUnsub; // Return a callable function
-    }),
-    signInWithPopup: jest.fn(),
-    signInWithRedirect: jest.fn(),
-    signOut: jest.fn(),
-    GoogleAuthProvider: jest.fn().mockImplementation(() => ({
-      setCustomParameters: jest.fn(),
-    })),
-    updateProfile: jest.fn(),
-  };
-});
+// Mock fetch for API calls
+global.fetch = jest.fn();
 
 describe('Authentication Flow Integration', () => {
   beforeEach(() => {

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
-import { initializeGoogleOAuth } from '../config/googleOAuth';
 
 const AuthContext = createContext();
 
@@ -11,17 +10,31 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
 
-  // Initialize Google OAuth on mount
+  // Initialize auth state from localStorage on mount
   useEffect(() => {
-    const initGoogle = async () => {
+    const initializeAuth = async () => {
       try {
-        await initializeGoogleOAuth();
-        console.log('✅ Google OAuth initialized');
+        const storedAccessToken = localStorage.getItem('accessToken');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        const storedUser = localStorage.getItem('currentUser');
+
+        if (storedAccessToken && storedRefreshToken && storedUser) {
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+          setCurrentUser(JSON.parse(storedUser));
+        }
       } catch (error) {
-        console.warn('⚠️ Failed to initialize Google OAuth:', error.message);
+        console.error('Error initializing auth:', error);
+        // Clear corrupted data
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('currentUser');
+      } finally {
+        setLoading(false);
       }
     };
-    initGoogle();
+
+    initializeAuth();
   }, []);
 
   // Register new user
@@ -149,49 +162,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken]);
 
-  // Sign in with Google
-  const signInWithGoogle = useCallback(async (googleToken) => {
-    try {
-      setLoading(true);
-
-      if (!googleToken) {
-        throw new Error('No Google token provided');
-      }
-
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ googleToken })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Google authentication failed');
-      }
-
-      // Store tokens and user info
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
-
-      setAccessToken(data.accessToken);
-      setRefreshToken(data.refreshToken);
-      setCurrentUser(data.user);
-
-      toast.success('Signed in with Google!');
-      return data.user;
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      toast.error(error.message || 'Google sign-in failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Refresh access token
   const refreshAccessToken = useCallback(async () => {
     try {
@@ -228,39 +198,46 @@ export const AuthProvider = ({ children }) => {
     }
   }, [refreshToken, logout]);
 
-  // Get current user profile
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      if (!accessToken) return null;
+  // Computed properties for user roles
+  const user = currentUser;
+  const isBuyer = currentUser?.role === 'buyer' || currentUser?.userType === 'buyer';
+  const isVendor = currentUser?.role === 'vendor' || currentUser?.userType === 'vendor';
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/me`, {
-        method: 'GET',
+  // Switch user role
+  const switchRole = useCallback(async (newRole) => {
+    try {
+      if (!accessToken || !currentUser) {
+        throw new Error('User must be logged in to switch roles');
+      }
+
+      const response = await fetch(`${getApiUrl()}/api/auth/jwt/switch-role`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ role: newRole })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // If unauthorized, try to refresh token
-        if (response.status === 401) {
-          const newToken = await refreshAccessToken();
-          if (!newToken) return null;
-        }
-        throw new Error(data.message || 'Failed to fetch user');
+        throw new Error(data.message || 'Role switch failed');
       }
 
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
-      setCurrentUser(data.user);
+      // Update user data
+      const updatedUser = { ...currentUser, ...data.user };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
 
-      return data.user;
+      toast.success(`Switched to ${newRole} role`);
+      return updatedUser;
     } catch (error) {
-      console.error('Fetch current user error:', error);
-      return null;
+      console.error('Role switch error:', error);
+      toast.error(error.message || 'Role switch failed');
+      throw error;
     }
-  }, [accessToken, refreshAccessToken]);
+  }, [accessToken, currentUser]);
 
   const value = {
     currentUser,
@@ -269,10 +246,16 @@ export const AuthProvider = ({ children }) => {
     refreshToken,
     register,
     login,
-    signInWithGoogle,
     logout,
     refreshAccessToken,
-    fetchCurrentUser
+    fetchCurrentUser,
+    registerAsVendor,
+    setUser,
+    // Aliases and computed properties
+    user: currentUser,
+    isBuyer,
+    isVendor,
+    switchRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

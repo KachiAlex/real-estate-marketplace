@@ -166,47 +166,6 @@ export const handleEmailPasswordAuth = async (
 };
 
 /**
- * Handle Google authentication
- * Centralizes Google sign-in flow
- */
-export const handleGoogleAuth = async (
-  signInWithGoogle,
-  navigate,
-  setLoggedInUser,
-  setShowRoleSelection
-) => {
-  try {
-    const result = await signInWithGoogle();
-    
-    // Check if redirect is in progress (popup was blocked, using redirect flow)
-    if (result.redirecting) {
-      // The redirect flow will handle the rest
-      return { handled: true, success: true, redirecting: true };
-    }
-
-    const postAuthResult = handlePostAuth(result, navigate, setLoggedInUser, setShowRoleSelection);
-    return {
-      ...postAuthResult,
-      success: postAuthResult.handled
-    };
-  } catch (error) {
-    console.error('Google authentication error:', error);
-    
-    // Handle specific Google auth errors
-    if (error.code === 'auth/popup-blocked') {
-      toast.error('Popup was blocked. Please allow popups and try again.');
-    } else if (error.code === 'auth/popup-closed-by-user') {
-      // User closed popup, don't show error
-      return { handled: false, success: false, cancelled: true };
-    } else {
-      toast.error(error.message || 'Failed to sign in with Google');
-    }
-    
-    return { handled: false, success: false, error: error.message || 'Google authentication failed' };
-  }
-};
-
-/**
  * Get default redirect path based on user role
  */
 export const getDefaultRedirectPath = (user, redirectUrl) => {

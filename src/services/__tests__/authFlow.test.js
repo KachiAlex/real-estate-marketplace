@@ -2,7 +2,6 @@ import {
   handlePostAuth,
   handleRoleSelection,
   handleEmailPasswordAuth,
-  handleGoogleAuth,
   getDefaultRedirectPath
 } from '../authFlow';
 
@@ -235,74 +234,6 @@ describe('authFlow', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Login failed');
-    });
-  });
-
-  describe('handleGoogleAuth', () => {
-    const mockSignInWithGoogle = jest.fn();
-
-    it('should handle successful Google sign-in', async () => {
-      mockSignInWithGoogle.mockResolvedValue({
-        success: true,
-        user: { id: '1', role: 'buyer' }
-      });
-
-      const result = await handleGoogleAuth(
-        mockSignInWithGoogle,
-        mockNavigate,
-        mockSetLoggedInUser,
-        mockSetShowRoleSelection
-      );
-
-      expect(result.success).toBe(true);
-      expect(mockSignInWithGoogle).toHaveBeenCalled();
-    });
-
-    it('should handle redirect flow', async () => {
-      mockSignInWithGoogle.mockResolvedValue({
-        success: true,
-        redirecting: true
-      });
-
-      const result = await handleGoogleAuth(
-        mockSignInWithGoogle,
-        mockNavigate,
-        mockSetLoggedInUser,
-        mockSetShowRoleSelection
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.redirecting).toBe(true);
-    });
-
-    it('should handle popup blocked error', async () => {
-      const error = { code: 'auth/popup-blocked', message: 'Popup blocked' };
-      mockSignInWithGoogle.mockRejectedValue(error);
-
-      const result = await handleGoogleAuth(
-        mockSignInWithGoogle,
-        mockNavigate,
-        mockSetLoggedInUser,
-        mockSetShowRoleSelection
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Popup blocked');
-    });
-
-    it('should handle user cancellation', async () => {
-      const error = { code: 'auth/popup-closed-by-user' };
-      mockSignInWithGoogle.mockRejectedValue(error);
-
-      const result = await handleGoogleAuth(
-        mockSignInWithGoogle,
-        mockNavigate,
-        mockSetLoggedInUser,
-        mockSetShowRoleSelection
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.cancelled).toBe(true);
     });
   });
 
