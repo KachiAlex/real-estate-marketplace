@@ -34,7 +34,7 @@ const MortgageApplicationDetail = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/');
       return;
     }
 

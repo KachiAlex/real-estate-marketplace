@@ -208,7 +208,7 @@ const MortgageBankRegister = () => {
       if (response.data.success) {
         toast.success('Registration submitted successfully! Please wait for admin verification.');
         setTimeout(() => {
-          navigate('/login');
+          navigate('/');
         }, 2000);
       } else {
         toast.error(response.data.message || 'Registration failed');

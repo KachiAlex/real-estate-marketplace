@@ -169,7 +169,7 @@ const PropertyAlerts = () => {
     
     if (!user) {
       toast.error('Please login to view property matches');
-      navigate('/login');
+      navigate('/');
       return;
     }
 

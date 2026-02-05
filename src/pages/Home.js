@@ -805,7 +805,7 @@ const Home = () => {
   const handleToggleFavorite = async (propertyId, property = null) => {
     if (!user) {
       toast.error('Please login to save properties to favorites');
-      navigate('/login');
+      navigate('/');
       return;
     }
 

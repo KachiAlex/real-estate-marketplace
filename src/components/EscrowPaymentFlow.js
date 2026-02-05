@@ -230,7 +230,7 @@ const EscrowPaymentFlow = ({
           : `/escrow/create?investmentId=${investmentId}&type=${transactionType}`;
         localStorage.setItem('authRedirectUrl', currentUrl);
         toast.error('Please login to continue');
-        navigate('/login');
+        navigate('/');
         return;
       }
 

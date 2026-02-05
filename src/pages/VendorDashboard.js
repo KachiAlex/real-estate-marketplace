@@ -516,7 +516,7 @@ const VendorDashboard = () => {
   const handleDeleteProperty = async (propertyId) => {
     if (!user) {
       toast.error('Please login to manage your properties');
-      navigate('/login');
+      navigate('/');
       return;
     }
 

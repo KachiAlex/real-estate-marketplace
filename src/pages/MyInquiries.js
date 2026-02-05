@@ -15,7 +15,7 @@ const MyInquiries = () => {
   const handlePurchaseProperty = (property) => {
     if (!user) {
       toast.error('Please login to purchase properties');
-      navigate('/login');
+      navigate('/');
       return;
     }
     
@@ -33,7 +33,7 @@ const MyInquiries = () => {
   const handleScheduleViewing = (property) => {
     if (!user) {
       toast.error('Please login to schedule viewings');
-      navigate('/login');
+      navigate('/');
       return;
     }
     

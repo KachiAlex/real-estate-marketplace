@@ -39,7 +39,7 @@ const VendorRegistrationPayment = ({ vendorData, onPaymentSuccess, onCancel }) =
   const handlePayment = async () => {
     if (!user) {
       toast.error('Please login to continue');
-      navigate('/login');
+      navigate('/');
       return;
     }
 
