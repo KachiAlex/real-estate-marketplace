@@ -3,9 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import storageService from '../services/storageService';
-import { db } from '../config/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth } from '../config/firebase';
 
 const VendorProfile = () => {
   const { user, updateUserProfile } = useAuth();
@@ -99,21 +96,6 @@ const VendorProfile = () => {
         avatar: avatarToSave
       };
 
-      // Try to save to Firestore
-      const fbUser = auth.currentUser;
-      if (fbUser) {
-        try {
-          await setDoc(doc(db, 'users', fbUser.uid), {
-            ...updatedUserData,
-            email: fbUser.email,
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-          console.log('Profile saved to Firestore including avatar:', avatarToSave ? 'Yes' : 'No');
-        } catch (firestoreError) {
-          console.warn('Failed to save to Firestore:', firestoreError);
-        }
-      }
-
       // Update local context and localStorage
       if (updateUserProfile) {
         await updateUserProfile(updatedUserData);
@@ -124,7 +106,7 @@ const VendorProfile = () => {
         const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
         const updatedUser = { ...currentUserData, ...updatedUserData };
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        console.log('Profile saved to localStorage including avatar');
+        console.log('Profile saved to localStorage');
       } catch (e) {
         console.error('Error updating localStorage:', e);
       }
@@ -182,39 +164,24 @@ const VendorProfile = () => {
     setUploadingAvatar(true);
 
     try {
-      const currentUser = auth.currentUser || user;
-      const userId = currentUser?.uid || currentUser?.id || user?.id;
+      const userId = user?.id || user?.uid;
 
       if (!userId) {
         throw new Error('User not authenticated');
       }
 
-      // Upload to Firebase Storage
+      // Upload to backend API
       const uploadResult = await storageService.uploadUserAvatar(file, userId);
 
       let avatarUrl;
       
       if (!uploadResult.success) {
-        // If Firebase Storage fails, use local data URL as fallback
-        console.error('Firebase Storage upload failed:', uploadResult.error);
+        // If backend upload fails, use local data URL as fallback
+        console.error('Backend upload failed:', uploadResult.error);
         console.log('Using local data URL as fallback');
         avatarUrl = localDataUrl;
         
-        // Still try to save to Firestore with local URL
-        try {
-          const userRef = doc(db, 'users', userId);
-          await setDoc(userRef, {
-            avatar: avatarUrl,
-            updatedAt: serverTimestamp(),
-            isLocalAvatar: true // Flag to indicate this is a local URL
-          }, { merge: true });
-          console.log('Saved local avatar to Firestore');
-        } catch (firestoreError) {
-          console.error('Firestore update error:', firestoreError);
-        }
-        
         // Update local state with local URL
-        // Save to localStorage directly to ensure persistence
         try {
           const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
           const updatedUser = { ...currentUserData, avatar: avatarUrl };
@@ -224,34 +191,22 @@ const VendorProfile = () => {
           console.error('Error saving to localStorage:', localError);
         }
         
-        // Try to update via updateUserProfile (may fail due to Firestore permissions, but that's ok)
+        // Try to update via updateUserProfile
         try {
           await updateUserProfile({ avatar: avatarUrl });
         } catch (profileError) {
-          console.warn('updateUserProfile failed (expected due to permissions):', profileError);
+          console.warn('updateUserProfile failed:', profileError);
           // Continue anyway - we've saved to localStorage
         }
         
         setFormData(prev => ({ ...prev, avatar: avatarUrl }));
         setAvatarPreview(avatarUrl);
-        toast.error('Profile picture saved locally. Cloud upload failed - check Firebase Storage permissions.');
+        toast.error('Profile picture saved locally. Server upload failed.');
         return; // Exit early since we're using local fallback
       }
 
       avatarUrl = uploadResult.url;
-      console.log('Firebase Storage upload successful:', avatarUrl);
-
-      // Save to Firestore
-      try {
-        const userRef = doc(db, 'users', userId);
-        await setDoc(userRef, {
-          avatar: avatarUrl,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      } catch (firestoreError) {
-        console.error('Firestore update error:', firestoreError);
-        // Continue even if Firestore update fails
-      }
+      console.log('Backend upload successful:', avatarUrl);
 
       // Update local state
       await updateUserProfile({ avatar: avatarUrl });
@@ -273,8 +228,8 @@ const VendorProfile = () => {
       
       let errorMessage = 'Failed to upload profile picture';
       
-      if (error.code === 'storage/unauthorized' || error.message?.includes('permission')) {
-        errorMessage = 'Storage permission denied. Please check your Firebase Storage rules.';
+      if (error.message?.includes('permission')) {
+        errorMessage = 'Upload permission denied. Please try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -297,23 +252,7 @@ const VendorProfile = () => {
       setAvatarPreview(null);
       setFormData(prev => ({ ...prev, avatar: '' }));
       
-      // Clear from Firestore
-      const currentUser = auth.currentUser || user;
-      const userId = currentUser?.uid || currentUser?.id || user?.id;
-      
-      if (userId) {
-        try {
-          const userRef = doc(db, 'users', userId);
-          await setDoc(userRef, {
-            avatar: '',
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-        } catch (firestoreError) {
-          console.error('Firestore update error:', firestoreError);
-        }
-      }
-      
-      // Also clear from localStorage
+      // Clear from localStorage
       try {
         const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
         delete currentUserData.avatar;

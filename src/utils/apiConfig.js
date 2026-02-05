@@ -1,5 +1,4 @@
-const DEFAULT_API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com'; // Render backend
-const FIREBASE_FUNCTIONS_URL = 'https://api-kzs3jdpe7a-uc.a.run.app'; // Firebase Functions
+const DEFAULT_API_BASE_URL = process.env.REACT_APP_API_URL || 'https://real-estate-marketplace-1-k8jp.onrender.com';
 
 const isLocalhost = (value) => {
   if (!value || typeof value !== 'string') return false;
@@ -32,10 +31,6 @@ const normalizeBaseUrl = (base) => {
 export const getApiBaseUrl = () => {
   // Use environment variable for Render, fallback to default
   return process.env.REACT_APP_API_URL || DEFAULT_API_BASE_URL;
-};
-
-export const getFirebaseFunctionsUrl = () => {
-  return FIREBASE_FUNCTIONS_URL;
 };
 
 export const getApiUrl = (path = '') => {

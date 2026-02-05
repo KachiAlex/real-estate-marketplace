@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { db, auth } from '../config/firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FaHome, FaChartLine, FaEye, FaHeart, FaEnvelope, FaCalendar, FaDollarSign, FaPlus, FaEdit, FaTrash, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaPhone, FaCheck, FaTimes, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 import PropertyVerification from '../components/PropertyVerificationNew';
 import { getVerificationStatus, isVerificationRequested, isVerificationApproved, getVerificationButtonText, getVerificationButtonClass } from '../utils/verificationStatus';
@@ -19,7 +17,7 @@ import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
 
 const VendorDashboard = () => {
-  const { user, firebaseAuthReady } = useAuth();
+  const { user } = useAuth();
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();
@@ -82,7 +80,7 @@ const VendorDashboard = () => {
     }
   }, [location.pathname]);
 
-  // Fetch vendor's properties from Firestore and localStorage fallback
+  // Fetch vendor's properties from localStorage and backend API
   const fetchVendorProperties = useCallback(async () => {
     if (!user) {
       setProperties([]);
@@ -93,9 +91,8 @@ const VendorDashboard = () => {
     setPropertiesLoading(true);
     
     try {
-      const fbUser = auth.currentUser;
-      const userId = fbUser?.uid || user?.id || user?.uid;
-      const userEmail = fbUser?.email || user?.email;
+      const userId = user?.id || user?.uid;
+      const userEmail = user?.email;
       
       console.log('VendorDashboard: Fetching properties for user:', { userId, userEmail });
       
@@ -106,56 +103,9 @@ const VendorDashboard = () => {
         return;
       }
 
-      // Fetch properties from Firestore where ownerId or ownerEmail matches
-      const propertiesRef = collection(db, 'properties');
+      // Fetch properties from localStorage as primary source
       let allProps = [];
-      let firestoreError = null;
 
-      // Try to fetch by ownerId first
-      if (userId) {
-        try {
-          const ownerIdQuery = query(propertiesRef, where('ownerId', '==', userId));
-          const ownerIdSnap = await getDocs(ownerIdQuery);
-          const ownerIdProps = ownerIdSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            source: 'firestore',
-            createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || new Date()
-          }));
-          console.log('VendorDashboard: Found', ownerIdProps.length, 'properties by ownerId in Firestore');
-          allProps = [...ownerIdProps];
-        } catch (err) {
-          console.warn('VendorDashboard: Error fetching by ownerId:', err);
-          firestoreError = err;
-        }
-      }
-
-      // Also fetch by ownerEmail if available
-      if (userEmail) {
-        try {
-          const emailQuery = query(propertiesRef, where('ownerEmail', '==', userEmail));
-          const emailSnap = await getDocs(emailQuery);
-          const emailProps = emailSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            source: 'firestore',
-            createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || new Date()
-          }));
-          console.log('VendorDashboard: Found', emailProps.length, 'properties by ownerEmail in Firestore');
-          
-          // Merge and deduplicate (in case same property is found by both queries)
-          emailProps.forEach(prop => {
-            if (!allProps.find(p => p.id === prop.id)) {
-              allProps.push(prop);
-            }
-          });
-        } catch (err) {
-          console.warn('VendorDashboard: Error fetching by ownerEmail:', err);
-          firestoreError = err;
-        }
-      }
-
-      // FALLBACK: Also check localStorage for properties saved locally (when Firestore fails)
       try {
         const localProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
         const userLocalProps = localProperties.filter(prop => {
@@ -167,24 +117,51 @@ const VendorDashboard = () => {
         if (userLocalProps.length > 0) {
           console.log('VendorDashboard: Found', userLocalProps.length, 'properties in localStorage');
           
-          // Add localStorage properties that aren't already in allProps
-          userLocalProps.forEach(prop => {
-            if (!allProps.find(p => p.id === prop.id)) {
+          allProps = userLocalProps.map(prop => ({
+            ...prop,
+            source: 'localStorage',
+            createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
+          }));
+        }
+      } catch (err) {
+        console.warn('VendorDashboard: Error reading localStorage:', err);
+      }
+
+      // Also try to fetch from backend API
+      try {
+        const response = await authenticatedFetch(getApiUrl('/properties'), {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const apiProps = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+          
+          console.log('VendorDashboard: Found', apiProps.length, 'properties from backend');
+          
+          // Merge API properties with localStorage, preferring API data
+          apiProps.forEach(prop => {
+            const existingIndex = allProps.findIndex(p => p.id === prop.id);
+            if (existingIndex >= 0) {
+              allProps[existingIndex] = {
+                ...allProps[existingIndex],
+                ...prop,
+                source: 'api',
+                createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
+              };
+            } else {
               allProps.push({
                 ...prop,
-                source: 'localStorage',
+                source: 'api',
                 createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
               });
             }
           });
         }
       } catch (err) {
-        console.warn('VendorDashboard: Error reading localStorage:', err);
-      }
-
-      // Show warning if Firestore failed but we have local data
-      if (firestoreError && allProps.length > 0) {
-        console.warn('VendorDashboard: Using localStorage fallback due to Firestore error');
+        console.warn('VendorDashboard: Error fetching from backend API:', err);
       }
 
       // Sort by createdAt descending
@@ -274,12 +251,10 @@ const VendorDashboard = () => {
     }
   }, [user]);
 
-  // Load vendor's properties when user or auth state changes
+  // Load vendor's properties when user changes
   useEffect(() => {
-    if (firebaseAuthReady) {
-      fetchVendorProperties();
-    }
-  }, [firebaseAuthReady, fetchVendorProperties]);
+    fetchVendorProperties();
+  }, [user, fetchVendorProperties]);
 
   useEffect(() => {
     if (!user) {
@@ -327,73 +302,7 @@ const VendorDashboard = () => {
     fetchVendorAnalytics();
   }, [user]);
 
-  // Sync localStorage properties to Firestore (runs once when component mounts and auth is ready)
-  useEffect(() => {
-    const syncLocalPropertiesToFirestore = async () => {
-      if (!firebaseAuthReady || !auth.currentUser) return;
-      
-      try {
-        const localProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
-        const fbUser = auth.currentUser;
-        
-        // Find properties that belong to this user and haven't been synced to Firestore
-        const unsyncedProps = localProperties.filter(prop => {
-          const belongsToUser = prop.ownerId === fbUser.uid || prop.ownerEmail === fbUser.email;
-          const notSynced = !prop.savedToFirestore && prop.id?.startsWith('local-');
-          return belongsToUser && notSynced;
-        });
-        
-        if (unsyncedProps.length === 0) return;
-        
-        console.log('VendorDashboard: Found', unsyncedProps.length, 'unsynced properties to sync to Firestore');
-        
-        for (const prop of unsyncedProps) {
-          try {
-            // Check if property already exists in Firestore (by checking if we can find it)
-            const propertiesRef = collection(db, 'properties');
-            
-            // Remove local-only fields before syncing
-            const { id: localId, savedToFirestore, source, ...propertyData } = prop;
-            
-            const firestoreDoc = await addDoc(propertiesRef, {
-              ...propertyData,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              ownerId: fbUser.uid,
-              ownerEmail: fbUser.email,
-              syncedFromLocal: true,
-              originalLocalId: localId
-            });
-            
-            console.log('VendorDashboard: Synced property', localId, 'to Firestore as', firestoreDoc.id);
-            
-            // Update localStorage to mark as synced
-            const updatedLocal = localProperties.map(p => 
-              p.id === localId 
-                ? { ...p, savedToFirestore: true, firestoreId: firestoreDoc.id }
-                : p
-            );
-            localStorage.setItem('mockProperties', JSON.stringify(updatedLocal));
-            
-            toast.success(`Property "${prop.title}" has been synced to cloud storage`);
-          } catch (syncError) {
-            console.error('VendorDashboard: Failed to sync property:', prop.id, syncError);
-          }
-        }
-        
-        // Refresh the properties list after syncing
-        if (unsyncedProps.length > 0) {
-          fetchVendorProperties();
-        }
-      } catch (error) {
-        console.error('VendorDashboard: Error during property sync:', error);
-      }
-    };
-    
-    // Run sync after a short delay to ensure everything is loaded
-    const syncTimeout = setTimeout(syncLocalPropertiesToFirestore, 2000);
-    return () => clearTimeout(syncTimeout);
-  }, [firebaseAuthReady, fetchVendorProperties]);
+  // Removed: Firestore sync is no longer needed
 
   // Load mock inquiries and viewing requests
   useEffect(() => {

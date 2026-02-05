@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { FaUpload, FaTimes, FaEye, FaPlay, FaFile, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import storageService from '../services/storageService';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -166,57 +165,42 @@ const EnhancedFileUpload = ({
   }, [user, disabled, files, maxFiles, type, finalAllowedTypes, finalMaxSize, propertyId, onFilesChange]);
 
   const uploadFileWithProgress = async (file, propertyId, userId, fileId) => {
-    const basePath = `properties/${propertyId}/${type}s`;
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-    const filePath = `${basePath}/${fileName}`;
-    
-    const metadata = {
-      customMetadata: {
-        propertyId,
-        uploadedBy: userId,
-        uploadedAt: new Date().toISOString(),
-        type: `property_${type}`
-      }
-    };
-
     try {
-      // Create a reference to the file location
-      const storageRef = ref(storageService.storage, filePath);
+      // Use storageService to upload the file
+      const result = await storageService.uploadFile(file, userId);
       
-      // Upload the file with progress tracking
-      const uploadTask = uploadBytes(storageRef, file, metadata);
-      
-      // Simulate progress updates (Firebase doesn't provide real progress callbacks for uploadBytes)
-      const progressInterval = setInterval(() => {
+      if (result.success) {
+        // Simulate progress updates for UX
         setUploadingFiles(prev => {
           const newMap = new Map(prev);
-          const current = newMap.get(fileId);
-          if (current && current.status === 'uploading') {
-            const newProgress = Math.min(current.progress + Math.random() * 20, 90);
-            newMap.set(fileId, { ...current, progress: newProgress });
-          }
+          newMap.set(fileId, { ...newMap.get(fileId), progress: 100 });
           return newMap;
         });
-      }, 200);
 
-      const snapshot = await uploadTask;
-      
-      // Clear progress interval
-      clearInterval(progressInterval);
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      
-      return {
-        success: true,
-        url: downloadURL,
-        path: snapshot.ref.fullPath,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        isLocal: false
-      };
+        return {
+          success: true,
+          url: result.url || result.path,
+          path: result.path,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          isLocal: false
+        };
+      } else {
+        // Fallback to local object URL
+        const localUrl = URL.createObjectURL(file);
+        console.warn(`Falling back to local ${type} storage for:`, file.name);
+        
+        return {
+          success: true,
+          url: localUrl,
+          path: `local-files/${fileId}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          isLocal: true
+        };
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
 

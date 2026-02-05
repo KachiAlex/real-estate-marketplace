@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
-import { db } from '../config/firebase';
 import { FaPlus, FaCheck, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -285,11 +283,17 @@ const AdminDataSeeder = () => {
     setIsSeeding(true);
     try {
       let addedCount = 0;
+      // Store to localStorage instead of Firestore
+      const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
       for (const property of sampleProperties) {
-        await addDoc(collection(db, 'properties'), property);
+        existingProperties.push({
+          ...property,
+          id: `property-${Date.now()}-${Math.random()}`
+        });
         addedCount++;
       }
-      toast.success(`Successfully added ${addedCount} properties to Firestore!`);
+      localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+      toast.success(`Successfully added ${addedCount} properties to local storage!`);
     } catch (error) {
       console.error('Error adding properties:', error);
       toast.error('Failed to add properties. Please check console for details.');
@@ -302,11 +306,14 @@ const AdminDataSeeder = () => {
     setIsSeeding(true);
     try {
       let addedCount = 0;
+      // Store to localStorage instead of Firestore
+      const existingUsers = JSON.parse(localStorage.getItem('mockUsers') || '[]');
       for (const user of sampleUsers) {
-        await setDoc(doc(db, 'users', user.id), user);
+        existingUsers.push(user);
         addedCount++;
       }
-      toast.success(`Successfully added ${addedCount} users to Firestore!`);
+      localStorage.setItem('mockUsers', JSON.stringify(existingUsers));
+      toast.success(`Successfully added ${addedCount} users to local storage!`);
     } catch (error) {
       console.error('Error adding users:', error);
       toast.error('Failed to add users. Please check console for details.');
@@ -318,21 +325,29 @@ const AdminDataSeeder = () => {
   const seedAllData = async () => {
     setIsSeeding(true);
     try {
+      // Store to localStorage instead of Firestore
       // Add users first
+      const existingUsers = JSON.parse(localStorage.getItem('mockUsers') || '[]');
       let userCount = 0;
       for (const user of sampleUsers) {
-        await setDoc(doc(db, 'users', user.id), user);
+        existingUsers.push(user);
         userCount++;
       }
+      localStorage.setItem('mockUsers', JSON.stringify(existingUsers));
 
       // Add properties
+      const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
       let propertyCount = 0;
       for (const property of sampleProperties) {
-        await addDoc(collection(db, 'properties'), property);
+        existingProperties.push({
+          ...property,
+          id: `property-${Date.now()}-${Math.random()}`
+        });
         propertyCount++;
       }
+      localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
 
-      toast.success(`Successfully added ${userCount} users and ${propertyCount} properties to Firestore!`);
+      toast.success(`Successfully added ${userCount} users and ${propertyCount} properties to local storage!`);
     } catch (error) {
       console.error('Error seeding data:', error);
       toast.error('Failed to seed data. Please check console for details.');

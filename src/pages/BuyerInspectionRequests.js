@@ -1,9 +1,7 @@
 ﻿import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../config/firebase';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { updateInspectionRequest, getInspectionAnalytics } from '../services/inspectionService';
+import { updateInspectionRequest, getInspectionAnalytics, listInspectionRequestsByBuyer } from '../services/inspectionService';
 import { FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -157,27 +155,15 @@ const BuyerInspectionRequests = () => {
       return;
     }
 
-    // Load from localStorage first (primary source)
+    // Load from localStorage (primary source)
     const localRequests = loadRequestsFromLocalStorage();
     updateRequests(localRequests);
 
-    // Also try to subscribe to Firestore (for future use when API is available)
-    let firestoreUnsub = null;
-    try {
-      const q = query(collection(db, 'inspectionRequests'), where('buyerId', '==', user.id));
-      firestoreUnsub = onSnapshot(q, (snap) => {
-        const arr = [];
-        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-        arr.sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt || 0) - new Date(a.createdAt?.toDate?.() || a.createdAt || 0));
-        
-        // Merge Firestore data with localStorage data (Firestore takes precedence if both exist)
-        const localRequests = loadRequestsFromLocalStorage();
-        const merged = [...arr, ...localRequests.filter(lr => !arr.find(fr => fr.id === lr.id))];
-        updateRequests(merged);
-      });
-    } catch (e) {
-      console.warn('Buyer realtime subscription failed, using localStorage only:', e);
-    }
+    // Poll for updates every 5 seconds as fallback
+    const pollInterval = setInterval(() => {
+      const updatedRequests = loadRequestsFromLocalStorage();
+      updateRequests(updatedRequests);
+    }, 5000);
 
     // Listen for viewing updates from other components
     const handleViewingsUpdate = () => {
@@ -202,7 +188,7 @@ const BuyerInspectionRequests = () => {
     });
 
     return () => {
-      if (firestoreUnsub) firestoreUnsub();
+      clearInterval(pollInterval);
       window.removeEventListener('viewingsUpdated', handleViewingsUpdate);
       window.removeEventListener('inspectionAnalyticsUpdated', handleAnalyticsUpdate);
     };

@@ -16,8 +16,6 @@ import {
 import { useInvestment } from '../contexts/InvestmentContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 
 const InvestmentDetail = () => {
   const { id } = useParams();
@@ -52,27 +50,10 @@ const InvestmentDetail = () => {
       
       setInvestment(investmentData);
 
-      // Load vendor details (try vendorId first, then sponsorId)
+      // Load vendor details from investment sponsor data (already populated)
       const vendorIdToLoad = investmentData?.vendorId || investmentData?.sponsorId;
-      if (vendorIdToLoad) {
-        try {
-          const vendorRef = doc(db, 'users', vendorIdToLoad);
-          const vendorDoc = await getDoc(vendorRef);
-          if (vendorDoc.exists()) {
-            setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
-          } else if (investmentData.sponsor) {
-            // Use sponsor info from investment data if vendor doc doesn't exist
-            setVendor(investmentData.sponsor);
-          }
-        } catch (err) {
-          console.warn('Error loading vendor:', err);
-          // Use sponsor info from investment data if available
-          if (investmentData.sponsor) {
-            setVendor(investmentData.sponsor);
-          }
-        }
-      } else if (investmentData.sponsor) {
-        // Use sponsor info directly if no ID is available
+      if (investmentData.sponsor) {
+        // Use sponsor info from investment data
         setVendor(investmentData.sponsor);
       }
 

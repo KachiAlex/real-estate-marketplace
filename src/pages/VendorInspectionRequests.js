@@ -1,8 +1,6 @@
 ﻿import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { listInspectionRequestsByVendor, updateInspectionRequest } from '../services/inspectionService';
-import { db } from '../config/firebase';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const VendorInspectionRequests = () => {
@@ -91,21 +89,22 @@ const VendorInspectionRequests = () => {
   useEffect(() => {
     load();
     if (!user?.id && !user?.email) return;
-    try {
-      const clauses = [];
-      if (user?.id) clauses.push(where('vendorId', '==', user.id));
-      if (user?.email) clauses.push(where('vendorEmail', '==', user.email));
-      const q = query(collection(db, 'inspectionRequests'), ...clauses);
-      const unsub = onSnapshot(q, (snap) => {
-        const arr = [];
-        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-        // sort newest first
-        arr.sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt || 0) - new Date(a.createdAt?.toDate?.() || a.createdAt || 0));
-        setRequests(arr);
-        // web notifications on status changes
+    
+    // Poll for updates every 5 seconds as fallback to real-time
+    const pollInterval = setInterval(() => {
+      load();
+    }, 5000);
+    
+    // Initial data load with change detection for notifications
+    (async () => {
+      try {
+        const data = await listInspectionRequestsByVendor(user?.id, user?.email);
+        setRequests(data);
+        
+        // Check for status changes and show notifications
         ensureNotificationPermission();
         const prev = prevStatusRef.current || {};
-        for (const r of arr) {
+        for (const r of data) {
           const previous = prev[r.id];
           if (previous && previous !== r.status) {
             if (r.status === 'accepted') {
@@ -120,9 +119,13 @@ const VendorInspectionRequests = () => {
             }
           }
         }
-        prevStatusRef.current = Object.fromEntries(arr.map(x => [x.id, x.status]));
-      });
-      return () => unsub();
+        prevStatusRef.current = Object.fromEntries(data.map(x => [x.id, x.status]));
+      } catch (e) {
+        console.error('Error loading inspection requests:', e);
+      }
+    })();
+    
+    return () => clearInterval(pollInterval);
     } catch (e) {
       console.warn('Realtime subscription failed, using manual load', e);
     }

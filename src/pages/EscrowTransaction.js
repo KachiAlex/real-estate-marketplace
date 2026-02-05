@@ -17,8 +17,6 @@ import {
 import { useEscrow } from '../contexts/EscrowContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 
 const EscrowTransaction = () => {
   const { id } = useParams();
@@ -77,57 +75,28 @@ const EscrowTransaction = () => {
         }
       }
 
-      // Load vendor/seller details
+      // Load vendor/seller details (use transaction data)
       const vendorId = transactionData.vendorId || transactionData.sellerId;
-      if (vendorId) {
-        try {
-          const vendorRef = doc(db, 'users', vendorId);
-          const vendorDoc = await getDoc(vendorRef);
-          if (vendorDoc.exists()) {
-            setVendor({ id: vendorDoc.id, ...vendorDoc.data() });
-          } else if (transactionData.sellerName) {
-            // Use transaction data if Firestore doc doesn't exist
-            setVendor({
-              id: vendorId,
-              firstName: transactionData.sellerName?.split(' ')[0] || '',
-              lastName: transactionData.sellerName?.split(' ').slice(1).join(' ') || '',
-              email: transactionData.sellerEmail || ''
-            });
-          }
-        } catch (err) {
-          console.warn('Error loading vendor:', err);
-          // Use transaction data as fallback
-          if (transactionData.sellerName) {
-            setVendor({
-              id: vendorId,
-              firstName: transactionData.sellerName?.split(' ')[0] || '',
-              lastName: transactionData.sellerName?.split(' ').slice(1).join(' ') || '',
-              email: transactionData.sellerEmail || ''
-            });
-          }
-        }
+      if (transactionData.sellerName) {
+        // Use transaction data
+        setVendor({
+          id: vendorId,
+          firstName: transactionData.sellerName?.split(' ')[0] || '',
+          lastName: transactionData.sellerName?.split(' ').slice(1).join(' ') || '',
+          email: transactionData.sellerEmail || ''
+        });
       }
 
-      // Load buyer details
+      // Load buyer details (use transaction data)
       const buyerId = transactionData.buyerId;
-      if (buyerId) {
-        try {
-          const buyerRef = doc(db, 'users', buyerId);
-          const buyerDoc = await getDoc(buyerRef);
-          if (buyerDoc.exists()) {
-            setBuyer({ id: buyerDoc.id, ...buyerDoc.data() });
-          } else if (transactionData.buyerName) {
-            // Use transaction data if Firestore doc doesn't exist
-            setBuyer({
-              id: buyerId,
-              firstName: transactionData.buyerName?.split(' ')[0] || '',
-              lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
-              email: transactionData.buyerEmail || ''
-            });
-          }
-        } catch (err) {
-          console.warn('Error loading buyer:', err);
-          // Use transaction data as fallback
+      if (transactionData.buyerName) {
+        // Use transaction data
+        setBuyer({
+          id: buyerId,
+          firstName: transactionData.buyerName?.split(' ')[0] || '',
+          lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
+          email: transactionData.buyerEmail || ''
+        });
           if (transactionData.buyerName) {
             setBuyer({
               id: buyerId,
