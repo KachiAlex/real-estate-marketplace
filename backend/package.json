@@ -9,7 +9,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "setup:firebase": "node scripts/setup-firebase-credentials.js",
     "seed:firestore": "node scripts/seedFirestore.js",
-    "test:notifications-escrow": "node scripts/testNotificationsEscrow.js"
+    "test:notifications-escrow": "node scripts/testNotificationsEscrow.js",
+    "migrate": "node migration/run-migration.js",
+    "verify-migration": "node verify-migration.js",
+    "test-db": "node test-db-connection.js"
   },
   "keywords": [
     "real-estate",
@@ -35,6 +38,9 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1",
+    "pg": "^8.18.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "stripe": "^13.5.0"
   },

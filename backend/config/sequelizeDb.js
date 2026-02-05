@@ -27,7 +27,7 @@ const sequelize = new Sequelize(DATABASE_URL, {
   }
 });
 
-// Import all model factory functions
+// Import all model factory functions from sequelize models
 const {
   User,
   Property,
@@ -47,7 +47,7 @@ const {
   PropertyAlert,
   DisputeResolution,
   InspectionRequest
-} = require('../models');
+} = require('../models/sequelize');
 
 // Initialize all models
 const db = {
