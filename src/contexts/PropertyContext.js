@@ -1,10 +1,26 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { db, auth } from '../config/firebase';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+
+// Backend-only mode: stubbed datastore helpers (no external SDK)
+const auth = { currentUser: null };
+const db = null;
+const collection = (...args) => ({ __stub: true, path: args.join('/') });
+const doc = (...args) => ({ __stub: true, path: args.join('/') });
+const query = (...args) => ({ __stub: true, args });
+const where = () => ({ __stub: true });
+const orderBy = () => ({ __stub: true });
+const limit = () => ({ __stub: true });
+const startAfter = () => ({ __stub: true });
+const serverTimestamp = () => new Date().toISOString();
+const getDoc = async () => ({ exists: () => false, data: () => null });
+const getDocs = async () => ({ docs: [] });
+const setDoc = async () => {};
+const deleteDoc = async () => {};
+const updateDoc = async () => {};
+const addDoc = async () => ({ id: `stub_${Date.now()}`, ref: {} });
 
 const PropertyContext = createContext();
 
@@ -233,160 +249,65 @@ export const PropertyProvider = ({ children }) => {
     totalItems: 0,
     itemsPerPage: 12
   });
-  const { user, firebaseAuthReady } = useAuth();
-
-  // Load properties on mount
-  useEffect(() => {
-    // Transform and set mock properties initially (so UI isn't empty)
       try {
-        const propertiesData = mockProperties.map(property => {
-          const details = property.details || {};
-          return {
-            ...property,
-            bedrooms: property.bedrooms || details.bedrooms || 0,
-            bathrooms: property.bathrooms || details.bathrooms || 0,
-            area: property.area || details.sqft || 0,
-            parking: property.parking || details.parking || 'N/A',
-            location: property.location?.city || `${property.location?.address}, ${property.location?.city}` || 'Location not specified',
-            image: property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
-            details: {
-              bedrooms: details.bedrooms || property.bedrooms || 0,
-              bathrooms: details.bathrooms || property.bathrooms || 0,
-              sqft: details.sqft || property.area || 0,
-              parking: details.parking || property.parking || 'N/A',
-              yearBuilt: details.yearBuilt || null,
-              lotSize: details.lotSize || null
-            }
-          };
+        const resp = await fetch(getApiUrl('/properties'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiPayload)
         });
-        setProperties(propertiesData);
-      console.log('Loaded mock properties initially:', propertiesData.length);
-      } catch (error) {
-      console.error('Error loading mock properties:', error);
-      }
-    
-    // Note: fetchProperties() will be called by components that need all properties
-    // This just sets the initial mock properties so UI isn't empty
-  }, []);
-
-  // Fetch properties with filters
-  const fetchProperties = useCallback(async (newFilters = {}, page = 1) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      let data = [...mockProperties]; // Default to mock data
-      
-      // Try Firestore (public read is allowed, so we can fetch even without auth)
-        try {
-        console.log('PropertyContext: Attempting to fetch properties from Firestore...');
-      const propertiesRef = collection(db, 'properties');
-      const constraints = [];
-
-        // Build query constraints
-      if (newFilters.type) constraints.push(where('type', '==', newFilters.type));
-      if (newFilters.status) constraints.push(where('listingType', '==', newFilters.status));
-      if (newFilters.city) constraints.push(where('location.city', '==', newFilters.city));
-        
-        // Try with orderBy first, but fallback if index is missing
-        let snap;
-        let firestoreProps = [];
-        try {
-          const constraintsWithOrder = [...constraints, orderBy('createdAt', 'desc')];
-          if (newFilters.limit) constraintsWithOrder.push(limit(Number(newFilters.limit)));
-          const q = query(propertiesRef, ...constraintsWithOrder);
-          snap = await getDocs(q);
-        } catch (orderByError) {
-          // If orderBy fails (missing index), fetch without ordering
-          console.warn('PropertyContext: orderBy failed, fetching all properties without ordering:', orderByError);
-          const constraintsNoOrder = [...constraints];
-          if (newFilters.limit) constraintsNoOrder.push(limit(Number(newFilters.limit)));
-          const q = constraintsNoOrder.length > 0 ? query(propertiesRef, ...constraintsNoOrder) : query(propertiesRef);
-          snap = await getDocs(q);
+        const data = await resp.json();
+        if (data?.success) {
+          toast.success('Property added successfully!');
+          await fetchProperties(filters);
+          return { success: true, id: data.data?.id, savedTo: 'api' };
         }
-        
-        firestoreProps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        throw new Error(data?.message || 'Backend create failed');
+      } catch (apiError) {
+        console.warn('PropertyContext: API create failed:', apiError);
 
-          // Enrich properties with vendorCode if missing
-          // Try to fetch vendorCode from users collection for properties that don't have it
-          // NOTE: Attempt enrichment if user is authenticated (either via auth.currentUser or user context)
-          const isAuthenticated = auth.currentUser || (user && user.id);
-          if (firestoreProps.length > 0 && isAuthenticated) {
-            try {
-              // query, where, getDocs, collection already imported at top
-              console.log('PropertyContext: Enriching', firestoreProps.length, 'properties with vendorCode (authenticated user)...');
-              
-              // First, get all unique ownerIds that need enrichment
-              const ownerIdsToLookup = new Set();
-              firestoreProps.forEach(prop => {
-                const hasAllVendorFields = prop.vendorCode && prop.vendorName && prop.vendorEmail && prop.vendorId;
-                if (!hasAllVendorFields && prop.ownerId) {
-                  ownerIdsToLookup.add(prop.ownerId);
-                }
-              });
-              
-              console.log('PropertyContext: Need to lookup vendor info for', ownerIdsToLookup.size, 'owners');
-              
-              // Fetch all user documents at once (batch lookup)
-              const userCodeMap = new Map(); // ownerId -> { vendorCode, vendorName, vendorEmail }
-              const emailToVendorCodeMap = new Map(); // email -> { vendorCode, vendorName, vendorEmail }
-              
-              if (ownerIdsToLookup.size > 0) {
-                // Get unique owner emails for properties that need enrichment
-                const ownerEmails = [...new Set(firestoreProps
-                  .filter(p => {
-                    const hasAllVendorFields = p.vendorCode && p.vendorName && p.vendorEmail && p.vendorId;
-                    return !hasAllVendorFields && p.ownerEmail;
-                  })
-                  .map(p => p.ownerEmail.toLowerCase()))];
-                
-                console.log('PropertyContext: Also checking', ownerEmails.length, 'owner emails for vendorCode');
-                
-                // Look up users by ownerId
-                await Promise.all(Array.from(ownerIdsToLookup).map(async (ownerId) => {
-                  try {
-                    const userRef = doc(db, 'users', ownerId);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                      const userData = userSnap.data();
-                      const vendorName = userData.firstName && userData.lastName 
-                        ? `${userData.firstName} ${userData.lastName}`.trim() 
-                        : userData.displayName || '';
-                      const vendorInfo = {
-                        vendorCode: userData.vendorCode || '',
-                        vendorName: vendorName,
-                        vendorEmail: userData.email || ''
-                      };
-                      
-                      if (userData.vendorCode) {
-                        userCodeMap.set(ownerId, vendorInfo);
-                        if (userData.email) {
-                          emailToVendorCodeMap.set(userData.email.toLowerCase(), vendorInfo);
-                        }
-                        console.log('PropertyContext: Found vendor info for owner', ownerId, vendorInfo);
-                      }
-                    }
-                  } catch (err) {
-                    console.warn('PropertyContext: Could not fetch user', ownerId, err);
-                  }
-                }));
-                
-                // Also try to look up users by email (fallback if ownerId doesn't match)
-                if (ownerEmails.length > 0) {
-                  try {
-                    const usersRef = collection(db, 'users');
-                    await Promise.all(ownerEmails.map(async (email) => {
-                      try {
-                        const emailQuery = query(usersRef, where('email', '==', email));
-                        const emailSnap = await getDocs(emailQuery);
-                        if (!emailSnap.empty) {
-                          const userData = emailSnap.docs[0].data();
-                          const vendorName = userData.firstName && userData.lastName 
-                            ? `${userData.firstName} ${userData.lastName}`.trim() 
-                            : userData.displayName || '';
-                          const vendorInfo = {
-                            vendorCode: userData.vendorCode || '',
-                            vendorName: vendorName,
+        const userId = user?.id || user?.uid || `temp-${Date.now()}`;
+        const userEmail = user?.email || 'unknown@example.com';
+        const vendorFirstName = user?.firstName || user?.displayName?.split(' ')[0] || 'Guest';
+        const vendorLastName = user?.lastName || user?.displayName?.split(' ')[1] || 'User';
+        const vendorFullName = `${vendorFirstName} ${vendorLastName}`.trim();
+        const vendorCode = user?.vendorCode || '';
+        const mockId = `local-${Date.now()}`;
+
+        console.log('PropertyContext: Saving to localStorage with user info:', { userId, userEmail, vendorCode });
+
+        const localProperty = {
+          id: mockId,
+          ...apiPayload,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          ownerId: userId,
+          ownerEmail: userEmail,
+          vendorCode: vendorCode,
+          vendorName: vendorFullName,
+          vendorEmail: userEmail,
+          vendorId: userId,
+          owner: {
+            id: userId,
+            firstName: vendorFirstName,
+            lastName: vendorLastName,
+            email: userEmail,
+            vendorCode: vendorCode,
+            name: vendorFullName
+          },
+          verificationStatus: 'pending',
+          approvalStatus: 'pending',
+          isVerified: false,
+          savedToLocalStorage: true
+        };
+
+        const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+        existingProperties.push(localProperty);
+        localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+
+        toast.success('Property added locally! It will sync when backend is available.');
+        await fetchProperties(filters);
+        return { success: true, id: mockId, savedTo: 'local' };
+      }
                             vendorEmail: userData.email || email
                           };
                           if (userData.vendorCode) {
@@ -503,162 +424,65 @@ export const PropertyProvider = ({ children }) => {
                   if (vendorId && !prop.owner.id) {
                     prop.owner.id = vendorId;
                   }
-                  
-                  // Only log as "enriched" if we actually set vendorCode
-                  if (prop.vendorCode && prop.vendorCode.trim() !== '') {
-                    console.log('PropertyContext: ✓ Enriched property', prop.id, 'with vendorCode:', prop.vendorCode, {
-                      vendorName: prop.vendorName || 'N/A',
-                      vendorEmail: prop.vendorEmail || 'N/A'
+                  try {
+                    const resp = await fetch(getApiUrl('/properties'), {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(apiPayload)
                     });
-                  } else {
-                    console.log('PropertyContext: ⚠ Enriched property', prop.id, 'with vendor info but NO vendorCode:', {
-                      vendorName: prop.vendorName || 'N/A',
-                      vendorEmail: prop.vendorEmail || 'N/A',
-                      ownerId: prop.ownerId || 'N/A',
-                      ownerEmail: prop.ownerEmail || 'N/A'
-                    });
-                  }
-                } else {
-                  console.warn('PropertyContext: Could not enrich property', prop.id, 'ownerId:', prop.ownerId, 'ownerEmail:', prop.ownerEmail);
-                }
-                
-                return prop;
-              });
-              
-              firestoreProps = enrichedProps;
-              console.log('PropertyContext: Firestore enrichment complete. Properties with vendorCode:', 
-                enrichedProps.filter(p => p.vendorCode).length);
-            } catch (err) {
-              console.warn('PropertyContext: Error enriching properties with vendorCode (non-blocking):', err);
-              // Continue with unenriched properties - they'll still be merged
-            }
-          } else if (firestoreProps.length > 0) {
-            console.log('PropertyContext: Skipping Firestore enrichment - not authenticated via Firebase Auth.');
-          }
-          
-          // ALWAYS try fallback enrichment using user context if user exists
-          // This runs regardless of whether Firestore enrichment ran or succeeded
-          if (firestoreProps.length > 0 && user && (user.id || user.email)) {
-            console.log('PropertyContext: Running fallback enrichment using user context for user:', user.id || user.email, 'vendorCode:', user.vendorCode || 'NOT SET');
-            let enrichedCount = 0;
-            firestoreProps = firestoreProps.map(prop => {
-              // Check if property belongs to current user (by ID or email)
-              const userIdMatches = prop.ownerId === user.id || prop.ownerId === user.uid;
-              const emailMatches = prop.ownerEmail?.toLowerCase() === user.email?.toLowerCase() ||
-                                   prop.owner?.email?.toLowerCase() === user.email?.toLowerCase() ||
-                                   prop.vendorEmail?.toLowerCase() === user.email?.toLowerCase();
-              const belongsToUser = userIdMatches || emailMatches;
-              
-              // Log for debugging
-              if (emailMatches && (!prop.vendorCode || prop.vendorCode === '')) {
-                console.log('PropertyContext: Found property owned by user email:', prop.id, 'ownerEmail:', prop.ownerEmail, 'user email:', user.email, 'user vendorCode:', user.vendorCode);
-              }
-              
-              // If property belongs to user and is missing vendorCode, enrich it
-              if (belongsToUser && (!prop.vendorCode || prop.vendorCode === '')) {
-                if (user.vendorCode) {
-                  prop.vendorCode = user.vendorCode;
-                  prop.vendorName = prop.vendorName || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}`.trim() : user.displayName || prop.vendorName || '');
-                  prop.vendorEmail = prop.vendorEmail || user.email || prop.ownerEmail || '';
-                  prop.vendorId = prop.vendorId || user.id || user.uid || prop.ownerId || '';
-                  
-                  if (!prop.owner) prop.owner = {};
-                  prop.owner.vendorCode = user.vendorCode;
-                  prop.owner.name = prop.vendorName;
-                  prop.owner.email = prop.vendorEmail;
-                  if (!prop.owner.firstName && user.firstName) prop.owner.firstName = user.firstName;
-                  if (!prop.owner.lastName && user.lastName) prop.owner.lastName = user.lastName;
-                  
-                  enrichedCount++;
-                  console.log('PropertyContext: Fallback enriched property', prop.id, 'with user context vendorCode:', user.vendorCode, 'ownerEmail:', prop.ownerEmail);
-                } else {
-                  console.warn('PropertyContext: Property belongs to user but user has no vendorCode. Property:', prop.id, 'User:', user.id || user.email);
-                }
-              }
-              return prop;
-            });
-            console.log('PropertyContext: Fallback enrichment complete. Enriched', enrichedCount, 'properties with user context.');
-          }
+                    const data = await resp.json();
+                    if (data?.success) {
+                      toast.success('Property added successfully!');
+                      await fetchProperties(filters);
+                      return { success: true, id: data.data?.id, savedTo: 'api' };
+                    }
+                    throw new Error(data?.message || 'Backend create failed');
+                  } catch (apiError) {
+                    console.warn('PropertyContext: API create failed:', apiError);
 
-          // MERGE Firestore properties with mock properties (don't replace!)
-          // This ensures all properties are available for filtering
-          if (firestoreProps.length > 0) {
-            console.log('PropertyContext: Found', firestoreProps.length, 'properties in Firestore');
-            console.log('PropertyContext: Starting with', data.length, 'mock properties');
-            
-            // Add Firestore properties that don't already exist in mock properties
-            let addedFromFirestore = 0;
-            let skippedDuplicates = 0;
-            firestoreProps.forEach(fsProp => {
-              const existsInMock = data.find(p => p.id === fsProp.id);
-              if (!existsInMock) {
-                data.push({
-                  ...fsProp,
-                  source: 'firestore'
-                });
-                addedFromFirestore++;
-              } else {
-                skippedDuplicates++;
-                // Update mock property with Firestore data (Firestore is source of truth)
-                const mockIndex = data.findIndex(p => p.id === fsProp.id);
-                if (mockIndex !== -1) {
-                  data[mockIndex] = {
-                    ...fsProp,
-                    source: 'firestore'
-                  };
-                }
-              }
-            });
-            console.log('PropertyContext: Added', addedFromFirestore, 'from Firestore, updated', skippedDuplicates, 'existing, total:', data.length);
-          } else {
-            console.log('PropertyContext: No Firestore properties found, using mock data only');
-          }
-          
-        // Also check localStorage for properties saved locally (check regardless of Firestore success)
-        try {
-          const localStorageData = localStorage.getItem('mockProperties');
-          if (localStorageData) {
-            const localProperties = JSON.parse(localStorageData);
-            console.log('PropertyContext: Found', localProperties.length, 'properties in localStorage');
-            
-            if (localProperties.length > 0) {
-              let addedFromLocal = 0;
-              localProperties.forEach(localProp => {
-                const exists = data.find(p => p.id === localProp.id);
-                if (!exists) {
-                  data.push({
-                    ...localProp,
-                    source: 'localStorage'
-                  });
-                  addedFromLocal++;
-                }
-              });
-              if (addedFromLocal > 0) {
-                console.log('PropertyContext: Added', addedFromLocal, 'properties from localStorage, total:', data.length);
-              }
-            }
-          }
-        } catch (localErr) {
-          console.warn('PropertyContext: Error reading localStorage properties:', localErr);
-          }
-        } catch (firestoreError) {
-        console.warn('PropertyContext: Firestore fetch failed (non-blocking, will use mock + localStorage):', firestoreError.message || firestoreError);
-        // Continue with mock data and check localStorage even if Firestore failed
-        try {
-          const localStorageData = localStorage.getItem('mockProperties');
-          if (localStorageData) {
-            const localProperties = JSON.parse(localStorageData);
-            if (localProperties.length > 0) {
-              let addedFromLocal = 0;
-              localProperties.forEach(localProp => {
-                const exists = data.find(p => p.id === localProp.id);
-                if (!exists) {
-                  data.push({
-                    ...localProp,
-                    source: 'localStorage'
-                  });
-                  addedFromLocal++;
-                }
+                    const userId = user?.id || user?.uid || `temp-${Date.now()}`;
+                    const userEmail = user?.email || 'unknown@example.com';
+                    const vendorFirstName = user?.firstName || user?.displayName?.split(' ')[0] || 'Guest';
+                    const vendorLastName = user?.lastName || user?.displayName?.split(' ')[1] || 'User';
+                    const vendorFullName = `${vendorFirstName} ${vendorLastName}`.trim();
+                    const vendorCode = user?.vendorCode || '';
+                    const mockId = `local-${Date.now()}`;
+
+                    console.log('PropertyContext: Saving to localStorage with user info:', { userId, userEmail, vendorCode });
+
+                    const localProperty = {
+                      id: mockId,
+                      ...apiPayload,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                      ownerId: userId,
+                      ownerEmail: userEmail,
+                      vendorCode: vendorCode,
+                      vendorName: vendorFullName,
+                      vendorEmail: userEmail,
+                      vendorId: userId,
+                      owner: {
+                        id: userId,
+                        firstName: vendorFirstName,
+                        lastName: vendorLastName,
+                        email: userEmail,
+                        vendorCode: vendorCode,
+                        name: vendorFullName
+                      },
+                      verificationStatus: 'pending',
+                      approvalStatus: 'pending',
+                      isVerified: false,
+                      savedToLocalStorage: true
+                    };
+
+                    const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
+                    existingProperties.push(localProperty);
+                    localStorage.setItem('mockProperties', JSON.stringify(existingProperties));
+
+                    toast.success('Property added locally! It will sync when backend is available.');
+                    await fetchProperties(filters);
+                    return { success: true, id: mockId, savedTo: 'local' };
+                  }
               });
               if (addedFromLocal > 0) {
                 console.log('PropertyContext: Added', addedFromLocal, 'properties from localStorage after Firestore error, total:', data.length);
@@ -993,7 +817,7 @@ export const PropertyProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Check if user is authenticated (either mock user or Firebase user)
+      // Check if user is authenticated
       if (!user && !auth.currentUser) {
         throw new Error('User must be logged in to add properties');
       }
@@ -1026,20 +850,20 @@ export const PropertyProvider = ({ children }) => {
       };
 
       try {
-        // Ensure Firebase auth is ready before attempting Firestore operations
-        if (!firebaseAuthReady) {
-          console.warn('PropertyContext: Firebase auth not ready, will use localStorage fallback');
-          throw new Error('Firebase authentication not ready');
+        // Ensure auth is ready before attempting datastore operations
+        if (!authReady) {
+          console.warn('PropertyContext: Auth not ready, will use localStorage fallback');
+          throw new Error('Auth not ready');
         }
 
-        // Use Firestore directly for cloud-based storage
+        // Use datastore directly for cloud-based storage
         const fbUser = auth.currentUser;
         if (!fbUser) {
-          console.warn('PropertyContext: No Firebase currentUser, will use localStorage fallback');
-          throw new Error('No authenticated Firebase user found');
+          console.warn('PropertyContext: No authenticated user, will use localStorage fallback');
+          throw new Error('No authenticated user found');
         }
 
-        console.log('PropertyContext: Saving property to Firestore for user:', fbUser.uid, fbUser.email);
+        console.log('PropertyContext: Saving property to datastore for user:', fbUser.uid, fbUser.email);
         console.log('PropertyContext: User vendorCode:', user?.vendorCode);
 
         // Get vendor information
@@ -1078,7 +902,7 @@ export const PropertyProvider = ({ children }) => {
 
         const propertyRef = await addDoc(collection(db, 'properties'), propertyData);
         
-        console.log('PropertyContext: Property saved to Firestore with ID:', propertyRef.id);
+        console.log('PropertyContext: Property saved to datastore with ID:', propertyRef.id);
         
         // Also save to localStorage as backup (in case Firestore read fails later)
         try {
@@ -1097,7 +921,7 @@ export const PropertyProvider = ({ children }) => {
             verificationStatus: 'pending',
             approvalStatus: 'pending',
             isVerified: false,
-            savedToFirestore: true
+            savedToDatastore: true
           };
           const existingProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
           existingProperties.push(localBackup);
@@ -1111,14 +935,14 @@ export const PropertyProvider = ({ children }) => {
         await fetchProperties(filters);
         return { success: true, id: propertyRef.id, savedTo: 'firestore' };
       } catch (firestoreError) {
-        console.error('PropertyContext: Firestore error:', firestoreError);
+        console.error('PropertyContext: Datastore error:', firestoreError);
         
         // Check if it's a permission error
         if (firestoreError.code === 'permission-denied') {
           throw new Error('Permission denied. Please ensure you are logged in and have proper permissions.');
         }
         
-        // For other Firestore errors, attempt to post to backend mock API, then fallback to localStorage
+        // For other datastore errors, attempt to post to backend API, then fallback to localStorage
         try {
           const resp = await fetch(getApiUrl('/properties'), {
             method: 'POST',
@@ -1191,7 +1015,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, fetchProperties, filters, firebaseAuthReady]);
+  }, [user, fetchProperties, filters, authReady]);
 
   // Update property
   const updateProperty = useCallback(async (propertyId, updates) => {
@@ -1203,7 +1027,7 @@ export const PropertyProvider = ({ children }) => {
       if (!propertyId) throw new Error('Property ID is required');
 
       // Try Firestore first if authentication is ready
-      if (firebaseAuthReady && auth.currentUser) {
+      if (authReady && auth.currentUser) {
       try {
         const propertyRef = doc(db, 'properties', propertyId);
         await updateDoc(propertyRef, {
@@ -1251,7 +1075,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, fetchProperties, filters, firebaseAuthReady]);
+  }, [user, fetchProperties, filters, authReady]);
 
   // Delete property
   const deleteProperty = useCallback(async (propertyId) => {
@@ -1554,7 +1378,7 @@ export const PropertyProvider = ({ children }) => {
       let allProperties = [...mockProperties]; // Start with mock data
       console.log('PropertyContext Admin: Starting with', allProperties.length, 'mock properties');
       
-      if (firebaseAuthReady) {
+      if (authReady) {
         try {
           console.log('PropertyContext: Fetching from Firestore...');
           const propertiesRef = collection(db, 'properties');
@@ -1767,14 +1591,14 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [firebaseAuthReady, user]);
+  }, [authReady, user]);
 
   const verifyProperty = useCallback(async (propertyId, verificationStatus, verificationNotes = '') => {
     setLoading(true);
     setError(null);
 
     const syncToFirestore = async () => {
-      if (!firebaseAuthReady || !auth.currentUser) return false;
+      if (!authReady || !auth.currentUser) return false;
       try {
         const propertyRef = doc(db, 'properties', propertyId);
         await updateDoc(propertyRef, {
@@ -1811,7 +1635,7 @@ export const PropertyProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [firebaseAuthReady]);
+  }, [authReady]);
 
   const value = {
     properties,

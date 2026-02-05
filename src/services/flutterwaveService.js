@@ -1,6 +1,5 @@
 ﻿// Flutterwave Payment Integration Service
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { getApiUrl } from '../utils/apiConfig';
 
 const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
 const FLUTTERWAVE_SECRET_KEY = process.env.REACT_APP_FLUTTERWAVE_SECRET_KEY;
@@ -84,17 +83,27 @@ class FlutterwaveService {
     }
   }
 
-  // Verify payment status using Firebase Functions
+  // Verify payment status using backend endpoint
   async verifyPayment(transactionId, txRef, status) {
     try {
-      const verifyPayment = httpsCallable(functions, 'verifyPayment');
-      const result = await verifyPayment({
-        transaction_id: transactionId,
-        tx_ref: txRef,
-        status: status
+      const response = await fetch(`${getApiUrl()}/api/payments/flutterwave/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          transaction_id: transactionId,
+          tx_ref: txRef,
+          status
+        })
       });
 
-      return result.data;
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || 'Payment verification failed');
+      }
+
+      return data;
     } catch (error) {
       console.error('Payment verification error:', error);
       return {

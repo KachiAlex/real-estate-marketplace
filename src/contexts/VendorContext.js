@@ -1,8 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
-import { db, auth } from '../config/firebase';
-import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+
+// Backend-only mode: stubbed datastore helpers (no external SDK)
+const auth = { currentUser: null };
+const db = null;
+const collection = (...args) => ({ __stub: true, path: args.join('/') });
+const doc = (...args) => ({ __stub: true, path: args.join('/') });
+const query = (...args) => ({ __stub: true, args });
+const where = () => ({ __stub: true });
+const serverTimestamp = () => new Date().toISOString();
+const getDoc = async () => ({ exists: () => false, data: () => null });
+const getDocs = async () => ({ docs: [] });
+const setDoc = async () => {};
+const addDoc = async () => ({ id: `stub_${Date.now()}`, ref: {} });
 
 const VendorContext = createContext();
 
@@ -56,7 +67,9 @@ export const useVendor = () => {
 };
 
 export const VendorProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const user = currentUser;
+  const authReady = !authLoading;
   const [vendorProfile, setVendorProfile] = useState(null);
   const [isAgent, setIsAgent] = useState(false);
   const [isPropertyOwner, setIsPropertyOwner] = useState(false);

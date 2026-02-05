@@ -1,24 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaEnvelope, FaArrowLeft } from 'react-icons/fa';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const getFrontendUrl = () => {
-    return process.env.REACT_APP_FRONTEND_URL || 
-           window.location.origin || 
-           'https://real-estate-marketplace-37544.web.app';
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email) {
       toast.error('Please enter your email address');
       return;
@@ -32,42 +25,23 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const normalizedEmail = email.trim().toLowerCase();
-      
-      // Configure action code settings for password reset
-      const actionCodeSettings = {
-        url: `${getFrontendUrl()}/reset-password`,
-        handleCodeInApp: false, // Open link in browser, not app
-      };
+      const response = await fetch(`${getApiUrl()}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase() })
+      });
 
-      // Send password reset email using Firebase Auth
-      await sendPasswordResetEmail(auth, normalizedEmail, actionCodeSettings);
-      
+      if (!response.ok) {
+        throw new Error('Failed to send reset link. Please try again.');
+      }
+
       setSubmitted(true);
-      toast.success('Password reset link sent to your email');
+      toast.success('If an account with that email exists, a reset link has been sent.');
     } catch (error) {
       console.error('Forgot password error:', error);
-      
-      // Handle specific Firebase Auth errors
-      let errorMessage = 'An error occurred. Please try again.';
-      
-      switch (error.code) {
-        case 'auth/user-not-found':
-          // For security, still show success message (don't reveal if email exists)
-          setSubmitted(true);
-          toast.success('If an account with that email exists, a password reset link has been sent.');
-          return;
-        case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many requests. Please try again later.';
-          break;
-        default:
-          errorMessage = error.message || 'Failed to send reset link. Please try again.';
-      }
-      
-      toast.error(errorMessage);
+      toast.error(error.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -83,10 +57,10 @@ const ForgotPassword = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
             <p className="text-gray-600 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>
+              If an account exists for <strong>{email}</strong>, a reset link has been sent.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Please check your inbox and click the link to reset your password. The link will expire in 1 hour.
+              Please check your inbox and click the link to reset your password.
             </p>
             <Link
               to="/login"
@@ -107,7 +81,7 @@ const ForgotPassword = () => {
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
           <p className="text-gray-600">
-            Enter your email address and we'll send you a link to reset your password.
+            Enter your email address and we'll send you a reset link.
           </p>
         </div>
 
@@ -118,17 +92,15 @@ const ForgotPassword = () => {
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="h-5 w-5 text-gray-400" />
+                <FaEnvelope className="text-gray-400" />
               </div>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="you@example.com"
-                required
-                disabled={loading}
               />
             </div>
           </div>
@@ -136,18 +108,14 @@ const ForgotPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60"
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link
-            to="/login"
-            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
-          >
-            <FaArrowLeft className="mr-2" />
+          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
             Back to Login
           </Link>
         </div>
@@ -157,4 +125,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-

@@ -1,5 +1,3 @@
-import { db } from '../config/firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import notificationService from './notificationService';
 
 const COLLECTION = 'inspectionRequests';
