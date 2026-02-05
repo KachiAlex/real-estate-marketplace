@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+// Firebase Auth disabled - using JWT authentication instead
+// import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
@@ -18,8 +19,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
-export const auth = getAuth(app);
+// Initialize Firebase services (excluding Auth - using JWT instead)
+// export const auth = getAuth(app);  // DISABLED - Using JWT authentication
+export const auth = null; // Stub for backward compatibility
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
