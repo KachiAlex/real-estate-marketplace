@@ -1,6 +1,6 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext-new';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
 import { EscrowProvider } from './contexts/EscrowContext';
@@ -18,11 +18,10 @@ import LoadingSpinner from './components/LoadingSpinner';
 import PropertyArkAssistant from './components/PropertyArkAssistant';
 import AITourGuide from './components/AITourGuide';
 import ErrorBoundary from './components/ErrorBoundary';
-import { checkFirebaseInit } from './utils/firebaseConfigDiagnostics';
 
 // Eagerly load critical pages (shown immediately on load)
 import Home from './pages/Home';
-import Login from './pages/Login';
+import LoginNew from './pages/LoginNew';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -74,17 +73,6 @@ const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 
 function App() {
-  // Run Firebase configuration diagnostics on mount
-  useEffect(() => {
-    const initCheck = checkFirebaseInit();
-    console.log('[App] Firebase initialized:', initCheck.authExists);
-    
-    // Warn if running on localhost but Firebase might not be properly configured
-    if (window.location.hostname === 'localhost' && !initCheck.authExists) {
-      console.warn('[App] Warning: Running on localhost but Firebase Auth not initialized');
-    }
-  }, []);
-  
   return (
     <TourProvider>
       <AuthProvider>
@@ -106,7 +94,7 @@ function App() {
                 }>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
+                  <Route path="/login" element={<LoginNew />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
