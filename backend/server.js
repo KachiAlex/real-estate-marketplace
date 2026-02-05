@@ -289,6 +289,14 @@ try {
   console.error('Failed to load auth routes stack:', error.stack);
 }
 
+// Custom JWT authentication routes (replace Firebase auth)
+try {
+  app.use('/api/auth/jwt', require('./routes/auth-jwt'));
+} catch (error) {
+  console.error('Failed to load JWT auth routes:', error.message);
+  console.error('Failed to load JWT auth routes stack:', error.stack);
+}
+
 try {
   app.use('/api/users', require('./routes/users'));
 } catch (error) {
