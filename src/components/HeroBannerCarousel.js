@@ -153,14 +153,6 @@ const HeroBannerCarousel = () => {
               <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
             </button>
             
-            {!user && (
-              <button 
-                onClick={() => navigate('/register')}
-                className="px-6 py-3 bg-white bg-opacity-10 backdrop-blur-sm text-white font-semibold rounded-lg border-2 border-white border-opacity-30 hover:bg-opacity-20 transition-all duration-300 shadow-xl text-sm sm:text-base"
-              >
-                Get Started Free
-              </button>
-            )}
           </div>
 
           {/* Trust Indicators */}

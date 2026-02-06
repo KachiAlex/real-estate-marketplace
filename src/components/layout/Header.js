@@ -24,7 +24,7 @@ const Header = () => {
   const isHomePage = location.pathname === '/';
   
   // Check if user is on a protected route (where sidebar should be visible)
-  const isProtectedRoute = user && !['/', '/login', '/register'].includes(location.pathname);
+  const isProtectedRoute = user && location.pathname !== '/';
   
   // Dashboard routes where we show minimal header (just user profile icon)
   const dashboardRoutes = [
@@ -122,22 +122,6 @@ const Header = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [openSearch]);
 
-  // Ensure Sign In button is always visible (browser extension resistant)
-  useEffect(() => {
-    if (!user) {
-      // Force visibility of Sign In links after component mounts
-      const signInLinks = document.querySelectorAll('a[href="/login"], a[href*="/login"], .sign-in-link');
-      signInLinks.forEach(link => {
-        if (link instanceof HTMLElement) {
-          link.style.setProperty('display', 'inline-block', 'important');
-          link.style.setProperty('visibility', 'visible', 'important');
-          link.style.setProperty('opacity', '1', 'important');
-          link.style.setProperty('pointer-events', 'auto', 'important');
-        }
-      });
-    }
-  }, [user]);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -175,7 +159,7 @@ const Header = () => {
           <div className="max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex justify-end items-center h-14 py-2">
             {/* User Profile Icon Only */}
-            {user ? (
+            {user && (
               <div className="relative user-menu-container">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -555,7 +539,7 @@ const Header = () => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
-            {user ? (
+            {user && (
               <>
               <div className="relative user-menu-container">
                 <button
@@ -737,7 +721,7 @@ const Header = () => {
                 Contact
               </Link>
 
-              {user ? (
+              {user && (
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex items-center space-x-2 mb-4">
                     <img

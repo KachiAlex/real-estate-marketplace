@@ -11,53 +11,6 @@
       name="description"
       content="PropertyArk - Buy, sell, rent, and invest in properties with secure escrow services"
     />
-    <!-- Browser compatibility and extension resistance -->
-    <style>
-      /* Ensure critical UI elements are always visible */
-      a[href="/login"],
-      a[href*="/login"],
-      .sign-in-link {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        position: relative !important;
-        z-index: 10 !important;
-      }
-      /* Override common ad-blocker hiding patterns */
-      .sign-in-button,
-      [data-signin],
-      [aria-label*="Sign in"],
-      [aria-label*="sign in"] {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-    </style>
-    <script>
-      // Ensure Sign In button visibility before React loads (browser extension resistant)
-      (function() {
-        function ensureSignInVisible() {
-          var links = document.querySelectorAll('a[href="/login"], a[href*="/login"]');
-          links.forEach(function(link) {
-            link.style.setProperty('display', 'inline-block', 'important');
-            link.style.setProperty('visibility', 'visible', 'important');
-            link.style.setProperty('opacity', '1', 'important');
-            link.style.setProperty('pointer-events', 'auto', 'important');
-          });
-        }
-        // Run immediately
-        ensureSignInVisible();
-        // Run after DOM is ready
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', ensureSignInVisible);
-        } else {
-          ensureSignInVisible();
-        }
-        // Run periodically to catch dynamic changes
-        setInterval(ensureSignInVisible, 1000);
-      })();
-    </script>
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

@@ -90,22 +90,12 @@ const EscrowTransaction = () => {
       // Load buyer details (use transaction data)
       const buyerId = transactionData.buyerId;
       if (transactionData.buyerName) {
-        // Use transaction data
         setBuyer({
           id: buyerId,
           firstName: transactionData.buyerName?.split(' ')[0] || '',
           lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
           email: transactionData.buyerEmail || ''
         });
-          if (transactionData.buyerName) {
-            setBuyer({
-              id: buyerId,
-              firstName: transactionData.buyerName?.split(' ')[0] || '',
-              lastName: transactionData.buyerName?.split(' ').slice(1).join(' ') || '',
-              email: transactionData.buyerEmail || ''
-            });
-          }
-        }
       }
     } catch (err) {
       console.error('Error loading transaction details:', err);

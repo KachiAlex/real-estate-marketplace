@@ -333,7 +333,7 @@ const BlogDetail = () => {
                 ) : (
                   <div className="bg-gray-50 p-6 rounded-lg text-center mb-8">
                     <p className="text-gray-600 mb-4">
-                      Please <Link to="/login" className="text-blue-600 hover:text-blue-800">login</Link> to comment.
+                      Please create an account (auth flow is currently being rebuilt) to comment.
                     </p>
                   </div>
                 )}

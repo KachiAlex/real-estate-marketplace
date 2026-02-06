@@ -207,7 +207,7 @@ const AdminDashboard = () => {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
             <p className="text-gray-600 mb-6">
-              You must be logged in as an administrator to access this page.
+              You must be logged in as an administrator to access this page. The auth experience is being rebuilt, so please return home or contact support for access.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800 font-medium mb-2">Admin Login Credentials:</p>
@@ -215,10 +215,10 @@ const AdminDashboard = () => {
               <p className="text-sm text-blue-700">Password: admin123</p>
             </div>
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/')}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Go to Login
+              Return to Home
             </button>
           </div>
         </div>

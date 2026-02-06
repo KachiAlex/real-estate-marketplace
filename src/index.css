@@ -47,24 +47,6 @@ img[src*="logo"] {
   filter: none !important;
 }
 
-/* Browser compatibility: Ensure Sign In button is always visible */
-a[href="/login"],
-a[href*="/login"],
-.sign-in-link {
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  position: relative !important;
-  z-index: 10 !important;
-}
-
-/* Override common ad-blocker and privacy extension hiding patterns */
-a[href="/login"]:not([style*="display: none"]),
-a[href*="/login"]:not([style*="display: none"]) {
-  display: inline-block !important;
-}
-
 @layer base {
 * {
   margin: 0;
