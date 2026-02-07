@@ -3,12 +3,13 @@
   command = "npm install --legacy-peer-deps && CI=false npm run build"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
   DISABLE_ESLINT_PLUGIN = "true"
   ESLINT_NO_DEV_ERRORS = "true"
   GENERATE_SOURCEMAP = "false"
   CI = "false"
+  NODE_ENV = "development"
 
 [[redirects]]
   from = "/login"
