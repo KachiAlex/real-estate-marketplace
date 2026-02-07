@@ -239,6 +239,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken, currentUser]);
 
+  // Register as vendor
+  const registerAsVendor = useCallback(async (vendorInfo) => {
+    try {
+      // Use switchRole to upgrade to vendor
+      const result = await switchRole('vendor');
+      return { success: true, user: result, navigateTo: '/vendor/dashboard' };
+    } catch (error) {
+      console.error('Vendor registration error:', error);
+      return { success: false, error: error.message };
+    }
+  }, [switchRole]);
+
   const value = {
     currentUser,
     loading,
@@ -249,6 +261,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshAccessToken,
     switchRole,
+    registerAsVendor,
     // Aliases and computed properties
     user: currentUser,
     isBuyer,
