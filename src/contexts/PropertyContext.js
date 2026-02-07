@@ -683,14 +683,14 @@ export const PropertyProvider = ({ children }) => {
       const propertyIdStr = String(propertyId);
 
       // Local persistence per user
-      const key = `favorites_${user.id}`;
+      const key = `favorites_${user?.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
       // Normalize all saved IDs to strings for consistent comparison
       const existing = new Set(savedFavorites.map(id => String(id)));
       let isNowFavorited = false;
       
       // Metadata storage key
-      const metadataKey = `favorites_metadata_${user.id}`;
+      const metadataKey = `favorites_metadata_${user?.id}`;
       const savedMetadata = JSON.parse(localStorage.getItem(metadataKey) || '{}');
       
       if (existing.has(propertyIdStr)) {

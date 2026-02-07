@@ -540,10 +540,10 @@ const VendorDashboard = () => {
       return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
     }
     if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+      return `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
     }
     if (user?.email) {
-      return user.email[0].toUpperCase();
+      return user?.email?.[0]?.toUpperCase() || 'V';
     }
     return 'V';
   };

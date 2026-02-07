@@ -530,7 +530,7 @@ const VendorProfile = () => {
                           const button = e.currentTarget;
                           const originalText = button.textContent;
                           try {
-                            const textToCopy = user.vendorCode || '';
+                            const textToCopy = user?.vendorCode || '';
                             if (!textToCopy) {
                               toast.error('Vendor ID not available');
                               return;
@@ -557,7 +557,7 @@ const VendorProfile = () => {
                             }, 2000);
                           } catch (err) {
                             // Fallback for older browsers
-                            const textToCopy = user.vendorCode || '';
+                            const textToCopy = user?.vendorCode || '';
                             if (!textToCopy) {
                               toast.error('Vendor ID not available');
                               return;
