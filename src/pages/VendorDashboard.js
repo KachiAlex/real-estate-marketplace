@@ -535,6 +535,7 @@ const VendorDashboard = () => {
   };
 
   const getUserInitials = () => {
+    if (!user) return 'V';
     if (user?.displayName) {
       return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
     }

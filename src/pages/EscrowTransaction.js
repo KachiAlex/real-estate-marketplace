@@ -340,7 +340,7 @@ const EscrowTransaction = () => {
             <Card.Body>
               {error && <Alert variant="danger">{error}</Alert>}
 
-              {canUserTakeAction() && (
+              {user && canUserTakeAction() && (
                 <div className="d-grid gap-2">
                   {user.uid === transaction.buyerId && transaction.status === 'documents_verified' && (
                     <Button 
