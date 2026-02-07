@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   // Load favorites from localStorage
   const loadFavorites = useCallback(() => {
-    if (user) {
+    if (user && user.id) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
       // Convert all IDs to strings for consistent comparison
@@ -56,7 +56,10 @@ const Dashboard = () => {
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
-    if (!user) return;
+    if (!user || !user.id) {
+      console.warn('refreshDashboardStats: No user available, skipping load');
+      return;
+    }
 
     // Get saved properties count from localStorage (includes mock data)
     const key = `favorites_${user.id}`;
@@ -185,15 +188,23 @@ const Dashboard = () => {
 
     const handleStorageChange = (e) => {
       // Listen for localStorage changes (works across tabs)
-      const key = `favorites_${user.id}`;
-      if (e.key === key) {
-        handleFavoritesUpdate();
+      if (user && user.id) {
+        const key = `favorites_${user.id}`;
+        if (e.key === key) {
+          handleFavoritesUpdate();
+        } else if (e.key === 'inquiries') {
+          handleInquiriesUpdate();
+        } else if (e.key === 'viewingRequests') {
+          handleViewingsUpdate();
+        } else if (e.key === `userInvestments_${user.id}`) {
+          handleInvestmentsUpdate();
+        } else if (e.key === 'escrowTransactions') {
+          handleEscrowUpdate();
+        }
       } else if (e.key === 'inquiries') {
         handleInquiriesUpdate();
       } else if (e.key === 'viewingRequests') {
         handleViewingsUpdate();
-      } else if (e.key === `userInvestments_${user.id}`) {
-        handleInvestmentsUpdate();
       } else if (e.key === 'escrowTransactions') {
         handleEscrowUpdate();
       }
@@ -308,6 +319,11 @@ const Dashboard = () => {
       return;
     }
 
+    if (!user || !user.id || !user.firstName || !user.lastName) {
+      toast.error('User information incomplete. Please refresh and try again.');
+      return;
+    }
+
     // Create viewing request data
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
@@ -359,7 +375,10 @@ const Dashboard = () => {
   // Load dashboard stats from all sources (localStorage, contexts, backend)
   useEffect(() => {
     const loadDashboardStats = () => {
-      if (!user) return;
+      if (!user || !user.id) {
+        console.warn('loadDashboardStats: No user available, skipping load');
+        return;
+      }
 
       // Get saved properties count from localStorage (includes mock data)
       const key = `favorites_${user.id}`;
