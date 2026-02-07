@@ -47,6 +47,11 @@ const MyInquiries = () => {
       return;
     }
 
+    if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
+      toast.error('User information incomplete. Please refresh and try again.');
+      return;
+    }
+
     // Create viewing request data
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
@@ -99,7 +104,7 @@ const MyInquiries = () => {
 
   // Load inquiries from localStorage
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       setLoading(false);
       return;
     }

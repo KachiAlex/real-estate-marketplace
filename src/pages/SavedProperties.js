@@ -16,7 +16,8 @@ const SavedProperties = () => {
 
   // Load saved properties from localStorage and match with actual property data
   const loadSavedProperties = useCallback(() => {
-    if (!user) {
+    if (!user || !user.id) {
+      console.warn('SavedProperties: No user available, skipping load');
       setSavedProperties([]);
       setLoading(false);
       return;

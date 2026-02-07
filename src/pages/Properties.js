@@ -38,7 +38,7 @@ const Properties = () => {
 
   // Load favorites from localStorage
   const loadFavorites = useCallback(() => {
-    if (user) {
+    if (user && user.id) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
       // Normalize all IDs to strings for consistent comparison
@@ -75,7 +75,7 @@ const Properties = () => {
 
     const handleStorageChange = (event) => {
       // Listen for storage events (cross-tab synchronization)
-      if (event.key === `favorites_${user.id}` && !isUpdatingRef.current) {
+      if (user && user.id && event.key === `favorites_${user.id}` && !isUpdatingRef.current) {
         setTimeout(() => {
           loadFavorites();
         }, 150);
@@ -646,13 +646,15 @@ const Properties = () => {
       }
       
       // Verify localStorage was updated correctly
-      const storageKey = `favorites_${user.id}`;
-      const savedFavorites = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const normalizedSaved = savedFavorites.map(id => String(id));
-      const isActuallyFavorited = normalizedSaved.includes(propertyIdStr);
-      
-      if (isActuallyFavorited !== result.favorited) {
-        console.warn('Properties: Favorite state mismatch detected, reloading...');
+      if (user && user.id) {
+        const storageKey = `favorites_${user.id}`;
+        const savedFavorites = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const normalizedSaved = savedFavorites.map(id => String(id));
+        const isActuallyFavorited = normalizedSaved.includes(propertyIdStr);
+        
+        if (isActuallyFavorited !== result.favorited) {
+          console.warn('Properties: Favorite state mismatch detected, reloading...');
+        }
       }
       
       // Reload favorites from localStorage after successful toggle
@@ -705,6 +707,11 @@ const Properties = () => {
   const handleConfirmScheduleViewing = () => {
     if (!selectedDate || !selectedTime) {
       toast.error('Please select both date and time');
+      return;
+    }
+
+    if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
+      toast.error('User information incomplete. Please refresh and try again.');
       return;
     }
 
