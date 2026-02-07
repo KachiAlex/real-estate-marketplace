@@ -124,6 +124,11 @@ const NotificationDropdown = () => {
 
   const handleSendMessage = async (notification) => {
     try {
+      if (!user || !user.id) {
+        toast.error('Please login to start a chat');
+        return;
+      }
+
       const { data } = notification;
       const buyerId = data?.buyerId || user.id;
       const vendorId = data?.vendorId;
@@ -208,6 +213,11 @@ const NotificationDropdown = () => {
   const handleRatingSubmit = async () => {
     if (!ratingTarget || ratingStars === 0) {
       toast.error('Please select a rating');
+      return;
+    }
+
+    if (!user || !user.id) {
+      toast.error('Please login to submit a rating');
       return;
     }
     
