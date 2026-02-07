@@ -239,6 +239,51 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken, currentUser]);
 
+  // Update user profile
+  const updateUserProfile = useCallback(async (updates) => {
+    try {
+      if (!currentUser) {
+        throw new Error('User must be logged in to update profile');
+      }
+
+      const response = await fetch(`${getApiUrl()}/api/auth/jwt/update-profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Profile update failed');
+      }
+
+      // Update user data locally
+      const updatedUser = { ...currentUser, ...updates };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+
+      toast.success('Profile updated successfully');
+      return updatedUser;
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error(error.message || 'Profile update failed');
+      throw error;
+    }
+  }, [accessToken, currentUser]);
+
+  // Set auth redirect URL (for future redirect after login)
+  // This is a placeholder function - actual redirect handling is done in ProtectedRoute
+  const setAuthRedirect = useCallback((url) => {
+    // Store the redirect URL for after login
+    if (url) {
+      sessionStorage.setItem('authRedirect', url);
+    }
+  }, []);
+
   // Register as vendor
   const registerAsVendor = useCallback(async (vendorInfo) => {
     try {
@@ -261,7 +306,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshAccessToken,
     switchRole,
+    updateUserProfile,
     registerAsVendor,
+    setAuthRedirect,
     // Aliases and computed properties
     user: currentUser,
     isBuyer,
