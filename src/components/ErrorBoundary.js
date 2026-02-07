@@ -22,6 +22,20 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Special handling for "user is not defined" errors
+    if (error.message && error.message.includes('user is not defined')) {
+      console.error('🚨 CRITICAL: "user is not defined" error detected', {
+        error: error.toString(),
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        location: window.location.href,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Try to recover by reloading with a specific indicator
+      sessionStorage.setItem('error_recovery_attempt', 'true');
+    }
+
     // Log error to error tracking service
     errorLogger(error, {
       componentStack: errorInfo.componentStack,
