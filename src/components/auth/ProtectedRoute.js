@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading, setAuthRedirect } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -18,11 +18,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    try {
-      // Remember where the user wanted to go
-      setAuthRedirect(location.pathname + location.search);
-    } catch {}
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
