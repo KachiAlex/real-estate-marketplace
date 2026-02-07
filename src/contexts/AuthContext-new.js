@@ -248,14 +248,11 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshAccessToken,
-    fetchCurrentUser,
-    registerAsVendor,
-    setUser,
+    switchRole,
     // Aliases and computed properties
     user: currentUser,
     isBuyer,
-    isVendor,
-    switchRole
+    isVendor
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
