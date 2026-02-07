@@ -74,7 +74,7 @@ const InvestmentDetail = () => {
   };
 
   const handleInvest = async () => {
-    if (!user || !user.id && !user.uid) {
+    if (!user || (!user.id && !user.uid)) {
       setError('Please login to invest');
       return;
     }
