@@ -230,7 +230,7 @@ const VendorSidebar = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-brand-blue to-blue-600 rounded-full flex items-center justify-center">
               {user?.photoURL ? (
                 <img 
-                  src={user.photoURL} 
+                  src={user?.photoURL} 
                   alt="User avatar" 
                   className="w-8 h-8 rounded-full object-cover"
                 />

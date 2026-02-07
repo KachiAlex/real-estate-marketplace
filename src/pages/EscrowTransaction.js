@@ -342,7 +342,7 @@ const EscrowTransaction = () => {
 
               {user && canUserTakeAction() && (
                 <div className="d-grid gap-2">
-                  {user.uid === transaction.buyerId && transaction.status === 'documents_verified' && (
+                  {user?.uid === transaction.buyerId && transaction.status === 'documents_verified' && (
                     <Button 
                       variant="success" 
                       onClick={handleConfirmPayment}
@@ -352,7 +352,7 @@ const EscrowTransaction = () => {
                     </Button>
                   )}
 
-                  {user.uid === transaction.vendorId && transaction.status === 'funds_released' && (
+                  {user?.uid === transaction.vendorId && transaction.status === 'funds_released' && (
                     <Button 
                       variant="primary" 
                       onClick={() => setShowROIModal(true)}
@@ -362,7 +362,7 @@ const EscrowTransaction = () => {
                     </Button>
                   )}
 
-                  {user.role === 'admin' && transaction.status === 'roi_paid' && (
+                  {user?.role === 'admin' && transaction.status === 'roi_paid' && (
                     <Button 
                       variant="success" 
                       onClick={handleCompleteTransaction}

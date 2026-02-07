@@ -422,6 +422,11 @@ const Investment = () => {
       return;
     }
 
+    if (!user || !user.id) {
+      toast.error('Please login to schedule viewings');
+      return;
+    }
+
     const projectToUse = selectedProject || projects[0];
     if (!projectToUse) {
       toast.error('No project selected');
@@ -433,9 +438,9 @@ const Investment = () => {
       projectId: projectToUse.id,
       projectName: projectToUse.name,
       projectLocation: projectToUse.location,
-      userId: user.id,
-      userName: `${user.firstName} ${user.lastName}`,
-      userEmail: user.email,
+      userId: user?.id,
+      userName: `${user?.firstName || ''} ${user?.lastName || ''}`,
+      userEmail: user?.email || '',
       status: 'pending_vendor',
       requestedAt: new Date().toISOString(),
       preferredDate: scheduleDate,
@@ -445,9 +450,9 @@ const Investment = () => {
       vendor: projectToUse.sponsor?.name || 'Investment Sponsor',
       vendorId: projectToUse.sponsor?.id || projectToUse.vendorId || 'mock-vendor-id',
       vendorEmail: projectToUse.sponsor?.email || projectToUse.vendorEmail || user?.email,
-      buyerId: user.id,
-      buyerName: `${user.firstName} ${user.lastName}`,
-      buyerEmail: user.email,
+      buyerId: user?.id,
+      buyerName: `${user?.firstName || ''} ${user?.lastName || ''}`,
+      buyerEmail: user?.email || '',
     };
     try {
       await createInspectionRequest(viewingRequest);
