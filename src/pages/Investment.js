@@ -252,6 +252,11 @@ const Investment = () => {
   };
 
   const handleConfirmInvestment = async () => {
+    if (!user || (!user.id && !user.uid)) {
+      toast.error('Please login to complete this investment');
+      return;
+    }
+
     if (!selectedProject || !investmentAmount) {
       toast.error('Please enter a valid investment amount');
       return;
