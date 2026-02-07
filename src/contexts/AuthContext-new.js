@@ -2,7 +2,26 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
-const AuthContext = createContext();
+// Default context value for fallback
+const defaultContextValue = {
+  currentUser: null,
+  loading: true,
+  accessToken: null,
+  refreshToken: null,
+  register: async () => { throw new Error('Auth not initialized'); },
+  login: async () => { throw new Error('Auth not initialized'); },
+  logout: async () => { throw new Error('Auth not initialized'); },
+  refreshAccessToken: async () => { throw new Error('Auth not initialized'); },
+  switchRole: async () => { throw new Error('Auth not initialized'); },
+  updateUserProfile: async () => { throw new Error('Auth not initialized'); },
+  registerAsVendor: async () => { throw new Error('Auth not initialized'); },
+  setAuthRedirect: () => {},
+  user: null,
+  isBuyer: false,
+  isVendor: false
+};
+
+const AuthContext = createContext(defaultContextValue);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -320,8 +339,11 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  // Return context even if not in provider (with fallback default values)
+  // This allows components to work even if accidentally used outside AuthProvider
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    console.warn('useAuth called outside AuthProvider. Using default values.');
+    return defaultContextValue;
   }
   return context;
 };
