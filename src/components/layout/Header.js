@@ -185,7 +185,7 @@ const Header = () => {
                     <div className="px-4 py-3 border-b border-gray-200">
                       <p className="text-sm font-semibold text-gray-900">{user?.firstName || ''} {user?.lastName || ''}</p>
                       <p className="text-xs text-gray-500">{user?.email || ''}</p>
-                      {(user.roles && user.roles.length > 1) && (
+                      {(user?.roles && user?.roles.length > 1) && (
                         <div className="mt-2 grid grid-cols-2 gap-2">
                         <button
                           onClick={async (e) => {
