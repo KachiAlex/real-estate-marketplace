@@ -94,6 +94,12 @@ const AuthRoutes = () => (
 
 const MainRoutes = () => (
   <Routes>
+    {/* Redirect old auth paths to new auth routes */}
+    <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+    <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+    <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
+    <Route path="/reset-password" element={<Navigate to="/auth/forgot-password" replace />} />
+    
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
     <Route path="/blog" element={<Blog />} />
