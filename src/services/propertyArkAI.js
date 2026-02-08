@@ -510,13 +510,13 @@ What specific help do you need? I'm here to make your real estate journey smooth
     }
     
     if (message.toLowerCase().includes('register') || message.toLowerCase().includes('sign up')) {
-      response += "Registration is quick and easy! You'll get access to:\n";
-      response += "Save and favorite properties, Create property alerts, Contact agents directly, Use escrow services, Track your inquiries\n\n";
-      response += "Would you like me to take you to the registration page?";
+      response += "Registration is temporarily unavailable while we rebuild the auth experience. " +
+                  "Please reach out to support@propertyark.com and we'll notify you once the new flow launches.\n\n";
+      response += "You'll still enjoy benefits like saving properties, creating alerts, contacting agents directly, using escrow services, and tracking inquiries once it is back online.";
       
       return {
         response,
-        action: { type: 'navigate', path: '/register' },
+        action: null,
         entities
       };
     }

@@ -11,6 +11,21 @@
   CI = "false"
 
 [[redirects]]
+  from = "/login"
+  to = "/auth/login"
+  status = 301
+
+[[redirects]]
+  from = "/register"
+  to = "/auth/register"
+  status = 301
+
+[[redirects]]
+  from = "/forgot-password"
+  to = "/auth/forgot-password"
+  status = 301
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

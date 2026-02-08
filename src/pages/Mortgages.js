@@ -9,7 +9,7 @@ const Mortgages = () => {
   const navigate = useNavigate();
 
   if (!user) {
-    navigate('/login');
+    navigate('/');
     return null;
   }
 

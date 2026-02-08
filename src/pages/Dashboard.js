@@ -294,7 +294,7 @@ const Dashboard = () => {
   const handleScheduleViewing = (property) => {
     if (!user) {
       toast.error('Please login to schedule viewings');
-      navigate('/login');
+      navigate('/');
       return;
     }
     
@@ -1035,7 +1035,7 @@ const Dashboard = () => {
                         if (!user) {
                           setAuthRedirect('/dashboard');
                           toast.error('Please login to save properties');
-                          navigate('/login');
+                          navigate('/');
                           return;
                         }
                         
@@ -1178,7 +1178,7 @@ const Dashboard = () => {
                         if (!user) {
                           setAuthRedirect('/dashboard');
                           toast.error('Please login to save properties');
-                          navigate('/login');
+                          navigate('/');
                           return;
                         }
                         

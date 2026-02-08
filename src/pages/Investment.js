@@ -231,7 +231,7 @@ const Investment = () => {
     if (!user) {
       setAuthRedirect('/investment');
       toast.error('Please login to invest');
-      navigate('/login');
+      navigate('/');
       return;
     }
     
@@ -364,7 +364,7 @@ const Investment = () => {
     if (!user) {
       setAuthRedirect('/investment');
       toast.error('Please login to add to wishlist');
-      navigate('/login');
+      navigate('/');
       return;
     }
 

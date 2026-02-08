@@ -126,10 +126,7 @@ const VendorInspectionRequests = () => {
     })();
     
     return () => clearInterval(pollInterval);
-    } catch (e) {
-      console.warn('Realtime subscription failed, using manual load', e);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps     
   }, [user?.id, user?.email]);
 
   const accept = async (req) => {

@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
       // Remember where the user wanted to go
       setAuthRedirect(location.pathname + location.search);
     } catch {}
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');

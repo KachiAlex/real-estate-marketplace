@@ -31,7 +31,7 @@ const Mortgage = () => {
   const handlePreQualification = () => {
     if (!user) {
       toast.error('Please login to start pre-qualification');
-      navigate('/login');
+      navigate('/');
       return;
     }
     // Reset form state
@@ -101,7 +101,7 @@ const Mortgage = () => {
     
     if (!user) {
       toast.error('Please login to apply for mortgage');
-      navigate('/login');
+      navigate('/');
       return;
     }
     
@@ -434,7 +434,7 @@ const Mortgage = () => {
         
         if (status === 401) {
           errorMessage = 'Authentication failed. Please login again.';
-          setTimeout(() => navigate('/login'), 2000);
+          setTimeout(() => navigate('/'), 2000);
         } else if (status === 400) {
           errorMessage = data?.message || data?.errors?.[0]?.msg || 'Invalid application data. Please check all fields.';
         } else if (status === 404) {
