@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutterwave Test Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .payment-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #f8f9fa;
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 40px;
+            background: #f5a623;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin: 0 auto 16px;
+        }
+        
+        .amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2d3436;
+            margin: 8px 0;
+        }
+        
+        .currency {
+            font-size: 18px;
+            color: #636e72;
+        }
+        
+        .form {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2d3436;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #f5a623;
+        }
+        
+        .pay-button {
+            width: 100%;
+            background: #f5a623;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 24px;
+        }
+        
+        .pay-button:hover {
+            background: #e09512;
+        }
+        
+        .pay-button:disabled {
+            background: #ddd;
+            cursor: not-allowed;
+        }
+        
+        .test-note {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+        
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f5a623;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="header">
+            <div class="logo">FLUTTERWAVE</div>
+            <div class="amount" id="amount">₦50,000</div>
+            <div class="currency">Nigerian Naira</div>
+        </div>
+        
+        <div class="form">
+            <div class="test-note">
+                <strong>Test Mode:</strong> This is a demo payment page. Use any card details to simulate a successful payment.
+            </div>
+            
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" value="test@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cardNumber">Card Number</label>
+                    <input type="text" id="cardNumber" value="4242424242424242" maxlength="19" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expiry">Expiry Date</label>
+                    <input type="text" id="expiry" value="12/25" maxlength="5" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cvv">CVV</label>
+                    <input type="text" id="cvv" value="123" maxlength="4" required>
+                </div>
+                
+                <button type="submit" class="pay-button" id="payButton">
+                    Pay ₦50,000
+                </button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing payment...</p>
+            </div>
+            
+            <div class="success-message" id="successMessage">
+                <h3>Payment Successful!</h3>
+                <p>Transaction completed. You can close this window.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const amount = urlParams.get('amount') || '50000';
+        const txRef = urlParams.get('tx_ref') || 'tx_' + Date.now();
+        
+        // Update amount display
+        document.getElementById('amount').textContent = `₦${parseInt(amount).toLocaleString()}`;
+        document.getElementById('payButton').textContent = `Pay ₦${parseInt(amount).toLocaleString()}`;
+        
+        // Format card number input
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+        
+        // Format expiry date input
+        document.getElementById('expiry').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        // Handle form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('paymentForm').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            // Simulate payment processing
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // Notify parent window about successful payment
+                if (window.parent) {
+                    window.parent.postMessage({
+                        type: 'PAYMENT_SUCCESS',
+                        txRef: txRef,
+                        amount: amount,
+                        status: 'success'
+                    }, '*');
+                }
+                
+                // Auto-close after 3 seconds
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
