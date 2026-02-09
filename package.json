@@ -92,13 +92,9 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "concurrently": "^9.2.0",
-    "nodemon": "^3.0.1"
+  "overrides": {
+    "@types/node": "24.2.0"
   },
-    "overrides": {
-      "@types/node": "24.2.0"
-    },
   "engines": {
     "node": ">=16.0.0"
   }
