@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -10,11 +10,10 @@ const HelpSupport = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-  const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'chat'
+  const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'support'
   const [selectedGuideSection, setSelectedGuideSection] = useState(null);
   const [selectedDocCategory, setSelectedDocCategory] = useState('all');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState('');
+  // live chat removed — using support ticket flow instead
   const [contactForm, setContactForm] = useState({
     subject: '',
     category: '',
@@ -167,11 +166,11 @@ const HelpSupport = () => {
       count: '100+ articles'
     },
     {
-      id: 'chat',
+      id: 'support',
       icon: FaHeadset,
-      title: 'Live Chat',
-      description: 'Chat with support agents',
-      count: '24/7 available'
+      title: 'Support Tickets',
+      description: 'Create a support ticket and receive email replies',
+      count: 'Response within 24 hours'
     }
   ];
 
@@ -393,12 +392,46 @@ const HelpSupport = () => {
     )
   );
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    // Handle contact form submission
-    console.log('Contact form submitted:', contactForm);
-    toast.success('Your message has been sent! We\'ll get back to you within 2 hours.');
-    setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
+
+    if (!contactForm.subject || !contactForm.category || !contactForm.message) {
+      toast.error('Please complete subject, category and message');
+      return;
+    }
+
+    // Require auth: backend support routes are protected
+    if (!user || !user.uid) {
+      toast.error('Please log in to submit a support ticket');
+      return;
+    }
+
+    try {
+      const payload = {
+        message: `Subject: ${contactForm.subject}\nPriority: ${contactForm.priority}\n\n${contactForm.message}`,
+        category: contactForm.category
+      };
+
+      const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        toast.success(data?.message || 'Support ticket submitted. We will respond soon.');
+        setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
+      } else if (resp.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        toast.error(err.error || `Failed to submit ticket (${resp.status})`);
+      }
+    } catch (error) {
+      console.error('Support ticket submit error:', error);
+      toast.error('Failed to submit support ticket. Please try again later.');
+    }
   };
 
   const handleSendChatMessage = async (e) => {
@@ -651,85 +684,7 @@ const HelpSupport = () => {
             </div>
           )}
 
-          {/* Live Chat Section */}
-          {activeResource === 'chat' && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Live Chat Support</h2>
-              
-              <div className="border border-gray-200 rounded-lg overflow-hidden" style={{ height: '600px' }}>
-                {/* Chat Header */}
-                <div className="bg-brand-blue text-white p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    <div>
-                      <h3 className="font-semibold">PropertyArk Support</h3>
-                      <p className="text-sm opacity-90">Online • Usually replies within minutes</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Chat Messages */}
-                <div className="p-4 h-full overflow-y-auto bg-gray-50" style={{ height: 'calc(600px - 140px)' }}>
-                  {chatMessages.length === 0 ? (
-                    <div className="text-center py-12">
-                      <FaHeadset className="text-6xl text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-2">Start a conversation with our support team</p>
-                      <p className="text-sm text-gray-500">We're here to help 24/7</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {chatMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                              msg.sender === 'user'
-                                ? 'bg-brand-blue text-white'
-                                : 'bg-white text-gray-900 border border-gray-200'
-                            }`}
-                          >
-                            <p>{msg.text}</p>
-                            <p className={`text-xs mt-1 ${
-                              msg.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                            }`}>
-                              {new Date(msg.timestamp).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Chat Input */}
-                {user && user.uid ? (
-                  <form onSubmit={handleSendChatMessage} className="border-t border-gray-200 p-4 bg-white">
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                      />
-                      <button
-                        type="submit"
-                        className="px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-dark transition-colors"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="border-t border-gray-200 p-4 bg-gray-50">
-                    <p className="text-gray-600 text-center">Please log in to your account to use live chat support.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Live chat removed — use Support Tickets via the contact form below */}
         </div>
       )}
 
