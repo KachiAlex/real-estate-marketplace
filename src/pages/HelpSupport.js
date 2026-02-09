@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -422,6 +422,8 @@ const HelpSupport = () => {
         const data = await resp.json();
         toast.success(data?.message || 'Support ticket submitted. We will respond soon.');
         setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
+        // refresh tickets after successful submit
+        if (typeof loadTickets === 'function') loadTickets();
       } else if (resp.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else {
@@ -433,6 +435,38 @@ const HelpSupport = () => {
       toast.error('Failed to submit support ticket. Please try again later.');
     }
   };
+
+  // Tickets state and loader
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState(null);
+
+  const loadTickets = async () => {
+    if (!user || !user.uid) return;
+    setTicketsLoading(true);
+    setTicketsError(null);
+    try {
+      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'));
+      if (!resp.ok) {
+        if (resp.status === 401) throw new Error('Authentication required');
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to load tickets (${resp.status})`);
+      }
+      const data = await resp.json();
+      setTickets(data.data || []);
+    } catch (err) {
+      console.error('Failed to load tickets:', err);
+      setTicketsError(err.message || 'Failed to load tickets');
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeResource === 'support') {
+      loadTickets();
+    }
+  }, [activeResource, user]);
 
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
@@ -685,6 +719,36 @@ const HelpSupport = () => {
           )}
 
           {/* Live chat removed — use Support Tickets via the contact form below */}
+          {activeResource === 'support' && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">My Support Tickets</h2>
+
+              <div className="border border-gray-200 rounded-lg p-4 mb-6">
+                {ticketsLoading ? (
+                  <p>Loading tickets...</p>
+                ) : ticketsError ? (
+                  <p className="text-red-500">{ticketsError}</p>
+                ) : tickets.length === 0 ? (
+                  <p className="text-gray-600">You have no support tickets. Use the form below to submit one.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {tickets.map(t => (
+                      <div key={t.id} className="border p-3 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{t.category} — {t.status}</h3>
+                            <p className="text-sm text-gray-600">{t.userEmail} • {new Date(t.createdAt).toLocaleString()}</p>
+                          </div>
+                          <div className="text-sm text-gray-500">{t.isRead ? 'Read' : 'New'}</div>
+                        </div>
+                        <p className="mt-2 text-gray-800 whitespace-pre-wrap">{t.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
