@@ -1,4 +1,118 @@
 import React, { useEffect, useState } from 'react';
+import { getApiUrl } from '../utils/apiConfig';
+import { authenticatedFetch } from '../utils/authToken';
+import toast from 'react-hot-toast';
+import { FaCheck, FaTimes, FaSyncAlt } from 'react-icons/fa';
+
+const AdminSupportTickets = () => {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [updating, setUpdating] = useState(false);
+
+  const loadTickets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await authenticatedFetch(getApiUrl('/admin/support/inquiries'));
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to load (${resp.status})`);
+      }
+      const data = await resp.json();
+      setTickets(data.data || []);
+    } catch (err) {
+      console.error('Admin tickets load error:', err);
+      setError(err.message || 'Failed to load tickets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const updateTicket = async (id, updates) => {
+    setUpdating(true);
+    try {
+      const resp = await authenticatedFetch(getApiUrl(`/admin/support/inquiries/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Update failed (${resp.status})`);
+      }
+      const data = await resp.json();
+      toast.success(data.message || 'Ticket updated');
+      // update local copy
+      setTickets(prev => prev.map(t => (t.id === id ? { ...t, ...data.data } : t)));
+    } catch (err) {
+      console.error('Update ticket error:', err);
+      toast.error(err.message || 'Failed to update ticket');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading) return <div className="p-6">Loading tickets...</div>;
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Admin — Support Tickets</h1>
+        <button className="btn" onClick={loadTickets}><FaSyncAlt className="inline mr-2"/> Refresh</button>
+      </div>
+
+      {tickets.length === 0 ? (
+        <div className="bg-white p-6 rounded shadow">No tickets found.</div>
+      ) : (
+        <div className="space-y-4">
+          {tickets.map(ticket => (
+            <div key={ticket.id} className="bg-white p-4 rounded shadow">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{ticket.category} — {ticket.status}</h3>
+                  <p className="text-sm text-gray-600">{ticket.userName || ticket.userEmail} • {new Date(ticket.createdAt).toLocaleString()}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    disabled={updating}
+                    title={ticket.isRead ? 'Mark unread' : 'Mark read'}
+                    onClick={() => updateTicket(ticket.id, { isRead: !ticket.isRead })}
+                    className={`px-3 py-1 rounded ${ticket.isRead ? 'bg-gray-100' : 'bg-green-100'} text-sm`}
+                  >
+                    {ticket.isRead ? 'Read' : 'New'}
+                  </button>
+                  <select
+                    value={ticket.status || 'new'}
+                    onChange={(e) => updateTicket(ticket.id, { status: e.target.value })}
+                    disabled={updating}
+                    className="border px-2 py-1 rounded"
+                  >
+                    <option value="new">new</option>
+                    <option value="open">open</option>
+                    <option value="pending">pending</option>
+                    <option value="resolved">resolved</option>
+                    <option value="closed">closed</option>
+                  </select>
+                </div>
+              </div>
+
+              <pre className="mt-3 whitespace-pre-wrap text-sm">{ticket.message}</pre>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminSupportTickets;
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
