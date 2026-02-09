@@ -1,5 +1,18 @@
 const CHUNK_RELOAD_KEY = 'real-estate-chunk-reload';
 
+// Runtime shim: ensure a global `user` binding exists so legacy/rolled-back
+// code that references an undeclared `user` identifier doesn't throw
+// ReferenceError at runtime. Use indirect eval to create a global var.
+if (typeof window !== 'undefined') {
+  try {
+    if (!window.user) window.user = null;
+    // Indirect eval runs in global scope — creates a global var binding.
+    try { (0, eval)('var user = window.user;'); } catch (e) { /* ignore */ }
+  } catch (e) {
+    // Best-effort shim; do not break startup if something goes wrong
+  }
+}
+
 const unregisterLegacyServiceWorkers = () => {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
   const shouldKeepSw = process.env.REACT_APP_ENABLE_SERVICE_WORKER === 'true';
