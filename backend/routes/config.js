@@ -27,4 +27,24 @@ router.get('/firebase', (req, res) => {
   });
 });
 
+// GET /api/config/db-check
+// Returns basic DB connectivity info for debugging (non-destructive)
+router.get('/db-check', async (req, res) => {
+  try {
+    const { User } = require('../config/sequelizeDb');
+    if (!User) {
+      return res.status(500).json({ success: false, message: 'User model not available' });
+    }
+
+    // Do a simple count to verify DB connectivity
+    const count = await User.count();
+    return res.json({ success: true, message: 'DB reachable', userCount: count });
+  } catch (err) {
+    console.error('DB check error:', err);
+    const payload = { success: false, message: 'DB check failed', error: err.message };
+    if (process.env.NODE_ENV !== 'production') payload.stack = err.stack;
+    return res.status(500).json(payload);
+  }
+});
+
 module.exports = router;
