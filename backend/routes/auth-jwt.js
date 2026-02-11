@@ -90,11 +90,12 @@ router.post('/register', [
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed',
-      error: error.message 
-    });
+    const errMsg = error && error.message ? error.message : String(error);
+    const payload = { success: false, message: 'Registration failed', error: errMsg };
+    if (process.env.NODE_ENV !== 'production') {
+      payload.stack = error.stack || null;
+    }
+    res.status(500).json(payload);
   }
 });
 
