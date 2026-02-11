@@ -650,20 +650,7 @@ const Header = () => {
               </>
             ) : (
               <>
-                <button
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    try {
-                      await signInWithGooglePopup();
-                      navigate('/dashboard', { replace: true });
-                    } catch (err) {
-                      // handled in context
-                    }
-                  }}
-                  className="text-sm text-gray-700 hover:text-brand-orange"
-                >
-                  Sign in
-                </button>
+                <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
               </>
             )}
           </div>
@@ -740,21 +727,13 @@ const Header = () => {
 
               {!user && (
                 <div className="pt-4 border-t border-gray-200">
-                  <button
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2 text-left"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      setIsMobileMenuOpen(false);
-                      try {
-                        await signInWithGooglePopup();
-                        navigate('/dashboard', { replace: true });
-                      } catch (err) {
-                        // handled in context
-                      }
-                    }}
+                  <Link
+                    to="/auth/login"
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign in
-                  </button>
+                  </Link>
                 </div>
               )}
 
