@@ -280,6 +280,24 @@ router.get('/me', verifyToken, async (req, res) => {
 // @desc    Exchange Google OAuth token for JWT
 // @route   POST /api/auth/jwt/google
 // @access  Public
+// @desc    Get Google OAuth client config
+// @route   GET /api/auth/jwt/google-config
+// @access  Public
+router.get('/google-config', async (req, res) => {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID || null;
+    const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI || `${req.protocol}://${req.get('host')}/auth/google-popup-callback`;
+
+    res.json({
+      success: true,
+      clientId,
+      redirectUri
+    });
+  } catch (error) {
+    console.error('google-config error:', error);
+    res.status(500).json({ success: false, message: 'Failed to read Google config' });
+  }
+});
 router.post('/google', async (req, res) => {
   try {
     const { googleToken } = req.body;
