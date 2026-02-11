@@ -320,18 +320,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
 
-      // Try frontend env first, fall back to fetching backend config
-      let clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        try {
-          const cfgResp = await fetch(getApiUrl('/auth/jwt/google-config'));
-          if (cfgResp.ok) {
-            const cfg = await cfgResp.json();
-            clientId = cfg.clientId || cfg.client_id || cfg.clientID;
-          }
-        } catch (e) {
-          // ignore
+      // Fetch client ID from backend config endpoint (avoid inlining secrets at build time)
+      let clientId = null;
+      try {
+        const cfgResp = await fetch(getApiUrl('/auth/jwt/google-config'));
+        if (cfgResp.ok) {
+          const cfg = await cfgResp.json();
+          clientId = cfg.clientId || cfg.client_id || cfg.clientID || null;
         }
+      } catch (e) {
+        // ignore
       }
 
       if (!clientId) {
