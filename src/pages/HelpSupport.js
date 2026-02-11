@@ -21,6 +21,12 @@ const HelpSupport = () => {
     priority: 'medium'
   });
 
+  // Chat state (legacy handlers reference these; live chat UI removed)
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+
+  
+
   // FAQ Categories and Questions
   const faqCategories = [
     {
