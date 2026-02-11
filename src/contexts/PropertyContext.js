@@ -232,6 +232,9 @@ export const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Ensure auth values are available in this context
+  const { user, currentUser: authCurrentUser, loading: authLoading } = useAuth();
+  const authReady = !authLoading;
   const [filters, setFilters] = useState({
     search: '',
     type: '',
@@ -311,6 +314,73 @@ export const PropertyProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+  // Fetch properties (main public function used across the app)
+  const fetchProperties = useCallback(async (opts = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Merge incoming options with current filters
+      const effectiveFilters = { ...filters, ...opts };
+
+      // Start with backend/mock properties
+      let allProperties = [...mockProperties];
+
+      // Merge localStorage-saved properties (created when offline)
+      try {
+        const localData = localStorage.getItem('mockProperties');
+        const localProps = JSON.parse(localData || '[]');
+        localProps.forEach(lp => {
+          if (!allProperties.find(p => p.id === lp.id)) {
+            allProperties.push({ ...lp, source: 'localStorage' });
+          }
+        });
+      } catch (localErr) {
+        console.warn('PropertyContext: Failed to read localStorage mockProperties', localErr);
+      }
+
+      // Apply simple filtering
+      let filtered = allProperties;
+      if (effectiveFilters.search) {
+        const q = String(effectiveFilters.search).toLowerCase();
+        filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q) || (p.city || '').toLowerCase().includes(q));
+      }
+      if (effectiveFilters.type) {
+        filtered = filtered.filter(p => p.typeSlug === effectiveFilters.type || p.type === effectiveFilters.type);
+      }
+      if (effectiveFilters.status) {
+        filtered = filtered.filter(p => p.statusSlug === effectiveFilters.status || p.listingType === effectiveFilters.status || p.status === effectiveFilters.status);
+      }
+      if (effectiveFilters.minPrice) {
+        const min = Number(effectiveFilters.minPrice) || 0;
+        filtered = filtered.filter(p => Number(p.price || 0) >= min);
+      }
+      if (effectiveFilters.maxPrice) {
+        const max = Number(effectiveFilters.maxPrice) || Number.MAX_SAFE_INTEGER;
+        filtered = filtered.filter(p => Number(p.price || 0) <= max);
+      }
+
+      // Pagination
+      const page = Number(effectiveFilters.page || pagination.currentPage) || 1;
+      const perPage = Number(pagination.itemsPerPage) || 12;
+      const totalItems = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+      const start = (page - 1) * perPage;
+      const pageItems = filtered.slice(start, start + perPage);
+
+      setProperties(pageItems);
+      setPagination(prev => ({ ...prev, currentPage: page, totalPages, totalItems }));
+
+      return { totalItems, totalPages, currentPage: page };
+    } catch (error) {
+      console.error('Error in fetchProperties:', error);
+      setError('Failed to fetch properties');
+      return { totalItems: 0, totalPages: 0, currentPage: 1 };
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, pagination.itemsPerPage]);
 
   // Add new property
   const addProperty = useCallback(async (propertyData) => {
