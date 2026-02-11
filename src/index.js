@@ -1,3 +1,6 @@
+// Ensure global `user` binding exists before any app modules initialize
+import './setupGlobalUser';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
