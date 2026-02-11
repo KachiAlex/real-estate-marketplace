@@ -315,6 +315,99 @@ export const AuthProvider = ({ children }) => {
     }
   }, [switchRole]);
 
+  // Sign in with Google via popup and exchange id_token for JWT
+  const signInWithGooglePopup = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Try frontend env first, fall back to fetching backend config
+      let clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        try {
+          const cfgResp = await fetch(`${getApiUrl()}/api/auth/jwt/google-config`);
+          if (cfgResp.ok) {
+            const cfg = await cfgResp.json();
+            clientId = cfg.clientId || cfg.client_id || cfg.clientID;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (!clientId) {
+        throw new Error('Google client ID is not configured');
+      }
+
+      const redirectUri = `${window.location.origin}/auth/google-popup-callback`;
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'id_token token',
+        scope: 'openid profile email',
+        prompt: 'select_account'
+      });
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+      const width = 500;
+      const height = 650;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+      const popup = window.open(authUrl, 'google_oauth', `width=${width},height=${height},left=${left},top=${top}`);
+      if (!popup) throw new Error('Popup blocked by browser');
+
+      const result = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener('message', handler);
+          reject(new Error('Timed out waiting for Google authentication'));
+        }, 2 * 60 * 1000);
+
+        const handler = (e) => {
+          if (e.origin !== window.location.origin) return;
+          const data = e.data || {};
+          if (data.type === 'google_oauth_result') {
+            clearTimeout(timer);
+            window.removeEventListener('message', handler);
+            resolve(data);
+          }
+        };
+
+        window.addEventListener('message', handler);
+      });
+
+      const idToken = result?.idToken || result?.id_token;
+      if (!idToken) throw new Error('No ID token returned from Google');
+
+      const resp = await fetch(`${getApiUrl()}/api/auth/jwt/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ googleToken: idToken })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.message || 'Google sign-in failed');
+
+      // Persist tokens and user
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setCurrentUser(data.user);
+
+      toast.success('Signed in with Google');
+      return data.user;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'Google sign-in failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value = {
     currentUser,
     loading,
@@ -327,6 +420,7 @@ export const AuthProvider = ({ children }) => {
     switchRole,
     updateUserProfile,
     registerAsVendor,
+    signInWithGooglePopup,
     setAuthRedirect,
     // Aliases and computed properties
     user: currentUser,

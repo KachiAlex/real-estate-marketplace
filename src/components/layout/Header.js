@@ -9,7 +9,7 @@ import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 
 const Header = () => {
-  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
+  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleMobileSidebar } = useSidebar();
@@ -650,7 +650,20 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+                <button
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await signInWithGooglePopup();
+                      navigate('/dashboard', { replace: true });
+                    } catch (err) {
+                      // handled in context
+                    }
+                  }}
+                  className="text-sm text-gray-700 hover:text-brand-orange"
+                >
+                  Sign in
+                </button>
                 <Link to="/auth/register" className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600">Get started</Link>
               </>
             )}
@@ -728,13 +741,21 @@ const Header = () => {
 
               {!user && (
                 <div className="pt-4 border-t border-gray-200">
-                  <Link
-                    to="/auth/login"
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                  <button
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2 text-left"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setIsMobileMenuOpen(false);
+                      try {
+                        await signInWithGooglePopup();
+                        navigate('/dashboard', { replace: true });
+                      } catch (err) {
+                        // handled in context
+                      }
+                    }}
                   >
                     Sign in
-                  </Link>
+                  </button>
                   <Link
                     to="/auth/register"
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300"
