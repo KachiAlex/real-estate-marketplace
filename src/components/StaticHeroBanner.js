@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
 import GlobalSearch from './GlobalSearch';
@@ -178,6 +178,15 @@ const StaticHeroBanner = () => {
           </div>
 
           {/* CTA Buttons */}
+          <div className="flex items-center justify-center space-x-3 mt-4">
+            <Link to="/auth/register" className="inline-block px-6 py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-lg font-semibold shadow-lg">
+              Get started
+            </Link>
+            <button onClick={() => openSearch()} className="inline-flex items-center space-x-2 px-5 py-3 bg-white/10 text-white rounded-2xl border border-white/20 hover:bg-white/20">
+              <span>Explore listings</span>
+              <FaArrowRight />
+            </button>
+          </div>
         </div>
       </div>
 

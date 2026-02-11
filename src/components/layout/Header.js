@@ -664,7 +664,6 @@ const Header = () => {
                 >
                   Sign in
                 </button>
-                <Link to="/auth/register" className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600">Get started</Link>
               </>
             )}
           </div>
@@ -756,13 +755,6 @@ const Header = () => {
                   >
                     Sign in
                   </button>
-                  <Link
-                    to="/auth/register"
-                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Get started
-                  </Link>
                 </div>
               )}
 
