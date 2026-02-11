@@ -23,6 +23,12 @@ const defaultContextValue = {
 
 const AuthContext = createContext(defaultContextValue);
 
+// Ensure user object has a consistent shape (always include `roles` array)
+const normalizeUser = (u) => {
+  if (!u) return u;
+  const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
+  return { ...u, roles };
+};
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +46,11 @@ export const AuthProvider = ({ children }) => {
         if (storedAccessToken && storedRefreshToken && storedUser) {
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken);
-          setCurrentUser(JSON.parse(storedUser));
+          try {
+            setCurrentUser(normalizeUser(JSON.parse(storedUser)));
+          } catch (e) {
+            setCurrentUser(null);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -81,14 +91,15 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Store tokens and user info
+      // Store tokens and normalized user info
+      const normalized = normalizeUser(data.user);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(normalized));
 
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
-      setCurrentUser(data.user);
+      setCurrentUser(normalized);
 
       toast.success('Registration successful!');
       return data.user;
@@ -122,14 +133,15 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store tokens and user info
+      // Store tokens and normalized user info
+      const normalized = normalizeUser(data.user);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(normalized));
 
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
-      setCurrentUser(data.user);
+      setCurrentUser(normalized);
 
       toast.success('Login successful!');
       return data.user;
@@ -244,8 +256,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Role switch failed');
       }
 
-      // Update user data
-      const updatedUser = { ...currentUser, ...data.user };
+      // Update and normalize user data
+      const updatedUser = normalizeUser({ ...currentUser, ...data.user });
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
 
@@ -280,8 +292,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Profile update failed');
       }
 
-      // Update user data locally
-      const updatedUser = { ...currentUser, ...updates };
+      // Update and normalize user data locally
+      const updatedUser = normalizeUser({ ...currentUser, ...updates });
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
 
