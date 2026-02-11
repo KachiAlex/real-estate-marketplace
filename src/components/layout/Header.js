@@ -539,7 +539,7 @@ const Header = () => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
-            {user && (
+            {user ? (
               <>
               <div className="relative user-menu-container">
                 <button
@@ -648,6 +648,11 @@ const Header = () => {
                 )}
               </div>
               </>
+            ) : (
+              <>
+                <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+                <Link to="/auth/register" className="ml-2 px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-orange-600">Get started</Link>
+              </>
             )}
           </div>
 
@@ -720,6 +725,25 @@ const Header = () => {
               >
                 Contact
               </Link>
+
+              {!user && (
+                <div className="pt-4 border-t border-gray-200">
+                  <Link
+                    to="/auth/login"
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/auth/register"
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get started
+                  </Link>
+                </div>
+              )}
 
               {user && (
                 <div className="pt-4 border-t border-gray-200">
