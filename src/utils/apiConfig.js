@@ -29,8 +29,9 @@ const normalizeBaseUrl = (base) => {
 };
 
 export const getApiBaseUrl = () => {
-  // Use environment variable for Render, fallback to default
-  return process.env.REACT_APP_API_URL || DEFAULT_API_BASE_URL;
+  // Normalize any injected base (remove trailing slash or trailing /api)
+  const envBase = process.env.REACT_APP_API_URL || DEFAULT_API_BASE_URL;
+  return normalizeBaseUrl(envBase);
 };
 
 export const getApiUrl = (path = '') => {
