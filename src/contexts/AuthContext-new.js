@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (email, password, firstName, lastName, phone = '') => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/register`, {
+      const response = await fetch(getApiUrl('/auth/jwt/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/login`, {
+      const response = await fetch(getApiUrl('/auth/jwt/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       // Call logout endpoint (optional, mainly for logging)
       if (accessToken) {
         try {
-          await fetch(`${getApiUrl()}/api/auth/jwt/logout`, {
+          await fetch(getApiUrl('/auth/jwt/logout'), {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/refresh`, {
+      const response = await fetch(getApiUrl('/auth/jwt/refresh'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -229,7 +229,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('User must be logged in to switch roles');
       }
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/switch-role`, {
+      const response = await fetch(getApiUrl('/auth/jwt/switch-role'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -265,7 +265,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('User must be logged in to update profile');
       }
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/update-profile`, {
+      const response = await fetch(getApiUrl('/auth/jwt/update-profile'), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
