@@ -324,7 +324,7 @@ export const AuthProvider = ({ children }) => {
       let clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
       if (!clientId) {
         try {
-          const cfgResp = await fetch(`${getApiUrl()}/api/auth/jwt/google-config`);
+          const cfgResp = await fetch(getApiUrl('/auth/jwt/google-config'));
           if (cfgResp.ok) {
             const cfg = await cfgResp.json();
             clientId = cfg.clientId || cfg.client_id || cfg.clientID;
@@ -379,7 +379,7 @@ export const AuthProvider = ({ children }) => {
       const idToken = result?.idToken || result?.id_token;
       if (!idToken) throw new Error('No ID token returned from Google');
 
-      const resp = await fetch(`${getApiUrl()}/api/auth/jwt/google`, {
+      const resp = await fetch(getApiUrl('/auth/jwt/google'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ googleToken: idToken })
