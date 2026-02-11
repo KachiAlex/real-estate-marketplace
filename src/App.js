@@ -23,6 +23,7 @@ import Home from './pages/Home';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -88,6 +89,7 @@ const AuthRoutes = () => (
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
   </Routes>
 );
