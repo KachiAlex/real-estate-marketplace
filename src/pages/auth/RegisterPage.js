@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
+import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
@@ -43,11 +44,14 @@ const RegisterPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Create your account"
-      description="Join PropertyArk to track favorites, organize viewings, and keep every chat, document, and alert in sync."
-      footer="We respect your privacy and never share your details without consent."
-    >
+    <>
+      {/* Show home hero banner on register page to match home top bar */}
+      <StaticHeroBanner />
+      <AuthLayout
+        title="Create your account"
+        description="Join PropertyArk to track favorites, organize viewings, and keep every chat, document, and alert in sync."
+        footer="We respect your privacy and never share your details without consent."
+      >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="rounded-2xl border border-red-400/70 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -138,7 +142,8 @@ const RegisterPage = () => {
           </Link>
         </div>
       </form>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 };
 
