@@ -16,7 +16,6 @@ import {
   FaQuestionCircle as FaHelp,
   FaFileContract,
   FaCalendar,
-  FaBlog,
   FaTimes
 } from 'react-icons/fa';
 
@@ -58,7 +57,6 @@ const Sidebar = () => {
     const publicMenuItems = [
       { path: '/', label: 'Home', icon: FaHome },
       { path: '/properties', label: 'Properties', icon: FaBuilding },
-      { path: '/blog', label: 'Blog', icon: FaBlog },
       { path: '/about', label: 'About', icon: FaQuestionCircle },
       { path: '/contact', label: 'Contact', icon: FaEnvelope },
       { path: '/help', label: 'Help', icon: FaHelp },

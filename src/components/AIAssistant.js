@@ -123,18 +123,7 @@ const AIAssistant = () => {
         { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
         { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
-    } else if (currentPath.includes('/blog')) {
-      // Blog page suggestions
-      return [
-        { icon: FaSearch, text: "Search blog articles", action: "search_blog" },
-        { icon: FaBell, text: "Subscribe to blog updates", action: "subscribe_blog" },
-        { icon: FaHome, text: "Latest property news", action: "latest_news" },
-        { icon: FaUser, text: "Share article", action: "share_article" },
-        { icon: FaQuestionCircle, text: "Market insights", action: "market_insights" },
-        { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
-        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
-      ];
+    // Blog page removed from the app — skip blog-specific suggestions
     } else if (currentPath.includes('/dashboard')) {
       // User dashboard suggestions
       return [
