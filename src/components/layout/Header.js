@@ -404,62 +404,14 @@ const Header = () => {
                 )}
               </div>
 
-              {/* Shortlet */}
-              <div className="relative dropdown-container">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
-                  aria-label="Shortlet locations"
-                  aria-expanded={activeDropdown === 'Shortlet'}
-                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeDropdown === 'Shortlet' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
-                  }`}
-                >
-                  <span>Shortlet</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${
-                      activeDropdown === 'Shortlet' ? 'rotate-180' : ''
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {activeDropdown === 'Shortlet' && (
-                  <div 
-                    className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48"
-                    role="menu"
-                    aria-label="Shortlet locations"
-                  >
-                    <div className="py-2">
-                      {quickFilters['Shortlet'].map((location, index) => (
-                        <Link
-                          key={location}
-                          to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
-                          onClick={() => setActiveDropdown(null)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700 focus:outline-none focus:bg-gray-100 focus:ring-2 focus:ring-blue-500"
-                          role="menuitem"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setActiveDropdown(null);
-                              window.location.href = `/properties?location=${encodeURIComponent(location)}&status=Shortlet`;
-                            } else if (e.key === 'Escape') {
-                              e.preventDefault();
-                              setActiveDropdown(null);
-                            }
-                          }}
-                        >
-                          {location}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Shortlet - link directly to shortlet listings instead of opening a locations dropdown */}
+              <Link
+                to="/properties?status=Shortlet"
+                onClick={() => setActiveDropdown(null)}
+                className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-brand-blue hover:text-brand-orange transition-colors whitespace-nowrap"
+              >
+                Shortlet
+              </Link>
 
               {/* Blog */}
               <Link
