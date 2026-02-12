@@ -4,7 +4,6 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
-import BlogManagement from '../components/BlogManagement';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
@@ -541,7 +540,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','verification','escrow','disputes','users','blog'].includes(t)) {
+    if (t && ['properties','verification','escrow','disputes','users'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1006,7 +1005,7 @@ const AdminDashboard = () => {
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
-              {activeTab === 'blog' && 'Blog content management'}
+              {/* Blog content management removed */}
             </p>
           </div>
         </div>
@@ -1773,12 +1772,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Blog Tab */}
-        {activeTab === 'blog' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
-            <BlogManagement />
-          </div>
-        )}
+        {/* Blog tab removed */}
 
       </main>
 

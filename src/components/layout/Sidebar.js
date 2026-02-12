@@ -129,11 +129,10 @@ const Sidebar = () => {
     );
   }
 
-         const menuItems = [
-           { path: '/dashboard', label: 'Dashboard', icon: FaHome },
-           { path: '/properties', label: 'Properties', icon: FaBuilding },
-           { path: '/blog', label: 'Blog', icon: FaBlog },
-           { path: '/investment', label: 'Investment', icon: FaChartLine },
+            const menuItems = [
+              { path: '/dashboard', label: 'Dashboard', icon: FaHome },
+              { path: '/properties', label: 'Properties', icon: FaBuilding },
+              { path: '/investment', label: 'Investment', icon: FaChartLine },
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
            { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
            { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },

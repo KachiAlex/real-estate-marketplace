@@ -33,8 +33,7 @@ const AddProperty = lazy(() => import('./pages/AddProperty'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const About = lazy(() => import('./pages/About'));
-const Blog = lazy(() => import('./pages/Blog'));
-const BlogDetail = lazy(() => import('./pages/BlogDetail'));
+// Blog pages removed — redirecting to properties instead
 const ProfessionalServicesEnquiry = lazy(() => import('./pages/ProfessionalServicesEnquiry'));
 const Escrow = lazy(() => import('./pages/Escrow'));
 const Investments = lazy(() => import('./pages/Investments'));
@@ -104,8 +103,8 @@ const MainRoutes = () => (
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
-    <Route path="/blog" element={<Blog />} />
-    <Route path="/blog/:slug" element={<BlogDetail />} />
+    <Route path="/blog" element={<Navigate to="/properties" replace />} />
+    <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={

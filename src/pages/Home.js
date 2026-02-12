@@ -29,7 +29,6 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
-import BlogSection from '../components/BlogSection';
 import StaticHeroBanner from '../components/StaticHeroBanner';
 import SEO from '../components/SEO';
 
@@ -1890,7 +1889,7 @@ const Home = () => {
       <HomeSections />
 
       {/* Blog Section */}
-      <BlogSection />
+      {/* Blog section removed */}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
