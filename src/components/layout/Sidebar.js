@@ -133,7 +133,7 @@ const Sidebar = () => {
               { path: '/investment', label: 'Investment', icon: FaChartLine },
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
            { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
-           { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
+           { path: '/my-inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
            { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
