@@ -71,14 +71,18 @@ const Header = () => {
 
   const handleVendorSwitch = async () => {
     const result = await switchRole('vendor');
-    
-    if (result.requiresVendorRegistration) {
-      // Show vendor registration modal
+
+    // Support multiple switchRole return shapes: either an object with flags or the updated user object
+    if (result && result.requiresVendorRegistration) {
       setShowVendorRegistrationModal(true);
       setIsUserMenuOpen(false);
-    } else if (result.success) {
+      return;
+    }
+
+    // If result indicates success (boolean) or is a user object, treat as successful switch
+    const switchedSuccessfully = (result && result.success) || (result && (result.id || result.roles || result.role));
+    if (switchedSuccessfully) {
       setIsUserMenuOpen(false);
-      // Navigate using React Router instead of window.location
       navigate('/vendor/dashboard', { replace: true });
     }
   };
@@ -388,7 +392,7 @@ const Header = () => {
                             // Always navigate to buyer dashboard when clicked
                             navigate('/dashboard', { replace: true });
                           }}
-                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${isBuyer ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
                         >
                           Buyer
@@ -401,12 +405,12 @@ const Header = () => {
                             if (result.requiresVendorRegistration) {
                               // Show vendor registration modal
                               setShowVendorRegistrationModal(true);
-                            } else if (result.success || isVendor()) {
+                            } else if (result.success || isVendor) {
                               // Navigate to vendor dashboard if switch successful or already vendor
                               navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
-                          className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${isVendor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                         >
                           Vendor
                         </button>
