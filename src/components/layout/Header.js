@@ -72,8 +72,8 @@ const Header = () => {
   const handleVendorSwitch = async () => {
     const result = await switchRole('vendor');
 
-    // If vendor registration is required, redirect to vendor registration page
-    if (result && result.requiresVendorRegistration) {
+    // Fallback: if user is not vendor, redirect to vendor registration
+    if (!isVendor || (result && result.requiresVendorRegistration)) {
       setIsUserMenuOpen(false);
       navigate('/vendor/register', { replace: true });
       return;
@@ -402,9 +402,9 @@ const Header = () => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
                             const result = await switchRole('vendor');
-                            if (result && result.requiresVendorRegistration) {
+                            if (!isVendor || (result && result.requiresVendorRegistration)) {
                               navigate('/vendor/register', { replace: true });
-                            } else if (result.success || isVendor) {
+                            } else if (result && (result.success || result.id || result.roles || result.role)) {
                               navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
