@@ -534,8 +534,8 @@ const AIAssistant = () => {
             action: { type: 'show_tour_selector' }
           };
         } else {
-          // Use advanced PropertyArk AI for natural language processing
-          aiResponse = PropertyArkAI.generateResponse(userMessage);
+          // Use advanced PropertyArk AI for natural language processing (safe)
+          aiResponse = safeGenerate(userMessage);
         }
       }
       
