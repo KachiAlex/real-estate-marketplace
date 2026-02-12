@@ -18,6 +18,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
+    // Redirect to the sign-in modal route so header/menu remain visible
     return <Navigate to="/auth/login" replace />;
   }
 

@@ -23,6 +23,7 @@ import Home from './pages/Home';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import SignInModal from './components/auth/SignInModal';
 import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports
@@ -367,10 +368,9 @@ const MainRoutes = () => (
 
 function App() {
   const location = useLocation();
-  // Show header on most pages. For auth routes we hide the header
-  // except for the register page where we want the full home header
-  // (hero / top bar) to be visible.
-  const hideHeaderPaths = ['/auth/login', '/auth/forgot-password', '/auth/google-popup-callback'];
+  // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
+  // hide header for full-page auth routes (register, forgot password, callback)
+  const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
   const isAuthRoute = hideHeaderPaths.includes(location.pathname);
 
   return (
@@ -407,6 +407,10 @@ function App() {
                               </Suspense>
                             </ErrorBoundary>
                           </div>
+                            {/* Show Sign-in as modal when route is /auth/login */}
+                            {location.pathname === '/auth/login' && (
+                              <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
+                            )}
                           <PropertyArkAssistant />
                           <AITourGuide />
                         </div>

@@ -16,7 +16,32 @@ const puppeteer = require('puppeteer');
 
   try {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.waitForTimeout(3000);
+    // If invoked in 'flow' mode, exercise the AI assistant chat flow
+    const mode = process.argv[3] || '';
+    if (mode === 'flow') {
+      // small delay for client-side scripts
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        await page.click('button[title="Open Kiki - Your AI Assistant"]');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (_) {}
+
+      const inputSelector = 'input[placeholder="Ask about properties, pricing, financing, legal docs..."]';
+      try {
+        await page.waitForSelector(inputSelector, { timeout: 10000 });
+        await page.focus(inputSelector);
+        const message = process.argv[4] || 'Hello, show me properties in Lagos';
+        await page.keyboard.type(message, { delay: 40 });
+        await page.click('button[title="Send message"]');
+        // wait for AI response
+        await new Promise(resolve => setTimeout(resolve, 6000));
+      } catch (err) {
+        consoleMessages.push({type: 'flow-error', text: String(err)});
+      }
+    } else {
+      // default: just wait a bit for any runtime errors to occur
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
   } catch (err) {
     consoleMessages.push({type: 'goto-error', text: String(err)});
   }
