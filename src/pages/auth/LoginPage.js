@@ -21,7 +21,13 @@ const LoginPage = () => {
       setError('');
       await login(email.trim(), password);
       toast.success('Welcome back!');
-      navigate('/dashboard', { replace: true });
+      const redirect = sessionStorage.getItem('authRedirect');
+      if (redirect) {
+        sessionStorage.removeItem('authRedirect');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message || 'Unexpected error while logging in.');
     }
@@ -76,7 +82,13 @@ const LoginPage = () => {
           onClick={async () => {
             try {
               await signInWithGooglePopup();
-              navigate('/dashboard', { replace: true });
+              const redirect = sessionStorage.getItem('authRedirect');
+              if (redirect) {
+                sessionStorage.removeItem('authRedirect');
+                navigate(redirect, { replace: true });
+              } else {
+                navigate('/dashboard', { replace: true });
+              }
             } catch (e) {
               // error already handled by context
             }

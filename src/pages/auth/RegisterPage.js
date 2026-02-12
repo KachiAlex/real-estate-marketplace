@@ -37,7 +37,14 @@ const RegisterPage = () => {
       setError('');
       await register(form.email.trim(), form.password, form.firstName.trim(), form.lastName.trim(), form.phone.trim());
       toast.success('Account created successfully.');
-      navigate('/dashboard', { replace: true });
+      // Redirect to intended destination if set (e.g., escrow flow)
+      const redirect = sessionStorage.getItem('authRedirect');
+      if (redirect) {
+        sessionStorage.removeItem('authRedirect');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message || 'Unable to register at this time.');
     }
