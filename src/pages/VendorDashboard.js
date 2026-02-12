@@ -18,6 +18,14 @@ import { authenticatedFetch } from '../utils/authToken';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Onboarding check: if vendor but not onboarded, redirect
+  useEffect(() => {
+    if (user && user.role === 'vendor' && !(user.vendorData && user.vendorData.onboardingComplete)) {
+      navigate('/vendor/register', { replace: true });
+    }
+  }, [user, navigate]);
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();
