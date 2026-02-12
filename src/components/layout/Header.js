@@ -144,148 +144,7 @@ const Header = () => {
     };
   }, [activeDropdown, isUserMenuOpen]);
 
-  // If on dashboard route, show minimal header with just user profile
-  if (isDashboardRoute) {
-    return (
-      <>
-        {/* Skip to content link for accessibility */}
-        <a 
-          href="#main-content" 
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Skip to main content
-        </a>
-        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 lg:ml-64 lg:w-[calc(100%-16rem)]">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <div className="flex justify-end items-center h-14 py-2">
-            {/* User Profile Icon Only */}
-            {user && (
-              <div className="relative user-menu-container">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="User menu"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {user.avatar ? (
-                      <img 
-                        src={user.avatar} 
-                        alt={`${user.firstName} ${user.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span>{user.firstName?.[0]?.toUpperCase() || 'U'}{user.lastName?.[0]?.toUpperCase() || ''}</span>
-                    )}
-                  </div>
-                </button>
-                
-                {/* User Menu Dropdown */}
-                {isUserMenuOpen && user && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-gray-900">{user?.firstName || ''} {user?.lastName || ''}</p>
-                      <p className="text-xs text-gray-500">{user?.email || ''}</p>
-                      {(user?.roles && user?.roles.length > 1) && (
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setIsUserMenuOpen(false);
-                            const result = await switchRole('buyer');
-                            // Always navigate to buyer dashboard when clicked
-                            navigate('/dashboard', { replace: true });
-                          }}
-                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          disabled={!user?.roles?.includes('buyer')}
-                        >
-                          Buyer
-                        </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              setIsUserMenuOpen(false);
-                              const result = await switchRole('vendor');
-                              if (result.requiresVendorRegistration) {
-                                // Show vendor registration modal
-                                setShowVendorRegistrationModal(true);
-                              } else if (result.success || isVendor()) {
-                                // Navigate to vendor dashboard if switch successful or already vendor
-                                navigate('/vendor/dashboard', { replace: true });
-                              }
-                            }}
-                            className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          >
-                            Vendor
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Admin Profile Link - Only show for admin context */}
-                    {isAdminContext && (
-                      <button
-                        onClick={handleAdminProfileClick}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaUser className="inline mr-2" />
-                        Profile
-                      </button>
-                    )}
-                    
-                    {/* Regular Profile Link - Only show for non-admin */}
-                    {!isAdminContext && (
-                      <Link
-                        to={profilePath}
-                        onClick={(e) => {
-                          console.log('Regular profile clicked', { profilePath, isAdminContext });
-                          e.stopPropagation();
-                          setIsUserMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaUser className="inline mr-2" />
-                        Profile
-                      </Link>
-                    )}
-                    
-                    {/* Admin Panel Link - Only show for admin users not in admin context */}
-                    {user.role === 'admin' && !isAdminContext && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaShieldAlt className="inline mr-2" />
-                        Admin Panel
-                      </Link>
-                    )}
-                    {user.role === 'mortgage_bank' && (
-                      <Link
-                        to="/mortgage-bank/dashboard"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        Mortgage Bank Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLogout();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-      </>
-    );
-  }
+  // Always render the full header (do not return a minimal header for dashboard routes)
 
   return (
     <>
@@ -647,6 +506,14 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Properties
+              </Link>
+              {/* Shortlet - direct link for mobile menu */}
+              <Link
+                to="/properties?status=Shortlet"
+                className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Shortlet
               </Link>
               <Link
                 to="/investments"
