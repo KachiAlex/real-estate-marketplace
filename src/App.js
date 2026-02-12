@@ -103,6 +103,7 @@ const MainRoutes = () => (
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
+    <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/blog" element={<Navigate to="/properties" replace />} />
     <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
