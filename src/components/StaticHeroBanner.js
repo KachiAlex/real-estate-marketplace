@@ -179,12 +179,27 @@ const StaticHeroBanner = () => {
 
           {/* CTA Buttons */}
           <div className="flex items-center justify-center space-x-3 mt-4">
-            <button
-              onClick={() => { navigate('/auth/register'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
-              className="inline-block px-6 py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-lg font-semibold shadow-lg"
-            >
-              Get started
-            </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  try {
+                    navigate('/auth/register');
+                  } catch (err) {
+                    // fall through to full navigation
+                  }
+                  // Scroll to top (best-effort)
+                  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) {}
+                  // Fallback: if SPA navigation didn't work, force a full reload to the register page
+                  setTimeout(() => {
+                    if (window.location.pathname !== '/auth/register') {
+                      window.location.href = '/auth/register';
+                    }
+                  }, 200);
+                }}
+                className="inline-block px-6 py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-lg font-semibold shadow-lg"
+              >
+                Get started
+              </button>
             <button onClick={() => { navigate('/properties'); window.scrollTo({ top: 0, behavior: 'instant' }); }} className="inline-flex items-center space-x-2 px-5 py-3 bg-white/10 text-white rounded-2xl border border-white/20 hover:bg-white/20">
               <span>Explore listings</span>
               <FaArrowRight />
