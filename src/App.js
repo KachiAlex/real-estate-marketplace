@@ -104,6 +104,7 @@ const MainRoutes = () => (
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
+    <Route path="/auth/login" element={<></>} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/blog" element={<Navigate to="/properties" replace />} />
     <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
@@ -369,9 +370,11 @@ const MainRoutes = () => (
 function App() {
   const location = useLocation();
   // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
-  // hide header for full-page auth routes (register, forgot password, callback)
+  // hide header for full-page auth routes (register, forgot password, callback).
+  // Explicitly treat `/auth/login` as a modal route to avoid router fallback redirects.
   const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
-  const isAuthRoute = hideHeaderPaths.includes(location.pathname);
+  const isSignInModalRoute = location.pathname === '/auth/login';
+  const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute;
 
   return (
     <TourProvider>
@@ -407,10 +410,10 @@ function App() {
                               </Suspense>
                             </ErrorBoundary>
                           </div>
-                            {/* Show Sign-in as modal when route is /auth/login */}
-                            {location.pathname === '/auth/login' && (
-                              <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
-                            )}
+                          {/* Show Sign-in as modal when route is /auth/login */}
+                          {isSignInModalRoute && (
+                            <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
+                          )}
                           <PropertyArkAssistant />
                           <AITourGuide />
                         </div>
