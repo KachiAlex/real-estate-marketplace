@@ -280,7 +280,7 @@ const Dashboard = () => {
         navigate('/saved-properties');
         break;
       case 'inquiries':
-        navigate('/inquiries');
+        navigate('/my-inquiries');
         break;
       case 'alerts':
         navigate('/alerts');
@@ -637,7 +637,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/inquiries')}
+                onClick={() => navigate('/my-inquiries')}
                 title="View active inquiries"
               >
                 <div className="flex items-center justify-between">
@@ -665,7 +665,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View billing and payments"
               >
                 <div className="flex items-center justify-between">
@@ -696,7 +696,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View escrow transactions"
               >
                 <div className="flex items-center justify-between">
@@ -710,7 +710,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View billing and payments"
               >
                 <div className="flex items-center justify-between">

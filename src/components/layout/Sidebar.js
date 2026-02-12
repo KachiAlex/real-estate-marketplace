@@ -59,7 +59,7 @@ const Sidebar = () => {
       { path: '/properties', label: 'Properties', icon: FaBuilding },
       { path: '/about', label: 'About', icon: FaQuestionCircle },
       { path: '/contact', label: 'Contact', icon: FaEnvelope },
-      { path: '/help', label: 'Help', icon: FaHelp },
+      { path: '/help-support', label: 'Help', icon: FaHelp },
     ];
 
     return (
@@ -138,8 +138,8 @@ const Sidebar = () => {
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
            { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
     { path: '/profile', label: 'Profile Settings', icon: FaUser },
-    { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
-    { path: '/help', label: 'Help & Support', icon: FaHelp },
+           { path: '/billing-payments', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
+           { path: '/help-support', label: 'Help & Support', icon: FaHelp },
   ];
 
   return (
