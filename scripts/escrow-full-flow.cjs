@@ -5,6 +5,15 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 (async () => {
   const base = process.argv[2] || 'https://propertyark.netlify.app/';
   const propertyId = process.argv[3] || 'prop_005';
+  // Optional selectors: arg4 = priceSelector, arg5 = paymentSelector, arg6 = priceRegex
+  const priceSelector = process.argv[4] || null;
+  const paymentSelector = process.argv[5] || null;
+  const priceRegexRaw = process.argv[6] || null;
+  // Optional numeric assertion: arg7 = expectedPrice (number), arg8 = tolerance (fraction if <1, absolute if >=1)
+  const expectedPriceArg = process.argv[7] || null;
+  const toleranceArg = process.argv[8] || null;
+  const expectedPrice = expectedPriceArg ? parseFloat(expectedPriceArg) : null;
+  const tolerance = toleranceArg ? parseFloat(toleranceArg) : 0.05; // default 5%
   const origin = new URL(base).origin;
   const propertyUrl = origin + '/property/' + propertyId;
 
@@ -171,32 +180,168 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
     const finalUrl = page.url();
     console.log('[full-flow] finalUrl=', finalUrl);
 
-    const escrowCheck = await page.evaluate(() => {
+    const escrowCheck = await page.evaluate((priceSelector, paymentSelector, priceRegexRaw) => {
+      const priceRegex = priceRegexRaw ? new RegExp(priceRegexRaw) : null;
+      const result = { match: false, details: {} };
       const regexBtn = /(buy with escrow|buy with escrow protection|proceed to payment|make payment|pay now|complete purchase|complete payment)/i;
       const title = Array.from(document.querySelectorAll('h1,h2')).map(n => n.textContent || '').join(' | ');
-      if (/escrow/i.test(title)) return { match: true, reason: 'heading contains "escrow"', heading: title };
+      result.details.heading = title;
+      if (/escrow/i.test(title)) result.match = true;
+
+      // Button/anchor checks
       const btns = Array.from(document.querySelectorAll('button,a')).map(el => (el.textContent || '').trim()).filter(t => regexBtn.test(t));
-      if (btns.length) return { match: true, reason: 'button text match', examples: btns.slice(0,5) };
-      const form = document.querySelector('form[id*="escrow"], form[class*="escrow"], form[id*="payment"], form[class*="payment"]');
-      if (form) return { match: true, reason: 'payment/escrow form present' };
-      return { match: false };
-    });
+      result.details.buttonMatches = btns.slice(0,5);
+      if (btns.length) result.match = true;
+
+      // Form presence and fields
+      const form = document.querySelector('form[id*="escrow"], form[class*="escrow"], form[id*="payment"], form[class*="payment"]') || document.querySelector('form');
+      result.details.formPresent = !!form;
+      if (form){
+        const hasName = !!form.querySelector('input[name="name"], input[name="fullName"], input[name="buyerName"], input[name*="name"]');
+        const hasEmail = !!form.querySelector('input[name="email"], input[type="email"]');
+        const hasPhone = !!form.querySelector('input[name="phone"], input[name*="phone"], input[type="tel"]');
+        result.details.formFields = { name: hasName, email: hasEmail, phone: hasPhone };
+        if (hasEmail || hasName) result.match = true;
+      }
+
+      // Price/amount detection: prefer provided selector
+      let priceEl = null;
+      if (priceSelector) priceEl = document.querySelector(priceSelector);
+      if (!priceEl) priceEl = document.querySelector('[data-test*="price"], [data-testid*="price"], .price, .amount, [id*="price"]');
+      result.details.priceText = priceEl ? (priceEl.textContent||'').trim().slice(0,120) : null;
+      result.details.priceSelectorUsed = priceSelector || 'auto';
+      if (priceEl) result.match = true;
+      if (priceEl && priceRegex) result.details.priceRegexMatch = priceRegex.test(result.details.priceText);
+
+      // Payment widget or iframe: prefer provided selector
+      const iframe = document.querySelector('iframe[src*="stripe"], iframe[src*="payment"], iframe[src*="checkout"]');
+      let paymentWidget = null;
+      if (paymentSelector) paymentWidget = document.querySelector(paymentSelector);
+      if (!paymentWidget) paymentWidget = document.querySelector('[data-test*="payment"], [data-testid*="payment"], .payment-widget, .payment-form');
+      result.details.iframe = !!iframe;
+      result.details.paymentWidget = !!paymentWidget;
+      result.details.paymentSelectorUsed = paymentSelector || 'auto';
+      if (iframe || paymentWidget) result.match = true;
+
+      // Data attributes useful for CI
+      const dataTest = document.querySelector('[data-test*="escrow"], [data-testid*="escrow"]');
+      result.details.dataTest = !!dataTest;
+      if (dataTest) result.match = true;
+
+      // Include sample button texts if present
+      result.details.sampleButtons = Array.from(document.querySelectorAll('button,a')).slice(0,10).map(el => (el.textContent||'').trim());
+
+      return result;
+    }, priceSelector, paymentSelector, priceRegexRaw);
 
     console.log('[full-flow] escrowCheck=', JSON.stringify(escrowCheck));
 
-    if (finalUrl.includes('/escrow') && escrowCheck.match){
-      console.log('FULL_FLOW: SUCCESS - ended on /escrow with escrow UI');
+    // If expectedPrice was provided, try to parse numeric value and compare
+    if (expectedPrice !== null){
+      const priceText = (escrowCheck.details && escrowCheck.details.priceText) || '';
+      let parsedValue = null;
+      const numMatch = priceText.match(/[-+]?\d[\d,\.\s]*/);
+      if (numMatch){
+        const numStr = numMatch[0].replace(/[,\s]/g, '');
+        const v = parseFloat(numStr);
+        if (!isNaN(v)) parsedValue = v;
+      }
+      escrowCheck.details.parsedPriceValue = parsedValue;
+      escrowCheck.details.expectedPrice = expectedPrice;
+      escrowCheck.details.tolerance = tolerance;
+      if (parsedValue !== null){
+        const diff = Math.abs(parsedValue - expectedPrice);
+        const rel = expectedPrice !== 0 ? diff / Math.abs(expectedPrice) : (diff === 0 ? 0 : Infinity);
+        const matched = (tolerance < 1) ? (rel <= tolerance) : (diff <= tolerance);
+        escrowCheck.details.priceMatch = matched;
+        escrowCheck.details.priceDiff = diff;
+        escrowCheck.details.priceRelDiff = rel;
+      } else {
+        escrowCheck.details.priceMatch = false;
+      }
+    }
+
+    // Optionally attempt to interact with payment UI to complete E2E
+    let paymentInteraction = { attempted:false, clicked:false, confirmationFound:false, messages:[] };
+    try{
+      if (finalUrl.includes('/escrow')){
+        // If a payment iframe exists, try to note it (can't reliably click cross-origin iframe)
+        if (escrowCheck.details.iframe){
+          paymentInteraction.attempted = true;
+          paymentInteraction.messages.push('payment iframe present; cannot click cross-origin iframe automatically');
+        }
+
+        // If a payment widget or selector is present, try clicking a common payment button
+        if (escrowCheck.details.paymentWidget || escrowCheck.details.buttonMatches.length){
+          paymentInteraction.attempted = true;
+          // Try to click obvious CTA buttons by text
+          const clickResult = await page.evaluate(() => {
+            const payRegex = /(pay now|make payment|complete payment|proceed to payment|checkout|complete purchase)/i;
+            const els = Array.from(document.querySelectorAll('button,a'));
+            for (const el of els){
+              const t = (el.textContent||'').trim();
+              if (payRegex.test(t)){
+                try{ el.click(); return { ok:true, by:'text', text: t }; }catch(e){ return { ok:false, err: String(e) }; }
+              }
+            }
+            // fallback: click element with data-test/payment-test attributes
+            const attr = document.querySelector('[data-test*="payment"], [data-testid*="payment"], [data-test*="pay"], [data-testid*="pay"]');
+            if (attr){ try{ attr.click(); return { ok:true, by:'data-attr' }; }catch(e){ return { ok:false, err: String(e) }; } }
+            return { ok:false };
+          });
+          paymentInteraction.clicked = !!(clickResult && clickResult.ok);
+          paymentInteraction.messages.push('clickResult:' + JSON.stringify(clickResult));
+
+          // Wait a moment and look for confirmation text
+          try{ await page.waitForTimeout(2000); }catch(e){}
+          const conf = await page.evaluate(() => {
+            const txt = (document.body && document.body.innerText) || '';
+            const confirmRegex = /(payment (successful|completed|received)|thank you for your purchase|transaction (complete|successful)|receipt)/i;
+            const m = txt.match(confirmRegex);
+            return { found: !!m, snippet: m ? txt.slice(Math.max(0, m.index-60), m.index+120) : null };
+          });
+          paymentInteraction.confirmationFound = !!(conf && conf.found);
+          paymentInteraction.messages.push('confirmation:' + JSON.stringify(conf));
+        }
+      }
+    }catch(e){ paymentInteraction.messages.push('paymentInteractionError:' + String(e)); }
+
+    // Determine final outcome including payment assertions
+    const onEscrow = finalUrl.includes('/escrow');
+    const priceOk = expectedPrice === null || (escrowCheck.details && escrowCheck.details.priceMatch);
+
+    if (onEscrow && escrowCheck.match && priceOk){
+      // If an expected payment completion was required, ensure it succeeded
+      const paymentRequired = !!(escrowCheck.details.paymentWidget || escrowCheck.details.iframe || escrowCheck.details.buttonMatches.length);
+      if (paymentRequired && !paymentInteraction.attempted){
+        console.warn('FULL_FLOW: PARTIAL - on escrow but no payment interaction attempted', JSON.stringify({escrowDetails: escrowCheck.details, paymentInteraction}));
+        await browser.close();
+        process.exit(4);
+      }
+      if (paymentRequired && paymentInteraction.attempted && !paymentInteraction.confirmationFound){
+        console.warn('FULL_FLOW: PARTIAL - payment interaction attempted but no confirmation detected', JSON.stringify({escrowDetails: escrowCheck.details, paymentInteraction}));
+        await browser.close();
+        process.exit(6);
+      }
+
+      console.log('FULL_FLOW: SUCCESS - ended on /escrow with escrow UI and price check passed', JSON.stringify({escrowDetails: escrowCheck.details, paymentInteraction}));
       await browser.close();
       process.exit(0);
     }
 
-    if (finalUrl.includes('/escrow')){
-      console.warn('FULL_FLOW: PARTIAL - landed on /escrow but escrow UI not detected');
+    if (onEscrow && escrowCheck.match && !priceOk){
+      console.error('FULL_FLOW: FAILED - landed on /escrow but price assertion failed', JSON.stringify(escrowCheck.details));
+      await browser.close();
+      process.exit(5);
+    }
+
+    if (onEscrow){
+      console.warn('FULL_FLOW: PARTIAL - landed on /escrow but escrow UI not detected', JSON.stringify(escrowCheck.details));
       await browser.close();
       process.exit(4);
     }
 
-    console.error('FULL_FLOW: FAILED - did not land on /escrow');
+    console.error('FULL_FLOW: FAILED - did not land on /escrow', JSON.stringify(escrowCheck.details));
     await browser.close();
     process.exit(2);
 
