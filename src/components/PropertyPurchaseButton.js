@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaShoppingCart, FaShieldAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -6,6 +7,7 @@ import EscrowPaymentFlow from './EscrowPaymentFlow';
 
 const PropertyPurchaseButton = ({ property, className = '' }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
 
   useEffect(() => {
@@ -22,7 +24,8 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
 
   const handlePurchaseClick = () => {
     if (!user) {
-      toast.error('Login is temporarily unavailable while we rebuild the auth experience.');
+      navigate('/auth/register');
+      window.scrollTo(0, 0);
       return;
     }
     setShowPaymentFlow(true);
