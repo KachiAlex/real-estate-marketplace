@@ -459,7 +459,7 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+                <Link to="/auth/login" onClick={(e) => { e.preventDefault(); navigate('/auth/login'); }} className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
               </>
             )}
           </div>
@@ -545,7 +545,7 @@ const Header = () => {
               {!user && (
                 <div className="pt-4 border-t border-gray-200">
                   <Link
-                    to="/auth/login"
+                    to="/auth/login" onClick={(e) => { e.preventDefault(); navigate('/auth/login'); }}
                     className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
