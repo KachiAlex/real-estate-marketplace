@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
@@ -8,7 +9,9 @@ import { authenticatedFetch } from '../utils/authToken';
 
 const HelpSupport = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const subjectRef = useRef(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'support'
@@ -559,7 +562,7 @@ const HelpSupport = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
+      <div id="contact-form" className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="relative">
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -736,7 +739,26 @@ const HelpSupport = () => {
                 ) : ticketsError ? (
                   <p className="text-red-500">{ticketsError}</p>
                 ) : tickets.length === 0 ? (
-                  <p className="text-gray-600">You have no support tickets. Use the form below to submit one.</p>
+                  <div>
+                    <p className="text-gray-600">You have no support tickets. Use the form below to submit one.</p>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => {
+                          if (!user || !user.uid) {
+                            toast.error('Please log in to create a support ticket');
+                            navigate('/auth/login');
+                            return;
+                          }
+                          const el = document.getElementById('contact-form');
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          setTimeout(() => subjectRef.current?.focus?.(), 300);
+                        }}
+                        className="btn-primary"
+                      >
+                        Create Support Ticket
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {tickets.map(t => (
@@ -753,6 +775,23 @@ const HelpSupport = () => {
                     ))}
                   </div>
                 )}
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (!user || !user.uid) {
+                      toast.error('Please log in to create a support ticket');
+                      navigate('/auth/login');
+                      return;
+                    }
+                    const el = document.getElementById('contact-form');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => subjectRef.current?.focus?.(), 300);
+                  }}
+                  className="btn-outline"
+                >
+                  Create Support Ticket
+                </button>
               </div>
             </div>
           )}
@@ -834,6 +873,7 @@ const HelpSupport = () => {
                 type="text"
                 value={contactForm.subject}
                 onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                ref={subjectRef}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                 placeholder="What can we help you with?"
                 required
