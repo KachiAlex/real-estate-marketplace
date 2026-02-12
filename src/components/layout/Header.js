@@ -72,10 +72,10 @@ const Header = () => {
   const handleVendorSwitch = async () => {
     const result = await switchRole('vendor');
 
-    // Support multiple switchRole return shapes: either an object with flags or the updated user object
+    // If vendor registration is required, redirect to vendor registration page
     if (result && result.requiresVendorRegistration) {
-      setShowVendorRegistrationModal(true);
       setIsUserMenuOpen(false);
+      navigate('/vendor/register', { replace: true });
       return;
     }
 
@@ -402,11 +402,9 @@ const Header = () => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
                             const result = await switchRole('vendor');
-                            if (result.requiresVendorRegistration) {
-                              // Show vendor registration modal
-                              setShowVendorRegistrationModal(true);
+                            if (result && result.requiresVendorRegistration) {
+                              navigate('/vendor/register', { replace: true });
                             } else if (result.success || isVendor) {
-                              // Navigate to vendor dashboard if switch successful or already vendor
                               navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
