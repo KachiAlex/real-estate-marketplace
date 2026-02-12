@@ -367,7 +367,11 @@ const MainRoutes = () => (
 
 function App() {
   const location = useLocation();
-  const isAuthRoute = location.pathname.startsWith('/auth');
+  // Show header on most pages. For auth routes we hide the header
+  // except for the register page where we want the full home header
+  // (hero / top bar) to be visible.
+  const hideHeaderPaths = ['/auth/login', '/auth/forgot-password', '/auth/google-popup-callback'];
+  const isAuthRoute = hideHeaderPaths.includes(location.pathname);
 
   return (
     <TourProvider>
