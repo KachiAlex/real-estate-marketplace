@@ -89,28 +89,39 @@ const VendorDashboard = () => {
   }, [user, fetchVendorProperties]);
 
   const fetchVendorProperties = useCallback(async () => {
-    // Fetch properties from localStorage as primary source
-    let allProps = [];
-
+    // Safe load: prefer local mockProperties, then fall back to API
     try {
       const localProperties = JSON.parse(localStorage.getItem('mockProperties') || '[]');
-      const userLocalProps = localProperties.filter(prop => {
-        const matchesId = prop.ownerId === userId || prop.ownerId === user?.id;
-        const matchesEmail = prop.ownerEmail === userEmail;
-        return matchesId || matchesEmail;
-      if (location.pathname === '/vendor/properties') {
-        setActiveTab('properties');
-      } else if (location.pathname === '/vendor/dashboard') {
-        setActiveTab('overview');
+      const userId = user?.uid || user?.id;
+      const userEmail = user?.email;
+      const userLocalProps = Array.isArray(localProperties)
+        ? localProperties.filter((prop) => {
+            const matchesId = prop?.ownerId && userId && prop.ownerId.toString() === userId.toString();
+            const matchesEmail = prop?.ownerEmail && userEmail && prop.ownerEmail.toLowerCase() === userEmail.toLowerCase();
+            return matchesId || matchesEmail;
+          })
+        : [];
+
+      if (typeof setProperties === 'function') setProperties(userLocalProps);
+
+      // Try to refresh from backend if available
+      try {
+        const resp = await authenticatedFetch(getApiUrl('/vendor/properties'));
+        if (resp.ok) {
+          const payload = await resp.json();
+          if (Array.isArray(payload?.data) && typeof setProperties === 'function') {
+            setProperties(payload.data);
+          }
+        }
+      } catch (apiErr) {
+        // Non-fatal
+        console.warn('VendorDashboard: could not fetch properties from API', apiErr);
       }
-    }, [location.pathname]);
-        }));
-      } catch (error) {
-        console.warn('VendorDashboard: Error fetching backend analytics summary', error);
-      }
-    };
-    fetchVendorAnalytics();
-  }, [user, navigate]);
+    } catch (err) {
+      console.warn('VendorDashboard: Error loading properties', err);
+      if (typeof setProperties === 'function') setProperties([]);
+    }
+  }, [user]);
 
   // Removed: Firestore sync is no longer needed
 
