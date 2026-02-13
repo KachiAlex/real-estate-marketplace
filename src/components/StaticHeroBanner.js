@@ -5,7 +5,7 @@ import { useGlobalSearch } from '../hooks/useGlobalSearch';
 import GlobalSearch from './GlobalSearch';
 import { FaSearch, FaArrowRight } from 'react-icons/fa';
 
-const StaticHeroBanner = () => {
+const StaticHeroBanner = ({ onOpenRegisterModal }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isSearchOpen, openSearch, closeSearch, handleResultClick } = useGlobalSearch();
@@ -182,19 +182,9 @@ const StaticHeroBanner = () => {
               <button
                 onClick={(e) => {
                   e.preventDefault();
-                  try {
-                    navigate('/auth/register');
-                  } catch (err) {
-                    // fall through to full navigation
+                  if (typeof onOpenRegisterModal === 'function') {
+                    onOpenRegisterModal();
                   }
-                  // Scroll to top (best-effort)
-                  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) {}
-                  // Fallback: if SPA navigation didn't work, force a full reload to the register page
-                  setTimeout(() => {
-                    if (window.location.pathname !== '/auth/register') {
-                      window.location.href = '/auth/register';
-                    }
-                  }, 200);
                 }}
                 className="inline-block px-6 py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-lg font-semibold shadow-lg"
               >

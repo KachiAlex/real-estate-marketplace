@@ -30,6 +30,7 @@ import {
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
+import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
 
 // Mock properties from backend/data/mockProperties.js - transformed for frontend
@@ -411,6 +412,7 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState(new Set());
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   // Pending filters (what user is selecting)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -908,6 +910,12 @@ const Home = () => {
     }
   };
 
+  // Expose modal opener globally for StaticHeroBanner
+  useEffect(() => {
+    window.openRegisterModal = () => setShowRegisterModal(true);
+    return () => { window.openRegisterModal = undefined; };
+  }, []);
+
   return (
     <>
       <SEO 
@@ -1016,8 +1024,11 @@ const Home = () => {
       
       {/* Static Hero Banner with Search - Full Width */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-8">
-        <StaticHeroBanner />
+        <StaticHeroBanner onOpenRegisterModal={() => setShowRegisterModal(true)} />
       </div>
+      {showRegisterModal && (
+        <RegisterModal onClose={() => setShowRegisterModal(false)} />
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
