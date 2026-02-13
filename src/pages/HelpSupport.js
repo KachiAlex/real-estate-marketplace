@@ -999,7 +999,7 @@ const HelpSupport = () => {
       {showCreateModal && (
         <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
       )}
-    </>
+    </div>
   );
 }
 
