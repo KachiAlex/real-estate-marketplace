@@ -388,9 +388,17 @@ const Header = () => {
                           onClick={async (e) => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
-                            const result = await switchRole('buyer');
-                            if (result && (result.success || result.id || result.roles || result.role)) {
-                              navigate('/dashboard', { replace: true });
+                            try {
+                              const result = await switchRole('buyer');
+                              const updated = result || {};
+                              const switched = Boolean(
+                                updated.success || updated.id || updated.roles || updated.role || updated.activeRole
+                              );
+                              if (switched) {
+                                navigate('/dashboard', { replace: true });
+                              }
+                            } catch (err) {
+                              console.error('Error switching to buyer role', err);
                             }
                           }}
                           className={`text-xs px-2 py-1 rounded border ${!isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
@@ -402,11 +410,31 @@ const Header = () => {
                           onClick={async (e) => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
-                            const result = await switchRole('vendor');
-                            if (!isVendor || (result && result.requiresVendorRegistration)) {
+                            try {
+                              const result = await switchRole('vendor');
+                              const updated = result || {};
+
+                              // If the server indicates vendor registration is required, go to registration
+                              if (updated.requiresVendorRegistration) {
+                                navigate('/vendor/register', { replace: true });
+                                return;
+                              }
+
+                              // Decide based on returned user/flags instead of stale `isVendor`
+                              const isNowVendor = Boolean(
+                                updated.roles?.includes('vendor') || updated.role === 'vendor' || updated.activeRole === 'vendor'
+                              );
+
+                              if (!isNowVendor) {
+                                // If not a vendor after the switch attempt, navigate to registration
+                                navigate('/vendor/register', { replace: true });
+                              } else {
+                                navigate('/vendor/dashboard', { replace: true });
+                              }
+                            } catch (err) {
+                              console.error('Error switching to vendor role', err);
+                              // On error, fallback to vendor registration flow
                               navigate('/vendor/register', { replace: true });
-                            } else if (result && (result.success || result.id || result.roles || result.role)) {
-                              navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
                           className={`text-xs px-2 py-1 rounded border ${isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
