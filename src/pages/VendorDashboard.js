@@ -47,60 +47,13 @@ const VendorDashboard = () => {
   useEffect(() => {
     if (location.pathname === '/vendor/properties') {
       setActiveTab('properties');
+  useEffect(() => {
+    if (location.pathname === '/vendor/properties') {
+      setActiveTab('properties');
     } else if (location.pathname === '/vendor/dashboard') {
-          {activeTab === 'overview' && (
-            <>
-              <div className="space-y-6">
-                {/* Recent Activity */}
-                <div 
-                  className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                  onClick={() => navigate('/vendor/properties')}
-                  title="View your properties"
-                >
-                  <div className="p-2 bg-green-100 rounded-full">
-                    <FaEye className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">New view on "Luxury Apartment in Victoria Island"</p>
-                    <p className="text-xs text-gray-500">2 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <FaEnvelope className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">New inquiry from John Adebayo</p>
-                    <p className="text-xs text-gray-500">15 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-orange-100 rounded-full">
-                    <FaHeart className="h-4 w-4 text-orange-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Property added to favorites</p>
-                    <p className="text-xs text-gray-500">1 hour ago</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Agent Information (for agents only) */}
-              {isAgent && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Profile</h3>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              {/* ...existing code for agent profile... */}
-                  </div>
-                </div>
-              )}
-            </>
+      setActiveTab('overview');
+    }
   }, [location.pathname]);
-
-  // Fetch vendor's properties from localStorage and backend API
-  const fetchVendorProperties = useCallback(async () => {
-    if (!user) {
-      setProperties([]);
       setPropertiesLoading(false);
       return;
     }
