@@ -408,14 +408,16 @@ const HelpSupport = () => {
 
     if (!contactForm.subject || !contactForm.category || !contactForm.message) {
       toast.error('Please complete subject, category and message');
-      return;
-    }
-
-    // Require auth: backend support routes are protected
-    if (!user || !user.uid) {
-      toast.error('Please log in to submit a support ticket');
-      return;
-    }
+      return (
+        <>
+          <div>
+            ...existing code...
+          </div>
+          {showCreateModal && (
+            <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
+          )}
+        </>
+      );
 
     try {
       const payload = {
@@ -495,14 +497,16 @@ const HelpSupport = () => {
         isError: true
       };
       setChatMessages(prev => [...prev, errorMessage]);
-      return;
-    }
-    
-    const userMessage = {
-      id: Date.now(),
-      text: chatInput,
-      sender: 'user',
-      timestamp: new Date()
+        return (
+          <>
+            <div>
+              ...existing code...
+            </div>
+            {showCreateModal && (
+              <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
+            )}
+          </>
+        );
     };
     
     setChatMessages([...chatMessages, userMessage]);
@@ -991,11 +995,11 @@ const HelpSupport = () => {
           </div>
         </div>
       </div>
-    </div>
-      {showCreateModal && (
-        <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-      )}
-  );
+
+    {showCreateModal && (
+      <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
+    )}
+  </div>);
 };
 
 export default HelpSupport;
