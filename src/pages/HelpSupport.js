@@ -6,6 +6,7 @@ import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, Fa
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
+import CreateTicketModal from '../components/support/CreateTicketModal';
 
 const HelpSupport = () => {
   const { user } = useAuth();
@@ -472,6 +473,8 @@ const HelpSupport = () => {
     }
   };
 
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   useEffect(() => {
     if (activeResource === 'support') {
       loadTickets();
@@ -749,9 +752,7 @@ const HelpSupport = () => {
                             navigate('/auth/login');
                             return;
                           }
-                          const el = document.getElementById('contact-form');
-                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          setTimeout(() => subjectRef.current?.focus?.(), 300);
+                          setShowCreateModal(true);
                         }}
                         className="btn-primary"
                       >
@@ -784,9 +785,7 @@ const HelpSupport = () => {
                       navigate('/auth/login');
                       return;
                     }
-                    const el = document.getElementById('contact-form');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => subjectRef.current?.focus?.(), 300);
+                    setShowCreateModal(true);
                   }}
                   className="btn-outline"
                 >
@@ -993,6 +992,9 @@ const HelpSupport = () => {
         </div>
       </div>
     </div>
+      {showCreateModal && (
+        <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
+      )}
   );
 };
 
