@@ -76,6 +76,7 @@ FRONTEND_URL=https://[YOUR_STAGING_URL]
 SENDGRID_API_KEY=[YOUR_KEY_HERE]
 EMAIL_FROM=noreply@propertyark.com
 EMAIL_FROM_NAME=Property Ark Support
+SUPPORT_EMAIL=admin@propertyark.com
 SOCKET_ORIGIN=https://[YOUR_STAGING_URL]
 LOG_LEVEL=debug
 ```

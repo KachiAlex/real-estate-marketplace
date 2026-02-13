@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FaShoppingCart, FaShieldAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import EscrowPaymentFlow from './EscrowPaymentFlow';
 
 const PropertyPurchaseButton = ({ property, className = '' }) => {
-  const { user } = useAuth();
+  const { user, setAuthRedirect } = useAuth();
+  const navigate = useNavigate();
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
 
   useEffect(() => {
@@ -21,11 +23,23 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
   }, [showPaymentFlow]);
 
   const handlePurchaseClick = () => {
+    const propertyId = property?.id || property?._id || property?.slug || null;
+    const target = propertyId ? `/escrow?propertyId=${encodeURIComponent(propertyId)}` : '/escrow';
+
     if (!user) {
-      toast.error('Login is temporarily unavailable while we rebuild the auth experience.');
+      // Remember where to return after sign up/login
+      try {
+        setAuthRedirect(target);
+      } catch (e) {
+        // ignore
+      }
+      navigate('/auth/register');
+      window.scrollTo(0, 0);
       return;
     }
-    setShowPaymentFlow(true);
+
+    // If signed in, go to the escrow payment route
+    navigate(target);
   };
 
   return (

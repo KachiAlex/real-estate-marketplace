@@ -36,7 +36,13 @@ const mockVendorProfile = {
   totalProperties: 45,
   totalSales: 1200000000,
   joinedDate: '2020-01-15T00:00:00Z',
-  status: 'verified'
+  status: 'verified',
+  subscription: {
+    active: true,
+    lastPaid: new Date().toISOString(),
+    nextDue: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+    fee: 50000
+  }
 };
 
 const mockAgentDocuments = [
@@ -71,6 +77,8 @@ export const VendorProvider = ({ children }) => {
   const user = currentUser;
   const authReady = !authLoading;
   const [vendorProfile, setVendorProfile] = useState(null);
+  // Subscription state: {active, lastPaid, nextDue, fee}
+  const [subscription, setSubscription] = useState(null);
   const [isAgent, setIsAgent] = useState(false);
   const [isPropertyOwner, setIsPropertyOwner] = useState(false);
   const [agentDocuments, setAgentDocuments] = useState([]);
@@ -83,6 +91,38 @@ export const VendorProvider = ({ children }) => {
       setLoading(false);
     }
   }, [user]);
+
+  // Check if subscription is active (paid for this month)
+  const isSubscriptionActive = (sub) => {
+    if (!sub || !sub.lastPaid || !sub.nextDue) return false;
+    const now = new Date();
+    return new Date(sub.lastPaid) <= now && now < new Date(sub.nextDue);
+  };
+
+  // Call this after payment to update vendor profile
+  const markSubscriptionPaid = async (fee = 50000) => {
+    try {
+      const fbUser = auth.currentUser;
+      if (!fbUser) throw new Error('Not authenticated');
+      const now = new Date();
+      const nextDue = new Date(now.getTime() + 30*24*60*60*1000); // 30 days
+      const sub = {
+        active: true,
+        lastPaid: now.toISOString(),
+        nextDue: nextDue.toISOString(),
+        fee
+      };
+      const vendorRef = doc(db, 'vendors', fbUser.uid);
+      await setDoc(vendorRef, { subscription: sub, updatedAt: serverTimestamp() }, { merge: true });
+      setSubscription(sub);
+      setVendorProfile(prev => ({ ...(prev || {}), subscription: sub }));
+      toast.success('Subscription payment recorded!');
+      return { success: true };
+    } catch (error) {
+      toast.error('Failed to update subscription status');
+      return { success: false, error: error.message };
+    }
+  };
 
   const fetchVendorProfile = async () => {
     try {
@@ -100,6 +140,8 @@ export const VendorProvider = ({ children }) => {
 
       if (!snap.exists()) {
         // Create a minimal vendor profile if none exists yet
+        const now = new Date();
+        const nextDue = new Date(now.getTime() + 30*24*60*60*1000);
         const seed = {
           id: fbUser.uid,
           businessName: user?.vendorData?.businessName || 'My Real Estate Business',
@@ -111,15 +153,23 @@ export const VendorProvider = ({ children }) => {
           },
           status: 'pending',
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          subscription: {
+            active: true,
+            lastPaid: now.toISOString(),
+            nextDue: nextDue.toISOString(),
+            fee: 50000
+          }
         };
         await setDoc(vendorRef, seed, { merge: true });
         setVendorProfile(seed);
+        setSubscription(seed.subscription);
         setIsAgent(true);
         setIsPropertyOwner(true);
       } else {
         const data = snap.data();
         setVendorProfile({ id: fbUser.uid, ...data });
+        setSubscription(data.subscription || null);
         setIsAgent(Boolean(data.isAgent));
         setIsPropertyOwner(Boolean(data.isPropertyOwner));
       }
@@ -207,6 +257,9 @@ export const VendorProvider = ({ children }) => {
     isPropertyOwner,
     agentDocuments,
     loading,
+    subscription,
+    isSubscriptionActive: isSubscriptionActive(subscription),
+    markSubscriptionPaid,
     // Expose computed document status for easy consumption in UI
     documentStatus: checkDocumentStatus(),
     updateVendorProfile,

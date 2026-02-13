@@ -9,7 +9,7 @@ import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 
 const Header = () => {
-  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor } = useAuth();
+  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleMobileSidebar } = useSidebar();
@@ -71,14 +71,18 @@ const Header = () => {
 
   const handleVendorSwitch = async () => {
     const result = await switchRole('vendor');
-    
-    if (result.requiresVendorRegistration) {
-      // Show vendor registration modal
-      setShowVendorRegistrationModal(true);
+
+    // Fallback: if user is not vendor, redirect to vendor registration
+    if (!isVendor || (result && result.requiresVendorRegistration)) {
       setIsUserMenuOpen(false);
-    } else if (result.success) {
+      navigate('/vendor/register', { replace: true });
+      return;
+    }
+
+    // If result indicates success (boolean) or is a user object, treat as successful switch
+    const switchedSuccessfully = (result && result.success) || (result && (result.id || result.roles || result.role));
+    if (switchedSuccessfully) {
       setIsUserMenuOpen(false);
-      // Navigate using React Router instead of window.location
       navigate('/vendor/dashboard', { replace: true });
     }
   };
@@ -144,148 +148,7 @@ const Header = () => {
     };
   }, [activeDropdown, isUserMenuOpen]);
 
-  // If on dashboard route, show minimal header with just user profile
-  if (isDashboardRoute) {
-    return (
-      <>
-        {/* Skip to content link for accessibility */}
-        <a 
-          href="#main-content" 
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Skip to main content
-        </a>
-        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 lg:ml-64 lg:w-[calc(100%-16rem)]">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <div className="flex justify-end items-center h-14 py-2">
-            {/* User Profile Icon Only */}
-            {user && (
-              <div className="relative user-menu-container">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="User menu"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {user.avatar ? (
-                      <img 
-                        src={user.avatar} 
-                        alt={`${user.firstName} ${user.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span>{user.firstName?.[0]?.toUpperCase() || 'U'}{user.lastName?.[0]?.toUpperCase() || ''}</span>
-                    )}
-                  </div>
-                </button>
-                
-                {/* User Menu Dropdown */}
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                      {(user.roles && user.roles.length > 1) && (
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setIsUserMenuOpen(false);
-                            const result = await switchRole('buyer');
-                            // Always navigate to buyer dashboard when clicked
-                            navigate('/dashboard', { replace: true });
-                          }}
-                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          disabled={!user?.roles?.includes('buyer')}
-                        >
-                          Buyer
-                        </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              setIsUserMenuOpen(false);
-                              const result = await switchRole('vendor');
-                              if (result.requiresVendorRegistration) {
-                                // Show vendor registration modal
-                                setShowVendorRegistrationModal(true);
-                              } else if (result.success || isVendor()) {
-                                // Navigate to vendor dashboard if switch successful or already vendor
-                                navigate('/vendor/dashboard', { replace: true });
-                              }
-                            }}
-                            className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          >
-                            Vendor
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Admin Profile Link - Only show for admin context */}
-                    {isAdminContext && (
-                      <button
-                        onClick={handleAdminProfileClick}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaUser className="inline mr-2" />
-                        Profile
-                      </button>
-                    )}
-                    
-                    {/* Regular Profile Link - Only show for non-admin */}
-                    {!isAdminContext && (
-                      <Link
-                        to={profilePath}
-                        onClick={(e) => {
-                          console.log('Regular profile clicked', { profilePath, isAdminContext });
-                          e.stopPropagation();
-                          setIsUserMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaUser className="inline mr-2" />
-                        Profile
-                      </Link>
-                    )}
-                    
-                    {/* Admin Panel Link - Only show for admin users not in admin context */}
-                    {user.role === 'admin' && !isAdminContext && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        <FaShieldAlt className="inline mr-2" />
-                        Admin Panel
-                      </Link>
-                    )}
-                    {user.role === 'mortgage_bank' && (
-                      <Link
-                        to="/mortgage-bank/dashboard"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        Mortgage Bank Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLogout();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-      </>
-    );
-  }
+  // Always render the full header (do not return a minimal header for dashboard routes)
 
   return (
     <>
@@ -296,7 +159,7 @@ const Header = () => {
       >
         Skip to main content
       </a>
-      <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
+        <header className={`bg-white shadow ${isHomePage ? 'sticky top-0 z-50' : ''}`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-16 md:h-20 py-2">
           <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
@@ -404,70 +267,16 @@ const Header = () => {
                 )}
               </div>
 
-              {/* Shortlet */}
-              <div className="relative dropdown-container">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'Shortlet' ? null : 'Shortlet')}
-                  aria-label="Shortlet locations"
-                  aria-expanded={activeDropdown === 'Shortlet'}
-                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeDropdown === 'Shortlet' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
-                  }`}
-                >
-                  <span>Shortlet</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${
-                      activeDropdown === 'Shortlet' ? 'rotate-180' : ''
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {activeDropdown === 'Shortlet' && (
-                  <div 
-                    className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48"
-                    role="menu"
-                    aria-label="Shortlet locations"
-                  >
-                    <div className="py-2">
-                      {quickFilters['Shortlet'].map((location, index) => (
-                        <Link
-                          key={location}
-                          to={`/properties?location=${encodeURIComponent(location)}&status=Shortlet`}
-                          onClick={() => setActiveDropdown(null)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700 focus:outline-none focus:bg-gray-100 focus:ring-2 focus:ring-blue-500"
-                          role="menuitem"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setActiveDropdown(null);
-                              window.location.href = `/properties?location=${encodeURIComponent(location)}&status=Shortlet`;
-                            } else if (e.key === 'Escape') {
-                              e.preventDefault();
-                              setActiveDropdown(null);
-                            }
-                          }}
-                        >
-                          {location}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Blog */}
+              {/* Shortlet - link directly to shortlet listings instead of opening a locations dropdown */}
               <Link
-                to="/blog"
+                to="/properties?status=Shortlet"
+                onClick={() => setActiveDropdown(null)}
                 className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-brand-blue hover:text-brand-orange transition-colors whitespace-nowrap"
               >
-                Blog
+                Shortlet
               </Link>
+
+              {/* Blog removed */}
 
               {/* Professional Services */}
               <div className="relative dropdown-container">
@@ -539,7 +348,7 @@ const Header = () => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
-            {user && (
+            {user ? (
               <>
               <div className="relative user-menu-container">
                 <button
@@ -580,10 +389,11 @@ const Header = () => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
                             const result = await switchRole('buyer');
-                            // Always navigate to buyer dashboard when clicked
-                            navigate('/dashboard', { replace: true });
+                            if (result && (result.success || result.id || result.roles || result.role)) {
+                              navigate('/dashboard', { replace: true });
+                            }
                           }}
-                          className={`text-xs px-2 py-1 rounded border ${isBuyer() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${!isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                           disabled={!user?.roles?.includes('buyer')}
                         >
                           Buyer
@@ -593,15 +403,14 @@ const Header = () => {
                             e.stopPropagation();
                             setIsUserMenuOpen(false);
                             const result = await switchRole('vendor');
-                            if (result.requiresVendorRegistration) {
-                              // Show vendor registration modal
-                              setShowVendorRegistrationModal(true);
-                            } else if (result.success || isVendor()) {
-                              // Navigate to vendor dashboard if switch successful or already vendor
+                            if (!isVendor || (result && result.requiresVendorRegistration)) {
+                              navigate('/vendor/register', { replace: true });
+                            } else if (result && (result.success || result.id || result.roles || result.role)) {
                               navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
-                          className={`text-xs px-2 py-1 rounded border ${isVendor() ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          disabled={!user?.roles?.includes('vendor')}
                         >
                           Vendor
                         </button>
@@ -648,6 +457,10 @@ const Header = () => {
                 )}
               </div>
               </>
+            ) : (
+              <>
+                <Link to="/auth/login" onClick={(e) => { e.preventDefault(); navigate('/auth/login'); }} className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+              </>
             )}
           </div>
 
@@ -692,6 +505,14 @@ const Header = () => {
               >
                 Properties
               </Link>
+              {/* Shortlet - direct link for mobile menu */}
+              <Link
+                to="/properties?status=Shortlet"
+                className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Shortlet
+              </Link>
               <Link
                 to="/investments"
                 className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
@@ -720,6 +541,18 @@ const Header = () => {
               >
                 Contact
               </Link>
+
+              {!user && (
+                <div className="pt-4 border-t border-gray-200">
+                  <Link
+                    to="/auth/login" onClick={(e) => { e.preventDefault(); navigate('/auth/login'); }}
+                    className="block text-gray-700 hover:text-red-600 transition-colors duration-300 mb-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
 
               {user && (
                 <div className="pt-4 border-t border-gray-200">

@@ -194,9 +194,25 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     );
   }
 
+  const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
+  useEffect(() => {
+    setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
+  }, [config?.vendorSubscriptionFee]);
+
+  const handleSubscriptionFeeChange = (e) => {
+    const value = Number(e.target.value.replace(/[^\d]/g, ''));
+    setSubscriptionFee(value);
+    if (typeof config?.onConfigChange === 'function') {
+      config.onConfigChange({ vendorSubscriptionFee: value });
+    }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('vendorSubscriptionFee', value);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header & Subscription Fee */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -206,6 +222,17 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
           <p className="text-sm text-gray-600 mt-1">
             Manage property verification requests and badge approvals
           </p>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Subscription Fee (₦)</label>
+            <input
+              type="number"
+              min="0"
+              value={subscriptionFee}
+              onChange={handleSubscriptionFeeChange}
+              className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="ml-2 text-xs text-gray-500">This fee is required for new vendor onboarding.</span>
+          </div>
         </div>
         
         {/* Filter Tabs */}

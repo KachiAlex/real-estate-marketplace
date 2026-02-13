@@ -86,7 +86,7 @@ class FlutterwaveService {
   // Verify payment status using backend endpoint
   async verifyPayment(transactionId, txRef, status) {
     try {
-      const response = await fetch(`${getApiUrl()}/api/payments/flutterwave/verify`, {
+      const response = await fetch(getApiUrl('/payments/flutterwave/verify'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

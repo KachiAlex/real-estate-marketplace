@@ -274,7 +274,7 @@ export const InvestmentProvider = ({ children }) => {
     setInvestments(mockInvestmentOpportunities);
     if (user) {
       // Load user investments from localStorage first, then fallback to mock data
-      const storageKey = `userInvestments_${user.id}`;
+      const storageKey = `userInvestments_${user?.id}`;
       const storedInvestments = JSON.parse(localStorage.getItem(storageKey) || '[]');
       
       if (storedInvestments.length > 0) {
@@ -298,7 +298,7 @@ export const InvestmentProvider = ({ children }) => {
   // Persist userInvestments to localStorage whenever they change
   useEffect(() => {
     if (user && userInvestments.length >= 0) {
-      const storageKey = `userInvestments_${user.id}`;
+      const storageKey = `userInvestments_${user?.id}`;
       localStorage.setItem(storageKey, JSON.stringify(userInvestments));
       // Dispatch event to notify dashboard and other components
       window.dispatchEvent(new CustomEvent('investmentsUpdated', {
@@ -346,7 +346,7 @@ export const InvestmentProvider = ({ children }) => {
       
       // Persist to localStorage
       if (user) {
-        const storageKey = `userInvestments_${user.id}`;
+        const storageKey = `userInvestments_${user?.id}`;
         localStorage.setItem(storageKey, JSON.stringify(updatedInvestments));
       }
       

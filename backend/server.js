@@ -154,6 +154,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Apply input sanitization to all routes
 app.use(sanitizeMiddleware);
 
+// Runtime config endpoints (safe; returns 204 when not configured)
+const configRoutes = require('./routes/config');
+app.use('/api/config', configRoutes);
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
@@ -162,6 +166,39 @@ io.on('connection', (socket) => {
   socket.on('join_user_room', (userId) => {
     socket.join(`user_${userId}`);
     console.log(`User ${userId} joined their notification room`);
+  });
+
+
+    // Minimal chat message flow with persistence
+    const MessageModel = require('./models/Message');
+    socket.on('chat_message', async (msg) => {
+      // Add participants array for querying
+      const msgToSave = { ...msg, participants: [msg.from, msg.to] };
+      await MessageModel.saveMessage(msgToSave);
+      // Deliver to recipient's room
+      socket.to(`user_${msg.to}`).emit('chat_message', msg);
+      // Notify sender of delivery
+      socket.emit('message_delivered', { msgId: msg.id });
+      // Also emit to recipient for delivery status (if online on multiple devices)
+      socket.to(`user_${msg.to}`).emit('message_delivered', { msgId: msg.id });
+    });
+// REST endpoint to fetch messages between two users
+const MessageModel = require('./models/Message');
+app.get('/api/messages/:userA/:userB', async (req, res) => {
+  try {
+    const { userA, userB } = req.params;
+    const messages = await MessageModel.getMessagesBetween(userA, userB, 100);
+    res.json({ messages });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch messages', details: err.message });
+  }
+});
+
+  socket.on('message_read', ({ msgId, to, from }) => {
+    // Notify sender that message was read
+    socket.to(`user_${to}`).emit('message_read', { msgId });
+    // Optionally, notify reader as well
+    socket.emit('message_read', { msgId });
   });
 
   // Handle disconnection

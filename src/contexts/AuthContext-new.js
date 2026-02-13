@@ -2,8 +2,33 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
-const AuthContext = createContext();
+// Default context value for fallback
+const defaultContextValue = {
+  currentUser: null,
+  loading: true,
+  accessToken: null,
+  refreshToken: null,
+  register: async () => { throw new Error('Auth not initialized'); },
+  login: async () => { throw new Error('Auth not initialized'); },
+  logout: async () => { throw new Error('Auth not initialized'); },
+  refreshAccessToken: async () => { throw new Error('Auth not initialized'); },
+  switchRole: async () => { throw new Error('Auth not initialized'); },
+  updateUserProfile: async () => { throw new Error('Auth not initialized'); },
+  registerAsVendor: async () => { throw new Error('Auth not initialized'); },
+  setAuthRedirect: () => {},
+  user: null,
+  isBuyer: false,
+  isVendor: false
+};
 
+const AuthContext = createContext(defaultContextValue);
+
+// Ensure user object has a consistent shape (always include `roles` array)
+const normalizeUser = (u) => {
+  if (!u) return u;
+  const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
+  return { ...u, roles };
+};
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +46,11 @@ export const AuthProvider = ({ children }) => {
         if (storedAccessToken && storedRefreshToken && storedUser) {
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken);
-          setCurrentUser(JSON.parse(storedUser));
+          try {
+            setCurrentUser(normalizeUser(JSON.parse(storedUser)));
+          } catch (e) {
+            setCurrentUser(null);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -41,7 +70,7 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (email, password, firstName, lastName, phone = '') => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/register`, {
+      const response = await fetch(getApiUrl('/auth/jwt/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -62,14 +91,15 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Store tokens and user info
+      // Store tokens and normalized user info
+      const normalized = normalizeUser(data.user);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(normalized));
 
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
-      setCurrentUser(data.user);
+      setCurrentUser(normalized);
 
       toast.success('Registration successful!');
       return data.user;
@@ -86,7 +116,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/login`, {
+      const response = await fetch(getApiUrl('/auth/jwt/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -103,14 +133,15 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store tokens and user info
+      // Store tokens and normalized user info
+      const normalized = normalizeUser(data.user);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(normalized));
 
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
-      setCurrentUser(data.user);
+      setCurrentUser(normalized);
 
       toast.success('Login successful!');
       return data.user;
@@ -131,7 +162,7 @@ export const AuthProvider = ({ children }) => {
       // Call logout endpoint (optional, mainly for logging)
       if (accessToken) {
         try {
-          await fetch(`${getApiUrl()}/api/auth/jwt/logout`, {
+          await fetch(getApiUrl('/auth/jwt/logout'), {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -170,7 +201,7 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/refresh`, {
+      const response = await fetch(getApiUrl('/auth/jwt/refresh'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -210,7 +241,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('User must be logged in to switch roles');
       }
 
-      const response = await fetch(`${getApiUrl()}/api/auth/jwt/switch-role`, {
+      const response = await fetch(getApiUrl('/auth/jwt/switch-role'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -225,8 +256,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Role switch failed');
       }
 
-      // Update user data
-      const updatedUser = { ...currentUser, ...data.user };
+      // Update and normalize user data
+      const updatedUser = normalizeUser({ ...currentUser, ...data.user });
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
 
@@ -239,6 +270,154 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken, currentUser]);
 
+  // Update user profile
+  const updateUserProfile = useCallback(async (updates) => {
+    try {
+      if (!currentUser) {
+        throw new Error('User must be logged in to update profile');
+      }
+
+      const response = await fetch(getApiUrl('/auth/jwt/update-profile'), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Profile update failed');
+      }
+
+      // Update and normalize user data locally
+      const updatedUser = normalizeUser({ ...currentUser, ...updates });
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+
+      toast.success('Profile updated successfully');
+      return updatedUser;
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error(error.message || 'Profile update failed');
+      throw error;
+    }
+  }, [accessToken, currentUser]);
+
+  // Set auth redirect URL (for future redirect after login)
+  // This is a placeholder function - actual redirect handling is done in ProtectedRoute
+  const setAuthRedirect = useCallback((url) => {
+    // Store the redirect URL for after login
+    if (url) {
+      sessionStorage.setItem('authRedirect', url);
+    }
+  }, []);
+
+  // Register as vendor
+  const registerAsVendor = useCallback(async (vendorInfo) => {
+    try {
+      // Use switchRole to upgrade to vendor
+      const result = await switchRole('vendor');
+      return { success: true, user: result, navigateTo: '/vendor/dashboard' };
+    } catch (error) {
+      console.error('Vendor registration error:', error);
+      return { success: false, error: error.message };
+    }
+  }, [switchRole]);
+
+  // Sign in with Google via popup and exchange id_token for JWT
+  const signInWithGooglePopup = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Fetch client ID from backend config endpoint (avoid inlining secrets at build time)
+      let clientId = null;
+      try {
+        const cfgResp = await fetch(getApiUrl('/auth/jwt/google-config'));
+        if (cfgResp.ok) {
+          const cfg = await cfgResp.json();
+          clientId = cfg.clientId || cfg.client_id || cfg.clientID || null;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      if (!clientId) {
+        throw new Error('Google client ID is not configured');
+      }
+
+      const redirectUri = `${window.location.origin}/auth/google-popup-callback`;
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'id_token token',
+        scope: 'openid profile email',
+        prompt: 'select_account'
+      });
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+      const width = 500;
+      const height = 650;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+      const popup = window.open(authUrl, 'google_oauth', `width=${width},height=${height},left=${left},top=${top}`);
+      if (!popup) throw new Error('Popup blocked by browser');
+
+      const result = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener('message', handler);
+          reject(new Error('Timed out waiting for Google authentication'));
+        }, 2 * 60 * 1000);
+
+        const handler = (e) => {
+          if (e.origin !== window.location.origin) return;
+          const data = e.data || {};
+          if (data.type === 'google_oauth_result') {
+            clearTimeout(timer);
+            window.removeEventListener('message', handler);
+            resolve(data);
+          }
+        };
+
+        window.addEventListener('message', handler);
+      });
+
+      const idToken = result?.idToken || result?.id_token;
+      if (!idToken) throw new Error('No ID token returned from Google');
+
+      const resp = await fetch(getApiUrl('/auth/jwt/google'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ googleToken: idToken })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.message || 'Google sign-in failed');
+
+      // Persist tokens and user
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      setCurrentUser(data.user);
+
+      toast.success('Signed in with Google');
+      return data.user;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'Google sign-in failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value = {
     currentUser,
     loading,
@@ -248,14 +427,15 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshAccessToken,
-    fetchCurrentUser,
+    switchRole,
+    updateUserProfile,
     registerAsVendor,
-    setUser,
+    signInWithGooglePopup,
+    setAuthRedirect,
     // Aliases and computed properties
     user: currentUser,
     isBuyer,
-    isVendor,
-    switchRole
+    isVendor
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -263,8 +443,11 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  // Return context even if not in provider (with fallback default values)
+  // This allows components to work even if accidentally used outside AuthProvider
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    console.warn('useAuth called outside AuthProvider. Using default values.');
+    return defaultContextValue;
   }
   return context;
 };

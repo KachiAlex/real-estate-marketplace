@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useVendor } from '../contexts/VendorContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -18,6 +19,19 @@ import { authenticatedFetch } from '../utils/authToken';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { subscription, isSubscriptionActive } = useVendor();
+
+  // Onboarding and subscription check: if vendor but not onboarded or not subscribed, redirect
+  useEffect(() => {
+    if (user && user.role === 'vendor') {
+      if (!(user.vendorData && user.vendorData.onboardingComplete)) {
+        navigate('/vendor/onboarding-dashboard', { replace: true });
+      } else if (!isSubscriptionActive) {
+        navigate('/vendor/renew-subscription', { replace: true });
+      }
+    }
+  }, [user, navigate, isSubscriptionActive]);
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();
@@ -268,20 +282,22 @@ const VendorDashboard = () => {
   useEffect(() => {
     const fetchVendorAnalytics = async () => {
       if (!user) return;
-
       try {
         const res = await authenticatedFetch(getApiUrl('/dashboard/vendor'), {
           headers: {
             'Content-Type': 'application/json'
           }
         });
-
         const data = await res.json();
+        if (res.status === 403 && data && data.redirect) {
+          // Backend says onboarding required, redirect
+          navigate(data.redirect, { replace: true });
+          return;
+        }
         if (!res.ok || !data.success) {
           console.warn('VendorDashboard: Failed to load backend analytics summary');
           return;
         }
-
         const summary = data.data || {};
         setAnalytics(prev => ({
           ...prev,
@@ -298,9 +314,8 @@ const VendorDashboard = () => {
         console.warn('VendorDashboard: Error fetching backend analytics summary', error);
       }
     };
-
     fetchVendorAnalytics();
-  }, [user]);
+  }, [user, navigate]);
 
   // Removed: Firestore sync is no longer needed
 
@@ -535,14 +550,15 @@ const VendorDashboard = () => {
   };
 
   const getUserInitials = () => {
+    if (!user) return 'V';
     if (user?.displayName) {
       return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
     }
     if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+      return `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
     }
     if (user?.email) {
-      return user.email[0].toUpperCase();
+      return user?.email?.[0]?.toUpperCase() || 'V';
     }
     return 'V';
   };
@@ -706,8 +722,13 @@ const VendorDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => {
-                  // Stay within the same component; avoid route changes that could reset auth
-                  setActiveTab(tab.id);
+                  if (tab.id === 'properties') {
+                    navigate('/vendor/properties');
+                  } else if (tab.id === 'overview') {
+                    navigate('/vendor/dashboard');
+                  } else {
+                    setActiveTab(tab.id);
+                  }
                 }}
                 className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
@@ -728,11 +749,11 @@ const VendorDashboard = () => {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Recent Activity */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/vendor/properties')}
+                title="View your properties"
+              >
                       <div className="p-2 bg-green-100 rounded-full">
                         <FaEye className="h-4 w-4 text-green-600" />
                       </div>

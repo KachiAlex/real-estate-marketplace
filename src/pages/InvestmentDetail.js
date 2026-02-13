@@ -74,6 +74,11 @@ const InvestmentDetail = () => {
   };
 
   const handleInvest = async () => {
+    if (!user || (!user.id && !user.uid)) {
+      setError('Please login to invest');
+      return;
+    }
+
     if (!investmentAmount || parseFloat(investmentAmount) <= 0) {
       setError('Please enter a valid investment amount');
       return;

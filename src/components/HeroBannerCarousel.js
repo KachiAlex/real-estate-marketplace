@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import RegisterModal from './auth/RegisterModal';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -17,6 +18,7 @@ const HeroBannerCarousel = () => {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const slides = [
     {
@@ -146,13 +148,15 @@ const HeroBannerCarousel = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-delay-2 justify-center">
             <button 
-              onClick={() => navigate('/properties')}
+              onClick={() => setShowRegisterModal(true)}
               className="group px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <span>{currentSlideData.buttonText}</span>
+              <span>Get Started</span>
               <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
             </button>
-            
+            {showRegisterModal && (
+              <RegisterModal onClose={() => setShowRegisterModal(false)} />
+            )}
           </div>
 
           {/* Trust Indicators */}

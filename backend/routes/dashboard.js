@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
+const vendorOnboarding = require('../middleware/vendorOnboarding');
 const { sanitizeInput } = require('../middleware/validation');
 const { getFirestore } = require('../config/firestore');
 const { ensureSeedProperties } = require('../services/propertyService');
@@ -140,7 +141,7 @@ router.get('/user', protect, sanitizeInput, async (req, res) => {
 // @desc    Get authenticated vendor's dashboard summary
 // @route   GET /api/dashboard/vendor
 // @access  Private
-router.get('/vendor', protect, sanitizeInput, async (req, res) => {
+router.get('/vendor', protect, vendorOnboarding, sanitizeInput, async (req, res) => {
   try {
     const db = getFirestore();
     if (!db) {

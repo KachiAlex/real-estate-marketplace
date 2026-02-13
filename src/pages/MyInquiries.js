@@ -47,15 +47,20 @@ const MyInquiries = () => {
       return;
     }
 
+    if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
+      toast.error('User information incomplete. Please refresh and try again.');
+      return;
+    }
+
     // Create viewing request data
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
       propertyId: selectedProperty.id,
       propertyTitle: selectedProperty.title,
       propertyLocation: selectedProperty.location,
-      userId: user.id,
-      userName: `${user.firstName} ${user.lastName}`,
-      userEmail: user.email,
+      userId: user?.id,
+      userName: `${user?.firstName || ''} ${user?.lastName || ''}`,
+      userEmail: user?.email || '',
       status: 'pending_vendor_confirmation',
       requestedAt: new Date().toISOString(),
       preferredDate: selectedDate,
@@ -99,7 +104,7 @@ const MyInquiries = () => {
 
   // Load inquiries from localStorage
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       setLoading(false);
       return;
     }

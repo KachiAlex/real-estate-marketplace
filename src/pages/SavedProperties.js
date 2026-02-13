@@ -16,7 +16,8 @@ const SavedProperties = () => {
 
   // Load saved properties from localStorage and match with actual property data
   const loadSavedProperties = useCallback(() => {
-    if (!user) {
+    if (!user || !user.id) {
+      console.warn('SavedProperties: No user available, skipping load');
       setSavedProperties([]);
       setLoading(false);
       return;
@@ -250,8 +251,8 @@ const SavedProperties = () => {
   };
 
   const handleScheduleViewing = (property) => {
-    if (!user) {
-      toast.error('Please register to schedule viewings');
+    if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
+      toast.error('User information incomplete. Please refresh and try again.');
       return;
     }
     
@@ -290,7 +291,10 @@ const SavedProperties = () => {
   };
 
   const createInquiry = (property, inquiryType, message = '') => {
-    if (!user || !property) return;
+    if (!user || !user.id || !property) {
+      console.warn('createInquiry: Missing user or property information');
+      return;
+    }
 
     // Check if inquiry already exists for this property and user
     const existingInquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');

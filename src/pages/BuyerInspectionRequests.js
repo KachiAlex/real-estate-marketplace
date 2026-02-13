@@ -144,7 +144,7 @@ const BuyerInspectionRequests = () => {
       }
     }
     prevStatusRef.current = Object.fromEntries(newRequests.map(x => [x.id, x.status]));
-    if (user?.id) {
+    if (user && user.id) {
       setAnalytics(getInspectionAnalytics({ role: 'buyer', userId: user.id }));
     }
   };

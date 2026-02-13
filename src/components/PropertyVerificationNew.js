@@ -128,13 +128,18 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       return;
     }
 
+    if (!user || (!user.id && !user.uid)) {
+      setError('Please login to submit verification request');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     
+
     try {
       // DEBUG: Check token before sending
       const token = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
-      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
       console.log('DEBUG: Verification submission', {
         hasToken: !!token,
         tokenLength: token?.length,
@@ -142,6 +147,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
         userId: user?.uid
       });
 
+      // Backend expects verificationPaymentId, not paymentReference
       const applicationData = {
         propertyId: property?.id,
         propertyName: formValues.propertyName || property?.title,
@@ -149,7 +155,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
         propertyLocation: formValues.propertyLocation || property?.location,
         message: formValues.message,
         preferredBadgeColor: formValues.preferredBadgeColor,
-        paymentReference: paymentData.reference,
+        verificationPaymentId: paymentData.reference,
         paymentAmount: paymentData.amount,
         paymentStatus: 'completed'
       };

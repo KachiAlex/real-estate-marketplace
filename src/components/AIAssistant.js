@@ -55,6 +55,22 @@ const AIAssistant = () => {
   const { properties, searchProperties } = useProperty();
   const { startTour, availableTours, isTourCompleted } = useTour();
 
+  // Safe wrapper for AI service in case the import isn't a callable instance
+  const safeGenerate = (prompt) => {
+    try {
+      if (PropertyArkAI && typeof PropertyArkAI.generateResponse === 'function') {
+        return PropertyArkAI.generateResponse(prompt);
+      }
+      if (PropertyArkAI && typeof PropertyArkAI === 'function') {
+        // in case service was exported as a function
+        return PropertyArkAI(prompt);
+      }
+    } catch (err) {
+      console.error('AI generate error:', err);
+    }
+    return { response: "Sorry, the AI assistant is currently unavailable.", action: null, entities: {} };
+  };
+
   const getQuickSuggestions = () => {
     const currentPath = window.location.pathname;
     
@@ -107,18 +123,7 @@ const AIAssistant = () => {
         { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
         { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
       ];
-    } else if (currentPath.includes('/blog')) {
-      // Blog page suggestions
-      return [
-        { icon: FaSearch, text: "Search blog articles", action: "search_blog" },
-        { icon: FaBell, text: "Subscribe to blog updates", action: "subscribe_blog" },
-        { icon: FaHome, text: "Latest property news", action: "latest_news" },
-        { icon: FaUser, text: "Share article", action: "share_article" },
-        { icon: FaQuestionCircle, text: "Market insights", action: "market_insights" },
-        { icon: FaLightbulb, text: "Property investment tips", action: "investment_tips" },
-        { icon: FaQuestionCircle, text: "What can you help with?", action: "help_general" },
-        { icon: FaGraduationCap, text: "Take me on a tour", action: "start_tour" }
-      ];
+    // Blog page removed from the app — skip blog-specific suggestions
     } else if (currentPath.includes('/dashboard')) {
       // User dashboard suggestions
       return [
@@ -366,127 +371,127 @@ const AIAssistant = () => {
         switch (action) {
           // Home page actions
           case "search_lagos":
-            aiResponse = PropertyArkAI.generateResponse("I want to search for properties in Lagos");
+            aiResponse = safeGenerate("I want to search for properties in Lagos");
             break;
           case "create_alert":
-            aiResponse = PropertyArkAI.generateResponse("I want to create a property alert");
+            aiResponse = safeGenerate("I want to create a property alert");
             break;
           case "show_luxury":
-            aiResponse = PropertyArkAI.generateResponse("Show me luxury properties");
+            aiResponse = safeGenerate("Show me luxury properties");
             break;
           case "help_register":
-            aiResponse = PropertyArkAI.generateResponse("Help me register as a buyer");
+            aiResponse = safeGenerate("Help me register as a buyer");
             break;
           case "explain_platform":
-            aiResponse = PropertyArkAI.generateResponse("How does this platform work?");
+            aiResponse = safeGenerate("How does this platform work?");
             break;
           case "show_investments":
-            aiResponse = PropertyArkAI.generateResponse("Show me investment opportunities");
+            aiResponse = safeGenerate("Show me investment opportunities");
             break;
           
           // Vendor dashboard actions
           case "create_property_help":
-            aiResponse = PropertyArkAI.generateResponse("Help me create a property listing");
+            aiResponse = safeGenerate("Help me create a property listing");
             break;
           case "manage_listings":
-            aiResponse = PropertyArkAI.generateResponse("How do I manage my property listings?");
+            aiResponse = safeGenerate("How do I manage my property listings?");
             break;
           case "update_profile":
-            aiResponse = PropertyArkAI.generateResponse("Help me update my profile");
+            aiResponse = safeGenerate("Help me update my profile");
             break;
           case "view_analytics":
-            aiResponse = PropertyArkAI.generateResponse("Show me my performance analytics");
+            aiResponse = safeGenerate("Show me my performance analytics");
             break;
           case "pricing_help":
-            aiResponse = PropertyArkAI.generateResponse("How should I price my property?");
+            aiResponse = safeGenerate("How should I price my property?");
             break;
           case "photo_tips":
-            aiResponse = PropertyArkAI.generateResponse("Give me tips for better property photos");
+            aiResponse = safeGenerate("Give me tips for better property photos");
             break;
           
           // Properties page actions
           case "advanced_search":
-            aiResponse = PropertyArkAI.generateResponse("Help me with advanced property search");
+            aiResponse = safeGenerate("Help me with advanced property search");
             break;
           case "save_search":
-            aiResponse = PropertyArkAI.generateResponse("How do I save this search as an alert?");
+            aiResponse = safeGenerate("How do I save this search as an alert?");
             break;
           case "similar_properties":
-            aiResponse = PropertyArkAI.generateResponse("Show me similar properties");
+            aiResponse = safeGenerate("Show me similar properties");
             break;
           case "contact_agent":
-            aiResponse = PropertyArkAI.generateResponse("How do I contact the property agent?");
+            aiResponse = safeGenerate("How do I contact the property agent?");
             break;
           case "schedule_viewing":
-            aiResponse = PropertyArkAI.generateResponse("Help me schedule a property viewing");
+            aiResponse = safeGenerate("Help me schedule a property viewing");
             break;
           case "property_valuation":
-            aiResponse = PropertyArkAI.generateResponse("Can you help me get a property valuation?");
+            aiResponse = safeGenerate("Can you help me get a property valuation?");
             break;
           
           // Investment page actions
           case "investment_calc":
-            aiResponse = PropertyArkAI.generateResponse("Help me with investment calculations");
+            aiResponse = safeGenerate("Help me with investment calculations");
             break;
           case "market_analysis":
-            aiResponse = PropertyArkAI.generateResponse("Show me market analysis and trends");
+            aiResponse = safeGenerate("Show me market analysis and trends");
             break;
           case "create_portfolio":
-            aiResponse = PropertyArkAI.generateResponse("Help me create an investment portfolio");
+            aiResponse = safeGenerate("Help me create an investment portfolio");
             break;
           case "investment_alerts":
-            aiResponse = PropertyArkAI.generateResponse("Set up investment alerts");
+            aiResponse = safeGenerate("Set up investment alerts");
             break;
           case "risk_assessment":
-            aiResponse = PropertyArkAI.generateResponse("Help me assess investment risks");
+            aiResponse = safeGenerate("Help me assess investment risks");
             break;
           case "investment_strategies":
-            aiResponse = PropertyArkAI.generateResponse("What are good investment strategies?");
+            aiResponse = safeGenerate("What are good investment strategies?");
             break;
           
           // Blog page actions
           case "search_blog":
-            aiResponse = PropertyArkAI.generateResponse("Help me search blog articles");
+            aiResponse = safeGenerate("Help me search blog articles");
             break;
           case "subscribe_blog":
-            aiResponse = PropertyArkAI.generateResponse("How do I subscribe to blog updates?");
+            aiResponse = safeGenerate("How do I subscribe to blog updates?");
             break;
           case "latest_news":
-            aiResponse = PropertyArkAI.generateResponse("Show me the latest property news");
+            aiResponse = safeGenerate("Show me the latest property news");
             break;
           case "share_article":
-            aiResponse = PropertyArkAI.generateResponse("How do I share this article?");
+            aiResponse = safeGenerate("How do I share this article?");
             break;
           case "market_insights":
-            aiResponse = PropertyArkAI.generateResponse("Give me market insights");
+            aiResponse = safeGenerate("Give me market insights");
             break;
           case "investment_tips":
-            aiResponse = PropertyArkAI.generateResponse("Share property investment tips");
+            aiResponse = safeGenerate("Share property investment tips");
             break;
           
           // Dashboard actions
           case "check_alerts":
-            aiResponse = PropertyArkAI.generateResponse("Show me my property alerts");
+            aiResponse = safeGenerate("Show me my property alerts");
             break;
           case "saved_properties":
-            aiResponse = PropertyArkAI.generateResponse("Show me my saved properties");
+            aiResponse = safeGenerate("Show me my saved properties");
             break;
           case "recent_searches":
-            aiResponse = PropertyArkAI.generateResponse("Show me my recent searches");
+            aiResponse = safeGenerate("Show me my recent searches");
             break;
           case "account_settings":
-            aiResponse = PropertyArkAI.generateResponse("Help me with account settings");
+            aiResponse = safeGenerate("Help me with account settings");
             break;
           case "recommendations":
-            aiResponse = PropertyArkAI.generateResponse("Give me personalized recommendations");
+            aiResponse = safeGenerate("Give me personalized recommendations");
             break;
           
           // General actions
           case "search_properties":
-            aiResponse = PropertyArkAI.generateResponse("Help me find properties");
+            aiResponse = safeGenerate("Help me find properties");
             break;
           case "browse_properties":
-            aiResponse = PropertyArkAI.generateResponse("Help me browse properties");
+            aiResponse = safeGenerate("Help me browse properties");
             break;
           case "start_tour":
             aiResponse = {
@@ -495,14 +500,14 @@ const AIAssistant = () => {
             };
             break;
           case "help_started":
-            aiResponse = PropertyArkAI.generateResponse("Help me get started on this platform");
+            aiResponse = safeGenerate("Help me get started on this platform");
             break;
           case "help_general":
-            aiResponse = PropertyArkAI.generateResponse("What can you help me with?");
+            aiResponse = safeGenerate("What can you help me with?");
             break;
           
           default:
-            aiResponse = PropertyArkAI.generateResponse(userMessage);
+            aiResponse = safeGenerate(userMessage);
         }
       } else {
         // Check if user is asking for a tour
@@ -518,8 +523,8 @@ const AIAssistant = () => {
             action: { type: 'show_tour_selector' }
           };
         } else {
-          // Use advanced PropertyArk AI for natural language processing
-          aiResponse = PropertyArkAI.generateResponse(userMessage);
+          // Use advanced PropertyArk AI for natural language processing (safe)
+          aiResponse = safeGenerate(userMessage);
         }
       }
       

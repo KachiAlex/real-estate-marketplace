@@ -56,7 +56,7 @@ const PropertyDetail = () => {
 
   // Check if property is favorited
   useEffect(() => {
-    if (property && user) {
+    if (property && user && user.id) {
       const key = `favorites_${user.id}`;
       const favorites = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
       setIsFavorite(favorites.has(property.id));
@@ -102,7 +102,7 @@ const PropertyDetail = () => {
   };
 
   const handleToggleFavorite = async () => {
-    if (!user) {
+    if (!user || !user.id) {
       toast.error('Please login to add favorites');
       // User can continue viewing the property without being forced to login
       return;
@@ -200,7 +200,10 @@ const PropertyDetail = () => {
   };
 
   const createInquiry = (property, inquiryType, message = '') => {
-    if (!user || !property) return;
+    if (!user || !user.id || !property) {
+      console.warn('createInquiry: Missing user or property information');
+      return;
+    }
 
     // Check if inquiry already exists for this property and user
     const existingInquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
@@ -341,6 +344,11 @@ const PropertyDetail = () => {
   const handleConfirmSchedule = async () => {
     if (!preferredDate || !preferredTime) {
       toast.error('Please select a preferred date and time');
+      return;
+    }
+
+    if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
+      toast.error('User information incomplete. Please refresh and try again.');
       return;
     }
 

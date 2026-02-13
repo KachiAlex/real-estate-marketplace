@@ -16,7 +16,6 @@ import {
   FaQuestionCircle as FaHelp,
   FaFileContract,
   FaCalendar,
-  FaBlog,
   FaTimes
 } from 'react-icons/fa';
 
@@ -53,25 +52,94 @@ const Sidebar = () => {
     };
   }, [isMobileSidebarOpen, user]);
 
-  // Don't render sidebar if user is not authenticated
+  // If user is not authenticated, render a provisional public sidebar
   if (!user) {
-    return null;
+    const publicMenuItems = [
+      { path: '/', label: 'Home', icon: FaHome },
+      { path: '/properties', label: 'Properties', icon: FaBuilding },
+      { path: '/about', label: 'About', icon: FaQuestionCircle },
+      { path: '/contact', label: 'Contact', icon: FaEnvelope },
+      { path: '/help-support', label: 'Help', icon: FaHelp },
+    ];
+
+    return (
+      <>
+        {isMobileSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-[60] lg:hidden transition-opacity"
+            onClick={closeMobileSidebar}
+          />
+        )}
+
+        <div className={`
+          w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-[70] flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          lg:translate-x-0
+          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <div className="flex-shrink-0 px-4 py-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center justify-between mb-2">
+              <Link to="/" onClick={closeMobileSidebar} className="flex items-center">
+                <img
+                  src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
+                  alt="PropertyArk Logo"
+                  className="w-auto h-16"
+                  onError={() => setLogoError(true)}
+                />
+              </Link>
+              <button
+                onClick={closeMobileSidebar}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                aria-label="Close sidebar"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 ml-1">Welcome</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">Explore</p>
+            <nav className="space-y-1.5 sm:space-y-2">
+              {publicMenuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={closeMobileSidebar}
+                    className={`flex items-center space-x-3 px-3 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100`}
+                  >
+                    <Icon className="text-lg flex-shrink-0" />
+                    <span className="whitespace-nowrap">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 bg-white">
+            <Link to="/auth/login" onClick={closeMobileSidebar} className="block mb-3 px-3 py-2 rounded-lg text-center bg-brand-blue text-white font-medium">Sign in</Link>
+            <Link to="/auth/register" onClick={closeMobileSidebar} className="block px-3 py-2 rounded-lg text-center border border-gray-300">Register</Link>
+          </div>
+        </div>
+      </>
+    );
   }
 
-         const menuItems = [
-           { path: '/dashboard', label: 'Dashboard', icon: FaHome },
-           { path: '/properties', label: 'Properties', icon: FaBuilding },
-           { path: '/blog', label: 'Blog', icon: FaBlog },
-           { path: '/investment', label: 'Investment', icon: FaChartLine },
+            const menuItems = [
+              { path: '/dashboard', label: 'Dashboard', icon: FaHome },
+              { path: '/properties', label: 'Properties', icon: FaBuilding },
+              { path: '/investment', label: 'Investment', icon: FaChartLine },
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
            { path: '/saved-properties', label: 'Saved Properties', icon: FaHeart },
-           { path: '/inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
+           { path: '/my-inquiries', label: 'My Inquiries', icon: FaQuestionCircle },
            { path: '/alerts', label: 'Property Alerts', icon: FaBell },
            { path: '/messages', label: 'Messages', icon: FaEnvelope },
            { path: '/my-inspections', label: 'My Inspections', icon: FaCalendar },
     { path: '/profile', label: 'Profile Settings', icon: FaUser },
-    { path: '/billing', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
-    { path: '/help', label: 'Help & Support', icon: FaHelp },
+           { path: '/billing-payments', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
+           { path: '/help-support', label: 'Help & Support', icon: FaHelp },
   ];
 
   return (

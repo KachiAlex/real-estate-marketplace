@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
+import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 
-const RegisterPage = () => {
+const RegisterPage = ({ isModal = false, onClose }) => {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -36,18 +37,30 @@ const RegisterPage = () => {
       setError('');
       await register(form.email.trim(), form.password, form.firstName.trim(), form.lastName.trim(), form.phone.trim());
       toast.success('Account created successfully.');
-      navigate('/dashboard', { replace: true });
+      // Redirect to intended destination if set (e.g., escrow flow)
+      const redirect = sessionStorage.getItem('authRedirect');
+      if (redirect) {
+        sessionStorage.removeItem('authRedirect');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message || 'Unable to register at this time.');
     }
   };
 
   return (
-    <AuthLayout
-      title="Create your account"
-      description="Join PropertyArk to track favorites, organize viewings, and keep every chat, document, and alert in sync."
-      footer="We respect your privacy and never share your details without consent."
-    >
+    <>
+      {/* Only show StaticHeroBanner if not in modal */}
+      {!isModal && <StaticHeroBanner />}
+      <AuthLayout
+        title="Create your account"
+        description="Join PropertyArk to track favorites, organize viewings, and keep every chat, document, and alert in sync."
+        footer="We respect your privacy and never share your details without consent."
+        isModal={isModal}
+        onClose={onClose}
+      >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="rounded-2xl border border-red-400/70 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -123,6 +136,26 @@ const RegisterPage = () => {
           </label>
         </div>
 
+
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await useAuth().signInWithGooglePopup();
+              const redirect = sessionStorage.getItem('authRedirect');
+              if (redirect) {
+                sessionStorage.removeItem('authRedirect');
+                navigate(redirect, { replace: true });
+              } else {
+                navigate('/dashboard', { replace: true });
+              }
+            } catch (e) {}
+          }}
+          className="w-full mb-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white font-semibold hover:bg-white/20 transition"
+        >
+          Sign up with Google
+        </button>
+
         <button
           type="submit"
           disabled={loading}
@@ -138,7 +171,8 @@ const RegisterPage = () => {
           </Link>
         </div>
       </form>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 };
 

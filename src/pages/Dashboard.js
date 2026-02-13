@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   // Load favorites from localStorage
   const loadFavorites = useCallback(() => {
-    if (user) {
+    if (user && user.id) {
       const key = `favorites_${user.id}`;
       const savedFavorites = JSON.parse(localStorage.getItem(key) || '[]');
       // Convert all IDs to strings for consistent comparison
@@ -56,7 +56,10 @@ const Dashboard = () => {
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
-    if (!user) return;
+    if (!user || !user.id) {
+      console.warn('refreshDashboardStats: No user available, skipping load');
+      return;
+    }
 
     // Get saved properties count from localStorage (includes mock data)
     const key = `favorites_${user.id}`;
@@ -185,15 +188,23 @@ const Dashboard = () => {
 
     const handleStorageChange = (e) => {
       // Listen for localStorage changes (works across tabs)
-      const key = `favorites_${user.id}`;
-      if (e.key === key) {
-        handleFavoritesUpdate();
+      if (user && user.id) {
+        const key = `favorites_${user.id}`;
+        if (e.key === key) {
+          handleFavoritesUpdate();
+        } else if (e.key === 'inquiries') {
+          handleInquiriesUpdate();
+        } else if (e.key === 'viewingRequests') {
+          handleViewingsUpdate();
+        } else if (e.key === `userInvestments_${user.id}`) {
+          handleInvestmentsUpdate();
+        } else if (e.key === 'escrowTransactions') {
+          handleEscrowUpdate();
+        }
       } else if (e.key === 'inquiries') {
         handleInquiriesUpdate();
       } else if (e.key === 'viewingRequests') {
         handleViewingsUpdate();
-      } else if (e.key === `userInvestments_${user.id}`) {
-        handleInvestmentsUpdate();
       } else if (e.key === 'escrowTransactions') {
         handleEscrowUpdate();
       }
@@ -269,7 +280,7 @@ const Dashboard = () => {
         navigate('/saved-properties');
         break;
       case 'inquiries':
-        navigate('/inquiries');
+        navigate('/my-inquiries');
         break;
       case 'alerts':
         navigate('/alerts');
@@ -308,16 +319,21 @@ const Dashboard = () => {
       return;
     }
 
+    if (!user || !user.id || !user.firstName || !user.lastName) {
+      toast.error('User information incomplete. Please refresh and try again.');
+      return;
+    }
+
     // Create viewing request data
     const viewingRequest = {
       id: `viewing-${Date.now()}`,
       propertyId: selectedProperty.id,
       propertyTitle: selectedProperty.title,
       propertyLocation: selectedProperty.location,
-      userId: user.id,
-      buyerId: user.id,
-      userName: `${user.firstName} ${user.lastName}`,
-      userEmail: user.email,
+      userId: user?.id,
+      buyerId: user?.id,
+      userName: `${user?.firstName || ''} ${user?.lastName || ''}`,
+      userEmail: user?.email || '',
       status: 'pending_vendor_confirmation',
       requestedAt: new Date().toISOString(),
       preferredDate: selectedDate,
@@ -359,7 +375,10 @@ const Dashboard = () => {
   // Load dashboard stats from all sources (localStorage, contexts, backend)
   useEffect(() => {
     const loadDashboardStats = () => {
-      if (!user) return;
+      if (!user || !user.id) {
+        console.warn('loadDashboardStats: No user available, skipping load');
+        return;
+      }
 
       // Get saved properties count from localStorage (includes mock data)
       const key = `favorites_${user.id}`;
@@ -618,7 +637,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/inquiries')}
+                onClick={() => navigate('/my-inquiries')}
                 title="View active inquiries"
               >
                 <div className="flex items-center justify-between">
@@ -646,7 +665,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View billing and payments"
               >
                 <div className="flex items-center justify-between">
@@ -677,7 +696,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View escrow transactions"
               >
                 <div className="flex items-center justify-between">
@@ -691,7 +710,7 @@ const Dashboard = () => {
               
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/billing')}
+                onClick={() => navigate('/billing-payments')}
                 title="View billing and payments"
               >
                 <div className="flex items-center justify-between">

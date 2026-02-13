@@ -164,22 +164,7 @@ export const TourProvider = ({ children }) => {
           action: { type: 'scroll', direction: 'down', amount: 400 },
           position: 'center'
         },
-        {
-          id: 'blog',
-          title: 'Real Estate Blog',
-          content: 'Let\'s check out our blog section! Here you\'ll find the latest real estate news, market insights, and helpful tips for buyers and sellers.',
-          target: null,
-          action: { type: 'navigate', path: '/blog' },
-          position: 'center'
-        },
-        {
-          id: 'blog-content',
-          title: 'Expert Content',
-          content: 'Our blog features expert articles about real estate trends, investment strategies, and market analysis. It\'s a great resource for staying informed!',
-          target: null,
-          action: { type: 'scroll', direction: 'down', amount: 300 },
-          position: 'center'
-        },
+        // Blog tour steps removed
         {
           id: 'assistant-help',
           title: 'I\'m Always Here to Help!',

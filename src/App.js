@@ -23,6 +23,8 @@ import Home from './pages/Home';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import SignInModal from './components/auth/SignInModal';
+import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -32,8 +34,7 @@ const AddProperty = lazy(() => import('./pages/AddProperty'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const About = lazy(() => import('./pages/About'));
-const Blog = lazy(() => import('./pages/Blog'));
-const BlogDetail = lazy(() => import('./pages/BlogDetail'));
+// Blog pages removed — redirecting to properties instead
 const ProfessionalServicesEnquiry = lazy(() => import('./pages/ProfessionalServicesEnquiry'));
 const Escrow = lazy(() => import('./pages/Escrow'));
 const Investments = lazy(() => import('./pages/Investments'));
@@ -67,6 +68,8 @@ const VendorProfile = lazy(() => import('./pages/VendorProfile'));
 const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
 const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
+const VendorOnboardingDashboard = lazy(() => import('./pages/VendorOnboardingDashboard'));
+const VendorRenewSubscription = lazy(() => import('./pages/VendorRenewSubscription'));
 
 const PageWithSidebar = ({ children, id }) => (
   <div className="flex w-full">
@@ -88,6 +91,7 @@ const AuthRoutes = () => (
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
   </Routes>
 );
@@ -102,8 +106,10 @@ const MainRoutes = () => (
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
-    <Route path="/blog" element={<Blog />} />
-    <Route path="/blog/:slug" element={<BlogDetail />} />
+    <Route path="/auth/login" element={<></>} />
+    <Route path="/auth/register" element={<RegisterPage />} />
+    <Route path="/blog" element={<Navigate to="/properties" replace />} />
+    <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={
@@ -359,13 +365,28 @@ const MainRoutes = () => (
         </VendorRoute>
       </ProtectedRoute>
     } />
+    <Route path="/vendor/onboarding-dashboard" element={
+      <VendorRoute>
+        <VendorOnboardingDashboard />
+      </VendorRoute>
+    } />
+    <Route path="/vendor/renew-subscription" element={
+      <VendorRoute>
+        <VendorRenewSubscription />
+      </VendorRoute>
+    } />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );
 
 function App() {
   const location = useLocation();
-  const isAuthRoute = location.pathname.startsWith('/auth');
+  // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
+  // hide header for full-page auth routes (register, forgot password, callback).
+  // Explicitly treat `/auth/login` as a modal route to avoid router fallback redirects.
+  const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
+  const isSignInModalRoute = location.pathname === '/auth/login';
+  const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute;
 
   return (
     <TourProvider>
@@ -401,6 +422,10 @@ function App() {
                               </Suspense>
                             </ErrorBoundary>
                           </div>
+                          {/* Show Sign-in as modal when route is /auth/login */}
+                          {isSignInModalRoute && (
+                            <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
+                          )}
                           <PropertyArkAssistant />
                           <AITourGuide />
                         </div>

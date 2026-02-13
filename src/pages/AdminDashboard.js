@@ -4,7 +4,6 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
-import BlogManagement from '../components/BlogManagement';
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
@@ -327,7 +326,8 @@ const AdminDashboard = () => {
       // Set default config for development
       setAdminSettings({
         verificationFee: 50000,
-        verificationBadgeColor: '#10B981'
+        verificationBadgeColor: '#10B981',
+        vendorSubscriptionFee: 50000
       });
       return;
     }
@@ -367,18 +367,24 @@ const AdminDashboard = () => {
         // Set default config instead of throwing error
         mergedConfig = {
           verificationFee: 50000,
-          verificationBadgeColor: '#10B981'
+          verificationBadgeColor: '#10B981',
+          vendorSubscriptionFee: 50000
         };
         console.warn('AdminDashboard: Using default verification settings');
       }
 
+      // Ensure vendorSubscriptionFee is present
+      if (typeof mergedConfig.vendorSubscriptionFee !== 'number') {
+        mergedConfig.vendorSubscriptionFee = 50000;
+      }
       setAdminSettings(mergedConfig);
     } catch (error) {
       console.warn('AdminDashboard: unable to load verification settings', error);
       // Set default config on error
       setAdminSettings({
         verificationFee: 50000,
-        verificationBadgeColor: '#10B981'
+        verificationBadgeColor: '#10B981',
+        vendorSubscriptionFee: 50000
       });
       toast.error(error?.message || 'Failed to load verification settings');
     } finally {
@@ -541,7 +547,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','verification','escrow','disputes','users','blog'].includes(t)) {
+    if (t && ['properties','verification','escrow','disputes','users'].includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1006,7 +1012,7 @@ const AdminDashboard = () => {
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
-              {activeTab === 'blog' && 'Blog content management'}
+              {/* Blog content management removed */}
             </p>
           </div>
         </div>
@@ -1016,7 +1022,7 @@ const AdminDashboard = () => {
 
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -1027,6 +1033,27 @@ const AdminDashboard = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Properties</p>
                   <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Vendor Subscription Fee Card */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 flex flex-col justify-between">
+              <div className="flex items-center mb-2">
+                <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 10c-4.41 0-8-1.79-8-4V6c0-2.21 3.59-4 8-4s8 1.79 8 4v8c0 2.21-3.59 4-8 4z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Vendor Subscription Fee</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    ₦{adminSettings?.vendorSubscriptionFee?.toLocaleString() || '50,000'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Current fee for vendor onboarding</p>
+                  {adminSettings?.updatedAt && (
+                    <p className="text-xs text-gray-400 mt-1">Last updated: {new Date(adminSettings.updatedAt).toLocaleDateString()}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1773,12 +1800,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Blog Tab */}
-        {activeTab === 'blog' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
-            <BlogManagement />
-          </div>
-        )}
+        {/* Blog tab removed */}
 
       </main>
 

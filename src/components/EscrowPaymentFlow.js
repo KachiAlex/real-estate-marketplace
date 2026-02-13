@@ -457,6 +457,11 @@ const EscrowPaymentFlow = ({
     console.log('🔥 EscrowPaymentFlow: handleProcessTestPayment called');
     
     try {
+      if (!user || (!user.id && !user.uid)) {
+        toast.error('Please login to complete this transaction');
+        return;
+      }
+
       setLoading(true);
       setPaymentError('');
 
@@ -559,6 +564,11 @@ const EscrowPaymentFlow = ({
     console.log('🔥 Investment:', investment);
     
     try {
+      if (!user || (!user.id && !user.uid)) {
+        toast.error('Please login to complete this transaction');
+        return;
+      }
+
       console.log('🔥 EscrowPaymentFlow: Starting validation...');
       
       // Validate payment data if card payment

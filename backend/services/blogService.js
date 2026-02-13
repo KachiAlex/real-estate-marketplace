@@ -14,14 +14,20 @@ const convertTimestamps = (doc) => {
   const converted = { id, ...data };
   
   // Convert Timestamp fields
-  if (converted.publishedAt && converted.publishedAt.toDate) {
+  if (converted.publishedAt && typeof converted.publishedAt.toDate === 'function') {
     converted.publishedAt = converted.publishedAt.toDate();
+  } else if (converted.publishedAt && (typeof converted.publishedAt === 'string' || typeof converted.publishedAt === 'number')) {
+    converted.publishedAt = new Date(converted.publishedAt);
   }
-  if (converted.createdAt && converted.createdAt.toDate) {
+  if (converted.createdAt && typeof converted.createdAt.toDate === 'function') {
     converted.createdAt = converted.createdAt.toDate();
+  } else if (converted.createdAt && (typeof converted.createdAt === 'string' || typeof converted.createdAt === 'number')) {
+    converted.createdAt = new Date(converted.createdAt);
   }
-  if (converted.updatedAt && converted.updatedAt.toDate) {
+  if (converted.updatedAt && typeof converted.updatedAt.toDate === 'function') {
     converted.updatedAt = converted.updatedAt.toDate();
+  } else if (converted.updatedAt && (typeof converted.updatedAt === 'string' || typeof converted.updatedAt === 'number')) {
+    converted.updatedAt = new Date(converted.updatedAt);
   }
   
   // Convert nested timestamps (e.g., in comments)
@@ -71,7 +77,15 @@ const getBlogs = async (filters = {}, sortBy = 'publishedAt', sortOrder = 'desc'
       const now = filters.publishedAt instanceof Date ? filters.publishedAt : new Date();
       blogs = blogs.filter(blog => {
         if (!blog.publishedAt) return false;
-        const pubDate = blog.publishedAt instanceof Date ? blog.publishedAt : blog.publishedAt.toDate();
+        let pubDate;
+        if (blog.publishedAt instanceof Date) {
+          pubDate = blog.publishedAt;
+        } else if (blog.publishedAt && typeof blog.publishedAt.toDate === 'function') {
+          pubDate = blog.publishedAt.toDate();
+        } else {
+          pubDate = blog.publishedAt ? new Date(blog.publishedAt) : null;
+        }
+        if (!pubDate) return false;
         return pubDate <= now;
       });
     }
@@ -162,8 +176,15 @@ const getBlogBySlug = async (slug) => {
     
     // Check published date
     if (blog.publishedAt) {
-      const pubDate = blog.publishedAt instanceof Date ? blog.publishedAt : blog.publishedAt.toDate();
-      if (pubDate > new Date()) {
+      let pubDate;
+      if (blog.publishedAt instanceof Date) {
+        pubDate = blog.publishedAt;
+      } else if (blog.publishedAt && typeof blog.publishedAt.toDate === 'function') {
+        pubDate = blog.publishedAt.toDate();
+      } else {
+        pubDate = blog.publishedAt ? new Date(blog.publishedAt) : null;
+      }
+      if (pubDate && pubDate > new Date()) {
         return null; // Not published yet
       }
     }
@@ -212,8 +233,15 @@ const getRelatedBlogs = async (currentBlog, limit = 4) => {
         
         // Check if published
         if (blog.publishedAt) {
-          const pubDate = blog.publishedAt instanceof Date ? blog.publishedAt : blog.publishedAt.toDate();
-          if (pubDate > new Date()) {
+          let pubDate;
+          if (blog.publishedAt instanceof Date) {
+            pubDate = blog.publishedAt;
+          } else if (blog.publishedAt && typeof blog.publishedAt.toDate === 'function') {
+            pubDate = blog.publishedAt.toDate();
+          } else {
+            pubDate = blog.publishedAt ? new Date(blog.publishedAt) : null;
+          }
+          if (pubDate && pubDate > new Date()) {
             return false;
           }
         }

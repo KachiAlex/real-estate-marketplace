@@ -90,11 +90,12 @@ router.post('/register', [
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed',
-      error: error.message 
-    });
+    const errMsg = error && error.message ? error.message : String(error);
+    const payload = { success: false, message: 'Registration failed', error: errMsg };
+    if (process.env.NODE_ENV !== 'production') {
+      payload.stack = error.stack || null;
+    }
+    res.status(500).json(payload);
   }
 });
 
@@ -280,6 +281,24 @@ router.get('/me', verifyToken, async (req, res) => {
 // @desc    Exchange Google OAuth token for JWT
 // @route   POST /api/auth/jwt/google
 // @access  Public
+// @desc    Get Google OAuth client config
+// @route   GET /api/auth/jwt/google-config
+// @access  Public
+router.get('/google-config', async (req, res) => {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID || null;
+    const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI || `${req.protocol}://${req.get('host')}/auth/google-popup-callback`;
+
+    res.json({
+      success: true,
+      clientId,
+      redirectUri
+    });
+  } catch (error) {
+    console.error('google-config error:', error);
+    res.status(500).json({ success: false, message: 'Failed to read Google config' });
+  }
+});
 router.post('/google', async (req, res) => {
   try {
     const { googleToken } = req.body;
@@ -396,6 +415,51 @@ router.post('/logout', verifyToken, (req, res) => {
     success: true,
     message: 'Logged out successfully'
   });
+});
+
+// @desc    Switch user role
+// @route   POST /api/auth/jwt/switch-role
+// @access  Private (requires valid JWT)
+router.post('/switch-role', verifyToken, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role || !['buyer', 'vendor', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // Add role to roles array if not present
+    let roles = Array.isArray(user.roles) ? user.roles : [user.role];
+    if (!roles.includes(role)) roles.push(role);
+    // Update user role and roles
+    await user.update({ role, roles });
+    // Generate new tokens
+    const accessToken = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+    res.json({
+      success: true,
+      message: 'Role switched successfully',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        role: user.role,
+        roles: user.roles,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Switch role error:', error);
+    res.status(500).json({ success: false, message: 'Role switch failed', error: error.message });
+  }
 });
 
 module.exports = router;

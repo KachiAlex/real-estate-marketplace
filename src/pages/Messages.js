@@ -1,6 +1,8 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaEnvelope, FaSearch, FaPaperPlane, FaPhone, FaVideo, FaEllipsisV, FaReply, FaForward, FaArchive, FaTrash, FaStar, FaCircle, FaCheck, FaCheckDouble, FaImage, FaFile, FaSmile } from 'react-icons/fa';
+import MinimalChat from '../components/MinimalChat';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -337,24 +339,28 @@ const Messages = () => {
                 <FaEnvelope className="text-gray-300 text-4xl mx-auto mb-2" />
                 <p className="text-gray-500">No conversations found</p>
               </div>
-            ) : (
-              <div className="space-y-1">
-                {sortedConversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation)}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedConversation?.id === conversation.id ? 'bg-blue-50 border-r-2 border-brand-blue' : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="relative">
-                        <img
-                          src={conversation.contact.avatar}
-                          alt={conversation.contact.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        {conversation.contact.isOnline && (
+            return (
+              <div className="messages-page" style={{ display: 'flex', minHeight: 600 }}>
+                {/* Sidebar */}
+                <div style={{ width: 320, borderRight: '1px solid #eee', background: '#fafbfc' }}>
+                  {/* ...existing code... */}
+                </div>
+                {/* Main Chat Panel */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                  {selectedConversation ? (
+                    <div style={{ padding: 24 }}>
+                      {/* Real-time MinimalChat integration */}
+                      <MinimalChat
+                        userId={user?.id || 'user1'}
+                        peerId={selectedConversation.contact?.id ? `user${selectedConversation.contact.id}` : 'user2'}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ padding: 32, color: '#888' }}>Select a conversation to start chatting.</div>
+                  )}
+                </div>
+              </div>
+            );
                           <FaCircle className="absolute bottom-0 right-0 text-green-500 text-xs" />
                         )}
                       </div>
