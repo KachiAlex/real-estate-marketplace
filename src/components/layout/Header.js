@@ -352,6 +352,7 @@ const Header = () => {
               <>
               <div className="relative user-menu-container">
                 <button
+                  aria-label="User menu"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 text-gray-700 hover:text-brand-orange transition-colors duration-300"
                 >
