@@ -276,20 +276,22 @@ const VendorDashboard = () => {
   useEffect(() => {
     const fetchVendorAnalytics = async () => {
       if (!user) return;
-
       try {
         const res = await authenticatedFetch(getApiUrl('/dashboard/vendor'), {
           headers: {
             'Content-Type': 'application/json'
           }
         });
-
         const data = await res.json();
+        if (res.status === 403 && data && data.redirect) {
+          // Backend says onboarding required, redirect
+          navigate(data.redirect, { replace: true });
+          return;
+        }
         if (!res.ok || !data.success) {
           console.warn('VendorDashboard: Failed to load backend analytics summary');
           return;
         }
-
         const summary = data.data || {};
         setAnalytics(prev => ({
           ...prev,
@@ -306,9 +308,8 @@ const VendorDashboard = () => {
         console.warn('VendorDashboard: Error fetching backend analytics summary', error);
       }
     };
-
     fetchVendorAnalytics();
-  }, [user]);
+  }, [user, navigate]);
 
   // Removed: Firestore sync is no longer needed
 
