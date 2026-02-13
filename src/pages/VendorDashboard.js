@@ -48,49 +48,53 @@ const VendorDashboard = () => {
     if (location.pathname === '/vendor/properties') {
       setActiveTab('properties');
     } else if (location.pathname === '/vendor/dashboard') {
-      setActiveTab('overview');
-    }
-  }, [location.pathname]);
-  
-  // Determine vendor type
-  const isAgent = user?.vendorData?.vendorCategory === 'agent';
-  const isPropertyOwner = user?.vendorData?.vendorCategory === 'property_owner';
-  const [properties, setProperties] = useState([]);
-  const [propertiesLoading, setPropertiesLoading] = useState(true);
-  const [analytics, setAnalytics] = useState({
-    totalProperties: 0,
-    activeListings: 0,
-    pendingListings: 0,
-    soldProperties: 0,
-    totalViews: 0,
-    totalInquiries: 0,
-    totalRevenue: 0,
-    averagePrice: 0,
-    conversionRate: 0,
-    monthlyViews: 0,
-    monthlyInquiries: 0
-  });
-  const [inquiries, setInquiries] = useState([]);
-  const [viewingRequests, setViewingRequests] = useState([]);
-  const [showProposalModal, setShowProposalModal] = useState(false);
-  const [proposalDate, setProposalDate] = useState('');
-  const [proposalTime, setProposalTime] = useState('');
-  const [selectedRequestId, setSelectedRequestId] = useState(null);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [verificationRequests, setVerificationRequests] = useState([]);
-  const [verificationRequestsLoading, setVerificationRequestsLoading] = useState(false);
+          {activeTab === 'overview' && (
+            <>
+              <div className="space-y-6">
+                {/* Recent Activity */}
+                <div 
+                  className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                  onClick={() => navigate('/vendor/properties')}
+                  title="View your properties"
+                >
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <FaEye className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">New view on "Luxury Apartment in Victoria Island"</p>
+                    <p className="text-xs text-gray-500">2 minutes ago</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <FaEnvelope className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">New inquiry from John Adebayo</p>
+                    <p className="text-xs text-gray-500">15 minutes ago</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-100 rounded-full">
+                    <FaHeart className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">Property added to favorites</p>
+                    <p className="text-xs text-gray-500">1 hour ago</p>
+                  </div>
+                </div>
+              </div>
 
-
-  // Sync tab with route
-  useEffect(() => {
-    if (location.pathname.startsWith('/vendor/add-property')) {
-      setActiveTab('add');
-    } else if (location.pathname.startsWith('/vendor/properties')) {
-      setActiveTab('properties');
-    } else if (location.pathname.startsWith('/vendor/dashboard')) {
-      // keep current or default to overview
-    }
+              {/* Agent Information (for agents only) */}
+              {isAgent && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Profile</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              {/* ...existing code for agent profile... */}
+                  </div>
+                </div>
+              )}
+            </>
   }, [location.pathname]);
 
   // Fetch vendor's properties from localStorage and backend API
