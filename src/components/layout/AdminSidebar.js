@@ -73,8 +73,12 @@ const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0
       {/* Admin Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center">
-            <FaChartBar className="text-white text-lg" />
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200">
+            <img
+              src="/logo.png"
+              alt="PropertyArk Logo"
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">ADMIN PANEL</p>
