@@ -27,7 +27,9 @@ const AuthContext = createContext(defaultContextValue);
 const normalizeUser = (u) => {
   if (!u) return u;
   const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
-  return { ...u, roles };
+  // Always set activeRole to the current role
+  const activeRole = u.role || u.userType || (roles.length > 0 ? roles[0] : undefined);
+  return { ...u, roles, activeRole };
 };
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -256,8 +258,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Role switch failed');
       }
 
-      // Update and normalize user data
-      const updatedUser = normalizeUser({ ...currentUser, ...data.user });
+      // Update and normalize user data, ensure activeRole is set
+      const updatedUser = normalizeUser({ ...currentUser, ...data.user, role: newRole, activeRole: newRole });
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
 
