@@ -258,12 +258,45 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Role switch failed');
       }
 
-      // Update and normalize user data, ensure activeRole is set
-      const updatedUser = normalizeUser({ ...currentUser, ...data.user, role: newRole, activeRole: newRole });
+      // If server indicates vendor registration is required, propagate that
+      if (data.requiresVendorRegistration) {
+        return { requiresVendorRegistration: true };
+      }
+
+      // Prefer authoritative user object from server when available
+      let serverUser = null;
+      if (data.user) {
+        serverUser = data.user;
+      } else {
+        // If server didn't include user in response, attempt to fetch the current profile
+        try {
+          const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          });
+          if (meResp.ok) {
+            const meData = await meResp.json();
+            serverUser = meData.user || meData;
+          }
+        } catch (e) {
+          // ignore — we'll fallback to merging
+        }
+      }
+
+      let updatedUser;
+      if (serverUser) {
+        updatedUser = normalizeUser(serverUser);
+      } else {
+        // Fallback: merge returned data into currentUser but DO NOT blindly set activeRole
+        updatedUser = normalizeUser({ ...currentUser, ...data.user });
+      }
+
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
 
-      toast.success(`Switched to ${newRole} role`);
+      toast.success(`Switched to ${updatedUser.activeRole || newRole} role`);
       return updatedUser;
     } catch (error) {
       console.error('Role switch error:', error);
