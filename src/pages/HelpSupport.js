@@ -994,13 +994,14 @@ const HelpSupport = () => {
             </div>
           </div>
         </div>
-      </div>
 
-    {showCreateModal && (
-      <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-    )}
-  </div>);
-};
+      </div>
+      {showCreateModal && (
+        <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
+      )}
+    </>
+  );
+}
 
 export default HelpSupport;
 
