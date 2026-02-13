@@ -716,8 +716,13 @@ const VendorDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => {
-                  // Stay within the same component; avoid route changes that could reset auth
-                  setActiveTab(tab.id);
+                  if (tab.id === 'properties') {
+                    navigate('/vendor/properties');
+                  } else if (tab.id === 'overview') {
+                    navigate('/vendor/dashboard');
+                  } else {
+                    setActiveTab(tab.id);
+                  }
                 }}
                 className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
@@ -738,11 +743,11 @@ const VendorDashboard = () => {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Recent Activity */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
+              <div 
+                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/vendor/properties')}
+                title="View your properties"
+              >
                       <div className="p-2 bg-green-100 rounded-full">
                         <FaEye className="h-4 w-4 text-green-600" />
                       </div>
