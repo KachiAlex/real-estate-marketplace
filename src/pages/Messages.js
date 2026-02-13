@@ -46,114 +46,11 @@ const Messages = () => {
             id: 1,
             text: "Hi! I'm interested in the 4-bedroom villa in Victoria Island. Could you provide more details?",
             timestamp: "2024-01-15T10:30:00Z",
-            sender: "user",
-            isRead: true
-          },
-          {
-            id: 2,
-            text: "Hello! Thank you for your interest. The villa is a beautiful 4-bedroom property with a private pool, gym, and 24/7 security. It's located in a prime area of Victoria Island. Would you like to schedule a viewing?",
-            timestamp: "2024-01-15T10:45:00Z",
-            sender: "agent",
-            isRead: true
-          },
-          {
-            id: 3,
-            text: "Yes, I'd love to see it. What are your available times this weekend?",
-            timestamp: "2024-01-15T11:00:00Z",
-            sender: "user",
-            isRead: true
-          },
-          {
-            id: 4,
-            text: "I've scheduled the viewing for Saturday 2 PM. Please confirm if that works for you.",
-            timestamp: "2024-01-15T14:30:00Z",
-            sender: "agent",
-            isRead: true
-          }
-        ]
-      },
-      {
-        id: 2,
-        contact: {
-          id: 2,
-          name: "Michael Adebayo",
-          role: "Property Agent",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-          phone: "+234 802 345 6789",
-          email: "michael@propertyark.com",
-          isOnline: false
-        },
-        property: {
-          id: 2,
-          title: "Modern 3-Bedroom Apartment in Ikoyi",
-          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop"
-        },
-        lastMessage: {
-          text: "The maintenance fee is ₦150,000 monthly and includes all amenities I mentioned.",
-          timestamp: "2024-01-12T16:10:00Z",
-          sender: "agent",
-          isRead: true
-        },
-        unreadCount: 0,
-        isStarred: false,
-        isArchived: false,
-        messages: [
-          {
-            id: 1,
-            text: "What are the maintenance fees for the Ikoyi apartment?",
-            timestamp: "2024-01-12T09:15:00Z",
-            sender: "user",
-            isRead: true
-          },
-          {
-            id: 2,
-            text: "The monthly maintenance fee is ₦150,000 and includes: 24/7 security, generator backup, swimming pool, gym, children's playground, and regular maintenance of common areas.",
-            timestamp: "2024-01-12T11:45:00Z",
-            sender: "agent",
-            isRead: true
-          },
-          {
-            id: 3,
-            text: "Thank you for the information. I'm also interested in the parking situation - how many parking spaces are allocated per unit?",
-            timestamp: "2024-01-12T15:30:00Z",
-            sender: "user",
-            isRead: true
-          },
-          {
-            id: 4,
-            text: "Each unit comes with 2 covered parking spaces. There's also additional visitor parking available.",
-            timestamp: "2024-01-12T16:10:00Z",
-            sender: "agent",
-            isRead: true
-          }
-        ]
-      },
-      {
-        id: 3,
-        contact: {
-          id: 3,
-          name: "Grace Okafor",
-          role: "Property Agent",
-          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-          phone: "+234 803 456 7890",
-          email: "grace@propertyark.com",
-          isOnline: true
-        },
-        property: {
-          id: 3,
-          title: "Elegant 2-Bedroom Penthouse in Lekki",
-          image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&h=100&fit=crop"
-        },
-        lastMessage: {
-          text: "I have a similar penthouse that just became available. Would you like me to send you the details?",
-          timestamp: "2024-01-08T17:20:00Z",
-          sender: "agent",
-          isRead: true
-        },
-        unreadCount: 0,
-        isStarred: false,
-        isArchived: false,
-        messages: [
+            // No mock data. To use real data, fetch from your backend here.
+            useEffect(() => {
+              setConversations([]);
+              setLoading(false);
+            }, []);
           {
             id: 1,
             text: "Is the Lekki penthouse still available? I'm looking to make an offer.",
