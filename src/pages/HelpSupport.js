@@ -765,19 +765,24 @@ const HelpSupport = () => {
                 )}
               </div>
               <div className="mt-4">
-                <button
-                  onClick={() => {
-                    if (!user || !user.uid) {
+                {user && (user.uid || user.id) ? (
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="btn-primary"
+                  >
+                    Create Support Ticket
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
                       toast.error('Please log in to create a support ticket');
                       navigate('/auth/login');
-                      return;
-                    }
-                    setShowCreateModal(true);
-                  }}
-                  className="btn-outline"
-                >
-                  Create Support Ticket
-                </button>
+                    }}
+                    className="btn-primary"
+                  >
+                    Create Support Ticket
+                  </button>
+                )}
               </div>
             </div>
           )}
