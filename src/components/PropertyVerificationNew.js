@@ -136,6 +136,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setSubmitting(true);
     setError('');
     
+
     try {
       // DEBUG: Check token before sending
       const token = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
@@ -146,6 +147,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
         userId: user?.uid
       });
 
+      // Backend expects verificationPaymentId, not paymentReference
       const applicationData = {
         propertyId: property?.id,
         propertyName: formValues.propertyName || property?.title,
@@ -153,7 +155,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
         propertyLocation: formValues.propertyLocation || property?.location,
         message: formValues.message,
         preferredBadgeColor: formValues.preferredBadgeColor,
-        paymentReference: paymentData.reference,
+        verificationPaymentId: paymentData.reference,
         paymentAmount: paymentData.amount,
         paymentStatus: 'completed'
       };
