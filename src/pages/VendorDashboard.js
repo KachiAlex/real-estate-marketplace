@@ -223,7 +223,10 @@ const VendorDashboard = () => {
 
   // Load vendor's properties when user changes
   useEffect(() => {
-    fetchVendorProperties();
+    // Aggressive fix: wrap async call in inner function
+    (async () => {
+      await fetchVendorProperties();
+    })();
   }, [user, fetchVendorProperties]);
 
   const fetchVendorProperties = useCallback(async () => {
@@ -236,150 +239,12 @@ const VendorDashboard = () => {
         const matchesId = prop.ownerId === userId || prop.ownerId === user?.id;
         const matchesEmail = prop.ownerEmail === userEmail;
         return matchesId || matchesEmail;
-      });
-      
-      if (userLocalProps.length > 0) {
-        console.log('VendorDashboard: Found', userLocalProps.length, 'properties in localStorage');
-        
-        allProps = userLocalProps.map(prop => ({
-          ...prop,
-          source: 'localStorage',
-          createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
-        }));
+      if (location.pathname === '/vendor/properties') {
+        setActiveTab('properties');
+      } else if (location.pathname === '/vendor/dashboard') {
+        setActiveTab('overview');
       }
-    } catch (err) {
-      console.warn('VendorDashboard: Error reading localStorage:', err);
-    }
-
-    // Also try to fetch from backend API
-    try {
-      const response = await authenticatedFetch(getApiUrl('/properties'), {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const apiProps = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
-        
-        console.log('VendorDashboard: Found', apiProps.length, 'properties from backend');
-        
-        // Merge API properties with localStorage, preferring API data
-        apiProps.forEach(prop => {
-          const existingIndex = allProps.findIndex(p => p.id === prop.id);
-          if (existingIndex >= 0) {
-            allProps[existingIndex] = {
-              ...allProps[existingIndex],
-              ...prop,
-              source: 'api',
-              createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
-            };
-          } else {
-            allProps.push({
-              ...prop,
-              source: 'api',
-              createdAt: prop.createdAt ? new Date(prop.createdAt) : new Date()
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.warn('VendorDashboard: Error fetching from backend API:', err);
-    }
-
-    // Sort by createdAt descending
-    allProps.sort((a, b) => {
-      const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt || 0);
-      const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt || 0);
-      return dateB - dateA;
-    });
-    
-    console.log('VendorDashboard: Total properties found:', allProps.length);
-
-    // Normalize property data for display
-    const normalizedProps = allProps.map(property => {
-      const details = property.details || {};
-      const images = property.images || [];
-      const primaryImage = images.find(img => img.isPrimary)?.url || 
-                           (typeof images[0] === 'string' ? images[0] : images[0]?.url) ||
-                           'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop';
-      
-      // Determine display status based on approval and listing type
-      let displayStatus = 'pending';
-      if (property.approvalStatus === 'approved' || property.verificationStatus === 'approved') {
-        displayStatus = 'active';
-      } else if (property.approvalStatus === 'rejected' || property.verificationStatus === 'rejected') {
-        displayStatus = 'rejected';
-      } else if (property.approvalStatus === 'pending' || property.verificationStatus === 'pending') {
-        displayStatus = 'pending';
-      }
-
-      return {
-        ...property,
-        image: primaryImage,
-        bedrooms: property.bedrooms || details.bedrooms || 0,
-        bathrooms: property.bathrooms || details.bathrooms || 0,
-        area: property.area || details.sqft || 0,
-        location: typeof property.location === 'object' 
-          ? `${property.location.address || ''}, ${property.location.city || ''}, ${property.location.state || ''}`.replace(/^, |, $/g, '')
-          : property.location || 'Location not specified',
-        status: displayStatus,
-        views: property.views || 0,
-        inquiries: property.inquiriesCount || 0,
-        favorites: property.favoritesCount || 0,
-        dateListed: property.createdAt instanceof Date 
-          ? property.createdAt.toISOString().split('T')[0]
-          : (typeof property.createdAt === 'string' ? property.createdAt.split('T')[0] : 'Unknown'),
-        lastUpdated: property.updatedAt?.toDate?.()?.toISOString?.()?.split('T')[0] ||
-                    (typeof property.updatedAt === 'string' ? property.updatedAt.split('T')[0] : null)
-      };
-    });
-
-    console.log('VendorDashboard: Total properties loaded:', normalizedProps.length);
-    setProperties(normalizedProps);
-
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) {
-      setVerificationRequests([]);
-      return;
-    }
-    fetchVerificationRequests();
-  }, [user, fetchVerificationRequests]);
-
-  // Load vendor analytics summary from backend
-  useEffect(() => {
-    const fetchVendorAnalytics = async () => {
-      if (!user) return;
-      try {
-        const res = await authenticatedFetch(getApiUrl('/dashboard/vendor'), {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await res.json();
-        if (res.status === 403 && data && data.redirect) {
-          // Backend says onboarding required, redirect
-          navigate(data.redirect, { replace: true });
-          return;
-        }
-        if (!res.ok || !data.success) {
-          console.warn('VendorDashboard: Failed to load backend analytics summary');
-          return;
-        }
-        const summary = data.data || {};
-        setAnalytics(prev => ({
-          ...prev,
-          totalProperties: summary.totalProperties ?? prev.totalProperties,
-          activeListings: summary.activeListings ?? prev.activeListings,
-          pendingListings: summary.pendingListings ?? prev.pendingListings,
-          soldProperties: summary.soldProperties ?? prev.soldProperties,
-          totalViews: summary.totalViews ?? prev.totalViews,
-          totalInquiries: summary.totalInquiries ?? prev.totalInquiries,
-          totalRevenue: summary.totalRevenue ?? prev.totalRevenue,
-          conversionRate: summary.conversionRate ?? prev.conversionRate
+    }, [location.pathname]);
         }));
       } catch (error) {
         console.warn('VendorDashboard: Error fetching backend analytics summary', error);
