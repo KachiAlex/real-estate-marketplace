@@ -554,38 +554,39 @@ const VendorDashboard = () => {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Recent Activity */}
-              <div 
-                className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
-                onClick={() => navigate('/vendor/properties')}
-                title="View your properties"
-              >
-                      <div className="p-2 bg-green-100 rounded-full">
-                        <FaEye className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-900">New view on "Luxury Apartment in Victoria Island"</p>
-                        <p className="text-xs text-gray-500">2 minutes ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-100 rounded-full">
-                        <FaEnvelope className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-900">New inquiry from John Adebayo</p>
-                        <p className="text-xs text-gray-500">15 minutes ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-orange-100 rounded-full">
-                        <FaHeart className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-900">Property added to favorites</p>
-                        <p className="text-xs text-gray-500">1 hour ago</p>
-                      </div>
-                    </div>
+              {/* Recent Activity - three simple cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                  className="stats-card cursor-pointer hover:bg-blue-700 transition-colors flex items-center space-x-4 p-4"
+                  onClick={() => navigate('/vendor/properties')}
+                  title="View your properties"
+                >
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <FaEye className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">New view on "Luxury Apartment in Victoria Island"</p>
+                    <p className="text-xs text-gray-500">2 minutes ago</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4 p-4 bg-white border border-gray-200 rounded-lg">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <FaEnvelope className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">New inquiry from John Adebayo</p>
+                    <p className="text-xs text-gray-500">15 minutes ago</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4 p-4 bg-white border border-gray-200 rounded-lg">
+                  <div className="p-2 bg-orange-100 rounded-full">
+                    <FaHeart className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">Property added to favorites</p>
+                    <p className="text-xs text-gray-500">1 hour ago</p>
                   </div>
                 </div>
               </div>
@@ -625,19 +626,20 @@ const VendorDashboard = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button 
+                  <button
                     onClick={() => {
                       setActiveTab('add');
                       navigate('/vendor/add-property');
                     }}
-                      className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                      title="Add new property"
+                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Add new property"
                   >
-                    <div className="p-2 bg-blue-100 rounded-full">
+                    <div className="flex-1 text-left">
                       <p className="font-medium text-gray-900">Update Listings</p>
                       <p className="text-sm text-gray-500">Edit property details</p>
                     </div>
                   </button>
+
                   <button
                     className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     title="View performance analytics"
