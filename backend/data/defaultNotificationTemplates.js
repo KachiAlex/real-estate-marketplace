@@ -349,6 +349,56 @@ const defaultNotificationTemplates = [
       { name: 'dashboardUrl', description: 'Dashboard URL', required: false }
     ]
   }
+,
+  {
+    name: 'Support Inquiry',
+    type: 'support_inquiry',
+    isActive: true,
+    channels: {
+      email: {
+        enabled: true,
+        subject: 'New Support Inquiry - {{category}}',
+        htmlTemplate: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2d3748;">New Support Inquiry</h2>
+            <p>You have received a new support inquiry from <strong>{{userName}}</strong> ({{userEmail}}).</p>
+            <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">Inquiry Details:</h3>
+              <p><strong>Category:</strong> {{category}}</p>
+              <p><strong>Message:</strong></p>
+              <div style="background: #ffffff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">{{message}}</div>
+              <p style="margin-top: 12px;"><strong>Submitted:</strong> {{createdAt}}</p>
+            </div>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="{{inquiryUrl}}" style="background: #4299e1; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View Inquiry</a>
+            </div>
+            <p>Reply to the user directly or manage the ticket in the admin panel.</p>
+            <p>Best regards,<br>The Real Estate Team</p>
+          </div>
+        `,
+        textTemplate: 'New support inquiry from {{userName}} ({{userEmail}}): Category: {{category}}. Message: {{message}}. View: {{inquiryUrl}}'
+      },
+      inApp: {
+        enabled: false,
+        title: 'New Support Inquiry',
+        message: 'You have a new support inquiry from {{userName}}'
+      },
+      push: {
+        enabled: false
+      },
+      sms: {
+        enabled: false
+      }
+    },
+    variables: [
+      { name: 'userName', description: "User's full name", required: true },
+      { name: 'userEmail', description: "User's email", required: true },
+      { name: 'category', description: 'Inquiry category', required: true },
+      { name: 'message', description: 'Inquiry message', required: true },
+      { name: 'createdAt', description: 'Submission date', required: false },
+      { name: 'inquiryUrl', description: 'Admin panel inquiry URL', required: false }
+    ]
+  }
 ];
 
 module.exports = defaultNotificationTemplates;

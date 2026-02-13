@@ -3,6 +3,7 @@ const router = express.Router();
 const { db, admin } = require('../config/firestore');
 const { authenticateToken } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
+const emailService = require('../services/emailService');
 
 const logger = createLogger('SupportRoutes');
 
@@ -56,8 +57,29 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       userEmail 
     });
 
-    // TODO: Send email notification to admins
-    // For now, just return success
+    // Attempt to notify admins via email (if SUPPORT_EMAIL configured)
+    try {
+      const raw = process.env.SUPPORT_EMAIL || '';
+      const emails = raw.split(',').map(e => e.trim()).filter(Boolean);
+      if (emails.length > 0) {
+        const recipients = emails.map(e => ({ email: e }));
+        const variables = {
+          userName,
+          userEmail,
+          category,
+          message,
+          createdAt: new Date().toLocaleString(),
+          inquiryUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/support/${inquiryId}`
+        };
+
+        const sendResult = await emailService.sendBulkEmails(recipients, 'support_inquiry', variables);
+        logger.info('Support inquiry notification send result', { inquiryId, sendResult });
+      } else {
+        logger.warn('SUPPORT_EMAIL not set; skipping support inquiry email notification');
+      }
+    } catch (err) {
+      logger.error('Error sending support inquiry notification email', err);
+    }
 
     return res.status(201).json({
       success: true,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useVendor } from '../contexts/VendorContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -19,13 +20,18 @@ import { authenticatedFetch } from '../utils/authToken';
 const VendorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { subscription, isSubscriptionActive } = useVendor();
 
-  // Onboarding check: if vendor but not onboarded, redirect
+  // Onboarding and subscription check: if vendor but not onboarded or not subscribed, redirect
   useEffect(() => {
-    if (user && user.role === 'vendor' && !(user.vendorData && user.vendorData.onboardingComplete)) {
-      navigate('/vendor/register', { replace: true });
+    if (user && user.role === 'vendor') {
+      if (!(user.vendorData && user.vendorData.onboardingComplete)) {
+        navigate('/vendor/onboarding-dashboard', { replace: true });
+      } else if (!isSubscriptionActive) {
+        navigate('/vendor/renew-subscription', { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, isSubscriptionActive]);
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();

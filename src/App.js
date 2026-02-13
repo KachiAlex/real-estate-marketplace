@@ -68,6 +68,8 @@ const VendorProfile = lazy(() => import('./pages/VendorProfile'));
 const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
 const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
+const VendorOnboardingDashboard = lazy(() => import('./pages/VendorOnboardingDashboard'));
+const VendorRenewSubscription = lazy(() => import('./pages/VendorRenewSubscription'));
 
 const PageWithSidebar = ({ children, id }) => (
   <div className="flex w-full">
@@ -362,6 +364,16 @@ const MainRoutes = () => (
           <VendorInspectionRequests />
         </VendorRoute>
       </ProtectedRoute>
+    } />
+    <Route path="/vendor/onboarding-dashboard" element={
+      <VendorRoute>
+        <VendorOnboardingDashboard />
+      </VendorRoute>
+    } />
+    <Route path="/vendor/renew-subscription" element={
+      <VendorRoute>
+        <VendorRenewSubscription />
+      </VendorRoute>
     } />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
