@@ -408,16 +408,8 @@ const HelpSupport = () => {
 
     if (!contactForm.subject || !contactForm.category || !contactForm.message) {
       toast.error('Please complete subject, category and message');
-      return (
-        <>
-          <div>
-            ...existing code...
-          </div>
-          {showCreateModal && (
-            <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-          )}
-        </>
-      );
+      return;
+    }
 
     try {
       const payload = {
@@ -487,35 +479,26 @@ const HelpSupport = () => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
-    // Check if user is authenticated
+    // Require authentication for sending chat messages
     if (!user || !user.uid) {
-      const errorMessage = {
-        id: Date.now(),
-        text: 'You must be logged in to use live chat. Please log in to your account first.',
-        sender: 'bot',
-        timestamp: new Date(),
-        isError: true
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
-        return (
-          <>
-            <div>
-              ...existing code...
-            </div>
-            {showCreateModal && (
-              <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-            )}
-          </>
-        );
+      toast.error('Please log in to send messages to support');
+      navigate('/auth/login');
+      return;
+    }
+
+    const userMessage = {
+      id: Date.now(),
+      text: chatInput,
+      sender: 'user',
+      timestamp: new Date()
     };
-    
-    setChatMessages([...chatMessages, userMessage]);
+    setChatMessages(prev => [...prev, userMessage]);
     const messageText = chatInput;
     setChatInput('');
-    
-    // Send message to support inquiry system
+
+    // Send message to support inquiry system (use same path as contact form)
     try {
-      const response = await authenticatedFetch(getApiUrl('/api/support/inquiry'), {
+      const response = await authenticatedFetch(getApiUrl('/support/inquiry'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
