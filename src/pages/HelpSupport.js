@@ -729,24 +729,7 @@ const HelpSupport = () => {
                 ) : ticketsError ? (
                   <p className="text-red-500">{ticketsError}</p>
                 ) : tickets.length === 0 ? (
-                  <div>
-                    <p className="text-gray-600">You have no support tickets. Use the form below to submit one.</p>
-                    <div className="mt-4">
-                      <button
-                        onClick={() => {
-                          if (!user || !user.uid) {
-                            toast.error('Please log in to create a support ticket');
-                            navigate('/auth/login');
-                            return;
-                          }
-                          setShowCreateModal(true);
-                        }}
-                        className="btn-primary"
-                      >
-                        Create Support Ticket
-                      </button>
-                    </div>
-                  </div>
+                  <p className="text-gray-600">You have no support tickets. Use the button below to submit one.</p>
                 ) : (
                   <div className="space-y-4">
                     {tickets.map(t => (
@@ -765,24 +748,19 @@ const HelpSupport = () => {
                 )}
               </div>
               <div className="mt-4">
-                {user && (user.uid || user.id) ? (
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="btn-primary"
-                  >
-                    Create Support Ticket
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
+                <button
+                  onClick={() => {
+                    if (!user) {
                       toast.error('Please log in to create a support ticket');
                       navigate('/auth/login');
-                    }}
-                    className="btn-primary"
-                  >
-                    Create Support Ticket
-                  </button>
-                )}
+                      return;
+                    }
+                    setShowCreateModal(true);
+                  }}
+                  className="btn-primary"
+                >
+                  Create Support Ticket
+                </button>
               </div>
             </div>
           )}
