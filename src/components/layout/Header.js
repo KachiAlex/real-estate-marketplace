@@ -408,9 +408,23 @@ const Header = () => {
                               navigate('/vendor/dashboard', { replace: true });
                             }
                           }}
-                          className={`text-xs px-2 py-1 rounded border ${isVendor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          className={`text-xs px-2 py-1 rounded border ${isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
                         >
                           Vendor
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setIsUserMenuOpen(false);
+                            const result = await switchRole('buyer');
+                            if (result && (result.success || result.id || result.roles || result.role)) {
+                              navigate('/dashboard', { replace: true });
+                            }
+                          }}
+                          className={`text-xs px-2 py-1 rounded border ${!isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+                          style={{ marginLeft: '0.5rem' }}
+                        >
+                          Buyer
                         </button>
                       </div>
                     </div>
