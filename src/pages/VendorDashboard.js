@@ -35,7 +35,6 @@ const VendorDashboard = () => {
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     // Set initial tab based on current route
     if (location.pathname === '/vendor/properties') {
