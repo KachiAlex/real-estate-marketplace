@@ -1,6 +1,8 @@
 ﻿
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { authenticatedFetch } from '../utils/authToken';
+import { getApiUrl } from '../utils/apiConfig';
 import { FaEnvelope, FaSearch, FaPaperPlane, FaPhone, FaVideo, FaEllipsisV, FaReply, FaForward, FaArchive, FaTrash, FaStar, FaCircle, FaCheck, FaCheckDouble, FaImage, FaFile, FaSmile } from 'react-icons/fa';
 import MinimalChat from '../components/MinimalChat';
 
@@ -13,51 +15,26 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
-  // Mock conversations data
+  // Fetch real conversations from backend
   useEffect(() => {
-    const mockConversations = [
-      {
-        id: 1,
-        contact: {
-          id: 1,
-          name: "Sarah Johnson",
-          role: "Property Agent",
-          avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-          phone: "+234 801 234 5678",
-          email: "sarah@propertyark.com",
-          isOnline: true
-        },
-        property: {
-          id: 1,
-          title: "Luxury 4-Bedroom Villa in Victoria Island",
-          image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop"
-        },
-        lastMessage: {
-          text: "I've scheduled the viewing for Saturday 2 PM. Please confirm if that works for you.",
-          timestamp: "2024-01-15T14:30:00Z",
-          sender: "agent",
-          isRead: true
-        },
-        unreadCount: 0,
-        isStarred: true,
-        isArchived: false,
-        messages: [
-          {
-            id: 1,
-            text: "Hi! I'm interested in the 4-bedroom villa in Victoria Island. Could you provide more details?",
-            timestamp: "2024-01-15T10:30:00Z",
-            // No mock data. To use real data, fetch from your backend here.
-            useEffect(() => {
-              setConversations([]);
-              setLoading(false);
-            }, []);
-          {
-            id: 1,
-            text: "Is the Lekki penthouse still available? I'm looking to make an offer.",
-            timestamp: "2024-01-08T16:45:00Z",
-            sender: "user",
-            isRead: true
-          },
+    const fetchConversations = async () => {
+      setLoading(true);
+      try {
+        const res = await authenticatedFetch(getApiUrl('/chat/conversations'));
+        const data = await res.json();
+        if (data && Array.isArray(data.data)) {
+          setConversations(data.data);
+        } else {
+          setConversations([]);
+        }
+      } catch (err) {
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConversations();
+  }, []);
           {
             id: 2,
             text: "I'm sorry, but this property was sold yesterday. However, I have a similar penthouse in the same building that just became available. Would you like me to send you the details?",
