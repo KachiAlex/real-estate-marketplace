@@ -7,6 +7,7 @@ import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
+import RoleSwitcher from '../RoleSwitcher';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
@@ -379,74 +380,8 @@ const Header = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     {/* Active role badge and switcher */}
-                    <div className="px-4 pb-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-500">Active Role</span>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          {user?.activeRole === 'vendor' ? 'Vendor' : 'Buyer'}
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setIsUserMenuOpen(false);
-                            try {
-                              const result = await switchRole('buyer');
-                              const updated = result || {};
-                              const switched = Boolean(
-                                updated.success || updated.id || updated.roles || updated.role || updated.activeRole
-                              );
-                              if (switched) {
-                                navigate('/dashboard', { replace: true });
-                              }
-                            } catch (err) {
-                              console.error('Error switching to buyer role', err);
-                            }
-                          }}
-                          className={`text-xs px-2 py-1 rounded border ${!isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          disabled={!user?.roles?.includes('buyer')}
-                        >
-                          Buyer
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setIsUserMenuOpen(false);
-                            try {
-                              const result = await switchRole('vendor');
-                              const updated = result || {};
-
-                              // If the server indicates vendor registration is required, go to registration
-                              if (updated.requiresVendorRegistration) {
-                                navigate('/vendor/register', { replace: true });
-                                return;
-                              }
-
-                              // Decide based on returned user/flags instead of stale `isVendor`
-                              const isNowVendor = Boolean(
-                                updated.roles?.includes('vendor') || updated.role === 'vendor' || updated.activeRole === 'vendor'
-                              );
-
-                              if (!isNowVendor) {
-                                // If not a vendor after the switch attempt, navigate to registration
-                                navigate('/vendor/register', { replace: true });
-                              } else {
-                                navigate('/vendor/dashboard', { replace: true });
-                              }
-                            } catch (err) {
-                              console.error('Error switching to vendor role', err);
-                              // On error, fallback to vendor registration flow
-                              navigate('/vendor/register', { replace: true });
-                            }
-                          }}
-                          className={`text-xs px-2 py-1 rounded border ${isVendorContext ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
-                          disabled={!user?.roles?.includes('vendor')}
-                        >
-                          Vendor
-                        </button>
-                      </div>
-                    </div>
+                    {/* Centralized role switcher component */}
+                    <RoleSwitcher onClose={() => setIsUserMenuOpen(false)} />
                     <Link
                       to={profilePath}
                       onClick={(e) => {
