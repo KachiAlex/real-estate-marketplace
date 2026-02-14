@@ -32,6 +32,7 @@ import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
 import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
+import FooterQuickLinks from '../components/FooterQuickLinks';
 
 // Mock properties from backend/data/mockProperties.js - transformed for frontend
 const backendMockProperties = [
@@ -1954,12 +1955,8 @@ const Home = () => {
             {/* Quick Links */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-3">
-                <li><Link to="/properties" className="text-gray-400 hover:text-white transition-colors">Browse Properties</Link></li>
-                <li><Link to="/mortgage" className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</Link></li>
-                <li><Link to="/investment" className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</Link></li>
-                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
-              </ul>
+              {/* Use FooterQuickLinks to route based on auth state */}
+              <FooterQuickLinks />
             </div>
 
             {/* Property Types */}
