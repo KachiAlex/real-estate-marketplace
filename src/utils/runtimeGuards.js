@@ -1,10 +1,3 @@
-// Robust utility to ensure global D is always defined
-export function ensureGlobalD() {
-  if (typeof window !== 'undefined') {
-    if (typeof window.D === 'undefined') window.D = null;
-    try { (0, eval)('var D = window.D;'); } catch (e) { /* ignore */ }
-  }
-}
 const CHUNK_RELOAD_KEY = 'real-estate-chunk-reload';
 
 // Runtime shim: ensure a global `user` binding exists so legacy/rolled-back

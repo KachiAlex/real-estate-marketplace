@@ -1,6 +1,3 @@
-// Ensure global D is always defined before any chunk loads (robust fix)
-import { ensureGlobalD } from '../utils/runtimeGuards';
-ensureGlobalD();
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useVendor } from '../contexts/VendorContext';
 import { useLocation, useNavigate } from 'react-router-dom';
