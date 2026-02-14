@@ -1,3 +1,7 @@
+import { ensureGlobalD } from '../../utils/runtimeGuards';
+
+// Defensive: ensure D is defined before rendering any vendor dashboard children
+ensureGlobalD();
 import React from 'react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import VendorSidebar from './VendorSidebar';

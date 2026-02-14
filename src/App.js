@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { ensureGlobalD } from './utils/runtimeGuards';
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
@@ -380,6 +382,10 @@ const MainRoutes = () => (
 );
 
 function App() {
+    // Re-apply D guard on every route change (robust fix)
+    useEffect(() => {
+      ensureGlobalD();
+    }, [location.pathname]);
   const location = useLocation();
   // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
   // hide header for full-page auth routes (register, forgot password, callback).
