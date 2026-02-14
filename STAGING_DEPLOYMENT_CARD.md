@@ -132,11 +132,41 @@ curl -X GET https://[backend]/api/admin/chat/canned-responses \
 | 404 on JS files | Clear cache, rebuild, check deployment path, verify CDN settings | 5 min |
 | Rate limit broken | Check backend/server.js lines 372-405, verify rate limit middleware, test with admin bypass | 5 min |
 | Firestore error | Verify rules and collection exists, check for missing indexes, review security rules | 3 min |
-| API 401 error | Check token validity, refresh tokens, auto-logout and re-login, verify Authorization header | 5 min |
-| API 500 error | Check backend logs, review error stack trace, restart backend, test endpoints with curl | 5 min |
-| Auth/session error | Clear cookies/localStorage, re-login, check token expiry, verify role switch logic | 3 min |
-| Frontend not loading | Check build output, verify environment variables, restart frontend server | 3 min |
-| Database connection error | Check Firestore/DB credentials, restart backend, verify DB URL | 5 min |
+| API 401 error | Check token validity, refresh tokens, auto-logout and re-login, verify Authorization header, inspect frontend error boundaries | 5 min |
+| API 500 error | Check backend logs, review error stack trace, restart backend, test endpoints with curl, enable debug logging | 5 min |
+| Auth/session error | Clear cookies/localStorage, re-login, check token expiry, verify role switch logic, inspect global variable guards | 3 min |
+| Frontend not loading | Check build output, verify environment variables, restart frontend server, check for chunk errors and missing globals | 3 min |
+| Database connection error | Check Firestore/DB credentials, restart backend, verify DB URL, review DB logs for errors | 5 min |
+
+---
+
+## Advanced Error Handling & Recovery
+
+- **ChunkLoadError / ReferenceError:**
+  - Reload page, clear browser cache, and check for missing global variable guards (e.g., `user`, `D`).
+  - Ensure `src/utils/runtimeGuards.js` is loaded early in your app.
+  - Review React error boundaries for proper fallback UI and logging.
+  - Use `registerRuntimeGuards()` in your app entry point for robust runtime protection.
+
+- **React Error Boundaries:**
+  - Add error boundaries to critical components to catch and display errors gracefully.
+  - Log error stack traces and component stacks for debugging.
+  - Provide user-friendly error messages and recovery actions (reload, logout, etc).
+
+- **Global Variable Initialization:**
+  - Use runtime guards for any global variable accessed by chunked or legacy code.
+  - Example: `if (!window.D) window.D = null;` and `var D = window.D;` via indirect eval.
+
+- **API Error Handling:**
+  - Always check response status and error messages in frontend code.
+  - Auto-logout or show login modal on 401 errors.
+  - Display clear error notifications for 500 errors and suggest retry or contact support.
+
+- **Session Recovery:**
+  - On session/auth errors, clear cookies/localStorage and prompt user to re-login.
+  - Ensure role switching logic is robust and tokens are refreshed as needed.
+
+---
 
 ---
 
