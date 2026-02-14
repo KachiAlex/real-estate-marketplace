@@ -21,7 +21,7 @@ describe('Authentication Flow Integration', () => {
     const TestApp = () => (
       <BrowserRouter>
         <AuthProvider>
-          <Login />
+          <LoginNew />
         </AuthProvider>
       </BrowserRouter>
     );
