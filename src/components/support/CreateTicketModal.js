@@ -7,8 +7,6 @@ import { authenticatedFetch } from '../../utils/authToken';
 
 const CreateTicketModal = ({ onClose, onSuccess }) => {
   const { user } = useAuth();
-  // Support both user object shapes
-  const currentUser = user && (user.uid ? user : user.currentUser ? user.currentUser : null);
   const navigate = useNavigate();
   const [form, setForm] = useState({ subject: '', category: '', priority: 'medium', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -20,7 +18,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (!currentUser || !(currentUser.uid || currentUser.email)) {
+    if (!user || !user.uid) {
       toast.error('Please log in to submit a support ticket');
       // Do not redirect to login modal after submission attempt
       return;
