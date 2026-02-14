@@ -113,6 +113,7 @@ const AuditLog = require('./models/AuditLog');
 const Notification = require('./models/Notification');
 const Blog = require('./models/Blog');
 const NotificationTemplate = require('./models/NotificationTemplate');
+const MessageModel = require('./models/Message');
 
 // Import middleware
 const { protect, authorize } = require('./middleware/auth');
@@ -170,7 +171,6 @@ io.on('connection', (socket) => {
 
 
     // Minimal chat message flow with persistence
-    const MessageModel = require('./models/Message');
     socket.on('chat_message', async (msg) => {
       // Add participants array for querying
       const msgToSave = { ...msg, participants: [msg.from, msg.to] };
@@ -183,7 +183,6 @@ io.on('connection', (socket) => {
       socket.to(`user_${msg.to}`).emit('message_delivered', { msgId: msg.id });
     });
 // REST endpoint to fetch messages between two users
-const MessageModel = require('./models/Message');
 app.get('/api/messages/:userA/:userB', async (req, res) => {
   try {
     const { userA, userB } = req.params;
