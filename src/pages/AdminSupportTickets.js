@@ -6,6 +6,8 @@ import { FaCheck, FaTimes, FaSyncAlt } from 'react-icons/fa';
 
 const AdminSupportTickets = () => {
   const [tickets, setTickets] = useState([]);
+  const [selectedPriority, setSelectedPriority] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -60,6 +62,16 @@ const AdminSupportTickets = () => {
   if (loading) return <div className="p-6">Loading tickets...</div>;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
+  // Get unique priorities and categories for filtering
+  const priorities = Array.from(new Set(tickets.map(t => t.priority || 'medium')));
+  const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
+
+  // Filter tickets by selected priority and category
+  const filteredTickets = tickets.filter(t =>
+    (selectedPriority === 'all' || t.priority === selectedPriority) &&
+    (selectedCategory === 'all' || t.category === selectedCategory)
+  );
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -67,16 +79,34 @@ const AdminSupportTickets = () => {
         <button className="btn" onClick={loadTickets}><FaSyncAlt className="inline mr-2"/> Refresh</button>
       </div>
 
-      {tickets.length === 0 ? (
-        <div className="bg-white p-6 rounded shadow">No tickets found.</div>
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium mb-1">Priority</label>
+          <select value={selectedPriority} onChange={e => setSelectedPriority(e.target.value)} className="border px-2 py-1 rounded">
+            <option value="all">All</option>
+            {priorities.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Category</label>
+          <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="border px-2 py-1 rounded">
+            <option value="all">All</option>
+            {categories.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {filteredTickets.length === 0 ? (
+        <div className="bg-white p-6 rounded shadow">No tickets found for selected filters.</div>
       ) : (
         <div className="space-y-4">
-          {tickets.map(ticket => (
+          {filteredTickets.map(ticket => (
             <div key={ticket.id} className="bg-white p-4 rounded shadow">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold">{ticket.category} — {ticket.status}</h3>
                   <p className="text-sm text-gray-600">{ticket.userName || ticket.userEmail} • {new Date(ticket.createdAt).toLocaleString()}</p>
+                  <span className={`inline-block mt-1 px-2 py-1 rounded text-xs ${ticket.priority === 'high' ? 'bg-red-200 text-red-800' : ticket.priority === 'critical' ? 'bg-red-600 text-white' : ticket.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'}`}>{ticket.priority ? ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1) : 'Medium'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button

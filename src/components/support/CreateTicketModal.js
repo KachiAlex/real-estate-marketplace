@@ -20,15 +20,17 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
 
     if (!user || !user.uid) {
       toast.error('Please log in to submit a support ticket');
-      navigate('/auth/login');
+      // Do not redirect to login modal after submission attempt
       return;
     }
 
     setSubmitting(true);
     try {
       const payload = {
-        message: `Subject: ${form.subject}\nPriority: ${form.priority}\n\n${form.message}`,
-        category: form.category
+        subject: form.subject,
+        message: form.message,
+        category: form.category,
+        priority: form.priority
       };
 
       const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
@@ -45,7 +47,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         if (onClose) onClose();
       } else if (resp.status === 401) {
         toast.error('Authentication required. Please log in again.');
-        navigate('/auth/login');
+        // Do not redirect to login modal after submission attempt
       } else {
         const err = await resp.json().catch(() => ({}));
         toast.error(err.error || `Failed to submit ticket (${resp.status})`);
