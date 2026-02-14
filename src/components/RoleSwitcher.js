@@ -9,6 +9,8 @@ import { useAuth } from '../contexts/AuthContext-new';
  * - Vendor can switch to buyer dashboard
  * - If buyer tries to access vendor dashboard without onboarding, prompt and route to onboarding
  */
+
+export default function RoleSwitcher({ onClose }) {
   const { user, isBuyer, isVendor, isVendorOnboarded, isVendorSubscriptionActive } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

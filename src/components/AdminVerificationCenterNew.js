@@ -177,6 +177,12 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     });
   };
 
+
+  const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
+  useEffect(() => {
+    setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
+  }, [config?.vendorSubscriptionFee]);
+
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -193,11 +199,6 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
       </div>
     );
   }
-
-  const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
-  useEffect(() => {
-    setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
-  }, [config?.vendorSubscriptionFee]);
 
   const handleSubscriptionFeeChange = (e) => {
     const value = Number(e.target.value.replace(/[^\d]/g, ''));
