@@ -166,11 +166,11 @@ const Header = () => {
               {/* Logo: Hide on dashboard routes */}
               {!isDashboardRoute && (
                 <Link to="/" className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none">
-                  <img 
-                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
-                    alt="PropertyArk Logo" 
+                  <img
+                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
+                    alt="PropertyArk Logo"
                     className="w-auto h-20 sm:h-24 md:h-28"
-                    style={{ 
+                    style={{
                       maxHeight: '7rem',
                       backgroundColor: 'transparent',
                       mixBlendMode: 'normal',
@@ -178,19 +178,16 @@ const Header = () => {
                       outline: 'none'
                     }}
                     onError={(e) => {
-                      // Fallback to icon if logo image doesn't exist
+                      e.target.style.display = 'none';
+                      if (e.target && e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                     }}
                   />
+
+                  <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
+                    <FaHome className="text-white text-xl" />
+                  </div>
                 </Link>
               )}
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
-                <FaHome className="text-white text-xl" />
-              </div>
-            </Link>
 
             {/* Navigation Menu */}
             <nav className="hidden lg:flex items-center flex-nowrap space-x-2 xl:space-x-4">
