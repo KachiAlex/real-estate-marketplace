@@ -2,13 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Aggressive global guard for D: ensures D is defined before any JS executes -->
-    <script>
-      if (typeof window !== 'undefined' && typeof window.D === 'undefined') {
-        window.D = null;
-        try { (0, eval)('var D = window.D;'); } catch (e) { /* ignore */ }
-      }
-    </script>
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
