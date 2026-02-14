@@ -127,16 +127,12 @@ curl -X GET https://[backend]/api/admin/chat/canned-responses \
 
 | Problem | Solution | Time |
 |---------|----------|------|
-| Socket.IO timeout | Restart backend, check logs for port conflicts, verify environment variables | 2 min |
-| Email not sending | Check SENDGRID_API_KEY, verify email service logs, test with fallback email | 5 min |
-| 404 on JS files | Clear cache, rebuild, check deployment path, verify CDN settings | 5 min |
-| Rate limit broken | Check backend/server.js lines 372-405, verify rate limit middleware, test with admin bypass | 5 min |
-| Firestore error | Verify rules and collection exists, check for missing indexes, review security rules | 3 min |
-| API 401 error | Check token validity, refresh tokens, auto-logout and re-login, verify Authorization header | 5 min |
-| API 500 error | Check backend logs, review error stack trace, restart backend, test endpoints with curl | 5 min |
-| Auth/session error | Clear cookies/localStorage, re-login, check token expiry, verify role switch logic | 3 min |
-| Frontend not loading | Check build output, verify environment variables, restart frontend server | 3 min |
-| Database connection error | Check Firestore/DB credentials, restart backend, verify DB URL | 5 min |
+| Socket.IO timeout | Restart backend | 2 min |
+| Email not sending | Check SENDGRID_API_KEY | 5 min |
+| 404 on JS files | Clear cache, rebuild | 5 min |
+| Rate limit broken | Check backend/server.js lines 372-405 | 5 min |
+| Firestore error | Verify rules and collection exists | 3 min |
+| API 500 error | Check backend logs | 5 min |
 
 ---
 
