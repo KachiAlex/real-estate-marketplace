@@ -39,6 +39,4 @@ const RegisterModal = ({ onClose }) => {
 };
 
 export default RegisterModal;
-      }
-
-      if (onClose) onClose();
+ 
