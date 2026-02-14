@@ -1,6 +1,8 @@
-// Ensure global `user` binding exists before any app modules initialize
+// Ensure runtime guards for global variables (user, D, etc) are set before any app modules initialize
+import { registerRuntimeGuards } from './utils/runtimeGuards';
+registerRuntimeGuards();
+// ...existing code...
 import './setupGlobalUser';
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -8,9 +10,6 @@ import { HelmetProvider } from './utils/HelmetShim';
 import './index.css';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
-import { registerRuntimeGuards } from './utils/runtimeGuards';
-
-registerRuntimeGuards();
 
 // Global error handler for uncaught errors
 window.addEventListener('error', (event) => {
