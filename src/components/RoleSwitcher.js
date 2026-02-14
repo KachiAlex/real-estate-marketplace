@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { registerRuntimeGuards } from '../utils/runtimeGuards';
 
 const RoleSwitcher = ({ onClose }) => {
   const { user, switchRole } = useAuth();
@@ -14,9 +13,6 @@ const RoleSwitcher = ({ onClose }) => {
     setLoading(true);
     try {
       const result = await switchRole(targetRole);
-
-      // Re-apply runtime guards after role switch
-      registerRuntimeGuards();
 
       // If server requires vendor onboarding, route there
       if (result && result.requiresVendorRegistration) {
