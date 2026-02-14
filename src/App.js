@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { ensureGlobalD } from './utils/runtimeGuards';
+import { registerRuntimeGuards } from './utils/runtimeGuards';
+registerRuntimeGuards();
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';

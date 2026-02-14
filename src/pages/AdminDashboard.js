@@ -1,4 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+import { registerRuntimeGuards } from '../utils/runtimeGuards';
+registerRuntimeGuards();
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
