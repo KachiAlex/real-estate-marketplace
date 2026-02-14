@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 // Mock DB update for onboarding and subscription
 const updateVendorStatus = async (userId, updates) => {
@@ -9,7 +9,7 @@ const updateVendorStatus = async (userId, updates) => {
 };
 
 // POST /api/vendor/onboard - Mark user as onboarded as vendor
-router.post('/onboard', verifyToken, async (req, res) => {
+router.post('/onboard', protect, async (req, res) => {
   try {
     // In real implementation, update user.vendorData.onboardingComplete = true
     const result = await updateVendorStatus(req.userId, { onboardingComplete: true });
@@ -20,7 +20,7 @@ router.post('/onboard', verifyToken, async (req, res) => {
 });
 
 // POST /api/vendor/subscribe - Mark vendor subscription as active (mock payment)
-router.post('/subscribe', verifyToken, async (req, res) => {
+router.post('/subscribe', protect, async (req, res) => {
   try {
     // In real implementation, update user.vendorData.subscriptionActive = true
     const result = await updateVendorStatus(req.userId, { subscriptionActive: true });
@@ -31,7 +31,7 @@ router.post('/subscribe', verifyToken, async (req, res) => {
 });
 
 // GET /api/vendor/status - Get vendor onboarding/subscription status
-router.get('/status', verifyToken, async (req, res) => {
+router.get('/status', protect, async (req, res) => {
   try {
     // In real implementation, fetch from DB
     // For now, return mock data
