@@ -1,8 +1,3 @@
-// Aggressive global guard for 'D' to prevent ReferenceError before any imports
-if (typeof window !== 'undefined') {
-  if (!window.D) window.D = null;
-  try { (0, eval)('var D = window.D;'); } catch (e) { /* ignore */ }
-}
 // Ensure runtime guards for global variables (user, D, etc) are set before any app modules initialize
 import { registerRuntimeGuards } from './utils/runtimeGuards';
 registerRuntimeGuards();
