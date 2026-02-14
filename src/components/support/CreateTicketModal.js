@@ -18,9 +18,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (!user || !user.uid) {
+    // Accept either `uid` or `id` depending on auth shape
+    if (!user || !(user.uid || user.id)) {
       toast.error('Please log in to submit a support ticket');
-      // Do not redirect to login modal after submission attempt
       return;
     }
 
