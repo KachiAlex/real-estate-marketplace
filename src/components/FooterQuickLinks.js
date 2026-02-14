@@ -12,21 +12,27 @@ const FooterQuickLinks = () => {
       // Signed-in users go to dashboard's properties view
       navigate('/dashboard?view=properties', { replace: false });
     } else {
-      // Public users see the public properties listing
-      navigate('/properties', { replace: false });
+      // Public users should see a restricted/public dashboard with only properties tab
+      navigate('/dashboard?public=1&view=properties', { replace: false });
     }
   };
 
   const goToMortgage = (e) => {
     e.preventDefault();
-    if (user) navigate('/dashboard?view=mortgage', { replace: false });
-    else navigate('/mortgage', { replace: false });
+    if (user) {
+      navigate('/dashboard?view=mortgage', { replace: false });
+    } else {
+      navigate('/dashboard?public=1&view=mortgage', { replace: false });
+    }
   };
 
   const goToInvestments = (e) => {
     e.preventDefault();
-    if (user) navigate('/dashboard?view=investments', { replace: false });
-    else navigate('/investment', { replace: false });
+    if (user) {
+      navigate('/dashboard?view=investments', { replace: false });
+    } else {
+      navigate('/dashboard?public=1&view=investments', { replace: false });
+    }
   };
 
   const goToAbout = (e) => {
