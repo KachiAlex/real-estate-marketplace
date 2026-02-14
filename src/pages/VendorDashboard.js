@@ -52,6 +52,22 @@ const VendorDashboard = () => {
     }
   }, [location.pathname]);
 
+  // Local state for dashboard
+  const [verificationRequests, setVerificationRequests] = useState([]);
+  const [verificationRequestsLoading, setVerificationRequestsLoading] = useState(false);
+  const [properties, setProperties] = useState([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
+  const [inquiries, setInquiries] = useState([]);
+  const [viewingRequests, setViewingRequests] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [proposalDate, setProposalDate] = useState('');
+  const [proposalTime, setProposalTime] = useState('');
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const isAgent = user?.role === 'agent';
+  const analytics = {};
+
   // Load verification requests when user or auth state changes
   const fetchVerificationRequests = useCallback(async () => {
     if (!user) {

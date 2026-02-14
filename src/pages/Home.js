@@ -1176,25 +1176,7 @@ const Home = () => {
                 placeholder="Enter vendor name..."
                 className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              {uniqueVendors.length > 0 && (
-                <div className="mt-2 max-h-40 overflow-y-auto">
-                  {uniqueVendors
-                    .filter(vendor => 
-                      !selectedVendor || 
-                      vendor.name.toLowerCase().includes(selectedVendor.toLowerCase())
-                    )
-                    .slice(0, 5)
-                    .map(vendor => (
-                      <button
-                        key={vendor.id}
-                        onClick={() => setSelectedVendor(vendor.name)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded transition-colors"
-                      >
-                        {vendor.name}
-                      </button>
-                    ))}
-                </div>
-              )}
+              {/* No suggestions: user types vendor name manually */}
             </div>
 
             {/* Price Range */}

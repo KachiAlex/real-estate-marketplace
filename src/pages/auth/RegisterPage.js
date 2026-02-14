@@ -6,7 +6,7 @@ import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 
 const RegisterPage = ({ isModal = false, onClose }) => {
-  const { register, loading } = useAuth();
+  const { register, loading, signInWithGooglePopup } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     firstName: '',
@@ -141,7 +141,7 @@ const RegisterPage = ({ isModal = false, onClose }) => {
           type="button"
           onClick={async () => {
             try {
-              await useAuth().signInWithGooglePopup();
+              await signInWithGooglePopup();
               const redirect = sessionStorage.getItem('authRedirect');
               if (redirect) {
                 sessionStorage.removeItem('authRedirect');
@@ -149,7 +149,9 @@ const RegisterPage = ({ isModal = false, onClose }) => {
               } else {
                 navigate('/dashboard', { replace: true });
               }
-            } catch (e) {}
+            } catch (e) {
+              console.warn('Google sign-in failed', e);
+            }
           }}
           className="w-full mb-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white font-semibold hover:bg-white/20 transition"
         >
