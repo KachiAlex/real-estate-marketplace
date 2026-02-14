@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import toast from 'react-hot-toast';
+import RegisterModal from './RegisterModal';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 const SignInModal = ({ onClose }) => {
   const { login, loading, signInWithGooglePopup } = useAuth();
@@ -9,6 +11,8 @@ const SignInModal = ({ onClose }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [showRegister, setShowRegister] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -34,6 +38,7 @@ const SignInModal = ({ onClose }) => {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={() => { if (onClose) onClose(); }} />
       <div className="relative w-full max-w-md rounded-2xl bg-white/5 border border-white/10 p-6 shadow-2xl backdrop-blur-lg">
@@ -103,13 +108,21 @@ const SignInModal = ({ onClose }) => {
           </div>
 
           <div className="flex items-center justify-between text-sm text-slate-300">
-            <button type="button" onClick={() => { navigate('/auth/forgot-password'); if (onClose) onClose(); }} className="text-amber-300">Forgot password?</button>
-            <button type="button" onClick={() => { navigate('/auth/register'); if (onClose) onClose(); }} className="text-slate-100">Create account</button>
+            <button type="button" onClick={() => { setShowForgot(true); }} className="text-amber-300">Forgot password?</button>
+            <button type="button" onClick={() => { setShowRegister(true); }} className="text-slate-100">Create account</button>
           </div>
         </form>
       </div>
     </div>
+    {showRegister && (
+      <RegisterModal onClose={() => setShowRegister(false)} />
+    )}
+    {showForgot && (
+      <ForgotPasswordModal onClose={() => setShowForgot(false)} />
+    )}
+    </>
   );
 };
 
 export default SignInModal;
+
