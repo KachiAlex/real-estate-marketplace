@@ -8,9 +8,6 @@ if (typeof window !== 'undefined') {
     if (!window.user) window.user = null;
     // Indirect eval runs in global scope — creates a global var binding.
     try { (0, eval)('var user = window.user;'); } catch (e) { /* ignore */ }
-    // Add runtime guard for 'D' to prevent ReferenceError
-    if (!window.D) window.D = null;
-    try { (0, eval)('var D = window.D;'); } catch (e) { /* ignore */ }
   } catch (e) {
     // Best-effort shim; do not break startup if something goes wrong
   }
