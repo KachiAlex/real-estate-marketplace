@@ -289,12 +289,26 @@ export const AuthProvider = ({ children }) => {
       if (serverUser) {
         updatedUser = normalizeUser(serverUser);
       } else {
-        // Fallback: merge returned data into currentUser but DO NOT blindly set activeRole
+        // Fallback: merge returned data into currentUser
         updatedUser = normalizeUser({ ...currentUser, ...data.user });
       }
 
+      // Ensure roles array contains the requested role and set activeRole when server didn't
+      updatedUser.roles = Array.isArray(updatedUser.roles) ? [...new Set(updatedUser.roles)] : [];
+      if (newRole && !updatedUser.roles.includes(newRole)) {
+        updatedUser.roles.push(newRole);
+      }
+
+      if (!updatedUser.activeRole && newRole) {
+        // If server didn't explicitly set an active role, assume the requested role
+        updatedUser.activeRole = newRole;
+      }
+
+      // Persist authoritative user to localStorage and state
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
+
+      console.debug('switchRole: updatedUser after switch', { newRole, updatedUser, serverData: data });
 
       toast.success(`Switched to ${updatedUser.activeRole || newRole} role`);
       return updatedUser;
