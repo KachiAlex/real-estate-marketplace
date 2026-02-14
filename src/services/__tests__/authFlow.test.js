@@ -26,7 +26,7 @@ describe('authFlow', () => {
   const mockSetLoggedInUser = jest.fn();
   const mockSetShowRoleSelection = jest.fn();
   const mockSetUser = jest.fn();
-  const mockSwitchRole = jest.fn().mockResolvedValue({ success: true });
+
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -128,7 +128,7 @@ describe('authFlow', () => {
         'vendor',
         mockLoggedInUser,
         mockSetUser,
-        mockSwitchRole,
+
         mockNavigate,
         mockSetShowRoleSelection
       );
@@ -137,7 +137,7 @@ describe('authFlow', () => {
       expect(result.dashboardPath).toBe('/vendor/dashboard');
       expect(localStorage.setItem).toHaveBeenCalledWith('activeRole', 'vendor');
       expect(mockSetUser).toHaveBeenCalled();
-      expect(mockSwitchRole).toHaveBeenCalledWith('vendor');
+
       expect(mockSetShowRoleSelection).toHaveBeenCalledWith(false);
 
       jest.advanceTimersByTime(100);
@@ -149,7 +149,7 @@ describe('authFlow', () => {
         'buyer',
         mockLoggedInUser,
         mockSetUser,
-        mockSwitchRole,
+
         mockNavigate,
         mockSetShowRoleSelection
       );
@@ -162,13 +162,13 @@ describe('authFlow', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      mockSwitchRole.mockRejectedValueOnce(new Error('Switch failed'));
+
       
       const result = await handleRoleSelection(
         'vendor',
         mockLoggedInUser,
         mockSetUser,
-        mockSwitchRole,
+
         mockNavigate,
         mockSetShowRoleSelection
       );

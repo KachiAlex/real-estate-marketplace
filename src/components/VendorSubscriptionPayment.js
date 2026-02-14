@@ -1,22 +1,42 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCheckCircle } from 'react-icons/fa';
+import { getApiUrl } from '../utils/apiConfig';
+import { authenticatedFetch } from '../utils/authToken';
 
-// Simulate fetching the current subscription fee (from admin config or localStorage)
-function getSubscriptionFee() {
-  const fee = localStorage.getItem('vendorSubscriptionFee');
-  return fee ? Number(fee) : 50000;
-}
 
 export default function VendorSubscriptionPayment({ onPaymentSuccess }) {
-  const [fee, setFee] = useState(getSubscriptionFee());
+  const [fee, setFee] = useState(50000); // Default value until fetched
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [loadingFee, setLoadingFee] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    setFee(getSubscriptionFee());
+    async function fetchFee() {
+      setLoadingFee(true);
+      setError('');
+      try {
+        const response = await authenticatedFetch(getApiUrl('/admin/settings'));
+        if (!response.ok) throw new Error('Failed to fetch subscription fee');
+        const data = await response.json();
+        if (data && data.success && typeof data.data?.vendorSubscriptionFee === 'number') {
+          setFee(data.data.vendorSubscriptionFee);
+        } else {
+          setFee(50000); // fallback
+        }
+      } catch (err) {
+        setError('Unable to load subscription fee. Please try again.');
+        setFee(50000);
+      } finally {
+        setLoadingFee(false);
+      }
+    }
+    fetchFee();
   }, []);
+
 
   const handlePay = () => {
     setPaying(true);
@@ -27,6 +47,23 @@ export default function VendorSubscriptionPayment({ onPaymentSuccess }) {
       if (onPaymentSuccess) onPaymentSuccess();
     }, 2000); // Simulate payment
   };
+
+
+  if (loadingFee) {
+    return (
+      <div style={{ textAlign: 'center', padding: 32 }}>
+        <p>Loading subscription fee...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: 32, color: 'red' }}>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   if (paid || localStorage.getItem('vendorSubscriptionPaid') === 'true') {
     return (

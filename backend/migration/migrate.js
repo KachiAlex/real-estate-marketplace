@@ -59,7 +59,7 @@ async function migrateUsers() {
           avatar: data.avatar,
           role: data.role || 'user',
           roles: data.roles || [data.role || 'user'],
-          activeRole: data.activeRole || data.active_role || data.role || 'user',
+
           provider: data.provider || 'email',
           isVerified: data.isVerified || data.is_verified || false,
           isActive: data.isActive !== false,

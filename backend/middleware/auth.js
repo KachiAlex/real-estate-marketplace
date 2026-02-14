@@ -285,7 +285,7 @@ exports.authorizeRole = (...allowedRoles) => {
       });
     }
 
-    const userRole = req.user.activeRole || req.user.role;
+    const userRole = req.user.role;
     
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({

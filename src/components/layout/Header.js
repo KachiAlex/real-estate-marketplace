@@ -1,16 +1,23 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿  // If admin, force navigation to admin dashboard if not already there
+  useEffect(() => {
+    if (user?.role === 'admin' && !location.pathname.startsWith('/admin')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import RoleSwitcher from '../RoleSwitcher';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { FaHome, FaBars, FaTimes, FaSearch, FaUser, FaShieldAlt } from 'react-icons/fa';
 import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
-import RoleSwitcher from '../RoleSwitcher';
+
 
 const Header = () => {
-  const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
+  const { user, logout, isBuyer, isVendor, registerAsVendor, signInWithGooglePopup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleMobileSidebar } = useSidebar();
@@ -71,7 +78,7 @@ const Header = () => {
   };
 
   const handleVendorSwitch = async () => {
-    const result = await switchRole('vendor');
+    // Dashboard switching removed
 
     // Fallback: if user is not vendor, redirect to vendor registration
     if (!isVendor || (result && result.requiresVendorRegistration)) {
@@ -381,7 +388,7 @@ const Header = () => {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     {/* Active role badge and switcher */}
                     {/* Centralized role switcher component */}
-                    <RoleSwitcher onClose={() => setIsUserMenuOpen(false)} />
+
                     <Link
                       to={profilePath}
                       onClick={(e) => {
@@ -652,6 +659,12 @@ const Header = () => {
           onClose={closeSearch}
           onResultClick={handleResultClick}
         />
+      )}
+      {/* Dashboard Role Switcher (buyer/vendor only) */}
+      {user && user.role !== 'admin' && (
+        <div className="w-full flex justify-center py-2 bg-gray-50 border-t">
+          <RoleSwitcher />
+        </div>
       )}
     </header>
     </>

@@ -12,7 +12,7 @@ const defaultContextValue = {
   login: async () => { throw new Error('Auth not initialized'); },
   logout: async () => { throw new Error('Auth not initialized'); },
   refreshAccessToken: async () => { throw new Error('Auth not initialized'); },
-  switchRole: async () => { throw new Error('Auth not initialized'); },
+
   updateUserProfile: async () => { throw new Error('Auth not initialized'); },
   registerAsVendor: async () => { throw new Error('Auth not initialized'); },
   setAuthRedirect: () => {},
@@ -236,88 +236,7 @@ export const AuthProvider = ({ children }) => {
   const isBuyer = currentUser?.role === 'buyer' || currentUser?.userType === 'buyer';
   const isVendor = currentUser?.role === 'vendor' || currentUser?.userType === 'vendor';
 
-  // Switch user role
-  const switchRole = useCallback(async (newRole) => {
-    try {
-      if (!accessToken || !currentUser) {
-        throw new Error('User must be logged in to switch roles');
-      }
 
-      const response = await fetch(getApiUrl('/auth/jwt/switch-role'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role: newRole })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Role switch failed');
-      }
-
-      // If server indicates vendor registration is required, propagate that
-      if (data.requiresVendorRegistration) {
-        return { requiresVendorRegistration: true };
-      }
-
-      // Prefer authoritative user object from server when available
-      let serverUser = null;
-      if (data.user) {
-        serverUser = data.user;
-      } else {
-        // If server didn't include user in response, attempt to fetch the current profile
-        try {
-          const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`
-            }
-          });
-          if (meResp.ok) {
-            const meData = await meResp.json();
-            serverUser = meData.user || meData;
-          }
-        } catch (e) {
-          // ignore — we'll fallback to merging
-        }
-      }
-
-      let updatedUser;
-      if (serverUser) {
-        updatedUser = normalizeUser(serverUser);
-      } else {
-        // Fallback: merge returned data into currentUser
-        updatedUser = normalizeUser({ ...currentUser, ...data.user });
-      }
-
-      // Ensure roles array contains the requested role and set activeRole when server didn't
-      updatedUser.roles = Array.isArray(updatedUser.roles) ? [...new Set(updatedUser.roles)] : [];
-      if (newRole && !updatedUser.roles.includes(newRole)) {
-        updatedUser.roles.push(newRole);
-      }
-
-      if (!updatedUser.activeRole && newRole) {
-        // If server didn't explicitly set an active role, assume the requested role
-        updatedUser.activeRole = newRole;
-      }
-
-      // Persist authoritative user to localStorage and state
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      setCurrentUser(updatedUser);
-
-      console.debug('switchRole: updatedUser after switch', { newRole, updatedUser, serverData: data });
-
-      toast.success(`Switched to ${updatedUser.activeRole || newRole} role`);
-      return updatedUser;
-    } catch (error) {
-      console.error('Role switch error:', error);
-      toast.error(error.message || 'Role switch failed');
-      throw error;
-    }
-  }, [accessToken, currentUser]);
 
   // Update user profile
   const updateUserProfile = useCallback(async (updates) => {
@@ -367,14 +286,13 @@ export const AuthProvider = ({ children }) => {
   // Register as vendor
   const registerAsVendor = useCallback(async (vendorInfo) => {
     try {
-      // Use switchRole to upgrade to vendor
-      const result = await switchRole('vendor');
+
       return { success: true, user: result, navigateTo: '/vendor/dashboard' };
     } catch (error) {
       console.error('Vendor registration error:', error);
       return { success: false, error: error.message };
     }
-  }, [switchRole]);
+
 
   // Sign in with Google via popup and exchange id_token for JWT
   const signInWithGooglePopup = useCallback(async () => {
@@ -467,6 +385,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+
+  // Vendor onboarding and subscription status helpers
+  const isVendorOnboarded = !!(currentUser && currentUser.vendorData && currentUser.vendorData.onboardingComplete);
+  const isVendorSubscriptionActive = !!(currentUser && currentUser.vendorData && currentUser.vendorData.subscriptionActive);
+
   const value = {
     currentUser,
     loading,
@@ -476,7 +399,6 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshAccessToken,
-    switchRole,
     updateUserProfile,
     registerAsVendor,
     signInWithGooglePopup,
@@ -484,7 +406,9 @@ export const AuthProvider = ({ children }) => {
     // Aliases and computed properties
     user: currentUser,
     isBuyer,
-    isVendor
+    isVendor,
+    isVendorOnboarded,
+    isVendorSubscriptionActive
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

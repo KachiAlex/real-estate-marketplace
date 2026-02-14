@@ -41,10 +41,7 @@ const User = (sequelize) => {
       type: DataTypes.JSON,
       defaultValue: ['user']
     },
-    activeRole: {
-      type: DataTypes.STRING,
-      defaultValue: 'user'
-    },
+
     provider: {
       type: DataTypes.STRING,
       defaultValue: 'email' // 'email', 'google', 'facebook'

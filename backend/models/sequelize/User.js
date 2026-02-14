@@ -42,10 +42,7 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       defaultValue: ['user']
     },
-    activeRole: {
-      type: DataTypes.STRING,
-      defaultValue: 'user'
-    },
+
     provider: {
       type: DataTypes.STRING,
       defaultValue: 'email'

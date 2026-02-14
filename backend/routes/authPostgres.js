@@ -47,7 +47,7 @@ router.post('/register', async (req, res) => {
       lastName,
       role,
       roles: [role],
-      activeRole: role,
+
       provider: 'email',
       isVerified: false
     });

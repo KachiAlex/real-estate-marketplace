@@ -40,7 +40,7 @@ const buildApplicantSnapshot = (user = {}) => {
     id: user.id || user._id || user.uid || null,
     name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name || user.companyName || 'Unknown Applicant',
     email: user.email || 'unknown@example.com',
-    role: user.role || user.activeRole || 'user',
+    role: user.role || 'user',
     phone: user.phone || user.contactPhone || null
   };
 };

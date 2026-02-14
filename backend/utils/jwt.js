@@ -24,7 +24,7 @@ const generateAccessToken = (user) => {
       email: user.email,
       role: user.role,
       roles: user.roles || [user.role],
-      activeRole: user.activeRole || user.role
+
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRY }

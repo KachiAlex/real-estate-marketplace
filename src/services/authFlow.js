@@ -72,7 +72,7 @@ export const handleRoleSelection = async (
   selectedRole,
   loggedInUser,
   setUser,
-  switchRole,
+
   navigate,
   setShowRoleSelection
 ) => {
@@ -89,10 +89,7 @@ export const handleRoleSelection = async (
       setUser(updatedUser);
     }
 
-    // Use switchRole if available for additional processing
-    if (switchRole) {
-      await switchRole(selectedRole);
-    }
+
 
     // Show success message
     toast.success(`Switched to ${selectedRole} dashboard`);

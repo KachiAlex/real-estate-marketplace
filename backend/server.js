@@ -246,6 +246,11 @@ if (!process.env.CLOUDINARY_CLOUD_NAME && process.env.NODE_ENV === 'production')
   warnLogger('Cloudinary not configured - file upload features will not work');
 }
 
+
+// Vendor onboarding/subscription endpoints
+const vendorRoutes = require('./routes/vendor');
+app.use('/api/vendor', vendorRoutes);
+
 // Import mock data
 const mockUsers = require('./data/mockUsers');
 const mockProperties = require('./data/mockProperties');

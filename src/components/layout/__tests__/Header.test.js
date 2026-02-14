@@ -18,7 +18,7 @@ jest.mock('../../../contexts/AuthContext', () => ({
     logout: jest.fn(),
     isBuyer: true,
     isVendor: false,
-    switchRole: jest.fn(),
+
     registerAsVendor: jest.fn(),
   }),
 }));
@@ -107,7 +107,7 @@ describe('Header', () => {
         logout: mockLogout,
         isBuyer: true,
         isVendor: false,
-        switchRole: jest.fn(),
+
         registerAsVendor: jest.fn(),
       }),
     }));
