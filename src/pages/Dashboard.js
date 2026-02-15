@@ -503,9 +503,12 @@ const Dashboard = () => {
               return;
             }
           } else if (res.status === 401) {
-            // Suppress 401 errors - expected for mock users
-            console.log('Dashboard: API returned 401 - using local data only');
+            // For dashboard stats, don't trigger logout - just use local data
+            console.log('Dashboard: API returned 401 for stats - using local data only (not logging out)');
             // Non-fatal - fall through to local data
+          } else {
+            // For other errors, log but don't logout
+            console.log('Dashboard: API error for stats:', res.status, '- using local data');
           }
         } catch (error) {
           // Suppress errors for mock users

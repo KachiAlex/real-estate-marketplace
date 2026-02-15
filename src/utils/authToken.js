@@ -68,6 +68,9 @@ export const authenticatedFetch = async (url, options = {}) => {
     }
   };
 
+  // Check if this is a non-critical endpoint that shouldn't trigger logout on 401
+  const isNonCriticalEndpoint = url.includes('/dashboard/user');
+
   // Debug: show what headers we're sending
   try {
     console.log('authenticatedFetch: url=', url);
@@ -100,20 +103,27 @@ export const authenticatedFetch = async (url, options = {}) => {
       const retryRes = await fetch(url, retryOptions);
       console.log('authenticatedFetch: retry response status:', retryRes.status, 'for', url);
       
-      // If retry also fails with 401, the refreshed token is invalid - logout user
+      // If retry also fails with 401, the refreshed token is invalid
       if (retryRes.status === 401) {
-        console.log('authenticatedFetch: refreshed token also unauthorized, logging out user');
-        // Clear tokens and trigger logout
-        try {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('currentUser');
-          // Dispatch custom event to notify AuthContext of logout
-          window.dispatchEvent(new CustomEvent('auth:logout'));
-          // Return the 401 response so the component can handle it
+        if (isNonCriticalEndpoint) {
+          // For non-critical endpoints, don't logout - just return the 401
+          console.log('authenticatedFetch: refreshed token also unauthorized for non-critical endpoint, not logging out');
           return retryRes;
-        } catch (e) {
-          console.error('Error clearing auth tokens:', e);
+        } else {
+          // For critical endpoints, logout the user
+          console.log('authenticatedFetch: refreshed token also unauthorized, logging out user');
+          // Clear tokens and trigger logout
+          try {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('currentUser');
+            // Dispatch custom event to notify AuthContext of logout
+            window.dispatchEvent(new CustomEvent('auth:logout'));
+            // Return the 401 response so the component can handle it
+            return retryRes;
+          } catch (e) {
+            console.error('Error clearing auth tokens:', e);
+          }
         }
       }
       
