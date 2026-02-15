@@ -1893,18 +1893,17 @@ const Home = () => {
             <div className="lg:col-span-1">
               <div className="flex items-center mb-4">
                 <div className="bg-white p-1 rounded-md shadow-lg inline-block">
-                  <img 
-                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`} 
-                    alt="PropertyArk Logo" 
-                    className="w-auto"
-                    style={{ 
-                      height: '6rem',
+                  <img
+                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
+                    alt="PropertyArk Logo"
+                    className="w-auto h-20 sm:h-24 md:h-28"
+                    style={{
                       backgroundColor: 'transparent',
                       mixBlendMode: 'normal',
-                      display: 'block'
+                      display: 'block',
+                      maxHeight: '7rem'
                     }}
                     onError={(e) => {
-                      // Fallback to icon if logo image doesn't exist
                       e.target.style.display = 'none';
                       e.target.parentElement.nextSibling.style.display = 'flex';
                     }}

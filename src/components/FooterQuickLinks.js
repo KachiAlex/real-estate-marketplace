@@ -42,10 +42,18 @@ const FooterQuickLinks = () => {
 
   return (
     <ul className="space-y-3">
-      <li><a href="/properties" onClick={goToProperties} className="text-gray-400 hover:text-white transition-colors">Browse Properties</a></li>
-      <li><a href="/mortgage" onClick={goToMortgage} className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</a></li>
-      <li><a href="/investment" onClick={goToInvestments} className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</a></li>
-      <li><a href="/about" onClick={goToAbout} className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+      <li>
+        <a href="/dashboard?view=properties" onClick={goToProperties} className="text-gray-400 hover:text-white transition-colors">Browse Properties</a>
+      </li>
+      <li>
+        <a href="/dashboard?view=mortgage" onClick={goToMortgage} className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</a>
+      </li>
+      <li>
+        <a href="/dashboard?view=investments" onClick={goToInvestments} className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</a>
+      </li>
+      <li>
+        <a href="/about" onClick={goToAbout} className="text-gray-400 hover:text-white transition-colors">About Us</a>
+      </li>
     </ul>
   );
 };
