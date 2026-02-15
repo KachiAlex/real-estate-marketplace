@@ -108,14 +108,13 @@ export const authenticatedFetch = async (url, options = {}) => {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('currentUser');
-          // Trigger logout by calling the logout endpoint if possible
-          await fetch(getApiUrl('/auth/jwt/logout'), {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${newToken}` }
-          }).catch(() => {}); // Ignore logout errors
-        } catch (e) {}
-        // Return the 401 response so the component can handle it
-        return retryRes;
+          // Dispatch custom event to notify AuthContext of logout
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+          // Return the 401 response so the component can handle it
+          return retryRes;
+        } catch (e) {
+          console.error('Error clearing auth tokens:', e);
+        }
       }
       
       // Retry successful, return the new response

@@ -72,8 +72,20 @@ function AuthProvider({ children }) {
       }
     };
 
+    // Listen for custom logout event from authenticatedFetch
+    const handleAuthLogout = () => {
+      console.log('AuthContext: Received auth:logout event, clearing state');
+      setAccessToken(null);
+      setRefreshToken(null);
+      setCurrentUser(null);
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
   }, []);
 
   const register = useCallback(async (email, password, firstName, lastName, phone = '') => {

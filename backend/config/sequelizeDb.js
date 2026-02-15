@@ -20,7 +20,7 @@ const sequelize = new Sequelize(DATABASE_URL, {
     idle: 10000
   },
   dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production' ? {
+    ssl: process.env.NODE_ENV === 'production' || DATABASE_URL.includes('render.com') ? {
       require: true,
       rejectUnauthorized: false
     } : false

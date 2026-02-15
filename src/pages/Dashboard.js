@@ -11,7 +11,7 @@ import { authenticatedFetch } from '../utils/authToken';
 import { getApiUrl } from '../utils/apiConfig';
 
 const Dashboard = () => {
-  const { user, setAuthRedirect } = useAuth();
+  const { user, accessToken, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { properties, loading, toggleFavorite } = useProperty();
@@ -53,6 +53,9 @@ const Dashboard = () => {
     totalEarnings: 0,
     monthlyBudget: 5000000
   });
+
+  // Prevent concurrent API calls
+  const [isLoadingBackendStats, setIsLoadingBackendStats] = useState(false);
 
   // Function to refresh dashboard stats
   const refreshDashboardStats = useCallback(() => {
@@ -434,6 +437,18 @@ const Dashboard = () => {
 
       // Try to get additional data from backend API (only if user has Firebase token)
       const fetchBackendStats = async () => {
+        if (isLoadingBackendStats) {
+          console.log('Dashboard: Backend stats fetch already in progress, skipping');
+          return;
+        }
+
+        // Check if user is still authenticated
+        if (!user || !accessToken) {
+          console.log('Dashboard: User not authenticated, skipping backend stats fetch');
+          return;
+        }
+
+        setIsLoadingBackendStats(true);
         try {
           // Check if user has a Firebase token before attempting API call
           const { hasAuthToken } = await import('../utils/authToken');
@@ -495,6 +510,8 @@ const Dashboard = () => {
         } catch (error) {
           // Suppress errors for mock users
           console.log('Dashboard: Error fetching backend stats (using local data)', error.message);
+        } finally {
+          setIsLoadingBackendStats(false);
         }
 
         // Fallback to local data only
