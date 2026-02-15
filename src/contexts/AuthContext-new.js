@@ -61,6 +61,19 @@ function AuthProvider({ children }) {
       }
     };
     initializeAuth();
+
+    // Listen for localStorage changes (when tokens are cleared by authenticatedFetch)
+    const handleStorageChange = (e) => {
+      if (e.key === 'accessToken' && !e.newValue) {
+        // accessToken was removed, clear auth state
+        setAccessToken(null);
+        setRefreshToken(null);
+        setCurrentUser(null);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const register = useCallback(async (email, password, firstName, lastName, phone = '') => {

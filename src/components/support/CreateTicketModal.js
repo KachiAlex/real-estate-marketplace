@@ -54,8 +54,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         if (onClose) onClose();
       } else if (resp.status === 401) {
         console.log('CreateTicketModal: Got 401, authentication issue');
-        toast.error('Authentication required. Please log in again.');
-        // Do not redirect to login modal after submission attempt
+        toast.error('Your session has expired. Please log in again.');
+        // Close modal and let AuthContext handle logout
+        if (onClose) onClose();
       } else {
         const err = await resp.json().catch(() => ({}));
         console.log('CreateTicketModal: Error response:', err);

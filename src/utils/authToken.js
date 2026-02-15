@@ -97,16 +97,32 @@ export const authenticatedFetch = async (url, options = {}) => {
       try {
         console.debug('authenticatedFetch: retrying with refreshed token for', url);
       } catch (e) {}
-      res = await fetch(url, retryOptions);
-      console.log('authenticatedFetch: retry response status:', res.status, 'for', url);
+      const retryRes = await fetch(url, retryOptions);
+      console.log('authenticatedFetch: retry response status:', retryRes.status, 'for', url);
+      
+      // If retry also fails with 401, the refreshed token is invalid - logout user
+      if (retryRes.status === 401) {
+        console.log('authenticatedFetch: refreshed token also unauthorized, logging out user');
+        // Clear tokens and trigger logout
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('currentUser');
+          // Trigger logout by calling the logout endpoint if possible
+          await fetch(getApiUrl('/auth/jwt/logout'), {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${newToken}` }
+          }).catch(() => {}); // Ignore logout errors
+        } catch (e) {}
+        // Return the 401 response so the component can handle it
+        return retryRes;
+      }
+      
+      // Retry successful, return the new response
+      return retryRes;
     } else {
       console.log('authenticatedFetch: token refresh failed or no refresh token');
     }
-    // If still 401, log response body for debugging
-    try {
-      const bodyText = await res.clone().text();
-      console.log('authenticatedFetch: 401 response body for', url, ':', bodyText);
-    } catch (e) {}
   }
 
   return res;
