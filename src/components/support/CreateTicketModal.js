@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -11,15 +11,36 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
   const [form, setForm] = useState({ subject: '', category: '', priority: 'medium', message: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  // Close modal if user becomes unauthenticated
+  useEffect(() => {
+    if (!user && onClose) {
+      console.log('CreateTicketModal: User became unauthenticated, closing modal');
+      onClose();
+    }
+  }, [user, onClose]);
+
   const handleSubmit = async (e) => {
     e && e.preventDefault();
+    
+    // Prevent double submission
+    if (submitting) {
+      console.log('CreateTicketModal: Already submitting, ignoring');
+      return;
+    }
+    
+    console.log('CreateTicketModal: handleSubmit called');
+    console.log('CreateTicketModal: current user:', user);
+    console.log('CreateTicketModal: current accessToken:', !!accessToken);
+    
     if (!form.subject || !form.category || !form.message) {
+      console.log('CreateTicketModal: Form validation failed');
       toast.error('Please complete subject, category and message');
       return;
     }
 
     // Accept either `uid` or `id` depending on auth shape
     if (!user || !user.uid) {
+      console.log('CreateTicketModal: User authentication check failed');
       toast.error('Please log in to submit a support ticket');
       return;
     }
@@ -28,6 +49,8 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
     console.log('CreateTicketModal: accessToken present:', !!accessToken);
 
     setSubmitting(true);
+    console.log('CreateTicketModal: Set submitting to true');
+    
     try {
       const payload = {
         subject: form.subject,
@@ -48,6 +71,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
 
       if (resp.ok) {
         const data = await resp.json().catch(() => ({}));
+        console.log('CreateTicketModal: Success response:', data);
         toast.success(data?.message || 'Support ticket submitted. We will respond by email.');
         setForm({ subject: '', category: '', priority: 'medium', message: '' });
         if (onSuccess) onSuccess();
@@ -66,6 +90,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
       console.error('Create ticket error:', error);
       toast.error('Failed to submit support ticket. Please try again later.');
     } finally {
+      console.log('CreateTicketModal: Setting submitting to false');
       setSubmitting(false);
     }
   };
