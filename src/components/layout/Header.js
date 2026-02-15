@@ -38,7 +38,7 @@ const Header = () => {
     }
   };
 
-  const headerClass = `bg-white border-b shadow-sm ${isHome ? 'sticky top-0 z-50' : ''}`;
+  const headerClass = `bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-[100]`;
 
   return (
     <header className={headerClass}>
@@ -48,7 +48,7 @@ const Header = () => {
             <img
               src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
               alt="PropertyArk Logo"
-              className="h-8"
+              className="w-auto h-20 sm:h-24 md:h-28"
               onError={() => setLogoError(true)}
             />
           ) : (
@@ -100,7 +100,6 @@ const Header = () => {
           ) : (
             <div className="hidden sm:flex space-x-2">
               <Link to="/auth/login" className="text-sm text-gray-700">Sign in</Link>
-              <Link to="/auth/register" className="text-sm font-medium text-white bg-amber-500 px-3 py-1 rounded">Sign up</Link>
             </div>
           )}
 

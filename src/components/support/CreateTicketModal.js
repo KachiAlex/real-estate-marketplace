@@ -6,7 +6,7 @@ import { getApiUrl } from '../../utils/apiConfig';
 import { authenticatedFetch } from '../../utils/authToken';
 
 const CreateTicketModal = ({ onClose, onSuccess }) => {
-  const { user } = useAuth();
+  const { user, accessToken, refreshAccessToken } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ subject: '', category: '', priority: 'medium', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -24,7 +24,19 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
       return;
     }
 
+    console.log('CreateTicketModal: Starting submit, user:', user.uid || user.id);
+    console.log('CreateTicketModal: accessToken present:', !!accessToken);
+
     setSubmitting(true);
+    // Ensure we have a valid access token (try refresh if missing)
+    try {
+      if (!accessToken && typeof refreshAccessToken === 'function') {
+        console.log('CreateTicketModal: No accessToken, attempting refresh');
+        await refreshAccessToken();
+      }
+    } catch (e) {
+      console.warn('Token refresh failed before creating ticket', e);
+    }
     try {
       const payload = {
         subject: form.subject,
@@ -33,11 +45,15 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         priority: form.priority
       };
 
+      console.log('CreateTicketModal: Sending payload:', payload);
+
       const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      console.log('CreateTicketModal: Response status:', resp.status);
 
       if (resp.ok) {
         const data = await resp.json().catch(() => ({}));
@@ -46,10 +62,12 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         if (onSuccess) onSuccess();
         if (onClose) onClose();
       } else if (resp.status === 401) {
+        console.log('CreateTicketModal: Got 401, authentication issue');
         toast.error('Authentication required. Please log in again.');
         // Do not redirect to login modal after submission attempt
       } else {
         const err = await resp.json().catch(() => ({}));
+        console.log('CreateTicketModal: Error response:', err);
         toast.error(err.error || `Failed to submit ticket (${resp.status})`);
       }
     } catch (error) {

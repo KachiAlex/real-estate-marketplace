@@ -165,11 +165,9 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/investment-opportunities" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <InvestmentOpportunities />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <InvestmentOpportunities />
+      </PageWithSidebar>
     } />
     <Route path="/investment-company/dashboard" element={
       <ProtectedRoute>
@@ -179,11 +177,9 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/mortgage" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Mortgage />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Mortgage />
+      </PageWithSidebar>
     } />
     <Route path="/mortgages" element={
       <ProtectedRoute>
@@ -411,7 +407,7 @@ function App() {
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
                           <Header />
-                          <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
+                          <div className="flex flex-grow w-full max-w-full overflow-x-hidden pt-24">
                             <ErrorBoundary>
                               <Suspense fallback={
                                 <div className="flex items-center justify-center w-full h-screen">

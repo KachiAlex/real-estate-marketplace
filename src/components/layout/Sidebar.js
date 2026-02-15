@@ -83,7 +83,7 @@ const Sidebar = () => {
                 <img
                   src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
                   alt="PropertyArk Logo"
-                  className="w-auto h-16"
+                  className="w-auto h-20 sm:h-24 md:h-28"
                   onError={() => setLogoError(true)}
                 />
               </Link>

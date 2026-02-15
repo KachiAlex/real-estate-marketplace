@@ -68,19 +68,45 @@ export const authenticatedFetch = async (url, options = {}) => {
     }
   };
 
+  // Debug: show what headers we're sending
+  try {
+    console.log('authenticatedFetch: url=', url);
+    console.log('authenticatedFetch: Authorization header present:', !!requestOptions.headers.Authorization);
+    if (requestOptions.headers.Authorization) {
+      console.log('authenticatedFetch: token starts with:', requestOptions.headers.Authorization.substring(0, 20) + '...');
+    } else {
+      console.log('authenticatedFetch: no Authorization header');
+    }
+  } catch (e) {}
+
   let res = await fetch(url, requestOptions);
 
+  console.log('authenticatedFetch: initial response status:', res.status, 'for', url);
+
   if (res.status === 401) {
+    console.log('authenticatedFetch: got 401, attempting token refresh');
     // Try refresh once
     const newToken = await tryRefreshAccessToken();
     if (newToken) {
+      console.log('authenticatedFetch: token refresh successful, retrying request');
       const retryHeaders = {
         ...requestOptions.headers,
         Authorization: `Bearer ${newToken}`
       };
       const retryOptions = { ...requestOptions, headers: retryHeaders };
+      try {
+        console.debug('authenticatedFetch: retrying with refreshed token for', url);
+      } catch (e) {}
       res = await fetch(url, retryOptions);
+      console.log('authenticatedFetch: retry response status:', res.status, 'for', url);
+    } else {
+      console.log('authenticatedFetch: token refresh failed or no refresh token');
     }
+    // If still 401, log response body for debugging
+    try {
+      const bodyText = await res.clone().text();
+      console.log('authenticatedFetch: 401 response body for', url, ':', bodyText);
+    } catch (e) {}
   }
 
   return res;
