@@ -412,20 +412,12 @@ const HelpSupport = () => {
     }
 
     try {
-      // Ensure we have a valid access token (try refresh if missing)
-      try {
-        if (!accessToken && typeof refreshAccessToken === 'function') {
-          await refreshAccessToken();
-        }
-      } catch (e) {
-        console.warn('Token refresh failed before submitting contact form', e);
-      }
       const payload = {
         message: `Subject: ${contactForm.subject}\nPriority: ${contactForm.priority}\n\n${contactForm.message}`,
         category: contactForm.category
       };
 
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
+      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -506,15 +498,7 @@ const HelpSupport = () => {
 
     // Send message to support inquiry system (use same path as contact form)
     try {
-      // Ensure we have a valid access token (try refresh if missing)
-      try {
-        if (!accessToken && typeof refreshAccessToken === 'function') {
-          await refreshAccessToken();
-        }
-      } catch (e) {
-        console.warn('Token refresh failed before sending chat message', e);
-      }
-      const response = await authenticatedFetch(getApiUrl('/support/inquiry'), {
+      const response = await authenticatedFetch(getApiUrl('/support/inquiries'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

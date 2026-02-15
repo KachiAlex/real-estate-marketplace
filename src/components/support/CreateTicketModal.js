@@ -19,24 +19,15 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
     }
 
     // Accept either `uid` or `id` depending on auth shape
-    if (!user || !(user.uid || user.id)) {
+    if (!user || !user.uid) {
       toast.error('Please log in to submit a support ticket');
       return;
     }
 
-    console.log('CreateTicketModal: Starting submit, user:', user.uid || user.id);
+    console.log('CreateTicketModal: Starting submit, user:', user.uid);
     console.log('CreateTicketModal: accessToken present:', !!accessToken);
 
     setSubmitting(true);
-    // Ensure we have a valid access token (try refresh if missing)
-    try {
-      if (!accessToken && typeof refreshAccessToken === 'function') {
-        console.log('CreateTicketModal: No accessToken, attempting refresh');
-        await refreshAccessToken();
-      }
-    } catch (e) {
-      console.warn('Token refresh failed before creating ticket', e);
-    }
     try {
       const payload = {
         subject: form.subject,
@@ -47,7 +38,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
 
       console.log('CreateTicketModal: Sending payload:', payload);
 
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
+      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
