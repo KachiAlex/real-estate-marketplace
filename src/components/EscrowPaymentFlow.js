@@ -5,6 +5,7 @@ import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake, FaSpinner } from 'react-icons/fa';
+import { initializePaystackPayment } from '../utils/paystack';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
@@ -150,7 +151,7 @@ const EscrowPaymentFlow = ({
   const [loading, setLoading] = useState(!(providedProperty || providedInvestment));
   const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
   const [paymentData, setPaymentData] = useState({
-    paymentMethod: 'flutterwave',
+    paymentMethod: 'paystack',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -573,19 +574,13 @@ const EscrowPaymentFlow = ({
       
       // Validate payment data if card payment
       if (paymentData.paymentMethod === 'card') {
-        console.log('🔥 EscrowPaymentFlow: Validating card payment...');
-        console.log('🔥 EscrowPaymentFlow: Card details:', paymentData);
         if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
-          console.log('❌ EscrowPaymentFlow: Card validation failed');
           toast.error('Please fill in all payment details');
           return;
         }
       } else if (paymentData.paymentMethod === 'test') {
-        console.log('🔥 EscrowPaymentFlow: Using test payment method');
         handleProcessTestPayment();
         return;
-      } else {
-        console.log('🔥 EscrowPaymentFlow: Using Flutterwave payment, skipping card validation');
       }
 
       console.log('🔥 EscrowPaymentFlow: Setting loading state...');
@@ -669,7 +664,7 @@ const EscrowPaymentFlow = ({
 
         const payload = {
           amount: itemPriceValue,
-          paymentMethod: 'flutterwave',
+          paymentMethod: 'paystack',
           paymentType: 'escrow',
           relatedEntity: {
             type: transactionType === 'investment' ? 'investment' : 'property',
@@ -726,33 +721,48 @@ const EscrowPaymentFlow = ({
 
         const providerData = data.data?.providerData || {};
         const paymentRecord = data.data?.payment || data.data;
-        const authorizationUrl = providerData.authorizationUrl || providerData.link;
-        const providerReference = providerData.txRef || providerData.tx_ref || paymentRecord?.reference;
+        const paystackKey = providerData.paystackKey || process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
+        const providerReference = paymentRecord?.reference || providerData.reference || providerData.txRef;
+        const amount = paymentRecord?.amount || payload.amount;
+        const email = user?.email || 'user@example.com';
 
-        if (!authorizationUrl) {
-          throw new Error('Payment authorization link missing from response');
+        if (!paystackKey || !providerReference || !amount) {
+          throw new Error('Paystack payment details missing from response');
         }
 
-        const entryToSave = {
-          escrowId,
-          paymentId: paymentRecord?.id,
-          reference: paymentRecord?.reference,
-          txRef: providerReference,
-          propertyId: property?.id,
-          investmentId: investment?.id,
-          status: 'processing',
-          checkoutUrl: authorizationUrl,
-          storedAt: Date.now()
-        };
+        // Launch Paystack payment
+        initializePaystackPayment({
+          key: paystackKey,
+          email,
+          amount: amount * 100, // Paystack expects amount in kobo
+          reference: providerReference,
+          onSuccess: (response) => {
+            toast.success('Payment completed! Verifying...');
+            // Optionally trigger backend verification here
+            setPaymentStatus('completed');
+            markEscrowTransactionFunded(escrowId, providerReference, 'paystack');
+            saveEscrowPaymentEntry({
+              escrowId,
+              paymentId: paymentRecord?.id,
+              reference: providerReference,
+              txRef: providerReference,
+              propertyId: property?.id,
+              investmentId: investment?.id,
+              status: 'completed',
+              checkoutUrl: '',
+              storedAt: Date.now()
+            });
+            setPendingPayment(null);
+            setCheckoutUrl('');
+            setStep(3);
+          },
+          onClose: () => {
+            toast('Paystack payment window closed.');
+          }
+        });
 
-        saveEscrowPaymentEntry(entryToSave);
-        setPendingPayment(entryToSave);
-        setCheckoutUrl(authorizationUrl);
         setPaymentStatus('processing');
         setStep(2);
-
-        openCheckoutWindow(authorizationUrl);
-        toast.success('Flutterwave checkout launched. Complete payment to proceed.');
 
         if (investmentId) {
           localStorage.setItem('pendingInvestmentProject', JSON.stringify(investment));
@@ -939,16 +949,16 @@ const EscrowPaymentFlow = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'flutterwave' }))}
+                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'paystack' }))}
                   className={`p-4 border-2 rounded-lg transition ${
-                    paymentData.paymentMethod === 'flutterwave'
+                    paymentData.paymentMethod === 'paystack'
                       ? 'border-blue-600 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="text-center">
                     <FaCreditCard className="mx-auto text-xl mb-2 text-blue-600" />
-                    <p className="font-medium text-gray-900 text-sm">Flutterwave</p>
+                    <p className="font-medium text-gray-900 text-sm">Paystack</p>
                   </div>
                 </button>
                 <button

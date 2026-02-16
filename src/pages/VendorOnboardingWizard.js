@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
+import { initializePaystackPayment } from '../utils/paystack';
 
 const VendorOnboardingWizard = () => {
   const { user, isVendorOnboarded, isVendorSubscriptionActive } = useAuth();
@@ -111,26 +112,30 @@ const VendorOnboardingWizard = () => {
   };
 
   const handlePayment = async () => {
-    // Initialize Paystack payment
     setLoading(true);
     try {
-      // This would integrate with Paystack
-      // For now, simulate payment completion
-      const response = await authenticatedFetch(getApiUrl('/vendor/subscribe'), {
-        method: 'POST',
-        body: JSON.stringify({
-          paymentReference: `REF_${Date.now()}`,
-          paymentMethod: 'paystack'
-        })
-      });
+      // Launch Paystack payment
+      const paystackKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
+      const reference = `VER_${Date.now()}`;
+      const email = user?.email || 'user@example.com';
+      const amount = 50000 * 100; // Example verification fee, Paystack expects amount in kobo
 
-      if (response.ok) {
-        setFormData(prev => ({ ...prev, paymentComplete: true }));
-        toast.success('Subscription activated successfully!');
-        setTimeout(() => {
-          navigate('/vendor/dashboard');
-        }, 2000);
-      }
+      initializePaystackPayment({
+        key: paystackKey,
+        email,
+        amount,
+        reference,
+        onSuccess: (response) => {
+          toast.success('Payment completed! Verifying...');
+          setFormData(prev => ({ ...prev, paymentComplete: true }));
+          setTimeout(() => {
+            navigate('/vendor/dashboard');
+          }, 2000);
+        },
+        onClose: () => {
+          toast('Paystack payment window closed.');
+        }
+      });
     } catch (error) {
       toast.error('Payment failed. Please try again.');
     } finally {

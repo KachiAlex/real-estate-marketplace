@@ -251,6 +251,10 @@ if (!process.env.CLOUDINARY_CLOUD_NAME && process.env.NODE_ENV === 'production')
 const vendorRoutes = require('./routes/vendor');
 app.use('/api/vendor', vendorRoutes);
 
+// Payment verification endpoint
+const paymentRoutes = require('./routes/payment');
+app.use('/api/payment', paymentRoutes);
+
 // Import mock data
 const mockUsers = require('./data/mockUsers');
 const mockProperties = require('./data/mockProperties');

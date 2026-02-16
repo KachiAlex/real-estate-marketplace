@@ -171,6 +171,28 @@ const AdminDashboard = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [activeTab, setActiveTab] = useState('properties');
   const [escrows, setEscrows] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [paymentsError, setPaymentsError] = useState('');
+    // Fetch payment records from backend
+    const loadPayments = useCallback(async () => {
+      setLoadingPayments(true);
+      setPaymentsError('');
+      try {
+        // Use authenticatedFetch if available, fallback to fetch
+        const fetchFn = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
+        const response = await fetchFn(getApiUrl('/payment'));
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.success) {
+          throw new Error(payload?.message || 'Failed to load payments');
+        }
+        setPayments(Array.isArray(payload.data) ? payload.data : []);
+      } catch (error) {
+        setPaymentsError(error?.message || 'Unable to load payments');
+      } finally {
+        setLoadingPayments(false);
+      }
+    }, []);
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -579,6 +601,9 @@ const AdminDashboard = () => {
     if (activeTab === 'users' && user?.role === 'admin') {
       const roleParam = userRoleFilter !== 'all' ? userRoleFilter : undefined;
       loadUsersFromApi({ role: roleParam });
+    }
+    if (activeTab === 'escrow' && user?.role === 'admin') {
+      loadPayments();
     }
   }, [activeTab, userRoleFilter, user?.role, loadUsersFromApi]);
 
@@ -1465,89 +1490,50 @@ const AdminDashboard = () => {
               <AdminEscrowVolumeChart escrows={escrows} />
             </div>
 
+            {/* Payment Records Section */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
+                <h2 className="text-lg font-medium text-gray-900">Payment Records</h2>
+                <p className="text-sm text-gray-500">All Paystack, Flutterwave, Stripe, and escrow payments</p>
               </div>
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Update</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {escrows.map(tx => (
-                      <tr key={tx.id}>
-                        <td className="px-6 py-4 text-sm">{tx.id}</td>
-                        <td className="px-6 py-4 text-sm">{tx.propertyTitle}</td>
-                        <td className="px-6 py-4 text-sm">{tx.buyerName}</td>
-                        <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
-                        <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
-                        <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : '—'}
-                        </td>
+              {loadingPayments ? (
+                <div className="p-6 text-center text-gray-500">Loading payments...</div>
+              ) : paymentsError ? (
+                <div className="p-6 text-center text-red-600">{paymentsError}</div>
+              ) : payments.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">No payment records found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gateway</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="lg:hidden space-y-4">
-                {escrows.map((tx) => {
-                  const statusKey = (tx.status || 'pending').toLowerCase();
-                  const statusClass = statusKey === 'active'
-                    ? 'bg-green-50 text-green-700'
-                    : statusKey === 'disputed'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-yellow-50 text-yellow-700';
-                  const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
-                  return (
-                    <div key={tx.id} className="p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{tx.propertyTitle}</p>
-                          <p className="text-xs text-gray-500">ID: {tx.id}</p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Buyer</p>
-                          <p className="font-medium text-gray-900">{tx.buyerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Seller</p>
-                          <p className="font-medium text-gray-900">{tx.sellerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Amount</p>
-                          <p className="font-medium text-gray-900">₦{Number(tx.amount || 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Created</p>
-                          <p className="font-medium text-gray-900">
-                            {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-gray-500">
-                        Updated {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : 'recently'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {payments.map((p) => (
+                        <tr key={p._id || p.reference}>
+                          <td className="px-6 py-4 text-sm">{p.reference || p._id}</td>
+                          <td className="px-6 py-4 text-sm capitalize">{p.type || 'escrow'}</td>
+                          <td className="px-6 py-4 text-sm">₦{Number(p.amount || 0).toLocaleString()}</td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${p.status === 'success' ? 'bg-green-100 text-green-800' : p.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{p.status}</span>
+                          </td>
+                          <td className="px-6 py-4 text-sm capitalize">{p.gateway || 'Paystack'}</td>
+                          <td className="px-6 py-4 text-sm">{p.userEmail || p.userId || '—'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

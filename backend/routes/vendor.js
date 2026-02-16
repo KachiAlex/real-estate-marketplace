@@ -5,35 +5,105 @@ const User = require('../models/User');
 const AdminSettings = require('../models/AdminSettings');
 
 // POST /api/vendor/register - Register as vendor (add vendor role)
-router.post('/register', protect, async (req, res) => {
+router.post('/register', async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    let user = null;
+    // If authenticated, req.userId will be set
+    if (req.userId) {
+      user = await User.findById(req.userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+      // Add vendor role if not already present
+      if (!user.roles.includes('vendor')) {
+        user.roles.push('vendor');
+        user.vendorProfile = {
+          ...user.vendorProfile,
+          joinedDate: new Date(),
+          kycStatus: 'pending',
+          subscription: {
+            isActive: false,
+            amount: 50000,
+            planType: 'monthly'
+          }
+        };
+        await user.save();
+      }
+      return res.json({
+        success: true,
+        message: 'Successfully registered as vendor',
+        user: {
+          id: user._id,
+          roles: user.roles,
+          vendorProfile: user.vendorProfile
+        }
+      });
+    }
 
-    // Add vendor role if not already present
-    if (!user.roles.includes('vendor')) {
-      user.roles.push('vendor');
-      user.vendorProfile = {
-        ...user.vendorProfile,
+    // Unauthenticated: create new vendor user
+    const { businessName, businessType, email, phone } = req.body;
+    if (!businessName || !businessType || !email) {
+      return res.status(400).json({ success: false, message: 'Missing required fields (businessName, businessType, email)' });
+    }
+    // Check if user already exists
+    let existing = await User.findOne({ email });
+    if (existing) {
+      // If user exists, add vendor role if not present
+      if (!existing.roles.includes('vendor')) {
+        existing.roles.push('vendor');
+        existing.vendorProfile = {
+          ...existing.vendorProfile,
+          businessName,
+          businessType,
+          phone,
+          joinedDate: new Date(),
+          kycStatus: 'pending',
+          subscription: {
+            isActive: false,
+            amount: 50000,
+            planType: 'monthly'
+          }
+        };
+        await existing.save();
+      }
+      return res.json({
+        success: true,
+        message: 'Vendor role added to existing user',
+        user: {
+          id: existing._id,
+          roles: existing.roles,
+          vendorProfile: existing.vendorProfile
+        }
+      });
+    }
+    // Create new user
+    const password = Math.random().toString(36).slice(-8); // Generate random password
+    user = new User({
+      email,
+      password,
+      roles: ['vendor'],
+      vendorProfile: {
+        businessName,
+        businessType,
+        phone,
         joinedDate: new Date(),
         kycStatus: 'pending',
         subscription: {
           isActive: false,
-          amount: 50000, // Default, will be updated from admin settings
+          amount: 50000,
           planType: 'monthly'
         }
-      };
-      await user.save();
-    }
-
-    res.json({
+      }
+    });
+    await user.save();
+    // Return credentials (email, password)
+    return res.json({
       success: true,
-      message: 'Successfully registered as vendor',
+      message: 'Vendor user created',
       user: {
         id: user._id,
         roles: user.roles,
         vendorProfile: user.vendorProfile
-      }
+      },
+      credentials: { email, password }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to register as vendor', error: error.message });

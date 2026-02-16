@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext-new';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
-import { authenticatedFetch } from '../utils/authToken';
 
 const BecomeVendorModal = ({ isOpen, onClose }) => {
   const { user, refreshAccessToken } = useAuth();
@@ -12,6 +11,8 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
   const [form, setForm] = useState({
     businessName: '',
     businessType: '',
+    email: '',
+    phone: '',
     agreeToTerms: false
   });
 
@@ -22,47 +23,38 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!form.businessName || !form.businessType) {
-      toast.error('Please fill in all business information');
+    if (!form.businessName || !form.businessType || !form.email) {
+      toast.error('Please fill in all business information and email');
       return;
     }
-
     if (!form.agreeToTerms) {
       toast.error('You must agree to the terms and conditions');
       return;
     }
-
     setLoading(true);
     try {
-      // Register as vendor
-      const response = await authenticatedFetch(getApiUrl('/vendor/register'), {
-        method: 'POST'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to register as vendor');
-      }
-
-      // Update vendor profile with business info
-      const profileResponse = await authenticatedFetch(getApiUrl('/vendor/profile/update'), {
-        method: 'PUT',
+      // Register as vendor (send business info and email)
+      const response = await fetch(getApiUrl('/vendor/register'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessName: form.businessName,
-          businessType: form.businessType
+          businessType: form.businessType,
+          email: form.email,
+          phone: form.phone || ''
         })
       });
-
-      if (!profileResponse.ok) {
-        console.warn('Profile update failed, but vendor registration succeeded');
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to register as vendor');
       }
-
       toast.success('Successfully registered as vendor!');
-
-      // Refresh user data
-      await refreshAccessToken();
-
-      // Close modal and redirect to onboarding
+      // Show credentials if returned
+      if (data.credentials) {
+        toast('Your vendor login credentials:', { icon: '🔑' });
+        toast(`Email: ${data.credentials.email}`);
+        toast(`Password: ${data.credentials.password}`);
+      }
       onClose();
       navigate('/vendor/onboarding-wizard');
 
@@ -120,27 +112,35 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
               type="text"
               value={form.businessName}
               onChange={handleChange('businessName')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
               placeholder="Your Business Name"
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Business Type
+              Email
             </label>
-            <select
-              value={form.businessType}
-              onChange={handleChange('businessType')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <input
+              type="email"
+              value={form.email}
+              onChange={handleChange('email')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+              placeholder="Your Email"
               required
-            >
-              <option value="">Select business type</option>
-              {businessTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone
+            </label>
+            <input
+              type="text"
+              value={form.phone}
+              onChange={handleChange('phone')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+              placeholder="Your Phone Number"
+            />
           </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">

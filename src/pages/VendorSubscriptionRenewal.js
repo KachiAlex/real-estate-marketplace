@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
+import { initializePaystackPayment } from '../utils/paystack';
 
 const VendorSubscriptionRenewal = () => {
   const { user } = useAuth();
@@ -31,24 +32,29 @@ const VendorSubscriptionRenewal = () => {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      // Initialize Paystack payment
-      const response = await authenticatedFetch(getApiUrl('/vendor/renew'), {
-        method: 'POST',
-        body: JSON.stringify({
-          paymentReference: `REF_${Date.now()}`,
-          paymentMethod: 'paystack'
-        })
-      });
+      // Launch Paystack payment
+      const paystackKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
+      const reference = `SUB_${Date.now()}`;
+      const email = user?.email || 'user@example.com';
+      const amount = subscriptionAmount * 100; // Paystack expects amount in kobo
 
-      if (response.ok) {
-        setPaymentComplete(true);
-        toast.success('Subscription renewed successfully!');
-        setTimeout(() => {
-          navigate('/vendor/dashboard');
-        }, 2000);
-      } else {
-        toast.error('Payment failed. Please try again.');
-      }
+      initializePaystackPayment({
+        key: paystackKey,
+        email,
+        amount,
+        reference,
+        onSuccess: async (response) => {
+          toast.success('Payment completed! Verifying...');
+          // Optionally trigger backend verification here
+          setPaymentComplete(true);
+          setTimeout(() => {
+            navigate('/vendor/dashboard');
+          }, 2000);
+        },
+        onClose: () => {
+          toast('Paystack payment window closed.');
+        }
+      });
     } catch (error) {
       toast.error('Payment failed. Please try again.');
     } finally {
