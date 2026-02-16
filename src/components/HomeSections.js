@@ -164,7 +164,7 @@ const HomeSections = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <>
+            searchQuery.trim() && paginatedAgents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
                 {paginatedAgents.map((agent) => (
                   <div key={agent.id || agent.email} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6">
@@ -183,21 +183,12 @@ const HomeSections = () => {
                         </p>
                       </div>
                     </div>
-                    
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center text-gray-600">
-                        <FaMapMarkerAlt className="mr-2 text-blue-500" />
-                        <span>{agent.vendorData?.agentLocation || 'Location not specified'}</span>
-                      </div>
-                      {agent.phone && (
-                        <div className="flex items-center text-gray-600">
-                          <FaPhone className="mr-2 text-blue-500" />
-                          <span>{agent.phone}</span>
-                        </div>
-                      )}
-                            {loading ? (
-                              <div className="flex justify-center items-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    {/* ...existing agent details and contact button... */}
+                  </div>
+                ))}
+              </div>
+            ) : null
+          )}
                               </div>
                             ) : (
                               searchQuery.trim() && paginatedAgents.length > 0 ? (
