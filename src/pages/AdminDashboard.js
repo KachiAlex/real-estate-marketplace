@@ -149,7 +149,7 @@ const MOCK_DISPUTES = [
 ];
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { 
     properties, 
     loading, 
@@ -220,8 +220,8 @@ const AdminDashboard = () => {
   const usersLoadedRef = useRef(false);
 
   // Early return for non-admin users
-  if (!user || user.role !== 'admin') {
-    console.log('AdminDashboard: Access denied - user:', user, 'role:', user?.role);
+  if (!user || !isAdmin) {
+    console.log('AdminDashboard: Access denied - user:', user, 'isAdmin:', isAdmin);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
