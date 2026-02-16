@@ -80,6 +80,7 @@ const OnboardingWizard = () => {
         toast.success('Payment successful!');
         setForm((prev) => ({ ...prev, paymentComplete: true }));
         setTimeout(() => {
+          // Always redirect to dashboard, never to login
           navigate('/vendor/dashboard');
         }, 2000);
       },

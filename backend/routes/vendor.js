@@ -143,15 +143,19 @@ router.put('/profile/update', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update vendor profile', error: error.message });
   }
 });
-router.post('/kyc/submit', protect, async (req, res) => {
+router.post('/kyc/submit', async (req, res) => {
   try {
-    const { documents, businessInfo } = req.body;
-    const user = await User.findById(req.userId);
-
+    const { documents, businessInfo, email } = req.body;
+    let user = null;
+    // Try to find user by ID if authenticated, else by email
+    if (req.userId) {
+      user = await User.findById(req.userId);
+    } else if (email) {
+      user = await User.findOne({ email });
+    }
     if (!user || !user.roles.includes('vendor')) {
       return res.status(403).json({ success: false, message: 'User is not registered as vendor' });
     }
-
     // Update business info
     if (businessInfo) {
       user.vendorProfile = {
@@ -160,7 +164,6 @@ router.post('/kyc/submit', protect, async (req, res) => {
         kycStatus: 'under_review'
       };
     }
-
     // Add KYC documents
     if (documents && Array.isArray(documents)) {
       user.vendorProfile.kycDocuments = documents.map(doc => ({
@@ -170,9 +173,7 @@ router.post('/kyc/submit', protect, async (req, res) => {
       }));
       user.vendorProfile.kycStatus = 'under_review';
     }
-
     await user.save();
-
     res.json({
       success: true,
       message: 'KYC documents submitted successfully',
