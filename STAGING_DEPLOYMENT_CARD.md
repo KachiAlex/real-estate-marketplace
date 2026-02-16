@@ -79,6 +79,10 @@ EMAIL_FROM_NAME=Property Ark Support
 SUPPORT_EMAIL=admin@propertyark.com
 SOCKET_ORIGIN=https://[YOUR_STAGING_URL]
 LOG_LEVEL=debug
+
+# Paystack Test Keys
+PAYSTACK_SECRET_KEY=sk_test_0bc8b42c70ec2955ac5d61a4b36f463ab47368fb
+PAYSTACK_PUBLIC_KEY=pk_test_b03deeb7e613d20289b6523d13f9ad311602c2b3
 ```
 
 ---
