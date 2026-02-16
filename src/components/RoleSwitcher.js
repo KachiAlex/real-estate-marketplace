@@ -9,13 +9,15 @@ const RoleSwitcher = ({ onClose }) => {
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
 
+	// Robust switch handler: updates context, handles navigation, and edge cases
 	const handleSwitch = async (targetRole) => {
-		if (!user) return;
+		if (!user || user.activeRole === targetRole) return;
 		setLoading(true);
 		try {
 			const result = await switchRole(targetRole);
 			onClose?.();
-			if (result && result.activeRole === 'vendor') {
+			// Defensive: ensure updated user context
+			if (result && (result.activeRole === 'vendor' || targetRole === 'vendor')) {
 				navigate('/vendor/dashboard', { replace: true });
 			} else {
 				navigate('/dashboard', { replace: true });
