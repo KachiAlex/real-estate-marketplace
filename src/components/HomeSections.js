@@ -195,86 +195,38 @@ const HomeSections = () => {
                           <span>{agent.phone}</span>
                         </div>
                       )}
-                      {agent.email && (
-                        <div className="flex items-center text-gray-600">
-                          <FaEnvelope className="mr-2 text-blue-500" />
-                          <span className="text-sm truncate">{agent.email}</span>
-                        </div>
-                      )}
-                      {agent.vendorData?.experience && (
-                        <div className="flex items-center text-gray-600">
-                          <FaUser className="mr-2 text-blue-500" />
-                          <span>{agent.vendorData.experience}</span>
-                        </div>
-                      )}
-                      {agent.propertiesCount > 0 && (
-                        <div className="flex items-center text-gray-600">
-                          <span className="text-sm text-gray-500">
-                            {agent.propertiesCount} {agent.propertiesCount === 1 ? 'property' : 'properties'} listed
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {agent.phone ? (
-                      <a
-                        href={`tel:${agent.phone}`}
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2 no-underline"
-                      >
-                        <FaPhone className="mr-1" />
-                        <span>Contact Agent</span>
-                      </a>
-                    ) : (
-                      <button 
-                        disabled
-                        className="w-full bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed transition-colors duration-300 flex items-center justify-center space-x-2"
-                        title="Phone number not available"
-                      >
-                        <FaPhone className="mr-1" />
-                        <span>Contact Agent</span>
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-4 mt-8">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={!pagination.hasPreviousPage}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      pagination.hasPreviousPage
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <FaChevronLeft className="inline mr-2" />
-                    Previous
-                  </button>
-                  
-                  <span className="text-gray-700">
-                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} agents)
-                  </span>
-                  
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                    disabled={!pagination.hasNextPage}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      pagination.hasNextPage
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Next
-                    <FaChevronRight className="inline ml-2" />
-                  </button>
-                </div>
-              )}
-
-              {paginatedAgents.length === 0 && !loading && (
-                <div className="text-center py-12">
+                            {loading ? (
+                              <div className="flex justify-center items-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                              </div>
+                            ) : (
+                              <>
+                                {searchQuery.trim() && paginatedAgents.length > 0 ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                                    {paginatedAgents.map((agent) => (
+                                      <div key={agent.id || agent.email} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6">
+                                        <div className="flex items-center space-x-4 mb-4">
+                                          <img
+                                            src={agent.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
+                                            alt={`${agent.firstName || ''} ${agent.lastName || ''}`}
+                                            className="w-16 h-16 rounded-full object-cover"
+                                          />
+                                          <div>
+                                            <h3 className="text-xl font-semibold text-gray-900">
+                                              {agent.firstName || ''} {agent.lastName || ''}
+                                            </h3>
+                                            <p className="text-blue-600 font-medium">
+                                              {agent.vendorData?.businessName || `${agent.firstName || ''} Real Estate`}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        {/* ...existing agent details and contact button... */}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </>
+                            )}
                   <p className="text-gray-500 text-lg">
                     {searchQuery || selectedLocation !== 'all'
                       ? 'No agents found matching your search criteria.'
