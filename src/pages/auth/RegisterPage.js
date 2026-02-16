@@ -6,7 +6,7 @@ import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 
 const RegisterPage = ({ isModal = false, onClose }) => {
-  const { register, loading } = useAuth();
+  const { register, loading, signInWithGooglePopup } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     firstName: '',
@@ -141,7 +141,7 @@ const RegisterPage = ({ isModal = false, onClose }) => {
           type="button"
           onClick={async () => {
             try {
-              await useAuth().signInWithGooglePopup();
+              await signInWithGooglePopup();
               const redirect = sessionStorage.getItem('authRedirect');
               if (redirect) {
                 sessionStorage.removeItem('authRedirect');
