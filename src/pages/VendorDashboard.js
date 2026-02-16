@@ -22,16 +22,7 @@ const VendorDashboard = () => {
   const navigate = useNavigate();
   const { subscription, isSubscriptionActive } = useVendor();
 
-  // Onboarding and subscription check: if vendor but not onboarded or not subscribed, redirect
-  useEffect(() => {
-    if (user && user.role === 'vendor') {
-      if (!(user.vendorData && user.vendorData.onboardingComplete)) {
-        navigate('/vendor/onboarding-dashboard', { replace: true });
-      } else if (!isSubscriptionActive) {
-        navigate('/vendor/renew-subscription', { replace: true });
-      }
-    }
-  }, [user, navigate, isSubscriptionActive]);
+  // Onboarding and subscription check removed: buyers can switch to vendor dashboard without onboarding/payment
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();
