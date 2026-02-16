@@ -446,8 +446,9 @@ const upload = multer({
 });
 
 router.post('/jwt/update-profile', verifyToken, upload.single('avatar'), async (req, res) => {
+router.post('/jwt/update-profile', upload.single('avatar'), async (req, res) => {
 // Also support PUT for update-profile
-router.put('/jwt/update-profile', verifyToken, upload.single('avatar'), async (req, res) => {
+router.put('/jwt/update-profile', upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findByPk(req.userId);
     if (!user) {
