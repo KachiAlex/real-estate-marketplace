@@ -8,7 +8,9 @@ const adminSettingsService = require('../services/adminSettingsService');
 const mortgageBankService = require('../services/mortgageBankService');
 
 const router = express.Router();
-// Update existing admin user by email (TEMP: no auth middleware for testing)
+// Update existing admin user by email (TEMP: Sequelize/Postgres, no auth middleware for testing)
+const { sequelize, db } = require('../config/sequelizeDb');
+const bcrypt = require('bcryptjs');
 router.put('/update-admin', [
   body('email').isEmail().withMessage('Valid email required'),
   body('firstName').optional().notEmpty().withMessage('First name required'),
@@ -22,7 +24,7 @@ router.put('/update-admin', [
     }
     const { email, firstName, lastName, password } = req.body;
     // Find user by email
-    const user = await userService.findByEmail(email);
+    const user = await db.User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -30,13 +32,13 @@ router.put('/update-admin', [
     const updateFields = {};
     if (firstName) updateFields.firstName = firstName;
     if (lastName) updateFields.lastName = lastName;
-    if (password) updateFields.password = password;
+    if (password) updateFields.password = await bcrypt.hash(password, 12);
     // Always keep role and roles as admin
     updateFields.role = 'admin';
     updateFields.roles = ['admin'];
     // Update user
-    const updatedUser = await userService.updateUser(user.id, updateFields);
-    res.json({ success: true, message: 'Admin user updated', user: { email, firstName: updatedUser.firstName, lastName: updatedUser.lastName, role: 'admin', roles: ['admin'] } });
+    await user.update(updateFields);
+    res.json({ success: true, message: 'Admin user updated', user: { email, firstName: user.firstName, lastName: user.lastName, role: 'admin', roles: ['admin'] } });
   } catch (error) {
     console.error('Update admin error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
