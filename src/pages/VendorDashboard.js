@@ -38,7 +38,7 @@ const VendorDashboard = () => {
   const navigate = useNavigate();
   const { subscription, isSubscriptionActive } = useVendor();
 
-  // Onboarding and subscription check removed: buyers can switch to vendor dashboard without onboarding/payment
+  // Onboarding and subscription check fully removed
   const { deleteProperty } = useProperty();
   useNotifications(); // Keep for side effects
   const location = useLocation();

@@ -7,7 +7,7 @@ import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
-import RoleSwitcher from '../RoleSwitcher';
+// RoleSwitcher removed
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
@@ -381,7 +381,7 @@ const Header = () => {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     {/* Active role badge and switcher */}
                     {/* Centralized role switcher component */}
-                    <RoleSwitcher onClose={() => setIsUserMenuOpen(false)} />
+                    {/* RoleSwitcher removed */}
                     <Link
                       to={profilePath}
                       onClick={(e) => {

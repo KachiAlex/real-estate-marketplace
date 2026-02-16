@@ -68,7 +68,7 @@ const VendorProfile = lazy(() => import('./pages/VendorProfile'));
 const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
 const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
-const VendorOnboardingDashboard = lazy(() => import('./pages/VendorOnboardingDashboard'));
+// VendorOnboardingDashboard removed
 const VendorRenewSubscription = lazy(() => import('./pages/VendorRenewSubscription'));
 
 const PageWithSidebar = ({ children, id }) => (
@@ -365,11 +365,7 @@ const MainRoutes = () => (
         </VendorRoute>
       </ProtectedRoute>
     } />
-    <Route path="/vendor/onboarding-dashboard" element={
-      <VendorRoute>
-        <VendorOnboardingDashboard />
-      </VendorRoute>
-    } />
+    {/* VendorOnboardingDashboard route removed */}
     <Route path="/vendor/renew-subscription" element={
       <VendorRoute>
         <VendorRenewSubscription />

@@ -618,6 +618,10 @@ const Dashboard = () => {
             <p className="text-blue-100 mb-4">
               Welcome to your dashboard. Track your property journey, manage saved listings, and explore new opportunities in the African real estate market.
             </p>
+            {/* Switch to Vendor Button */}
+            <div className="mb-4">
+              <RoleSwitcher buttonLabel="Switch to Vendor" />
+            </div>
 
         {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
