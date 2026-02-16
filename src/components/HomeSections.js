@@ -200,32 +200,30 @@ const HomeSections = () => {
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                               </div>
                             ) : (
-                              <>
-                                {searchQuery.trim() && paginatedAgents.length > 0 ? (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-                                    {paginatedAgents.map((agent) => (
-                                      <div key={agent.id || agent.email} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6">
-                                        <div className="flex items-center space-x-4 mb-4">
-                                          <img
-                                            src={agent.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
-                                            alt={`${agent.firstName || ''} ${agent.lastName || ''}`}
-                                            className="w-16 h-16 rounded-full object-cover"
-                                          />
-                                          <div>
-                                            <h3 className="text-xl font-semibold text-gray-900">
-                                              {agent.firstName || ''} {agent.lastName || ''}
-                                            </h3>
-                                            <p className="text-blue-600 font-medium">
-                                              {agent.vendorData?.businessName || `${agent.firstName || ''} Real Estate`}
-                                            </p>
-                                          </div>
+                              searchQuery.trim() && paginatedAgents.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                                  {paginatedAgents.map((agent) => (
+                                    <div key={agent.id || agent.email} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6">
+                                      <div className="flex items-center space-x-4 mb-4">
+                                        <img
+                                          src={agent.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
+                                          alt={`${agent.firstName || ''} ${agent.lastName || ''}`}
+                                          className="w-16 h-16 rounded-full object-cover"
+                                        />
+                                        <div>
+                                          <h3 className="text-xl font-semibold text-gray-900">
+                                            {agent.firstName || ''} {agent.lastName || ''}
+                                          </h3>
+                                          <p className="text-blue-600 font-medium">
+                                            {agent.vendorData?.businessName || `${agent.firstName || ''} Real Estate`}
+                                          </p>
                                         </div>
-                                        {/* ...existing agent details and contact button... */}
                                       </div>
-                                    ))}
-                                  </div>
-                                ) : null}
-                              </>
+                                      {/* ...existing agent details and contact button... */}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null
                             )}
                   <p className="text-gray-500 text-lg">
                     {searchQuery || selectedLocation !== 'all'
