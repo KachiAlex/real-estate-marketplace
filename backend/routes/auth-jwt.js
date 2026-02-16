@@ -420,3 +420,101 @@ router.post('/logout', verifyToken, (req, res) => {
 
 
 module.exports = router;
+/**
+ * @desc    Update user profile and avatar
+ * @route   POST /api/auth/jwt/update-profile
+ * @access  Private (requires valid JWT)
+ */
+const multer = require('multer');
+const path = require('path');
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, path.join(__dirname, '../uploads/avatars'));
+    },
+    filename: function (req, file, cb) {
+      cb(null, `${req.userId}_${Date.now()}${path.extname(file.originalname)}`);
+    }
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: function (req, file, cb) {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed!'));
+    }
+    cb(null, true);
+  }
+});
+
+router.post('/jwt/update-profile', verifyToken, upload.single('avatar'), async (req, res) => {
+// Also support PUT for update-profile
+router.put('/jwt/update-profile', verifyToken, upload.single('avatar'), async (req, res) => {
+  try {
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // Update fields
+    const { firstName, lastName, phone } = req.body;
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (phone) user.phone = phone;
+    // Avatar upload
+    if (req.file) {
+      user.avatar = `/uploads/avatars/${req.file.filename}`;
+    }
+    await user.save();
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        avatar: user.avatar,
+        role: user.role,
+        isVerified: user.isVerified,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+});
+  try {
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // Update fields
+    const { firstName, lastName, phone } = req.body;
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (phone) user.phone = phone;
+    // Avatar upload
+    if (req.file) {
+      user.avatar = `/uploads/avatars/${req.file.filename}`;
+    }
+    await user.save();
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        avatar: user.avatar,
+        role: user.role,
+        isVerified: user.isVerified,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+});
