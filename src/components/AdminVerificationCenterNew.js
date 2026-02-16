@@ -14,6 +14,7 @@ import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
 
 const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }) => {
+  // All hooks must be called unconditionally at the top level
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,6 +22,11 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   const [statusChangeApp, setStatusChangeApp] = useState(null); // For status change modal
   const [newStatus, setNewStatus] = useState(''); // New status being selected
   const [changing, setChanging] = useState(false); // Loading state for status change
+  const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
+
+  useEffect(() => {
+    setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
+  }, [config?.vendorSubscriptionFee]);
 
   // Fetch verification applications
   const fetchApplications = async () => {
@@ -194,10 +200,6 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     );
   }
 
-  const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
-  useEffect(() => {
-    setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
-  }, [config?.vendorSubscriptionFee]);
 
   const handleSubscriptionFeeChange = (e) => {
     const value = Number(e.target.value.replace(/[^\d]/g, ''));

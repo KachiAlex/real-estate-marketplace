@@ -18,6 +18,22 @@ import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
 
 const VendorDashboard = () => {
+    // State variables for dashboard data
+    const [verificationRequests, setVerificationRequests] = useState([]);
+    const [verificationRequestsLoading, setVerificationRequestsLoading] = useState(false);
+    const [properties, setProperties] = useState([]);
+    const [propertiesLoading, setPropertiesLoading] = useState(false);
+    const [inquiries, setInquiries] = useState([]);
+    const [viewingRequests, setViewingRequests] = useState([]);
+    const [selectedProperty, setSelectedProperty] = useState(null);
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+    const [showProposalModal, setShowProposalModal] = useState(false);
+    const [proposalDate, setProposalDate] = useState('');
+    const [proposalTime, setProposalTime] = useState('');
+    const [selectedRequestId, setSelectedRequestId] = useState(null);
+    // Example analytics and isAgent (replace with real logic if needed)
+    const analytics = {};
+    const isAgent = user?.vendorData?.isAgent || false;
   const { user } = useAuth();
   const navigate = useNavigate();
   const { subscription, isSubscriptionActive } = useVendor();
