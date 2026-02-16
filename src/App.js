@@ -150,25 +150,19 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/investment" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Investment />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Investment />
+      </PageWithSidebar>
     } />
     <Route path="/investment/:id" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <InvestmentDetail />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <InvestmentDetail />
+      </PageWithSidebar>
     } />
     <Route path="/investments" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Investments />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Investments />
+      </PageWithSidebar>
     } />
     <Route path="/investment-opportunities" element={
       <PageWithSidebar>

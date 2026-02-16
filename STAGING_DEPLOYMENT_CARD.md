@@ -2,9 +2,14 @@
 
 **Print this page or bookmark it for quick access during deployment**
 
----
 
 ## Quick Commands
+
+---
+
+<div align="center">
+  <button style="background-color:#007bff;color:#fff;padding:10px 20px;border:none;border-radius:4px;font-size:16px;cursor:pointer;">Proceed to Onboarding</button>
+</div>
 
 ### Deploy Frontend
 
