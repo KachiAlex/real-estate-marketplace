@@ -13,7 +13,7 @@ const RoleSwitcher = ({ onClose }) => {
 		if (!user) return;
 		setLoading(true);
 		try {
-			const result = await switchRole(targetRole === 'buyer' ? 'user' : targetRole);
+			const result = await switchRole(targetRole);
 			onClose?.();
 			if (result && result.activeRole === 'vendor') {
 				navigate('/vendor/dashboard', { replace: true });
