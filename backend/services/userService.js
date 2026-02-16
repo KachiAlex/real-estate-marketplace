@@ -246,20 +246,16 @@ const findByEmail = async (email) => {
 };
 
 // Find user by ID
+const { sequelize } = require('../config/sequelize');
+const UserModel = require('../models/index').User(sequelize);
+
 const findById = async (userId) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-    
-    const userDoc = await db.collection(COLLECTION).doc(userId).get();
-    
-    if (!userDoc.exists) {
+    const user = await UserModel.findByPk(userId);
+    if (!user) {
       return null;
     }
-    
-    return convertTimestamps(userDoc);
+    return user.toJSON();
   } catch (error) {
     console.error('Error finding user by ID:', error);
     throw error;
