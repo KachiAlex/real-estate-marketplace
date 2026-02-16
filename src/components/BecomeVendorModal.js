@@ -76,8 +76,9 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // Add top margin offset for fixed header (80px)
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center mt-[80px] p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">

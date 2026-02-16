@@ -39,10 +39,10 @@ const Header = () => {
   };
 
   const headerClass = `bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-[100]`;
-
+  // Responsive header: keep logo size, ensure header height is consistent, add modal offset utility
   return (
-    <header className={headerClass}>
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <header className={headerClass} style={{height: '80px', minHeight: '80px'}}>
+      <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between h-full">
         <Link to="/" className="flex items-center space-x-3">
           {!logoError ? (
             <img
@@ -60,32 +60,32 @@ const Header = () => {
           <div className="relative" ref={propertiesRef}>
             <button
               onClick={() => setIsPropertiesOpen(!isPropertiesOpen)}
-              className="text-sm text-gray-700 flex items-center space-x-1"
+              className="text-sm text-blue-600 hover:underline flex items-center space-x-1"
             >
               <span>Properties</span>
             </button>
 
             {isPropertiesOpen && (
               <div className="absolute left-0 mt-2 w-56 bg-white border rounded shadow z-50">
-                <Link to="/properties?type=buy" className="block px-4 py-2 text-sm">For Sale</Link>
-                <Link to="/properties?type=rent" className="block px-4 py-2 text-sm">For Rent</Link>
-                <Link to="/properties?type=short-let" className="block px-4 py-2 text-sm">Shortlet</Link>
-                <Link to="/properties" className="block px-4 py-2 text-sm">All Properties</Link>
+                <Link to="/properties?type=buy" className="block px-4 py-2 text-sm text-blue-600 hover:underline">For Sale</Link>
+                <Link to="/properties?type=rent" className="block px-4 py-2 text-sm text-blue-600 hover:underline">For Rent</Link>
+                <Link to="/properties?type=short-let" className="block px-4 py-2 text-sm text-blue-600 hover:underline">Shortlet</Link>
+                <Link to="/properties" className="block px-4 py-2 text-sm text-blue-600 hover:underline">All Properties</Link>
               </div>
             )}
           </div>
 
-          <Link to="/professional-services/enquiry" className="text-sm text-gray-700">Professional Service</Link>
-          <Link to="/investments" className="text-sm text-gray-700">Investments</Link>
-          <Link to="/about" className="text-sm text-gray-700">About</Link>
+          <Link to="/professional-services/enquiry" className="text-sm text-blue-600 hover:underline">Professional Service</Link>
+          <Link to="/investments" className="text-sm text-blue-600 hover:underline">Investments</Link>
+          <Link to="/about" className="text-sm text-blue-600 hover:underline">About</Link>
           {user && !isVendor && (
-            <Link to="/auth/vendor-register" className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+            <Link to="/auth/vendor-register" className="text-sm text-blue-600 hover:underline px-3 py-1 rounded">
               Become a Vendor
             </Link>
           )}
         </nav>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 md:space-x-3">
 
           {user ? (
             <div className="relative" ref={menuRef}>
@@ -104,7 +104,7 @@ const Header = () => {
             </div>
           ) : (
             <div className="hidden sm:flex space-x-2">
-              <Link to="/auth/login" className="text-sm text-gray-700">Sign in</Link>
+              <Link to="/auth/login" className="text-sm text-blue-600 hover:underline">Sign in</Link>
             </div>
           )}
 
@@ -116,7 +116,7 @@ const Header = () => {
 
       {isMobileOpen && (
         <div className="md:hidden border-t bg-white">
-            <nav className="px-4 py-3 space-y-2">
+            <nav className="px-2 py-2 space-y-1">
             <Link to="/" onClick={() => setIsMobileOpen(false)} className="block">Home</Link>
             <Link to="/properties?type=buy" onClick={() => setIsMobileOpen(false)} className="block">For Sale</Link>
             <Link to="/properties?type=rent" onClick={() => setIsMobileOpen(false)} className="block">For Rent</Link>

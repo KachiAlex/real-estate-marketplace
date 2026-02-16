@@ -18,8 +18,9 @@ const RegisterModal = ({ onClose }) => {
 
   const onPanelClick = (e) => e.stopPropagation();
 
+  // Add top margin offset for fixed header (80px)
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-16 sm:pt-0" role="dialog" aria-modal="true" aria-label="Register" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center mt-[80px] sm:mt-0" role="dialog" aria-modal="true" aria-label="Register" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
 
       <div
