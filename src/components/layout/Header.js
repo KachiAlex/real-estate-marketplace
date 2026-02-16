@@ -4,7 +4,7 @@ import { FaBars, FaTimes, FaBell, FaUser, FaSearch } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
-  const { user, logout } = useAuth() || {};
+  const { user, logout, isVendor } = useAuth() || {};
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location?.pathname === '/' || location?.pathname === '/home';
@@ -78,6 +78,11 @@ const Header = () => {
           <Link to="/professional-services/enquiry" className="text-sm text-gray-700">Professional Service</Link>
           <Link to="/investments" className="text-sm text-gray-700">Investments</Link>
           <Link to="/about" className="text-sm text-gray-700">About</Link>
+          {user && !isVendor && (
+            <Link to="/auth/vendor-register" className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+              Become a Vendor
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center space-x-3">

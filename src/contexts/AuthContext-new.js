@@ -193,10 +193,12 @@ function AuthProvider({ children }) {
   }, [refreshToken, logout]);
 
   const user = currentUser;
-  const isBuyer = currentUser?.role === 'buyer' || currentUser?.userType === 'buyer';
-  const isVendor = currentUser?.role === 'vendor' || currentUser?.userType === 'vendor';
-  const isVendorOnboarded = !!(currentUser && currentUser.vendorData && currentUser.vendorData.onboardingComplete);
-  const isVendorSubscriptionActive = !!(currentUser && currentUser.vendorData && currentUser.vendorData.subscriptionActive);
+  const isBuyer = currentUser?.roles?.includes('buyer') || currentUser?.role === 'buyer' || currentUser?.userType === 'buyer';
+  const isVendor = currentUser?.roles?.includes('vendor') || currentUser?.role === 'vendor' || currentUser?.userType === 'vendor';
+  const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.role === 'admin';
+  const hasDualRole = isBuyer && isVendor;
+  const isVendorOnboarded = !!(currentUser && currentUser.vendorProfile && currentUser.vendorProfile.onboardingComplete);
+  const isVendorSubscriptionActive = !!(currentUser && currentUser.vendorProfile && currentUser.vendorProfile.subscription && currentUser.vendorProfile.subscription.isActive);
 
   const updateUserProfile = useCallback(async (updates) => {
     if (!currentUser) throw new Error('User must be logged in to update profile');
@@ -307,6 +309,8 @@ function AuthProvider({ children }) {
     user,
     isBuyer,
     isVendor,
+    isAdmin,
+    hasDualRole,
     isVendorOnboarded,
     isVendorSubscriptionActive
   };

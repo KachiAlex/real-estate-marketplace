@@ -32,6 +32,7 @@ const Properties = lazy(() => import('./pages/Properties'));
 const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
 const AddProperty = lazy(() => import('./pages/AddProperty'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminSupportTickets = lazy(() => import('./pages/AdminSupportTickets'));
 const Profile = lazy(() => import('./pages/Profile'));
 const About = lazy(() => import('./pages/About'));
 // Blog pages removed — redirecting to properties instead
@@ -70,6 +71,10 @@ const VendorHelp = lazy(() => import('./pages/VendorHelp'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 const VendorOnboardingDashboard = lazy(() => import('./pages/VendorOnboardingDashboard'));
 const VendorRenewSubscription = lazy(() => import('./pages/VendorRenewSubscription'));
+const VendorOnboardingWizard = lazy(() => import('./pages/VendorOnboardingWizard'));
+const VendorSubscriptionRenewal = lazy(() => import('./pages/VendorSubscriptionRenewal'));
+const AdminVendorManagement = lazy(() => import('./pages/AdminVendorManagement'));
+const VendorRegisterPage = lazy(() => import('./pages/auth/VendorRegisterPage'));
 
 const PageWithSidebar = ({ children, id }) => (
   <div className="flex w-full">
@@ -90,6 +95,7 @@ const AuthRoutes = () => (
   <Routes>
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
+    <Route path="/auth/vendor-register" element={<VendorRegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
@@ -242,6 +248,16 @@ const MainRoutes = () => (
         <AdminDashboard />
       </ProtectedRoute>
     } />
+    <Route path="/admin/support-tickets" element={
+      <ProtectedRoute>
+        <AdminSupportTickets />
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/vendors" element={
+      <ProtectedRoute>
+        <AdminVendorManagement />
+      </ProtectedRoute>
+    } />
     <Route path="/profile" element={
       <ProtectedRoute>
         <PageWithSidebar>
@@ -366,10 +382,20 @@ const MainRoutes = () => (
         <VendorOnboardingDashboard />
       </VendorRoute>
     } />
+    <Route path="/vendor/onboarding-wizard" element={
+      <ProtectedRoute>
+        <VendorOnboardingWizard />
+      </ProtectedRoute>
+    } />
     <Route path="/vendor/renew-subscription" element={
       <VendorRoute>
         <VendorRenewSubscription />
       </VendorRoute>
+    } />
+    <Route path="/vendor/subscription-renewal" element={
+      <ProtectedRoute>
+        <VendorSubscriptionRenewal />
+      </ProtectedRoute>
     } />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>

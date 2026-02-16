@@ -562,6 +562,11 @@ const AdminDashboard = () => {
   }, [activeTab, user, adminSettings, loadingVerificationSettings, loadVerificationConfig]);
 
   const handleSwitchTab = (tabId) => {
+    if (tabId === 'support-tickets') {
+      navigate('/admin/support-tickets');
+      setIsSidebarOpen(false);
+      return;
+    }
     setActiveTab(tabId);
     const params = new URLSearchParams(location.search);
     params.set('tab', tabId);

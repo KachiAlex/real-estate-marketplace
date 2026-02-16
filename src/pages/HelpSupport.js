@@ -18,6 +18,41 @@ const HelpSupport = () => {
   const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'support'
   const [selectedGuideSection, setSelectedGuideSection] = useState(null);
   const [selectedDocCategory, setSelectedDocCategory] = useState('all');
+
+  // Tickets state and loader
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState(null);
+
+  const loadTickets = async () => {
+    if (!user || !user.uid) return;
+    setTicketsLoading(true);
+    setTicketsError(null);
+    try {
+      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'));
+      if (!resp.ok) {
+        if (resp.status === 401) throw new Error('Authentication required');
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to load tickets (${resp.status})`);
+      }
+      const data = await resp.json();
+      setTickets(data.data || []);
+    } catch (err) {
+      console.error('Failed to load tickets:', err);
+      setTicketsError(err.message || 'Failed to load tickets');
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  useEffect(() => {
+    if (activeResource === 'support') {
+      loadTickets();
+    }
+  }, [activeResource, user]);
+
   // live chat removed — using support ticket flow instead
   const [contactForm, setContactForm] = useState({
     subject: '',
@@ -427,8 +462,6 @@ const HelpSupport = () => {
         const data = await resp.json();
         toast.success(data?.message || 'Support ticket submitted. We will respond soon.');
         setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
-        // refresh tickets after successful submit
-        if (typeof loadTickets === 'function') loadTickets();
       } else if (resp.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else {
@@ -441,39 +474,7 @@ const HelpSupport = () => {
     }
   };
 
-  // Tickets state and loader
-  const [tickets, setTickets] = useState([]);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
-  const [ticketsError, setTicketsError] = useState(null);
 
-  const loadTickets = async () => {
-    if (!user || !user.uid) return;
-    setTicketsLoading(true);
-    setTicketsError(null);
-    try {
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'));
-      if (!resp.ok) {
-        if (resp.status === 401) throw new Error('Authentication required');
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || `Failed to load tickets (${resp.status})`);
-      }
-      const data = await resp.json();
-      setTickets(data.data || []);
-    } catch (err) {
-      console.error('Failed to load tickets:', err);
-      setTicketsError(err.message || 'Failed to load tickets');
-    } finally {
-      setTicketsLoading(false);
-    }
-  };
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    if (activeResource === 'support') {
-      loadTickets();
-    }
-  }, [activeResource, user]);
 
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
@@ -718,7 +719,7 @@ const HelpSupport = () => {
             </div>
           )}
 
-          {/* Live chat removed — use Support Tickets via the contact form below */}
+          {/* Support Tickets Section */}
           {activeResource === 'support' && (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">My Support Tickets</h2>
@@ -764,6 +765,7 @@ const HelpSupport = () => {
               </div>
             </div>
           )}
+
         </div>
       )}
 
@@ -962,9 +964,10 @@ const HelpSupport = () => {
         </div>
 
       </div>
+
+      {/* Create Ticket Modal */}
       {showCreateModal && (
         <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-
       )}
     </div>
   );

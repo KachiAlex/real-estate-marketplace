@@ -31,6 +31,7 @@ import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
 import RegisterModal from '../components/auth/RegisterModal';
+import BecomeVendorCTA from '../components/BecomeVendorCTA';
 import SEO from '../components/SEO';
 import FooterQuickLinks from '../components/FooterQuickLinks';
 
@@ -1061,6 +1062,11 @@ const Home = () => {
               <span className="text-purple-600">transparent processes</span>
             </span>
           </div>
+        </div>
+        
+        {/* Become Vendor CTA - Prominent placement on home page */}
+        <div className="mb-8">
+          <BecomeVendorCTA />
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">

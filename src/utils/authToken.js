@@ -69,7 +69,7 @@ export const authenticatedFetch = async (url, options = {}) => {
   };
 
   // Check if this is a non-critical endpoint that shouldn't trigger logout on 401
-  const isNonCriticalEndpoint = url.includes('/dashboard/user');
+  const isNonCriticalEndpoint = url.includes('/dashboard/user') || url.includes('/support/');
 
   // Debug: show what headers we're sending
   try {

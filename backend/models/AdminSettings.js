@@ -13,6 +13,22 @@ const adminSettingsSchema = new mongoose.Schema({
     default: 100000,
     min: [0, 'Vendor listing fee cannot be negative']
   },
+  vendorSubscriptionFee: {
+    type: Number,
+    required: true,
+    default: 50000, // NGN 50,000
+    min: [0, 'Subscription fee cannot be negative']
+  },
+  vendorSubscriptionGracePeriod: {
+    type: Number,
+    default: 7, // days
+    min: [0, 'Grace period cannot be negative']
+  },
+  vendorLateFee: {
+    type: Number,
+    default: 10000, // NGN 10,000 late fee
+    min: [0, 'Late fee cannot be negative']
+  },
   escrowTimeoutDays: {
     type: Number,
     required: true,

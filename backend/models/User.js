@@ -40,9 +40,64 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'agent', 'admin', 'mortgage_bank', 'vendor'],
     default: 'user'
   },
-  isVerified: {
-    type: Boolean,
-    default: false
+  roles: [{
+    type: String,
+    enum: ['buyer', 'vendor', 'admin', 'mortgage_bank'],
+    default: ['buyer']
+  }],
+  vendorProfile: {
+    businessName: String,
+    businessType: String,
+    licenseNumber: String,
+    isAgent: Boolean,
+    isPropertyOwner: Boolean,
+    experience: String,
+    specializations: [String],
+    contactInfo: {
+      phone: String,
+      address: String
+    },
+    kycStatus: {
+      type: String,
+      enum: ['pending', 'under_review', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    kycDocuments: [{
+      type: {
+        type: String, // 'nin', 'business_license', 'address_proof'
+        required: true
+      },
+      documentNumber: String,
+      fileUrl: String,
+      status: {
+        type: String,
+        enum: ['pending', 'verified', 'rejected'],
+        default: 'pending'
+      },
+      uploadedAt: { type: Date, default: Date.now },
+      verifiedAt: Date,
+      verifiedBy: mongoose.Schema.Types.ObjectId,
+      rejectionReason: String
+    }],
+    subscription: {
+      isActive: { type: Boolean, default: false },
+      planType: { type: String, default: 'monthly' },
+      amount: { type: Number, default: 50000 }, // NGN
+      lastPaid: Date,
+      nextDue: Date,
+      paymentHistory: [{
+        amount: Number,
+        paidAt: Date,
+        reference: String,
+        status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+        paymentMethod: String
+      }],
+      suspensionDate: Date,
+      suspensionReason: String,
+      gracePeriodEnd: Date
+    },
+    onboardingComplete: { type: Boolean, default: false },
+    joinedDate: Date
   },
   isActive: {
     type: Boolean,

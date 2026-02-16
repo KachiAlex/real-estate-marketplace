@@ -49,6 +49,12 @@ export const ADMIN_MENU_ITEMS = [
       description: 'Manage blog posts and content'
     },
     { 
+      id: 'support-tickets', 
+      label: 'Support Tickets', 
+      icon: FaComments,
+      description: 'Handle user support tickets'
+    },
+    { 
       id: 'chat-support', 
       label: 'Chat Support', 
       icon: FaComments,

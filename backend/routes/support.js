@@ -14,7 +14,7 @@ const logger = createLogger('SupportRoutes');
  */
 router.post('/inquiry', authenticateToken, async (req, res) => {
   try {
-    const { message, category } = req.body;
+    const { message, category, priority = 'medium', subject } = req.body;
 
     // Validate required fields
     if (!message || !category) {
@@ -30,8 +30,8 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
     // Get user info
     const userId = req.user.id || req.user.uid || req.user.email;
     const userEmail = req.user.email || 'unknown@example.com';
-    const userName = req.user.firstName && req.user.lastName 
-      ? `${req.user.firstName} ${req.user.lastName}` 
+    const userName = req.user.firstName && req.user.lastName
+      ? `${req.user.firstName} ${req.user.lastName}`
       : req.user.name || 'Unknown User';
 
     const inquiry = {
@@ -41,6 +41,8 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       userName,
       message,
       category,
+      priority,
+      subject: subject || `Support Inquiry - ${category}`,
       status: 'new',
       isRead: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -50,25 +52,26 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
     // Save inquiry to Firestore
     await inquiryRef.set(inquiry);
 
-    logger.info('Support inquiry created', { 
-      inquiryId, 
-      userId, 
+    logger.info('Support inquiry created', {
+      inquiryId,
+      userId,
       category,
-      userEmail 
+      priority
     });
 
     // Attempt to notify admins via email (if SUPPORT_EMAIL configured)
     try {
       const raw = process.env.SUPPORT_EMAIL || '';
-      const emails = raw.split(',').map(e => e.trim()).filter(Boolean);
-      if (emails.length > 0) {
-        const recipients = emails.map(e => ({ email: e }));
+      const recipients = raw.split(',').map(email => email.trim()).filter(email => email);
+
+      if (recipients.length > 0) {
         const variables = {
           userName,
           userEmail,
           category,
+          priority,
           message,
-          createdAt: new Date().toLocaleString(),
+          inquiryId,
           inquiryUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/support/${inquiryId}`
         };
 
@@ -77,21 +80,25 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       } else {
         logger.warn('SUPPORT_EMAIL not set; skipping support inquiry email notification');
       }
-    } catch (err) {
-      logger.error('Error sending support inquiry notification email', err);
+    } catch (emailErr) {
+      logger.error('Error sending support inquiry notification email', emailErr);
+      // Don't fail the request if email fails
     }
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      data: inquiry,
-      message: 'Your inquiry has been submitted successfully. Our support team will respond shortly.'
+      message: 'Your inquiry has been submitted successfully. Our support team will respond shortly.',
+      data: {
+        id: inquiryId,
+        status: 'new'
+      }
     });
 
   } catch (error) {
     logger.error('Error creating support inquiry', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      error: 'Failed to submit inquiry. Please try again.'
+      error: 'Failed to submit inquiry. Please try again later.'
     });
   }
 });
@@ -108,25 +115,28 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
     const snapshot = await db.collection('supportInquiries')
       .where('userId', '==', userId)
       .orderBy('createdAt', 'desc')
-      .limit(50)
       .get();
 
-    const inquiries = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date()
-    }));
+    const inquiries = [];
+    snapshot.forEach(doc => {
+      inquiries.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      });
+    });
 
-    return res.json({
+    res.json({
       success: true,
       data: inquiries
     });
 
   } catch (error) {
     logger.error('Error fetching support inquiries', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      error: 'Failed to fetch inquiries'
+      error: 'Failed to load inquiries'
     });
   }
 });
@@ -134,39 +144,42 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
 /**
  * @route   GET /api/admin/support/inquiries
  * @desc    Get all support inquiries (admin only)
- * @access  Private/Admin
+ * @access  Private (Admin)
  */
-router.get('/admin/inquiries', authenticateToken, async (req, res) => {
+router.get('/admin/support/inquiries', authenticateToken, async (req, res) => {
   try {
     // Check if user is admin
-    if (req.user.role !== 'admin') {
+    if (!req.user.role || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        error: 'Only admins can access this route'
+        error: 'Admin access required'
       });
     }
 
     const snapshot = await db.collection('supportInquiries')
       .orderBy('createdAt', 'desc')
-      .limit(100)
       .get();
 
-    const inquiries = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date()
-    }));
+    const inquiries = [];
+    snapshot.forEach(doc => {
+      inquiries.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      });
+    });
 
-    return res.json({
+    res.json({
       success: true,
       data: inquiries
     });
 
   } catch (error) {
     logger.error('Error fetching admin support inquiries', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      error: 'Failed to fetch inquiries'
+      error: 'Failed to load inquiries'
     });
   }
 });
@@ -174,43 +187,40 @@ router.get('/admin/inquiries', authenticateToken, async (req, res) => {
 /**
  * @route   PUT /api/admin/support/inquiries/:id
  * @desc    Update support inquiry status (admin only)
- * @access  Private/Admin
+ * @access  Private (Admin)
  */
-router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
+router.put('/admin/support/inquiries/:id', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status, isRead } = req.body;
-
     // Check if user is admin
-    if (req.user.role !== 'admin') {
+    if (!req.user.role || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        error: 'Only admins can access this route'
+        error: 'Admin access required'
       });
     }
 
-    const updates = {
+    const { id } = req.params;
+    const { status, isRead } = req.body;
+
+    const updateData = {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    if (status) updates.status = status;
-    if (isRead !== undefined) updates.isRead = isRead;
+    if (status) updateData.status = status;
+    if (typeof isRead === 'boolean') updateData.isRead = isRead;
 
-    await db.collection('supportInquiries').doc(id).update(updates);
+    await db.collection('supportInquiries').doc(id).update(updateData);
 
-    const doc = await db.collection('supportInquiries').doc(id).get();
+    logger.info('Support inquiry updated', { inquiryId: id, status, isRead });
 
-    logger.info('Support inquiry updated', { inquiryId: id, updates });
-
-    return res.json({
+    res.json({
       success: true,
-      data: doc.data(),
       message: 'Inquiry updated successfully'
     });
 
   } catch (error) {
     logger.error('Error updating support inquiry', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       error: 'Failed to update inquiry'
     });
