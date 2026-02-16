@@ -13,28 +13,9 @@ const RoleSwitcher = ({ onClose }) => {
     setLoading(true);
     try {
       const result = await switchRole(targetRole);
-
-      // If server requires vendor onboarding, route there
-      if (result && result.requiresVendorRegistration) {
-        toast('Please complete vendor onboarding', { icon: 'ℹ️' });
-        onClose?.();
-        return navigate('/vendor/register', { replace: true });
-      }
-
-      // If result is a user object or contains roles, determine outcome
-      const updated = result || {};
-      const roles = updated.roles || user.roles || [];
-      const activeRole = updated.activeRole || user.activeRole || (roles[0] ?? null);
-
-      if (targetRole === 'vendor' && !roles.includes('vendor')) {
-        // Not a vendor after attempting switch — go to onboarding
-        onClose?.();
-        return navigate('/vendor/register', { replace: true });
-      }
-
-      // Successful switch — route to appropriate dashboard
+      // Always update UI and state to reflect new active role
       onClose?.();
-      if (activeRole === 'vendor' || targetRole === 'vendor') {
+      if (result && result.activeRole === 'vendor') {
         navigate('/vendor/dashboard', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
@@ -42,8 +23,6 @@ const RoleSwitcher = ({ onClose }) => {
     } catch (err) {
       console.error('Role switch failed', err);
       toast.error(err?.message || 'Failed to switch role');
-      // Fallback to vendor registration if target was vendor
-      if (targetRole === 'vendor') navigate('/vendor/register', { replace: true });
     } finally {
       setLoading(false);
     }
