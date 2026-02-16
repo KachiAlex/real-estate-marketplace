@@ -20,27 +20,48 @@ router.put('/update-admin', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('Validation errors:', errors.array());
       return res.status(400).json({ success: false, errors: errors.array() });
     }
     const { email, firstName, lastName, password } = req.body;
+    console.log('Update-admin request body:', req.body);
     // Find user by email
-    const user = await db.User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    let user;
+    try {
+      user = await db.User.findOne({ where: { email } });
+      if (!user) {
+        console.error('User not found for email:', email);
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+    } catch (lookupErr) {
+      console.error('User lookup error:', lookupErr);
+      return res.status(500).json({ success: false, message: 'User lookup error', error: lookupErr.message });
     }
     // Prepare update fields
     const updateFields = {};
     if (firstName) updateFields.firstName = firstName;
     if (lastName) updateFields.lastName = lastName;
-    if (password) updateFields.password = await bcrypt.hash(password, 12);
+    if (password) {
+      try {
+        updateFields.password = await bcrypt.hash(password, 12);
+      } catch (hashErr) {
+        console.error('Password hash error:', hashErr);
+        return res.status(500).json({ success: false, message: 'Password hash error', error: hashErr.message });
+      }
+    }
     // Always keep role and roles as admin
     updateFields.role = 'admin';
     updateFields.roles = ['admin'];
     // Update user
-    await user.update(updateFields);
+    try {
+      await user.update(updateFields);
+    } catch (updateErr) {
+      console.error('User update error:', updateErr);
+      return res.status(500).json({ success: false, message: 'User update error', error: updateErr.message });
+    }
     res.json({ success: true, message: 'Admin user updated', user: { email, firstName: user.firstName, lastName: user.lastName, role: 'admin', roles: ['admin'] } });
   } catch (error) {
-    console.error('Update admin error:', error);
+    console.error('Update admin error (outer catch):', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
