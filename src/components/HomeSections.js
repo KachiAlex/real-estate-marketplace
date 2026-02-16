@@ -232,7 +232,7 @@ const HomeSections = () => {
                   </p>
                 </div>
               )}
-            </>
+            
           )}
         </section>
 
