@@ -64,25 +64,17 @@ const VendorOnboardingWizard = () => {
   const handleBusinessInfoSubmit = async () => {
     setLoading(true);
     try {
-      // First register as vendor if not already
-      if (!user?.roles?.includes('vendor')) {
-        await authenticatedFetch(getApiUrl('/vendor/register'), {
-          method: 'POST'
-        });
-      }
-
-      // Submit business info
-      const response = await authenticatedFetch(getApiUrl('/vendor/kyc/submit'), {
+      // Register as vendor (unauthenticated allowed)
+      await fetch(getApiUrl('/vendor/register'), {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessInfo: formData.businessInfo
         })
       });
 
-      if (response.ok) {
-        setCurrentStep(1);
-        toast.success('Business information saved successfully');
-      }
+      setCurrentStep(1);
+      toast.success('Business information saved successfully');
     } catch (error) {
       toast.error('Failed to save business information');
     } finally {
@@ -93,17 +85,16 @@ const VendorOnboardingWizard = () => {
   const handleKycSubmit = async () => {
     setLoading(true);
     try {
-      const response = await authenticatedFetch(getApiUrl('/vendor/kyc/submit'), {
+      await fetch(getApiUrl('/vendor/kyc/submit'), {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           documents: formData.kycDocuments
         })
       });
 
-      if (response.ok) {
-        setCurrentStep(2);
-        toast.success('KYC documents submitted successfully');
-      }
+      setCurrentStep(2);
+      toast.success('KYC documents submitted successfully');
     } catch (error) {
       toast.error('Failed to submit KYC documents');
     } finally {
