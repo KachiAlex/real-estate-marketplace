@@ -8,11 +8,12 @@ Use this checklist to ensure Firebase is properly configured for password reset 
 - [ ] Project ID: `real-estate-marketplace-37544`
 - [ ] Access Firebase Console: https://console.firebase.google.com/project/real-estate-marketplace-37544
 
+
 ### 2. Verify API Key Configuration
 **Location:** Firebase Console → Project Settings → General → Your apps
 
 - [ ] Check Web App API Key matches `src/config/firebase.js`
-- [ ] Current API Key: `AIzaSyCKPiM3fjQWqxrdN4UoyfLxsJKNk6h8lIU`
+- [ ] Current API Key: `AIza...REDACTED`
 - [ ] Verify authDomain: `real-estate-marketplace-37544.firebaseapp.com`
 
 **How to verify:**

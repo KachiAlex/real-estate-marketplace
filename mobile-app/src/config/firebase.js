@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCKPiM3fjQWqxrdN4UoyfLxsJKNk6h8lIU",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: "real-estate-marketplace-37544.firebaseapp.com",
   projectId: "real-estate-marketplace-37544",
   storageBucket: "real-estate-marketplace-37544.firebasestorage.app",

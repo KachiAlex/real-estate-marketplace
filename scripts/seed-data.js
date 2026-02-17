@@ -4,7 +4,7 @@ import { getFirestore, collection, addDoc, doc, setDoc } from 'firebase/firestor
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCKPiM3fjQWqxrdN4UoyfLxsJKNk6h8lIU",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "real-estate-marketplace-37544.firebaseapp.com",
   projectId: "real-estate-marketplace-37544",
   storageBucket: "real-estate-marketplace-37544.firebasestorage.app",
