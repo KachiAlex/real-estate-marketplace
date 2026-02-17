@@ -46,7 +46,8 @@ const {
   PropertyInquiry,
   PropertyAlert,
   DisputeResolution,
-  InspectionRequest
+  InspectionRequest,
+  AdminSettings
 } = require('../models/sequelize');
 
 // Initialize all models
@@ -70,7 +71,8 @@ const db = {
   PropertyInquiry: PropertyInquiry(sequelize),
   PropertyAlert: PropertyAlert(sequelize),
   DisputeResolution: DisputeResolution(sequelize),
-  InspectionRequest: InspectionRequest(sequelize)
+  InspectionRequest: InspectionRequest(sequelize),
+  AdminSettings: AdminSettings(sequelize)
 };
 
 // Define relationships

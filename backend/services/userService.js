@@ -1,108 +1,18 @@
-const { getFirestore } = require('../config/firestore');
 const bcrypt = require('bcryptjs');
-const admin = require('firebase-admin');
+const db = require('../config/sequelizeDb');
+const UserModel = db.User;
 
 const COLLECTION = 'users';
 
-// Helper to convert Firestore timestamps to Date
-const convertTimestamps = (doc) => {
-  if (!doc) return null;
-  
-  const data = doc.data ? doc.data() : doc;
-  const converted = { ...data };
-
-  // Always prefer the Firestore document ID so downstream auth uses the canonical id
-  const documentId = doc.id || data.id || data._id;
-  if (documentId) {
-    converted.id = documentId;
-  }
-  
-  // Convert Firestore Timestamp fields to JavaScript dates
-  if (converted.createdAt && converted.createdAt.toDate) {
-    converted.createdAt = converted.createdAt.toDate();
-  }
-  if (converted.updatedAt && converted.updatedAt.toDate) {
-    converted.updatedAt = converted.updatedAt.toDate();
-  }
-  if (converted.lastLogin && converted.lastLogin.toDate) {
-    converted.lastLogin = converted.lastLogin.toDate();
-  }
-  if (converted.resetPasswordExpires) {
-    if (typeof converted.resetPasswordExpires === 'object' && converted.resetPasswordExpires.toDate) {
-      converted.resetPasswordExpires = converted.resetPasswordExpires.toDate().getTime();
-    } else if (converted.resetPasswordExpires instanceof Date) {
-      converted.resetPasswordExpires = converted.resetPasswordExpires.getTime();
-    }
-  }
-  if (converted.verificationExpires && converted.verificationExpires.toDate) {
-    converted.verificationExpires = converted.verificationExpires.toDate();
-  }
-  if (converted.suspendedAt && converted.suspendedAt.toDate) {
-    converted.suspendedAt = converted.suspendedAt.toDate();
-  }
-  if (converted.activatedAt && converted.activatedAt.toDate) {
-    converted.activatedAt = converted.activatedAt.toDate();
-  }
-  if (converted.verifiedAt && converted.verifiedAt.toDate) {
-    converted.verifiedAt = converted.verifiedAt.toDate();
-  }
-  
-  return converted;
+// Convert Sequelize instance to plain object and normalize date fields
+const convertTimestamps = (userInstance) => {
+  if (!userInstance) return null;
+  const u = userInstance.toJSON ? userInstance.toJSON() : userInstance;
+  return u;
 };
 
 // Ensure a Firestore user exists for a Firebase-authenticated account
-const ensureUserFromFirebase = async (claims) => {
-  try {
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-
-    if (!claims || !claims.uid) {
-      throw new Error('Invalid Firebase claims');
-    }
-
-    const userId = claims.uid;
-    const userRef = db.collection(COLLECTION).doc(userId);
-    const userSnap = await userRef.get();
-
-    if (!userSnap.exists) {
-      const email = (claims.email || '').toLowerCase();
-      const fullName = claims.name || email.split('@')[0] || 'User';
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || 'User';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      const newUserDoc = {
-        firstName,
-        lastName,
-        email,
-        role: 'user',
-        roles: ['user'],
-        avatar: claims.picture || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        isVerified: true,
-        isActive: true,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastLogin: admin.firestore.FieldValue.serverTimestamp()
-      };
-
-      await userRef.set(newUserDoc, { merge: true });
-      return {
-        id: userId,
-        ...newUserDoc,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastLogin: new Date()
-      };
-    }
-
-    return convertTimestamps(userSnap);
-  } catch (error) {
-    console.error('Error ensuring Firebase user:', error);
-    throw error;
-  }
-};
+// ensureUserFromFirebase removed — Firebase support has been removed.
 
 // Hash password
 const hashPassword = async (password) => {
@@ -138,107 +48,56 @@ const listUsers = async ({
   sort = 'createdAt',
   order = 'desc'
 } = {}) => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-
-  let filterQuery = db.collection(COLLECTION);
-
-  if (role) {
-    filterQuery = filterQuery.where('role', '==', role);
-  }
-
-  const verifiedFilter = toBooleanFilter(isVerified);
-  if (verifiedFilter !== undefined) {
-    filterQuery = filterQuery.where('isVerified', '==', verifiedFilter);
-  }
-
-  const sortField = sanitizeUserSortField(sort);
-  const direction = order === 'asc' ? 'asc' : 'desc';
-  let query = filterQuery.orderBy(sortField, direction);
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const snapshot = await query.offset(skip).limit(Number(limit)).get();
-
-  let users = snapshot.docs.map(convertTimestamps);
+  const where = {};
+  if (role) where.role = role;
+  if (isVerified !== undefined) where.isVerified = toBooleanFilter(isVerified);
 
   if (search) {
-    const lowerSearch = search.toLowerCase();
-    users = users.filter((user) => (
-      user.firstName?.toLowerCase().includes(lowerSearch) ||
-      user.lastName?.toLowerCase().includes(lowerSearch) ||
-      user.email?.toLowerCase().includes(lowerSearch)
-    ));
+    const s = `%${search}%`;
+    // Use simple email/firstName/lastName LIKE search
+    const { Op } = require('sequelize');
+    where[Op.or] = [
+      { firstName: { [Op.iLike]: s } },
+      { lastName: { [Op.iLike]: s } },
+      { email: { [Op.iLike]: s } }
+    ];
   }
 
-  const totalSnap = await filterQuery.count().get();
-  const totalItems = totalSnap.data().count;
-  const totalPages = Math.ceil(totalItems / Number(limit)) || 1;
+  const orderArr = [[sort, order === 'asc' ? 'ASC' : 'DESC']];
+  const offset = (Number(page) - 1) * Number(limit);
+
+  const { rows, count } = await UserModel.findAndCountAll({ where, order: orderArr, offset, limit: Number(limit) });
 
   return {
-    users,
+    users: rows.map(convertTimestamps),
     pagination: {
       currentPage: Number(page),
-      totalPages,
-      totalItems,
+      totalPages: Math.ceil(count / Number(limit)) || 1,
+      totalItems: count,
       itemsPerPage: Number(limit)
     }
   };
 };
 
 const getUserStats = async () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
+  const total = await UserModel.count();
+  const agents = await UserModel.count({ where: { role: 'agent' } });
+  const verified = await UserModel.count({ where: { isVerified: true } });
+  const active = await UserModel.count({ where: { isActive: true } });
 
-  const usersRef = db.collection(COLLECTION);
-  const [totalSnap, agentSnap, verifiedSnap, activeSnap] = await Promise.all([
-    usersRef.count().get(),
-    usersRef.where('role', '==', 'agent').count().get(),
-    usersRef.where('isVerified', '==', true).count().get(),
-    usersRef.where('isActive', '==', true).count().get()
-  ]);
-
-  return {
-    total: totalSnap.data().count,
-    agents: agentSnap.data().count,
-    verified: verifiedSnap.data().count,
-    active: activeSnap.data().count
-  };
+  return { total, agents, verified, active };
 };
 
 const deleteUser = async (userId) => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-
-  await db.collection(COLLECTION).doc(userId).delete();
+  await UserModel.destroy({ where: { id: userId } });
 };
 
 // Find user by email
 const findByEmail = async (email) => {
   try {
-    if (!email || typeof email !== 'string') {
-      return null;
-    }
-    
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-    
-    const usersRef = db.collection(COLLECTION);
-    const snapshot = await usersRef.where('email', '==', email.toLowerCase().trim()).limit(1).get();
-    
-    if (snapshot.empty) {
-      return null;
-    }
-    
-    const doc = snapshot.docs[0];
-    return convertTimestamps(doc);
+    if (!email || typeof email !== 'string') return null;
+    const user = await UserModel.findOne({ where: { email: email.toLowerCase().trim() } });
+    return user ? convertTimestamps(user) : null;
   } catch (error) {
     console.error('Error finding user by email:', error);
     throw error;
@@ -246,16 +105,11 @@ const findByEmail = async (email) => {
 };
 
 // Find user by ID
-const { sequelize } = require('../config/sequelize');
-const UserModel = require('../models/index').User(sequelize);
-
 const findById = async (userId) => {
   try {
     const user = await UserModel.findByPk(userId);
-    if (!user) {
-      return null;
-    }
-    return user.toJSON();
+    if (!user) return null;
+    return convertTimestamps(user);
   } catch (error) {
     console.error('Error finding user by ID:', error);
     throw error;
@@ -265,64 +119,33 @@ const findById = async (userId) => {
 // Create user
 const createUser = async (userData) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-    
-    // Check if user already exists
     const existing = await findByEmail(userData.email);
-    if (existing) {
-      throw new Error('User already exists with this email');
-    }
-    
-    // Hash password if provided
+    if (existing) throw new Error('User already exists with this email');
+
     const hashedPassword = userData.password ? await hashPassword(userData.password) : null;
-    
-    const userDoc = {
+
+    const payload = {
+      email: (userData.email || '').toLowerCase(),
+      password: hashedPassword,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      email: userData.email.toLowerCase(),
-      password: hashedPassword,
       phone: userData.phone || null,
       avatar: userData.avatar || 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
       role: userData.role || 'user',
       isVerified: userData.isVerified || false,
       isActive: userData.isActive !== undefined ? userData.isActive : true,
-      preferences: userData.preferences || {
-        notifications: {
-          email: true,
-          sms: false,
-          push: true
-        },
-        searchPreferences: {
-          minPrice: 0,
-          maxPrice: 1000000,
-          propertyTypes: [],
-          locations: []
-        }
-      },
+      preferences: userData.preferences || {},
       favorites: userData.favorites || [],
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      lastLogin: admin.firestore.FieldValue.serverTimestamp()
+      lastLogin: userData.lastLogin || null,
+      verificationToken: userData.verificationToken || null,
+      verificationExpires: userData.verificationExpires || null,
+      resetPasswordToken: userData.resetPasswordToken || null,
+      resetPasswordExpires: userData.resetPasswordExpires || null
     };
-    
-    // Add optional fields
-    if (userData.verificationToken) userDoc.verificationToken = userData.verificationToken;
-    if (userData.verificationExpires) userDoc.verificationExpires = userData.verificationExpires;
-    if (userData.resetPasswordToken) userDoc.resetPasswordToken = userData.resetPasswordToken;
-    if (userData.resetPasswordExpires) userDoc.resetPasswordExpires = userData.resetPasswordExpires;
-    
-    const userRef = db.collection(COLLECTION).doc();
-    await userRef.set(userDoc);
-    
-    const createdUser = await userRef.get();
-    const user = convertTimestamps(createdUser);
-    
-    // Remove password from returned user
+
+    const created = await UserModel.create(payload);
+    const user = convertTimestamps(created);
     delete user.password;
-    
     return user;
   } catch (error) {
     console.error('Error creating user:', error);
@@ -333,33 +156,16 @@ const createUser = async (userData) => {
 // Update user
 const updateUser = async (userId, updates) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-    
-    const userRef = db.collection(COLLECTION).doc(userId);
-    
-    // Hash password if it's being updated
-    if (updates.password) {
-      updates.password = await hashPassword(updates.password);
-    }
-    
-    // Convert dates to Firestore Timestamps if needed
-    const updateData = {
-      ...updates,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-    
-    await userRef.update(updateData);
-    
-    const updatedUser = await userRef.get();
-    const user = convertTimestamps(updatedUser);
-    
-    // Remove password from returned user
-    delete user.password;
-    
-    return user;
+    const user = await UserModel.findByPk(userId);
+    if (!user) return null;
+
+    if (updates.password) updates.password = await hashPassword(updates.password);
+
+    await user.update(updates);
+    const updated = await UserModel.findByPk(userId);
+    const result = convertTimestamps(updated);
+    delete result.password;
+    return result;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -369,30 +175,11 @@ const updateUser = async (userId, updates) => {
 // Find user by reset token
 const findByResetToken = async (tokenHash) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      throw new Error('Firestore not initialized');
-    }
-    
-    const usersRef = db.collection(COLLECTION);
-    const snapshot = await usersRef
-      .where('resetPasswordToken', '==', tokenHash)
-      .limit(1)
-      .get();
-    
-    if (snapshot.empty) {
-      return null;
-    }
-    
-    const doc = snapshot.docs[0];
-    const user = convertTimestamps(doc);
-    
-    // Check if token is expired (client-side check since Firestore doesn't support Date comparisons well)
-    if (!user.resetPasswordExpires || user.resetPasswordExpires <= Date.now()) {
-      return null;
-    }
-    
-    return user;
+    const user = await UserModel.findOne({ where: { resetPasswordToken: tokenHash } });
+    if (!user) return null;
+    const u = convertTimestamps(user);
+    if (!u.resetPasswordExpires || new Date(u.resetPasswordExpires).getTime() <= Date.now()) return null;
+    return u;
   } catch (error) {
     console.error('Error finding user by reset token:', error);
     throw error;

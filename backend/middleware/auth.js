@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
-const admin = require('firebase-admin');
 const userService = require('../services/userService');
 const mockUsers = require('../data/mockUsers');
 const jwtUtils = require('../utils/jwt');
+
+// Firebase removed — middleware now relies only on backend JWTs and mock headers.
 
 const ALLOW_MOCK_AUTH = process.env.ALLOW_MOCK_AUTH !== 'false';
 
@@ -37,40 +38,6 @@ const attachMockUserFromHeaders = (req) => {
   return true;
 };
 
-const resolveUserForFirebaseClaims = async (claims) => {
-  const email = (claims && typeof claims.email === 'string') ? claims.email : null;
-  if (!email) return null;
-  
-  // Try to find existing user
-  let user = await userService.findByEmail(email);
-  
-  // If user doesn't exist, create them from Firebase claims
-  if (!user) {
-    console.log('[auth] Creating new user from Firebase claims for email:', email);
-    try {
-      // Extract name from Firebase display name or claim name
-      const displayName = claims.name || email.split('@')[0];
-      const [firstName, ...lastNameParts] = displayName.split(' ');
-      const lastName = lastNameParts.join(' ') || 'User';
-      
-      user = await userService.createUser({
-        firstName: firstName || 'Firebase',
-        lastName: lastName || 'User',
-        email: email,
-        // Firebase users don't have passwords - they use Firebase auth
-        password: Math.random().toString(36).slice(-8),
-        firebaseUid: claims.uid,
-        emailVerified: claims.email_verified || false
-      });
-      console.log('[auth] User created successfully from Firebase claims:', user.id);
-    } catch (createError) {
-      console.error('[auth] Failed to create user from Firebase claims:', createError?.message);
-      return null;
-    }
-  }
-  
-  return user;
-};
 
 // Protect routes - verify token
 exports.protect = async (req, res, next) => {
@@ -149,38 +116,14 @@ exports.protect = async (req, res, next) => {
       return next();
     } catch (jwtError) {
       console.warn('[protect] JWT verification failed:', jwtError?.message || jwtError);
-      console.log('[protect] Attempting Firebase ID token verification...');
-      // If backend JWT verification fails, try Firebase ID token (used by the frontend)
-      try {
-        const claims = await admin.auth().verifyIdToken(token);
-        console.log('[protect] Firebase token verified for email:', claims?.email);
-        const user = await resolveUserForFirebaseClaims(claims);
-
-        if (!user) {
-          console.warn('[protect] Firebase token resolved but user not found for email:', claims?.email);
-          console.log('[protect] Creating/syncing user from Firebase claims...');
-          if (!attachMockUserFromHeaders(req)) {
-            return res.status(401).json({
-              success: false,
-              message: 'User not found'
-            });
-          }
-          return next();
-        }
-
-        delete user.password;
-        req.user = user;
+      // Firebase support removed — only backend JWTs are accepted.
+      if (attachMockUserFromHeaders(req)) {
         return next();
-      } catch (firebaseError) {
-        console.warn('[protect] Firebase token verification failed:', firebaseError?.message || firebaseError);
-        if (attachMockUserFromHeaders(req)) {
-          return next();
-        }
-        return res.status(401).json({
-          success: false,
-          message: 'Not authorized to access this route'
-        });
       }
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
     }
   } catch (error) {
     res.status(500).json({

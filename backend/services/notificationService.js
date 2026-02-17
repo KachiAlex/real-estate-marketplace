@@ -1,41 +1,12 @@
-const { getFirestore, admin } = require('../config/firestore');
+const db = require('../config/sequelizeDb');
 const notificationTemplateService = require('./notificationTemplateService');
 const userService = require('./userService');
 const emailService = require('./emailService');
 
-const COLLECTION = 'notifications';
+const NotificationModel = db.Notification;
 const DEFAULT_CHANNELS = { email: true, inApp: true, sms: false, push: true };
 
-const requireDb = () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-  return db;
-};
-
-const convertTimestamp = (value) => {
-  if (!value) return value;
-  return typeof value.toDate === 'function' ? value.toDate() : value;
-};
-
-const convertNotificationDoc = (doc) => {
-  if (!doc) return null;
-  const data = doc.data ? doc.data() : doc;
-  const id = doc.id || data.id;
-  const notification = {
-    id,
-    ...data
-  };
-
-  ['createdAt', 'updatedAt', 'sentAt', 'readAt', 'archivedAt', 'expiresAt'].forEach((key) => {
-    if (notification[key]) {
-      notification[key] = convertTimestamp(notification[key]);
-    }
-  });
-
-  return notification;
-};
+const toJSON = (inst) => (inst ? (inst.toJSON ? inst.toJSON() : inst) : null);
 
 const normalizeId = (value) => {
   if (!value) return null;
@@ -56,164 +27,58 @@ const toFirestoreTimestamp = (value) => {
 };
 
 class NotificationService {
-  constructor() {
-    this.socketIO = null;
-  }
-
-  initializeSocketIO(io) {
-    this.socketIO = io;
-  }
+  constructor() { this.socketIO = null; }
+  initializeSocketIO(io) { this.socketIO = io; }
 
   async createNotification(notificationData = {}) {
-    try {
-      const db = requireDb();
+    if (!notificationData.recipient) throw new Error('Recipient is required');
+    if (!notificationData.type) throw new Error('Notification type is required');
 
-      const recipient = normalizeId(notificationData.recipient);
-      const sender = normalizeId(notificationData.sender);
+    const template = notificationData.templateId
+      ? await notificationTemplateService.getTemplateById(notificationData.templateId)
+      : await notificationTemplateService.getTemplateByType(notificationData.type);
 
-      if (!recipient) {
-        throw new Error('Recipient is required');
-      }
+    const finalChannels = { ...DEFAULT_CHANNELS, ...(notificationData.channels || {}) };
 
-      if (!notificationData.type) {
-        throw new Error('Notification type is required');
-      }
+    const created = await NotificationModel.create({
+      userId: notificationData.recipient,
+      type: notificationData.type,
+      title: notificationData.title || (template?.channels?.inApp?.title) || 'Notification',
+      message: notificationData.message || (template?.channels?.inApp?.message) || '' ,
+      data: notificationData.data || {},
+      isRead: false
+    });
 
-      const template = notificationData.templateId
-        ? await notificationTemplateService.getTemplateById(notificationData.templateId)
-        : await notificationTemplateService.getTemplateByType(notificationData.type);
-
-      let finalTitle = notificationData.title;
-      let finalMessage = notificationData.message;
-      let finalChannels = {
-        ...DEFAULT_CHANNELS,
-        ...(notificationData.channels || {})
-      };
-
-      if (template) {
-        if (template.channels?.inApp?.enabled) {
-          finalTitle = template.channels.inApp.title || finalTitle;
-          finalMessage = template.channels.inApp.message || finalMessage;
-        }
-
-        finalChannels = {
-          email: finalChannels.email && template.channels?.email?.enabled !== false,
-          inApp: finalChannels.inApp && template.channels?.inApp?.enabled !== false,
-          sms: finalChannels.sms && template.channels?.sms?.enabled !== false,
-          push: finalChannels.push && template.channels?.push?.enabled !== false
-        };
-      }
-
-      const docRef = db.collection(COLLECTION).doc();
-      const payload = {
-        recipient,
-        sender: sender || null,
-        type: notificationData.type,
-        title: finalTitle || 'Notification',
-        message: finalMessage || notificationData.message || 'You have a new notification',
-        data: notificationData.data || {},
-        priority: notificationData.priority || 'medium',
-        channels: finalChannels,
-        status: 'unread',
-        expiresAt: toFirestoreTimestamp(notificationData.expiresAt),
-        templateId: template?.id || notificationData.templateId || null,
-        metadata: notificationData.metadata || {},
-        sentAt: null,
-        readAt: null,
-        archivedAt: null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      };
-
-      await docRef.set(payload);
-      const savedDoc = await docRef.get();
-      const notification = convertNotificationDoc(savedDoc);
-
-      await this.sendNotification(notification, template);
-
-      return {
-        success: true,
-        data: notification
-      };
-    } catch (error) {
-      console.error('Failed to create notification:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+    const notification = toJSON(created);
+    await this.sendNotification(notification, template);
+    return { success: true, data: notification };
   }
 
   async getUnreadCount(userId) {
-    const recipient = normalizeId(userId);
-    if (!recipient) {
-      throw new Error('Valid userId is required');
-    }
-
-    const db = requireDb();
-    const snapshot = await db.collection(COLLECTION)
-      .where('recipient', '==', recipient)
-      .where('status', '==', 'unread')
-      .count()
-      .get();
-
-    return snapshot.data().count;
+    if (!userId) throw new Error('Valid userId is required');
+    return await NotificationModel.count({ where: { userId, isRead: false } });
   }
 
   async getNotificationById(notificationId, userId) {
-    try {
-      const db = requireDb();
-      const docRef = db.collection(COLLECTION).doc(notificationId);
-      const snap = await docRef.get();
-
-      if (!snap.exists || snap.data().recipient !== normalizeId(userId)) {
-        return {
-          success: false,
-          message: 'Notification not found'
-        };
-      }
-
-      return {
-        success: true,
-        data: convertNotificationDoc(snap)
-      };
-    } catch (error) {
-      console.error('Failed to get notification:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+    const n = await NotificationModel.findByPk(notificationId);
+    if (!n || n.userId !== userId) return { success: false, message: 'Notification not found' };
+    return { success: true, data: toJSON(n) };
   }
 
   async sendNotification(notification, template = null) {
     try {
-      const recipient = await userService.findById(notification.recipient);
-      if (!recipient) {
-        throw new Error('Recipient not found');
-      }
+      const recipient = await userService.findById(notification.userId || notification.recipient);
+      if (!recipient) throw new Error('Recipient not found');
 
+      // email
       if (notification.channels?.email) {
         await this.sendEmailNotification(notification, recipient, template);
       }
 
-      if (notification.channels?.inApp) {
-        await this.sendInAppNotification(notification);
-      }
+      // in-app (already persisted)
+      // push/sms are no-ops for now
 
-      if (notification.channels?.sms) {
-        await this.sendSMSNotification(notification, recipient);
-      }
-
-      if (notification.channels?.push) {
-        await this.sendPushNotification(notification, recipient);
-      }
-
-      const db = requireDb();
-      await db.collection(COLLECTION).doc(notification.id).update({
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      await NotificationModel.update({ sentAt: new Date() }, { where: { id: notification.id } });
     } catch (error) {
       console.error('Failed to send notification:', error);
     }
@@ -222,22 +87,16 @@ class NotificationService {
   async sendEmailNotification(notification, recipient, template) {
     try {
       const templateDoc = template || await notificationTemplateService.getTemplateByType(notification.type);
-
-      const variables = {
-        userName: [recipient.firstName, recipient.lastName].filter(Boolean).join(' ').trim() || recipient.email,
-        ...notification.data
-      };
-
-      if (templateDoc && templateDoc.channels?.email?.enabled) {
-        const rendered = notificationTemplateService.renderTemplate(templateDoc, variables);
-        if (rendered.channels.email) {
-          await emailService.sendEmail(
-            recipient.email,
-            rendered.channels.email.subject || notification.title,
-            rendered.channels.email.htmlTemplate || `<p>${notification.message}</p>`,
-            rendered.channels.email.textTemplate || notification.message
-          );
-          return;
+      const variables = { userName: [recipient.firstName, recipient.lastName].filter(Boolean).join(' ').trim() || recipient.email, ...notification.data };
+      const rendered = templateDoc ? notificationTemplateService.renderTemplate(templateDoc, variables) : null;
+      const subject = rendered?.channels?.email?.subject || notification.title;
+      const html = rendered?.channels?.email?.htmlTemplate || `<p>${notification.message}</p>`;
+      const text = rendered?.channels?.email?.textTemplate || notification.message;
+      await emailService.sendEmail(recipient.email, subject, html, text);
+    } catch (err) {
+      console.error('sendEmailNotification failed:', err.message);
+    }
+  }
         }
       }
 

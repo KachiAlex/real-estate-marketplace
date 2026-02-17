@@ -1,6 +1,5 @@
-const { getFirestore, admin } = require('../config/firestore');
+const db = require('../config/sequelizeDb');
 
-const COLLECTION = 'adminSettings';
 const DOC_ID = 'global';
 
 const DEFAULT_SETTINGS = {
@@ -25,54 +24,21 @@ const DEFAULT_SETTINGS = {
   autoApproveUsers: false
 };
 
-const ensureSettingsDoc = async (db) => {
-  const docRef = db.collection(COLLECTION).doc(DOC_ID);
-  const snapshot = await docRef.get();
-
-  if (!snapshot.exists) {
-    await docRef.set({
-      ...DEFAULT_SETTINGS,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    return (await docRef.get()).data();
-  }
-
-  return snapshot.data();
-};
+const AdminSettingsModel = db.AdminSettings;
 
 const getSettings = async () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
+  const [settings] = await AdminSettingsModel.findOrCreate({
+    where: { id: DOC_ID },
+    defaults: { id: DOC_ID, ...DEFAULT_SETTINGS }
+  });
 
-  const data = await ensureSettingsDoc(db);
-  return {
-    id: DOC_ID,
-    ...data
-  };
+  return settings.toJSON();
 };
 
 const updateSettings = async (updates) => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-
-  const docRef = db.collection(COLLECTION).doc(DOC_ID);
-  await ensureSettingsDoc(db);
-
-  await docRef.set({
-    ...updates,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-
-  const snapshot = await docRef.get();
-  return {
-    id: DOC_ID,
-    ...snapshot.data()
-  };
+  await AdminSettingsModel.update(updates, { where: { id: DOC_ID } });
+  const settings = await AdminSettingsModel.findByPk(DOC_ID);
+  return settings ? settings.toJSON() : null;
 };
 
 module.exports = {

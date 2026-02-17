@@ -89,6 +89,21 @@ module.exports = (sequelize) => {
     vendorData: {
       type: DataTypes.JSON
     },
+    // Migration: add fields that existed on the MongoDB user schema
+    suspendedAt: { type: DataTypes.DATE },
+    suspendedBy: { type: DataTypes.STRING },
+    activatedAt: { type: DataTypes.DATE },
+    activatedBy: { type: DataTypes.STRING },
+    verificationToken: { type: DataTypes.STRING },
+    verificationExpires: { type: DataTypes.DATE },
+    resetPasswordToken: { type: DataTypes.STRING },
+    resetPasswordExpires: { type: DataTypes.DATE },
+    verificationNotes: { type: DataTypes.STRING },
+    verifiedBy: { type: DataTypes.STRING },
+    verifiedAt: { type: DataTypes.DATE },
+    preferences: { type: DataTypes.JSON, defaultValue: {} },
+    favorites: { type: DataTypes.JSON, defaultValue: [] },
+    mortgageBankProfile: { type: DataTypes.STRING },
     lastLogin: {
       type: DataTypes.DATE
     },

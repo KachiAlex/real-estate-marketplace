@@ -21,5 +21,6 @@ module.exports = {
   PropertyInquiry: require('./PropertyInquiry'),
   PropertyAlert: require('./PropertyAlert'),
   DisputeResolution: require('./DisputeResolution'),
-  InspectionRequest: require('./InspectionRequest')
+  InspectionRequest: require('./InspectionRequest'),
+  AdminSettings: require('./AdminSettings')
 };

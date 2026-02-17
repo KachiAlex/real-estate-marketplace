@@ -98,27 +98,19 @@ setImmediate(async () => {
   }
 });
 
-// Initialize Firestore (Firebase)
-try {
-  initializeFirestore();
-  console.log('✅ Firestore initialized');
-} catch (error) {
-  console.warn('⚠️ Firestore initialization failed:', error.message);
-  console.warn('⚠️ Blog routes will use Firestore, but connection may fail');
-  console.warn('📝 To fix: Set FIREBASE_SERVICE_ACCOUNT_KEY or GOOGLE_APPLICATION_CREDENTIALS');
-  console.warn('📚 See backend/FIRESTORE_SETUP.md for setup instructions');
-}
+// Firestore removed from runtime. Use PostgreSQL/Sequelize only.
 
-// Import models FIRST (before setImmediate)
-const User = require('./models/User');
-const Property = require('./models/Property');
-const AdminSettings = require('./models/AdminSettings');
-const EscrowTransaction = require('./models/EscrowTransaction');
-const AuditLog = require('./models/AuditLog');
-const Notification = require('./models/Notification');
-const Blog = require('./models/Blog');
-const NotificationTemplate = require('./models/NotificationTemplate');
-const MessageModel = require('./models/Message');
+// Import Sequelize models
+const db = require('./config/sequelizeDb');
+const User = db.User;
+const Property = db.Property;
+const AdminSettings = db.AdminSettings;
+const EscrowTransaction = db.EscrowTransaction;
+const AuditLog = null; // legacy Mongo model removed
+const Notification = db.Notification;
+const Blog = db.Blog;
+const NotificationTemplate = null; // legacy Mongo model removed
+const MessageModel = db.Message;
 
 // Import middleware
 const { protect, authorize } = require('./middleware/auth');
@@ -258,34 +250,11 @@ const mockProperties = require('./data/mockProperties');
 // Initialize admin settings if they don't exist
 async function initializeAdminSettings() {
   try {
-    // Check if MongoDB is connected
-    const mongoose = require('mongoose');
-    if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ MongoDB not connected - skipping admin settings initialization');
-      return;
-    }
-
-    const existingSettings = await AdminSettings.findOne();
-    if (!existingSettings) {
-      const defaultSettings = new AdminSettings({
-        verificationFee: 50000,
-        vendorListingFee: 100000,
-        escrowTimeoutDays: 7,
-        platformFee: 0.025,
-        maxFileSize: 10485760,
-        allowedFileTypes: [
-          'image/jpeg', 'image/png', 'image/webp', 
-          'application/pdf', 'application/msword', 
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ],
-        maintenanceMode: false,
-        emailNotifications: true,
-        smsNotifications: false,
-        autoApproveProperties: false,
-        autoApproveUsers: false
-      });
-      await defaultSettings.save();
-      console.log('✅ Admin settings initialized');
+    // Use Sequelize AdminSettings table
+    const settings = await AdminSettings.findByPk('global');
+    if (!settings) {
+      await AdminSettings.create({ id: 'global' });
+      console.log('✅ Admin settings initialized (PostgreSQL)');
     }
   } catch (error) {
     console.warn('⚠️ Failed to initialize admin settings (non-fatal):', error.message);

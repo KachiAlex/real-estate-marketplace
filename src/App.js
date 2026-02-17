@@ -1,3 +1,4 @@
+const OnboardVendor = lazy(() => import('./pages/OnboardVendor'));
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
@@ -112,7 +113,11 @@ const MainRoutes = () => (
     <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
     {/* Public vendor onboarding route */}
-    <Route path="/onboard-vendor" element={<React.Suspense fallback={<div className='flex items-center justify-center w-full h-screen'><LoadingSpinner size='lg' /></div>}><import('./pages/OnboardVendor').then(m => <m.default />)}</React.Suspense>} />
+    <Route path="/onboard-vendor" element={
+      <React.Suspense fallback={<div className="flex items-center justify-center w-full h-screen"><LoadingSpinner size="lg" /></div>}>
+        <OnboardVendor />
+      </React.Suspense>
+    } />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={
       <ProtectedRoute>
