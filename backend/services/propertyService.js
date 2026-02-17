@@ -1,4 +1,4 @@
-const { getFirestore, admin } = require('../config/firestore');
+// Firestore removed
 const mockProperties = require('../data/mockProperties');
 
 const COLLECTION = 'properties';
@@ -26,8 +26,7 @@ const convertPropertyDoc = (doc) => {
 
 const ensureSeedProperties = async () => {
   if (seedInitialized) return;
-  const db = getFirestore();
-  if (!db) throw new Error('Firestore not initialized');
+  // Use Sequelize/PostgreSQL only
 
   const snapshot = await db.collection(COLLECTION).limit(1).get();
   if (!snapshot.empty) {
@@ -40,8 +39,7 @@ const ensureSeedProperties = async () => {
     const docRef = db.collection(COLLECTION).doc(property.id);
     batch.set(docRef, {
       ...property,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // createdAt and updatedAt: use Sequelize timestamps or Date.now()
       verificationStatus: property.verificationStatus || 'pending'
     });
   });
@@ -79,8 +77,7 @@ const listProperties = async ({
   sort = 'createdAt',
   order = 'desc'
 } = {}) => {
-  const db = getFirestore();
-  if (!db) throw new Error('Firestore not initialized');
+  // Use Sequelize/PostgreSQL only
 
   await ensureSeedProperties();
 
@@ -149,8 +146,7 @@ const createProperty = async (propertyData) => {
     ...propertyData,
     id: docRef.id,
     favorites: propertyData.favorites || [],
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    // createdAt and updatedAt: use Sequelize timestamps or Date.now()
     verificationStatus: propertyData.verificationStatus || 'pending',
     status: propertyData.status || 'for-sale'
   };

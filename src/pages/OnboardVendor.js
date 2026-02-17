@@ -62,7 +62,7 @@ export default function OnboardVendor() {
         kycDocs: kycDocUrls,
         kycStatus: 'pending',
       });
-      navigate('/vendor-dashboard');
+      navigate('/vendor/dashboard');
     } catch (err) {
       setError('Failed to onboard. Please try again.');
     } finally {

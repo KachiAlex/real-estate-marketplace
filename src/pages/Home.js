@@ -1841,16 +1841,14 @@ const Home = () => {
                 <span>Explore Properties</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
-              {/* Become a Vendor CTA - show if user is logged in and not a vendor */}
-              {user && !user.roles?.includes('vendor') && (
-                <button
-                  onClick={() => navigate('/onboard-vendor')}
-                  className="px-10 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group"
-                >
-                  <span>Become a Vendor</span>
-                  <FaBuilding className="group-hover:scale-110 transition-transform" />
-                </button>
-              )}
+              {/* Become a Vendor CTA - always visible */}
+              <button
+                onClick={() => navigate('/onboard-vendor')}
+                className="px-10 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group"
+              >
+                <span>Become a Vendor</span>
+                <FaBuilding className="group-hover:scale-110 transition-transform" />
+              </button>
             </div>
           </div>
         </div>

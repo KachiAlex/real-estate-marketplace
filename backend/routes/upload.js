@@ -1,3 +1,61 @@
+// Vendor KYC document upload (PDF, DOC, images)
+const vendorKycUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png'
+  ])
+});
+
+/**
+ * @route   POST /api/upload/vendor/kyc
+ * @desc    Upload vendor KYC documents
+ * @access  Private (Vendor or User)
+ */
+router.post(
+  '/vendor/kyc',
+  protect,
+  checkCloudinaryConfig,
+  vendorKycUpload.array('documents', 10), // Max 10 documents
+  async (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files provided'
+        });
+      }
+      // Simulate upload to cloud (replace with actual upload logic)
+      const uploaded = req.files.map(file => ({
+        url: `/uploads/${file.filename}`,
+        name: file.originalname,
+        publicId: file.filename
+      }));
+      res.json({
+        success: true,
+        data: { uploaded }
+      });
+    } catch (error) {
+      errorLogger(error, req, { context: 'Vendor KYC upload' });
+      if (req.files) {
+        req.files.forEach(file => {
+          fs.unlink(file.path).catch(() => {});
+        });
+      }
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload KYC documents',
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      });
+    }
+  }
+);
 const express = require('express');
 const multer = require('multer');
 const path = require('path');

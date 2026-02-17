@@ -111,6 +111,8 @@ const MainRoutes = () => (
     <Route path="/blog" element={<Navigate to="/properties" replace />} />
     <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
+    {/* Public vendor onboarding route */}
+    <Route path="/onboard-vendor" element={<React.Suspense fallback={<div className='flex items-center justify-center w-full h-screen'><LoadingSpinner size='lg' /></div>}><import('./pages/OnboardVendor').then(m => <m.default />)}</React.Suspense>} />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={
       <ProtectedRoute>

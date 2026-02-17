@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db, admin } = require('../config/firestore');
+// Firestore removed
 const { authenticateToken } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
 const emailService = require('../services/emailService');
@@ -43,11 +43,10 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       category,
       status: 'new',
       isRead: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      // createdAt and updatedAt: use Sequelize timestamps or Date.now()
     };
 
-    // Save inquiry to Firestore
+    // Save inquiry to PostgreSQL
     await inquiryRef.set(inquiry);
 
     logger.info('Support inquiry created', { 
@@ -190,7 +189,7 @@ router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
     }
 
     const updates = {
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      // updatedAt: use Sequelize timestamps or Date.now()
     };
 
     if (status) updates.status = status;
