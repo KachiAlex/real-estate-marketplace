@@ -1,4 +1,4 @@
-const { getFirestore, admin } = require('../config/firestore');
+// Firestore removed. Use Sequelize/PostgreSQL models instead.
 const propertyService = require('./propertyService');
 const notificationService = require('./notificationService');
 
@@ -14,11 +14,7 @@ const VALID_REASONS = [
 const STATUS_FLOW = ['open', 'awaiting_response', 'under_review', 'resolved', 'closed'];
 
 const requireDb = () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-  return db;
+  // Use Sequelize/PostgreSQL only
 };
 
 const normalizeId = (value) => {
@@ -92,7 +88,7 @@ class DisputeService {
       throw error;
     }
 
-    const db = requireDb();
+    // const db = requireDb(); // Use Sequelize/PostgreSQL only
     const userId = normalizeId(user);
     if (!userId) {
       const error = new Error('Unable to determine user ID');
@@ -190,8 +186,7 @@ class DisputeService {
           description
         })
       ],
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      // createdAt and updatedAt: use Sequelize timestamps or Date.now()
     };
 
     const docRef = await requireDb().collection(COLLECTION).add(disputePayload);
@@ -280,8 +275,7 @@ class DisputeService {
     const entry = buildTimelineEntry('message', message, user, { attachments });
 
     await docRef.update({
-      timeline: admin.firestore.FieldValue.arrayUnion(entry),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      // timeline: use array push, updatedAt: use Sequelize timestamps or Date.now()
     });
 
     await notificationService.createNotification({
@@ -313,8 +307,8 @@ class DisputeService {
       throw error;
     }
 
-    const db = requireDb();
-    const docRef = db.collection(COLLECTION).doc(disputeId);
+    // const db = requireDb(); // Use Sequelize/PostgreSQL only
+    // const docRef = await sequelize.models.Dispute.findByPk(disputeId); // Example for Sequelize
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -332,12 +326,12 @@ class DisputeService {
       status,
       resolutionNotes: resolutionNotes || null,
       resolution: resolution || null,
-      timeline: admin.firestore.FieldValue.arrayUnion(entry),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      // timeline: use array push for Sequelize,
+      // updatedAt: use Sequelize timestamps or Date.now()
     };
 
     if (status === 'resolved') {
-      updates.resolvedAt = admin.firestore.FieldValue.serverTimestamp();
+      // updates.resolvedAt: use Date or Sequelize
       updates.resolvedBy = normalizeId(user);
     }
 

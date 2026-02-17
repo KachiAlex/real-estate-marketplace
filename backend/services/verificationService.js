@@ -1,38 +1,14 @@
-const { getFirestore, admin } = require('../config/firestore');
+// Firestore removed. Use Sequelize/PostgreSQL models instead.
 const adminSettingsService = require('./adminSettingsService');
 const paymentService = require('./paymentService');
 
 const COLLECTION = 'verificationApplications';
 
-const requireDb = () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-  return db;
-};
+// requireDb removed. Use Sequelize/PostgreSQL models directly.
 
-const convertTimestamp = (value) => {
-  if (!value) return null;
-  if (typeof value.toDate === 'function') {
-    return value.toDate();
-  }
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') return new Date(value);
-  return value;
-};
+// convertTimestamp removed. Use native Date or Sequelize timestamps.
 
-const convertDoc = (doc) => {
-  if (!doc) return null;
-  const data = doc.data ? doc.data() : doc;
-  const application = { id: doc.id || data.id, ...data };
-  ['createdAt', 'updatedAt', 'decisionAt'].forEach((key) => {
-    if (application[key]) {
-      application[key] = convertTimestamp(application[key]);
-    }
-  });
-  return application;
-};
+// convertDoc removed. Use Sequelize/PostgreSQL models directly.
 
 const buildApplicantSnapshot = (user = {}) => {
   if (!user) return null;
@@ -81,123 +57,21 @@ const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmoun
   return payment;
 };
 
-const ensurePaymentNotReused = async ({ db, paymentId }) => {
-  const existing = await db
-    .collection(COLLECTION)
-    .where('verificationPaymentId', '==', paymentId)
-    .limit(1)
-    .get();
+// ensurePaymentNotReused: implement with Sequelize/PostgreSQL
 
-  if (!existing.empty) {
-    throw buildError('Verification payment reference has already been used');
-  }
+const submitApplication = async (args) => {
+  // TODO: Implement submitApplication using Sequelize/PostgreSQL
+  throw new Error('Not implemented: submitApplication (PostgreSQL)');
 };
 
-const submitApplication = async ({
-  applicant,
-  propertyName,
-  propertyId,
-  propertyUrl,
-  propertyLocation,
-  message,
-  attachments = [],
-  preferredBadgeColor,
-  verificationPaymentId
-}) => {
-  const db = requireDb();
-  const docRef = db.collection(COLLECTION).doc();
-  const applicantSnapshot = buildApplicantSnapshot(applicant);
-  const settings = await adminSettingsService.getSettings();
-  const verificationFee = settings.verificationFee || 50000;
-
-  const payment = await ensureVerificationPayment({
-    paymentId: verificationPaymentId,
-    applicantId: applicantSnapshot?.id,
-    requiredAmount: verificationFee
-  });
-
-  await ensurePaymentNotReused({ db, paymentId: verificationPaymentId });
-
-  const payload = {
-    applicant: applicantSnapshot,
-    propertyName,
-    propertyId: propertyId || null,
-    propertyUrl: propertyUrl || null,
-    propertyLocation: propertyLocation || null,
-    message: message || '',
-    attachments,
-    status: 'pending',
-    badgeColor: null,
-    requestedBadgeColor: preferredBadgeColor || settings.verificationBadgeColor || '#10B981',
-    verificationFee,
-    verificationPaymentId,
-    verificationPaymentReference: payment.reference,
-    verificationPaymentMethod: payment.paymentMethod,
-    verificationPaymentAmount: payment.amount,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  await docRef.set(payload);
-  const created = await docRef.get();
-  return convertDoc(created);
+const listApplications = async (args = {}) => {
+  // TODO: Implement listApplications using Sequelize/PostgreSQL
+  throw new Error('Not implemented: listApplications (PostgreSQL)');
 };
 
-const listApplications = async ({ status, applicantId } = {}) => {
-  const db = requireDb();
-  let queryRef = db.collection(COLLECTION);
-
-  if (status && status !== 'all') {
-    queryRef = queryRef.where('status', '==', status);
-  }
-
-  if (applicantId) {
-    queryRef = queryRef.where('applicant.id', '==', applicantId);
-  }
-
-  const snapshot = await queryRef.get();
-  return snapshot.docs
-    .map(convertDoc)
-    .sort((a, b) => {
-      const aTime = a?.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-      const bTime = b?.createdAt instanceof Date ? b.createdAt.getTime() : 0;
-      return bTime - aTime;
-    });
-};
-
-const updateApplicationStatus = async ({ id, status, adminNotes, badgeColor, adminUser }) => {
-  const db = requireDb();
-  const docRef = db.collection(COLLECTION).doc(id);
-  const snapshot = await docRef.get();
-
-  if (!snapshot.exists) {
-    const error = new Error('Verification application not found');
-    error.statusCode = 404;
-    throw error;
-  }
-
-  const settings = await adminSettingsService.getSettings();
-  const resolvedBadgeColor = badgeColor || settings.verificationBadgeColor || '#10B981';
-
-  const updates = {
-    status,
-    adminNotes: adminNotes || null,
-    decisionBy: buildApplicantSnapshot(adminUser),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  if (status === 'approved') {
-    updates.badgeColor = resolvedBadgeColor;
-    updates.decisionAt = admin.firestore.FieldValue.serverTimestamp();
-  }
-
-  if (status === 'rejected') {
-    updates.decisionAt = admin.firestore.FieldValue.serverTimestamp();
-  }
-
-  await docRef.set(updates, { merge: true });
-  const updated = await docRef.get();
-  return convertDoc(updated);
+const updateApplicationStatus = async (args) => {
+  // TODO: Implement updateApplicationStatus using Sequelize/PostgreSQL
+  throw new Error('Not implemented: updateApplicationStatus (PostgreSQL)');
 };
 
 module.exports = {

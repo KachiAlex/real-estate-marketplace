@@ -13,7 +13,7 @@ const VALID_TRANSITIONS = {
   disputed: ['completed', 'cancelled', 'refunded'],
   completed: [],
   cancelled: [],
-  refunded: []
+  // Firestore removed. Use Sequelize/PostgreSQL models instead.
 };
 
 const requireDb = () => {
@@ -32,13 +32,7 @@ const normalizeId = (value) => {
     if (value._id) return value._id.toString();
     if (value.uid) return value.uid;
   }
-  return null;
-};
-
-const convertTimestamp = (value) => {
-  if (!value) return value;
-  return typeof value.toDate === 'function' ? value.toDate() : value;
-};
+  // requireDb removed. Use Sequelize/PostgreSQL models directly.
 
 const convertEscrowDoc = (doc) => {
   if (!doc) return null;
@@ -51,53 +45,14 @@ const convertEscrowDoc = (doc) => {
       if (escrow[field]) {
         escrow[field] = convertTimestamp(escrow[field]);
       }
-    });
-
-  if (escrow.dispute) {
-    ['filedAt', 'resolvedAt'].forEach((field) => {
+  // convertTimestamp removed. Use native Date or Sequelize timestamps.
       if (escrow.dispute[field]) {
-        escrow.dispute[field] = convertTimestamp(escrow.dispute[field]);
-      }
-    });
-  }
-
-  if (Array.isArray(escrow.timeline)) {
-    escrow.timeline = escrow.timeline.map((entry) => ({
-      ...entry,
-      timestamp: entry.timestamp ? new Date(entry.timestamp) : undefined
-    }));
-  }
-
-  if (Array.isArray(escrow.documents)) {
-    escrow.documents = escrow.documents.map((docItem) => ({
-      ...docItem,
-      uploadedAt: docItem.uploadedAt ? new Date(docItem.uploadedAt) : undefined
-    }));
-  }
-
-  return escrow;
-};
-
-const buildUserSnapshot = (user) => {
-  if (!user) return null;
-  return {
-    id: normalizeId(user),
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    phone: user.phone || user.phoneNumber || null,
-    avatar: user.avatar || null
-  };
-};
-
-const buildTimelineEntry = (action, description, performedBy, metadata = {}) => ({
-  action,
-  description,
+  // convertEscrowDoc removed. Use Sequelize/PostgreSQL models directly.
   performedBy: normalizeId(performedBy),
   metadata,
   timestamp: new Date().toISOString()
-});
-
+      // TODO: Implement listTransactions using Sequelize/PostgreSQL
+      throw new Error('Not implemented: listTransactions (PostgreSQL)');
 const ensureParticipants = (buyerId, sellerId) => {
   const participants = new Set();
   if (buyerId) participants.add(buyerId);
@@ -140,9 +95,8 @@ const getEscrowNotificationPayload = (escrow, status) => {
       return {
         type: 'escrow_cancelled',
         title: 'Transaction Cancelled',
-        message: `Escrow transaction for ${escrow.propertySnapshot?.title || 'the property'} has been cancelled`
-      };
-    case 'refunded':
+      // TODO: Implement getTransactionById using Sequelize/PostgreSQL
+      throw new Error('Not implemented: getTransactionById (PostgreSQL)');
       return {
         type: 'escrow_resolved',
         title: 'Refund Processed',
@@ -175,12 +129,8 @@ class EscrowService {
     }
 
     if (status && STATUS_PIPELINE.includes(status)) {
-      query = query.where('status', '==', status);
-    }
-
-    const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
-    const pageLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 50);
-    const offset = (pageNumber - 1) * pageLimit;
+      // TODO: Implement createTransaction using Sequelize/PostgreSQL
+      throw new Error('Not implemented: createTransaction (PostgreSQL)');
 
     const snapshot = await query
       .orderBy('createdAt', 'desc')
