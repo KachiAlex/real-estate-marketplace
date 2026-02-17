@@ -130,6 +130,12 @@ const AdminDisputesManagement = ({ disputes }) => {
     );
   };
 
+  if (loading) {
+    return <div className="h-64 flex items-center justify-center text-sm text-gray-500">Loading disputes...</div>;
+  }
+  if (error) {
+    return <div className="h-64 flex items-center justify-center text-sm text-red-500">{error}</div>;
+  }
   return (
     <div className="space-y-6">
       {/* Header */}

@@ -679,4 +679,24 @@ class EscrowService {
   }
 }
 
+/**
+ * Returns escrow transaction volumes grouped by date (YYYY-MM-DD)
+ * Output: [{ date: '2026-02-17', total: 1000000 }, ...]
+ */
+async function getEscrowVolumesByDate() {
+  const db = requireDb();
+  const collection = db.collection(COLLECTION);
+  const snapshot = await collection.get();
+  const volumesByDate = {};
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const createdAt = convertTimestamp(data.createdAt) || new Date();
+    const dateKey = createdAt.toISOString().split('T')[0];
+    if (!volumesByDate[dateKey]) volumesByDate[dateKey] = 0;
+    volumesByDate[dateKey] += data.amount || 0;
+  });
+  return Object.entries(volumesByDate).map(([date, total]) => ({ date, total }));
+}
+
 module.exports = new EscrowService();
+module.exports.getEscrowVolumesByDate = getEscrowVolumesByDate;

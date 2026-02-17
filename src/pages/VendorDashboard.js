@@ -1,20 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { initializePaystackPayment } from '../services/paystackService';
+import { requestPropertyVerification } from '../services/propertyApi';
+import { isVerificationRequested, isVerificationApproved, setVerificationStatus } from '../utils/verificationStatus';
 import { FaHome, FaEnvelope, FaCalendar, FaMoneyBillWave, FaUsers, FaFileContract, FaBell, FaUser } from 'react-icons/fa';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useProperty } from '../contexts/PropertyContext';
+import { useVendor } from '../contexts/VendorContext';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 const sections = [
-  { id: 'overview', label: 'Overview', icon: FaHome },
-  { id: 'properties', label: 'Properties', icon: FaHome },
-  { id: 'inquiries', label: 'Inquiries', icon: FaEnvelope },
-  { id: 'inspections', label: 'Inspections', icon: FaCalendar },
-  { id: 'earnings', label: 'Earnings', icon: FaMoneyBillWave },
-  { id: 'team', label: 'Team', icon: FaUsers },
-  { id: 'contracts', label: 'Contracts', icon: FaFileContract },
-  { id: 'notifications', label: 'Notifications', icon: FaBell },
-  { id: 'profile', label: 'Profile', icon: FaUser }
+  { id: 'overview', label: 'Overview', icon: FaHome, path: '/vendor/dashboard/overview' },
+  { id: 'properties', label: 'Properties', icon: FaHome, path: '/vendor/dashboard/properties' },
+  { id: 'inquiries', label: 'Inquiries', icon: FaEnvelope, path: '/vendor/dashboard/inquiries' },
+  { id: 'inspections', label: 'Inspections', icon: FaCalendar, path: '/vendor/dashboard/inspections' },
+  { id: 'earnings', label: 'Earnings', icon: FaMoneyBillWave, path: '/vendor/dashboard/earnings' },
+  { id: 'team', label: 'Team', icon: FaUsers, path: '/vendor/dashboard/team' },
+  { id: 'contracts', label: 'Contracts', icon: FaFileContract, path: '/vendor/dashboard/contracts' },
+  { id: 'notifications', label: 'Notifications', icon: FaBell, path: '/vendor/dashboard/notifications' },
+  { id: 'profile', label: 'Profile', icon: FaUser, path: '/vendor/dashboard/profile' }
 ];
 
 const VendorDashboard = () => {
-  const [activeSection, setActiveSection] = useState('overview');
+  const [verifyModal, setVerifyModal] = useState({ open: false, property: null });
+  const handleVerificationPayment = (property) => {
+    const userEmail = vendorProfile?.contactInfo?.email || '';
+    const reference = `VERIFY-${property.id}-${Date.now()}`;
+    initializePaystackPayment({
+      email: userEmail,
+      amount: 50000,
+      reference,
+      metadata: {
+        propertyId: property.id,
+        vendorId: vendorProfile?.id
+      },
+      onSuccess: async (response) => {
+        setVerifyModal({ open: false, property: null });
+        try {
+          await requestPropertyVerification({
+            propertyId: property.id,
+            paymentReference: response.reference,
+            amount: 50000
+          });
+          setVerificationStatus(property.id, 'requested');
+          alert('Payment successful! Verification request submitted.');
+          fetchProperties();
+        } catch (e) {
+          alert('Payment succeeded but verification request failed: ' + e.message);
+        }
+      },
+      onClose: () => {
+        setVerifyModal({ open: false, property: null });
+      }
+    });
+  };
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Determine active section from path
+  const activeSection = sections.find(s => location.pathname.startsWith(s.path))?.id || 'overview';
+  // Property context
+  const {
+    properties,
+    loading: propertiesLoading,
+    fetchProperties,
+    error: propertiesError
+  } = useProperty();
+
+  // Vendor context
+  const {
+    vendorProfile,
+    vendorLoading,
+    fetchVendorProfile,
+    agentDocuments,
+    subscription
+  } = useVendor();
+
+  // Notification context
+  const {
+    notifications,
+    unreadCount,
+    loading: notificationsLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refreshNotifications
+  } = useNotifications();
+
+  useEffect(() => {
+    if (activeSection === 'properties') {
+      fetchProperties();
+    }
+  }, [activeSection, fetchProperties]);
+
+  const propertyStats = {
+    properties: properties.length,
+    earnings: properties.reduce((sum, p) => sum + (p.price || 0), 0),
+    inquiries: 0, // Placeholder, replace with real inquiries count if available
+    inspections: 0 // Placeholder, replace with real inspections count if available
+  };
+  const recentActivity = notifications.slice(0, 4).map(n => `${n.title}: ${n.message}`);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -22,81 +105,16 @@ const VendorDashboard = () => {
       <aside className="w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-40 flex flex-col">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-brand-blue">Vendor Dashboard</h2>
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Contracts</h1>
-            <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Contracts: <span className="font-mono bg-gray-100 px-2 py-1 rounded">2</span></span>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* upload contract logic */}}>Upload Contract</button>
-            <div>
-              <h1 className="text-2xl font-bold mb-4">Profile</h1>
-              <div className="mb-6 flex items-center">
-                <img src="https://via.placeholder.com/64" alt="Profile" className="w-16 h-16 rounded-full mr-4 border" />
-                <div>
-                  <div className="text-gray-600 text-sm mb-1">Vendor ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">VND-123456</span></div>
-                  <button className="bg-blue-600 text-white px-3 py-1 rounded-lg font-semibold hover:bg-blue-700 transition text-xs" onClick={() => {/* upload picture logic */}}>Upload Picture</button>
-                </div>
-              </div>
-              <form className="bg-white rounded-xl shadow border border-gray-200 p-6 max-w-lg">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Aisha" />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Mohammed" />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="aisha.mohammed@propertyowner.com" />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <input type="tel" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+2348012345678" />
-                </div>
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Save Changes</button>
-              </form>
-              <div className="mt-4 text-xs text-gray-400">Edit your profile information and upload a profile picture.</div>
-            </div>
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Example contract rows, replace with dynamic data */}
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Lease Agreement - Ikoyi Apartment</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Active</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><a href="#" className="text-blue-600 hover:underline">View PDF</a></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Sales Contract - Medical Apartment</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Completed</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><a href="#" className="text-blue-600 hover:underline">View PDF</a></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Upload, view, edit, and delete contracts. Document management enabled.</div>
-          </div>
+        </div>
+        <nav className="flex-1 flex flex-col gap-2 p-4 overflow-y-auto">
+          {sections.map((section) => (
+            <button
               key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-2 ${activeSection === section.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-left font-semibold transition-all ${activeSection === section.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => navigate(section.path)}
             >
-              <section.icon className="h-5 w-5" />
-              <span>{section.label}</span>
+              <span className="text-lg"><section.icon /></span>
+              {section.label}
             </button>
           ))}
         </nav>
@@ -104,117 +122,163 @@ const VendorDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 ml-64 p-8">
-        {activeSection === 'overview' && (
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Dashboard Overview</h1>
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-blue-600">12</div>
-                <div className="text-xs text-gray-500 mt-1">Properties</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-green-600">₦2,500,000</div>
-                <div className="text-xs text-gray-500 mt-1">Earnings</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-yellow-600">5</div>
-                <div className="text-xs text-gray-500 mt-1">Inquiries</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-gray-600">3</div>
-                <div className="text-xs text-gray-500 mt-1">Inspection Requests</div>
-              </div>
+        <Routes>
+          <Route path="/vendor/dashboard" element={<Navigate to="/vendor/dashboard/overview" replace />} />
+          <Route path="/vendor/dashboard/overview" element={
+            <div>
+              <h1 className="text-2xl font-bold mb-4">Dashboard Overview</h1>
+              {propertiesLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <span className="text-gray-500">Loading dashboard...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-blue-600">{propertyStats.properties}</div>
+                      <div className="text-xs text-gray-500 mt-1">Properties</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-green-600">₦{propertyStats.earnings.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">Earnings (Sum of Prices)</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-yellow-600">{propertyStats.inquiries}</div>
+                      <div className="text-xs text-gray-500 mt-1">Inquiries</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-gray-600">{propertyStats.inspections}</div>
+                      <div className="text-xs text-gray-500 mt-1">Inspection Requests</div>
+                    </div>
+                  </div>
+                  {/* Recent Activity */}
+                  <div className="bg-white rounded-xl shadow border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+                    <ul className="space-y-3">
+                      {recentActivity.length === 0 ? (
+                        <li className="text-sm text-gray-400">No recent activity.</li>
+                      ) : recentActivity.map((item, idx) => (
+                        <li key={idx} className="text-sm text-gray-700">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Quick Actions */}
+                  <div className="flex space-x-4">
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* add property logic */}}>Add Property</button>
+                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* request payout logic */}}>Request Payout</button>
+                    <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition" onClick={() => {/* view notifications logic */}}>View Notifications</button>
+                  </div>
+                  <div className="mt-4 text-xs text-gray-400">Quick stats, recent activity, and shortcuts to key actions.</div>
+                </>
+              )}
             </div>
-            {/* Recent Activity */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-6 mb-8">
-              <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-              <ul className="space-y-3">
-                <li className="text-sm text-gray-700">Property "Luxury Apartment in Ikoyi" approved.</li>
-                <li className="text-sm text-gray-700">Inspection scheduled for "Medical Professional Apartment".</li>
-                <li className="text-sm text-gray-700">New inquiry from Oluwaseun Akoma.</li>
-                <li className="text-sm text-gray-700">Earnings payout requested.</li>
-              </ul>
+          } />
+          <Route path="/vendor/dashboard/properties" element={
+            <div>
+              <h1 className="text-2xl font-bold mb-4">Properties</h1>
+              {propertiesLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <span className="text-gray-500">Loading properties...</span>
+                </div>
+              ) : propertiesError ? (
+                <div className="text-red-500">{propertiesError}</div>
+              ) : (
+                <>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="text-gray-600 text-sm">Total Properties: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{properties.length}</span></span>
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => fetchProperties()}>Refresh</button>
+                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* open add property modal */}}>Add Property</button>
+                  </div>
+                  {/* Property Statistics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-blue-600">{properties.length}</div>
+                      <div className="text-xs text-gray-500 mt-1">Total Properties</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-green-600">{properties.filter(p => p.status === 'For Sale').length}</div>
+                      <div className="text-xs text-gray-500 mt-1">For Sale</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-yellow-600">{properties.filter(p => p.status === 'For Rent').length}</div>
+                      <div className="text-xs text-gray-500 mt-1">For Rent</div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="text-lg font-bold text-gray-600">{properties.filter(p => p.status === 'For Lease').length}</div>
+                      <div className="text-xs text-gray-500 mt-1">For Lease</div>
+                    </div>
+                  </div>
+                  {/* Property Listing Table */}
+                  <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {properties.map((property) => (
+                          <tr key={property.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">{property.title}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{property.status}</span>
+                              {/* Verification Badge/Status */}
+                              {isVerificationApproved(property.id) || property.isVerified ? (
+                                <span className="ml-2 inline-block align-middle" title="Verified Property">
+                                  <svg className="w-4 h-4 text-blue-500 inline" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 00-1.414 0L9 11.586 6.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l7-7a1 1 0 000-1.414z" /></svg>
+                                  <span className="ml-1 text-xs text-blue-600 font-semibold">Verified</span>
+                                </span>
+                              ) : isVerificationRequested(property.id) || property.verificationStatus === 'pending' ? (
+                                <span className="ml-2 text-xs text-yellow-600 font-semibold">Verification Submitted</span>
+                              ) : null}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">₦{property.price?.toLocaleString()}</td>
+                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                              <button className="text-blue-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
+                              <button className="text-red-600 hover:underline mr-2" onClick={() => {/* delete logic */}}>Delete</button>
+                              {!isVerificationApproved(property.id) && !isVerificationRequested(property.id) && property.verificationStatus !== 'pending' && !property.isVerified && (
+                                <button
+                                  className="text-green-600 hover:underline"
+                                  onClick={() => setVerifyModal({ open: true, property })}
+                                >
+                                  Request Verification
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                              {/* Verification Modal */}
+                              {verifyModal?.open && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                                  <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+                                    <h2 className="text-xl font-bold mb-4">Request Property Verification</h2>
+                                    <p className="mb-4">To verify <span className="font-semibold">{verifyModal.property.title}</span>, you must pay a verification fee of <span className="font-bold text-green-700">₦50,000</span>.</p>
+                                    <div className="flex justify-end space-x-2 mt-6">
+                                      <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300" onClick={() => setVerifyModal({ open: false, property: null })}>Cancel</button>
+                                      <button className="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700" onClick={() => handleVerificationPayment(verifyModal.property)}>Proceed to Payment</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 text-xs text-gray-400">Local storage fallback enabled for offline property management.</div>
+                </>
+              )}
             </div>
-            {/* Quick Actions */}
-            <div className="flex space-x-4">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* add property logic */}}>Add Property</button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* request payout logic */}}>Request Payout</button>
-              <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition" onClick={() => {/* view notifications logic */}}>View Notifications</button>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Quick stats, recent activity, and shortcuts to key actions.</div>
-          </div>
-        )}
-        {activeSection === 'properties' && (
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Properties</h1>
-            <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Vendor ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">VND-123456</span></span>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* refresh logic */}}>Refresh</button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* open add property modal */}}>Add Property</button>
-            </div>
-            {/* Property Statistics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-blue-600">12</div>
-                <div className="text-xs text-gray-500 mt-1">Total Properties</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-green-600">7</div>
-                <div className="text-xs text-gray-500 mt-1">For Sale</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-yellow-600">4</div>
-                <div className="text-xs text-gray-500 mt-1">For Rent</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-gray-600">1</div>
-                <div className="text-xs text-gray-500 mt-1">For Lease</div>
-              </div>
-            </div>
-            {/* Property Listing Table */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Example property rows, replace with dynamic data */}
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Luxury Apartment in Ikoyi</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">For Sale</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">₦420,000,000</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-blue-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Medical Professional Apartment</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">For Rent</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">₦750,000/month</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-blue-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Local storage fallback enabled for offline property management.</div>
-          </div>
-        )}
+          } />
+          {/* Add similar <Route> blocks for other sections as needed */}
+        </Routes>
         {activeSection === 'inquiries' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Inquiries</h1>
             <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Inquiries: <span className="font-mono bg-gray-100 px-2 py-1 rounded">5</span></span>
+              <span className="text-gray-600 text-sm">Total Inquiries: <span className="font-mono bg-gray-100 px-2 py-1 rounded">0</span></span>
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* refresh logic */}}>Refresh</button>
             </div>
             {/* Inquiry List Table */}
@@ -229,26 +293,9 @@ const VendorDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Example inquiry rows, replace with dynamic data */}
                   <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Luxury Apartment in Ikoyi</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Oluwaseun Akoma</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">New</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-green-600 hover:underline mr-2" onClick={() => {/* reply logic */}}>Reply</button>
-                      <button className="text-gray-600 hover:underline" onClick={() => {/* mark as read logic */}}>Mark as Read</button>
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">No inquiries found.</td>
                   </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Medical Professional Apartment</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Fatima Ibrahim</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Read</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-green-600 hover:underline mr-2" onClick={() => {/* reply logic */}}>Reply</button>
-                      <button className="text-gray-600 hover:underline" onClick={() => {/* mark as unread logic */}}>Mark as Unread</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
                 </tbody>
               </table>
             </div>
@@ -259,10 +306,9 @@ const VendorDashboard = () => {
           <div>
             <h1 className="text-2xl font-bold mb-4">Inspection Requests</h1>
             <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Requests: <span className="font-mono bg-gray-100 px-2 py-1 rounded">3</span></span>
+              <span className="text-gray-600 text-sm">Total Requests: <span className="font-mono bg-gray-100 px-2 py-1 rounded">0</span></span>
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* refresh logic */}}>Refresh</button>
             </div>
-            {/* Inspection Requests Table */}
             <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead>
@@ -275,194 +321,101 @@ const VendorDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Example inspection rows, replace with dynamic data */}
                   <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Luxury Apartment in Ikoyi</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Oluwaseun Akoma</td>
-                    <td className="px-6 py-4 whitespace-nowrap">2026-02-18</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Pending</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-green-600 hover:underline mr-2" onClick={() => {/* approve logic */}}>Approve</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* reject logic */}}>Reject</button>
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">No inspection requests found.</td>
                   </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Medical Professional Apartment</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Fatima Ibrahim</td>
-                    <td className="px-6 py-4 whitespace-nowrap">2026-02-19</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Approved</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline mr-2" onClick={() => {/* view logic */}}>View</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* reject logic */}}>Reject</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
                 </tbody>
               </table>
             </div>
-            {/* Inspection Analytics */}
             <div className="mt-4 text-xs text-gray-400">Analytics and status management enabled for inspection requests.</div>
           </div>
         )}
         {activeSection === 'earnings' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Earnings</h1>
-            {/* Earnings Summary */}
-            <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Earnings: <span className="font-mono bg-green-100 px-2 py-1 rounded">₦2,500,000</span></span>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* payout logic */}}>Request Payout</button>
-            </div>
-            {/* Earnings Statistics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-green-600">₦1,200,000</div>
-                <div className="text-xs text-gray-500 mt-1">Paid Out</div>
+            {propertiesLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <span className="text-gray-500">Loading earnings...</span>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-blue-600">₦1,300,000</div>
-                <div className="text-xs text-gray-500 mt-1">Pending</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="text-lg font-bold text-gray-600">₦0</div>
-                <div className="text-xs text-gray-500 mt-1">Failed</div>
-              </div>
-            </div>
-            {/* Transaction History Table */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Example transaction rows, replace with dynamic data */}
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">2026-02-10</td>
-                    <td className="px-6 py-4 whitespace-nowrap">₦500,000</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Paid Out</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline" onClick={() => {/* view logic */}}>View</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">2026-02-14</td>
-                    <td className="px-6 py-4 whitespace-nowrap">₦1,000,000</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Pending</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline" onClick={() => {/* view logic */}}>View</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Earnings summary, payout actions, and transaction history available.</div>
+            ) : (
+              <>
+                <div className="mb-6 flex items-center justify-between">
+                  <span className="text-gray-600 text-sm">Total Earnings: <span className="font-mono bg-green-100 px-2 py-1 rounded">₦{properties.reduce((sum, p) => sum + (p.price || 0), 0).toLocaleString()}</span></span>
+                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* payout logic */}}>Request Payout</button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                    <div className="text-lg font-bold text-green-600">₦{(properties.filter(p => p.status === 'Paid Out').reduce((sum, p) => sum + (p.price || 0), 0)).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500 mt-1">Paid Out</div>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                    <div className="text-lg font-bold text-blue-600">₦{(properties.filter(p => p.status === 'Pending').reduce((sum, p) => sum + (p.price || 0), 0)).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500 mt-1">Pending</div>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                    <div className="text-lg font-bold text-gray-600">₦0</div>
+                    <div className="text-xs text-gray-500 mt-1">Failed</div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {properties.map((p) => (
+                        <tr key={p.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">₦{(p.price || 0).toLocaleString()}</td>
+                          <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{p.status}</span></td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button className="text-gray-600 hover:underline" onClick={() => {/* view logic */}}>View</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-xs text-gray-400">Earnings summary, payout actions, and transaction history available.</div>
+              </>
+            )}
           </div>
         )}
-        {activeSection === 'team' && (
+        {activeSection === 'profile' && (
           <div>
-            <h1 className="text-2xl font-bold mb-4">Team</h1>
-            <p className="text-gray-700">Manage your team members and roles.</p>
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Team Management</h1>
-            <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Members: <span className="font-mono bg-gray-100 px-2 py-1 rounded">4</span></span>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* add member logic */}}>Add Member</button>
-            </div>
-            {/* Team Member List Table */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Example team member rows, replace with dynamic data */}
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Emeka Okafor</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Agent</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-blue-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* remove logic */}}>Remove</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Fatima Ibrahim</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Manager</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Pending</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-blue-600 hover:underline mr-2" onClick={() => {/* edit logic */}}>Edit</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* remove logic */}}>Remove</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Add, edit, and remove team members. Manage roles and permissions.</div>
-          </div>
-            <h1 className="text-2xl font-bold mb-4">Contracts</h1>
-            <p className="text-gray-700">View and manage contracts.</p>
-          </div>
-        )}
-        {activeSection === 'notifications' && (
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Notifications</h1>
-            <p className="text-gray-700">See your notifications and alerts.</p>
-          <div>
-            <h1 className="text-2xl font-bold mb-4">Notifications</h1>
-            <div className="mb-6 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Total Notifications: <span className="font-mono bg-gray-100 px-2 py-1 rounded">6</span></span>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* refresh logic */}}>Refresh</button>
-            </div>
-            {/* Notification List Table */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Example notification rows, replace with dynamic data */}
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Property Approved</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Your property has been approved!</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Read</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-gray-600 hover:underline mr-2" onClick={() => {/* mark as unread logic */}}>Mark as Unread</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">Inspection Scheduled</td>
-                    <td className="px-6 py-4 whitespace-nowrap">Inspection for Medical Apartment is scheduled.</td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Unread</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-green-600 hover:underline mr-2" onClick={() => {/* mark as read logic */}}>Mark as Read</button>
-                      <button className="text-red-600 hover:underline" onClick={() => {/* delete logic */}}>Delete</button>
-                    </td>
-                  </tr>
-                  {/* Add more rows as needed */}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-400">Real-time updates and status management enabled for notifications.</div>
-          </div>
             <h1 className="text-2xl font-bold mb-4">Profile</h1>
-            <p className="text-gray-700">Edit your vendor profile and settings.</p>
+            {vendorLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <span className="text-gray-500">Loading profile...</span>
+              </div>
+            ) : vendorProfile ? (
+              <>
+                <div className="mb-6 flex items-center">
+                  <img src={vendorProfile.photoURL || 'https://via.placeholder.com/64'} alt="Profile" className="w-16 h-16 rounded-full mr-4 border" />
+                  <div>
+                    <div className="text-gray-600 text-sm mb-1">Vendor ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{vendorProfile.id}</span></div>
+                    <div className="text-gray-600 text-sm mb-1">Name: {vendorProfile.businessName}</div>
+                    <div className="text-gray-600 text-sm mb-1">Email: {vendorProfile.contactInfo?.email}</div>
+                    <div className="text-gray-600 text-sm mb-1">Phone: {vendorProfile.contactInfo?.phone}</div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow border border-gray-200 p-6 max-w-lg">
+                  <div className="mb-4">Business Type: {vendorProfile.businessType}</div>
+                  <div className="mb-4">License Number: {vendorProfile.licenseNumber}</div>
+                  <div className="mb-4">Experience: {vendorProfile.experience}</div>
+                  <div className="mb-4">Joined: {vendorProfile.joinedDate ? new Date(vendorProfile.joinedDate).toLocaleDateString() : 'N/A'}</div>
+                  <div className="mb-4">Status: <span className="font-mono bg-green-100 px-2 py-1 rounded">{vendorProfile.status}</span></div>
+                </div>
+                <div className="mt-4 text-xs text-gray-400">Profile information loaded from VendorContext.</div>
+              </>
+            ) : (
+              <div className="text-gray-500">No vendor profile found.</div>
+            )}
           </div>
         )}
       </main>

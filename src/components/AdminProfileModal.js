@@ -2,48 +2,93 @@ import React, { useState } from 'react';
 import { FaTimes, FaUser, FaEnvelope, FaShieldAlt, FaCalendarAlt, FaCamera, FaEdit, FaSave, FaPhone } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
+
 const AdminProfileModal = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    bio: user?.bio || '',
-    avatar: user?.avatar || ''
-  });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', bio: '', avatar: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch profile on open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    setError(null);
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/admin/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch admin profile');
+        const json = await res.json();
+        setFormData(json.data || {});
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    // Here you would typically save to backend
-    console.log('Saving admin profile:', formData);
-    setIsEditing(false);
-    // You could update the user context here
-    // updateUser({ ...user, ...formData });
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formData)
+      });
+      if (!res.ok) throw new Error('Failed to update profile');
+      setIsEditing(false);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      bio: user?.bio || '',
-      avatar: user?.avatar || ''
-    });
     setIsEditing(false);
+    setLoading(true);
+    setError(null);
+    // Re-fetch profile to reset form
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/admin/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch admin profile');
+        const json = await res.json();
+        setFormData(json.data || {});
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
   };
 
+
   if (!isOpen) return null;
+  if (loading) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"><div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-12 text-center">Loading profile...</div></div>;
+  }
+  if (error) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"><div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-12 text-center text-red-500">{error}</div></div>;
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FaUser },

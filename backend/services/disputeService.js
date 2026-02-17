@@ -363,6 +363,28 @@ class DisputeService {
   }
 }
 
+/**
+ * Returns all disputes for admin
+ */
+async function getAllDisputes() {
+  const db = requireDb();
+  const snapshot = await db.collection(COLLECTION).get();
+  return snapshot.docs.map(convertDisputeDoc);
+}
+
+disputeService.getAllDisputes = getAllDisputes;
+
+/**
+ * Updates dispute status/resolution for admin
+ */
+async function updateDisputeStatus(disputeId, status, resolutionNotes, adminId) {
+  // Fetch admin user (minimal snapshot)
+  const user = { id: adminId, role: 'admin' };
+  return disputeService.updateStatus({ disputeId, status, resolutionNotes, user });
+}
+
+disputeService.updateDisputeStatus = updateDisputeStatus;
+
 const disputeService = new DisputeService();
 disputeService.VALID_REASONS = VALID_REASONS;
 disputeService.STATUS_FLOW = STATUS_FLOW;

@@ -252,6 +252,13 @@ const getPropertyStats = async () => {
   return await getPropertyCounts(db);
 };
 
+const getPropertyStatusSummary = async () => {
+  const db = getFirestore();
+  if (!db) throw new Error('Firestore not initialized');
+  await ensureSeedProperties();
+  return await getPropertyCounts(db);
+};
+
 const listRecentProperties = async (limit = 5) => {
   const db = getFirestore();
   if (!db) throw new Error('Firestore not initialized');
@@ -289,6 +296,7 @@ module.exports = {
   updatePropertyVerification,
   deleteProperty,
   getPropertyStats,
+  getPropertyStatusSummary,
   deletePropertiesByOwner,
   listRecentProperties,
   toggleFavorite,

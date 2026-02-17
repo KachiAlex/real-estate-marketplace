@@ -1,3 +1,114 @@
+// @desc    Seed or reset mock data (admin/dev only)
+// @route   POST /api/admin/seed-data
+// @access  Private (Admin only)
+router.post('/seed-data', async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const { type } = req.body;
+    // Example: type = 'properties', 'users', 'all'
+    const propertyService = require('../services/propertyService');
+    const userService = require('../services/userService');
+    if (type === 'properties' || type === 'all') {
+      await propertyService.seedProperties();
+    }
+    if (type === 'users' || type === 'all') {
+      await userService.seedUsers();
+    }
+    res.json({ success: true, message: 'Seed data completed' });
+  } catch (error) {
+    console.error('Admin seed data error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+// @desc    Get current admin profile
+// @route   GET /api/admin/profile
+// @access  Private (Admin only)
+router.get('/profile', async (req, res) => {
+  try {
+    // Assume req.user is populated by auth middleware
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    // Return minimal admin profile
+    const { id, email, firstName, lastName, role, avatar, phone, bio } = req.user;
+    res.json({ success: true, data: { id, email, firstName, lastName, role, avatar, phone, bio } });
+  } catch (error) {
+    console.error('Admin get profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @desc    Update current admin profile
+// @route   PUT /api/admin/profile
+// @access  Private (Admin only)
+router.put('/profile', async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const { firstName, lastName, avatar, phone, bio } = req.body;
+    const userService = require('../services/userService');
+    const updated = await userService.updateUser(req.user.id, { firstName, lastName, avatar, phone, bio });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Admin update profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+// @desc    Get all disputes for admin
+// @route   GET /api/admin/disputes
+// @access  Private (Admin only)
+router.get('/disputes', async (req, res) => {
+  try {
+    const disputes = await require('../services/disputeService').getAllDisputes();
+    res.json({ success: true, data: disputes });
+  } catch (error) {
+    console.error('Admin get disputes error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @desc    Update dispute status/resolution
+// @route   PATCH /api/admin/disputes/:id
+// @access  Private (Admin only)
+router.patch('/disputes/:id', async (req, res) => {
+  try {
+    const { status, resolutionNotes } = req.body;
+    const updated = await require('../services/disputeService').updateDisputeStatus(req.params.id, status, resolutionNotes, req.user?.id);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Admin update dispute error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+// @desc    Get escrow transaction volumes grouped by date
+// @route   GET /api/admin/escrow/volumes
+// @access  Private (Admin only)
+router.get('/escrow/volumes', async (req, res) => {
+  try {
+    const volumes = await require('../services/escrowService').getEscrowVolumesByDate();
+    res.json({ success: true, data: volumes });
+  } catch (error) {
+    console.error('Admin escrow volumes error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+// @desc    Get property status summary for admin charts
+// @route   GET /api/admin/properties/status-summary
+// @access  Private (Admin only)
+router.get('/properties/status-summary', async (req, res) => {
+  try {
+    // Aggregate property status counts
+    const stats = await propertyService.getPropertyStatusSummary();
+    // Example: { pending: 5, approved: 10, rejected: 2 }
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    console.error('Admin property status summary error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const { protect, authorize } = require('../middleware/auth');

@@ -1,19 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
-
-// Backend-only mode: stubbed datastore helpers (no external SDK)
-const auth = { currentUser: null };
-const db = null;
-const collection = (...args) => ({ __stub: true, path: args.join('/') });
-const doc = (...args) => ({ __stub: true, path: args.join('/') });
-const query = (...args) => ({ __stub: true, args });
-const where = () => ({ __stub: true });
-const serverTimestamp = () => new Date().toISOString();
-const getDoc = async () => ({ exists: () => false, data: () => null });
-const getDocs = async () => ({ docs: [] });
-const setDoc = async () => {};
-const addDoc = async () => ({ id: `stub_${Date.now()}`, ref: {} });
+import axios from 'axios';
+import { getApiUrl } from '../utils/apiConfig';
+import { uploadVendorKycDocuments } from '../utils/vendorKycUpload';
 
 const VendorContext = createContext();
 
@@ -203,13 +193,17 @@ export const VendorProvider = ({ children }) => {
     }
   };
 
+  // Update vendor profile via Render backend
   const updateVendorProfile = async (profileData) => {
     try {
-      const fbUser = auth.currentUser;
-      if (!fbUser) throw new Error('Not authenticated');
-      const vendorRef = doc(db, 'vendors', fbUser.uid);
-      await setDoc(vendorRef, { ...profileData, updatedAt: serverTimestamp() }, { merge: true });
-      setVendorProfile(prev => ({ ...(prev || {}), ...profileData }));
+      if (!user || !user.id) throw new Error('Not authenticated');
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        getApiUrl(`/vendor/profile`),
+        profileData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setVendorProfile(prev => ({ ...(prev || {}), ...response.data.vendor }));
       toast.success('Vendor profile updated successfully!');
       return { success: true };
     } catch (error) {
@@ -219,26 +213,16 @@ export const VendorProvider = ({ children }) => {
     }
   };
 
-  const uploadAgentDocument = async (documentData) => {
-    try {
-      const fbUser = auth.currentUser;
-      if (!fbUser) throw new Error('Not authenticated');
-      const docsRef = collection(db, 'vendors', fbUser.uid, 'documents');
-      const payload = {
-        ...documentData,
-        agentId: fbUser.uid,
-        uploadedAt: serverTimestamp(),
-        status: 'pending'
-      };
-      const ref = await addDoc(docsRef, payload);
-      setAgentDocuments(prev => [...prev, { id: ref.id, ...payload }]);
-      toast.success('Document uploaded successfully!');
-      return { success: true };
-    } catch (error) {
-      console.error('Error uploading agent document:', error);
-      toast.error('Failed to upload document');
-      return { success: false, error: error.message };
+  // Upload agent/vendor KYC document(s) via Render backend
+  const uploadAgentDocument = async (files) => {
+    const result = await uploadVendorKycDocuments(files);
+    if (result.success) {
+      setAgentDocuments(prev => [...prev, ...result.data]);
+      toast.success('KYC documents uploaded successfully!');
+    } else {
+      toast.error(result.error || 'Failed to upload KYC documents');
     }
+    return result;
   };
 
   const checkDocumentStatus = () => {

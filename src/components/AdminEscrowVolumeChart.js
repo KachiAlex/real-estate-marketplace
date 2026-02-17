@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -21,26 +21,44 @@ ChartJS.register(
   Legend
 );
 
-const AdminEscrowVolumeChart = ({ escrows = [] }) => {
-  if (!escrows.length) {
-    return (
-      <div className="h-64 flex items-center justify-center text-sm text-gray-500">
-        No escrow data available yet.
-      </div>
-    );
+const AdminEscrowVolumeChart = () => {
+  const [volumes, setVolumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchVolumes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/admin/escrow/volumes', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch escrow volumes');
+        const json = await res.json();
+        setVolumes(json.data || []);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVolumes();
+  }, []);
+
+  if (loading) {
+    return <div className="h-64 flex items-center justify-center text-sm text-gray-500">Loading chart...</div>;
+  }
+  if (error) {
+    return <div className="h-64 flex items-center justify-center text-sm text-red-500">{error}</div>;
+  }
+  if (!volumes.length) {
+    return <div className="h-64 flex items-center justify-center text-sm text-gray-500">No escrow data available yet.</div>;
   }
 
-  // Group by date (YYYY-MM-DD) and sum amounts
-  const totalsByDate = escrows.reduce((acc, tx) => {
-    const date = tx.createdAt ? new Date(tx.createdAt).toISOString().split('T')[0] : 'Unknown';
-    if (!acc[date]) acc[date] = 0;
-    acc[date] += tx.amount || 0;
-    return acc;
-  }, {});
-
-  const labels = Object.keys(totalsByDate).sort();
-  const data = labels.map(d => totalsByDate[d]);
-
+  const labels = volumes.map(v => v.date);
+  const data = volumes.map(v => v.total);
   const chartData = {
     labels,
     datasets: [
@@ -56,14 +74,11 @@ const AdminEscrowVolumeChart = ({ escrows = [] }) => {
       }
     ]
   };
-
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (context) => `₦${(context.parsed.y || 0).toLocaleString()}`
@@ -71,12 +86,9 @@ const AdminEscrowVolumeChart = ({ escrows = [] }) => {
       }
     },
     scales: {
-      y: {
-        beginAtZero: true
-      }
+      y: { beginAtZero: true }
     }
   };
-
   return (
     <div className="h-64">
       <Line data={chartData} options={options} />
