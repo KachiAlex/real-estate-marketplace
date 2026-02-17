@@ -1,8 +1,5 @@
 import notificationService from './notificationService';
 
-const COLLECTION = 'inspectionRequests';
-const VIEWING_REQUESTS_KEY = 'viewingRequests';
-const INSPECTION_ACTIVITY_KEY = 'inspectionActivityLog';
 const ANALYTICS_EVENT = 'inspectionAnalyticsUpdated';
 const ACTIVITY_EVENT = 'inspectionActivity';
 
@@ -86,29 +83,6 @@ const buildInspectionNotificationEntries = (action, request, payload) => {
   const pushForVendor = (title, message) => {
     if (request.vendorId || request.vendorEmail) {
       entries.push({
-        recipientId: request.vendorId,
-        recipientEmail: request.vendorEmail,
-        roles: ['vendor'],
-        type: action,
-        title,
-        message,
-        priority: 'medium',
-        metadata: { requestId: request.id, propertyTitle, buyerName, vendorName }
-      });
-    }
-  };
-
-  const pushForBuyer = (title, message) => {
-    if (request.buyerId || request.userId || request.buyerEmail || request.userEmail) {
-      entries.push({
-        recipientId: request.buyerId || request.userId,
-        recipientEmail: request.buyerEmail || request.userEmail,
-        roles: ['buyer'],
-        type: action,
-        title,
-        message,
-        priority: 'medium',
-        metadata: { requestId: request.id, propertyTitle, buyerName, vendorName }
       });
     }
   };
