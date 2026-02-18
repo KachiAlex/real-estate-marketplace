@@ -14,6 +14,14 @@ const logger = createLogger('SupportRoutes');
  */
 router.post('/inquiry', authenticateToken, async (req, res) => {
   try {
+    // Log incoming request for quick server-side verification
+    logger.info('Incoming support inquiry request', {
+      userId: req.user?.id || req.user?.uid || 'unknown',
+      userEmail: req.user?.email || 'unknown',
+      ip: req.ip,
+      category: req.body?.category || null,
+      subjectPreview: req.body?.subject ? String(req.body.subject).slice(0, 120) : null
+    });
     const { message, category } = req.body;
 
     // Validate required fields

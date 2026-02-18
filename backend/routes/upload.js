@@ -1,17 +1,4 @@
-// Vendor KYC document upload (PDF, DOC, images)
-const vendorKycUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: fileFilter([
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
-    'image/jpeg',
-    'image/jpg',
-    'image/png'
-  ])
-});
+
 
 /**
  * @route   POST /api/upload/vendor/kyc
@@ -106,7 +93,21 @@ const fileFilter = (allowedTypes) => {
 };
 
 // Multer configurations for different file types
-const imageUpload = multer({
+const vendorKycUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png'
+  ])
+});
+
+const imageUpload = multer(
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'])

@@ -1,8 +1,3 @@
-try {
-  app.use('/api/vendor', require('./routes/vendor'));
-} catch (error) {
-  console.error('Failed to load vendor routes:', error.message);
-}
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -375,6 +370,12 @@ try {
   app.use('/api/upload', require('./routes/upload'));
 } catch (error) {
   console.error('Failed to load upload routes:', error.message);
+}
+
+try {
+  app.use('/api/vendor', require('./routes/vendor'));
+} catch (error) {
+  console.error('Failed to load vendor routes:', error.message);
 }
 
 try {
