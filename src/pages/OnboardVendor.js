@@ -14,6 +14,7 @@ export default function OnboardVendor() {
   const [form, setForm] = useState({
     businessName: '',
     businessType: '',
+    licenseNumber: '',
     contactEmail: '',
     contactPhone: '',
     kycDocs: [],
@@ -55,6 +56,7 @@ export default function OnboardVendor() {
       await updateVendorProfile({
         businessName: form.businessName,
         businessType: form.businessType,
+        licenseNumber: form.licenseNumber,
         contactInfo: {
           email: form.contactEmail,
           phone: form.contactPhone,
@@ -90,6 +92,10 @@ export default function OnboardVendor() {
               <input name="businessType" value={form.businessType} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
             </div>
             <div>
+              <label className="block mb-1 font-medium">License Number</label>
+              <input name="licenseNumber" value={form.licenseNumber} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
               <label className="block mb-1 font-medium">Contact Email</label>
               <input name="contactEmail" value={form.contactEmail} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
             </div>
@@ -111,6 +117,7 @@ export default function OnboardVendor() {
             <ul className="mb-2 text-sm">
               <li><b>Business Name:</b> {form.businessName}</li>
               <li><b>Business Type:</b> {form.businessType}</li>
+              <li><b>License Number:</b> {form.licenseNumber}</li>
               <li><b>Contact Email:</b> {form.contactEmail}</li>
               <li><b>Contact Phone:</b> {form.contactPhone}</li>
               <li><b>KYC Docs:</b> {form.kycDocs.length} file(s) selected</li>
@@ -121,7 +128,7 @@ export default function OnboardVendor() {
         <div className="flex space-x-2">
           {step > 0 && <button type="button" onClick={handleBack} className="px-4 py-2 rounded bg-gray-200">Back</button>}
           {step < steps.length - 1 && <button type="button" onClick={handleNext} className="px-4 py-2 rounded bg-blue-600 text-white">Next</button>}
-          {step === steps.length - 1 && <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white" disabled={submitting}>{submitting ? 'Submitting...' : 'Submit'}</button>}
+          {step === steps.length - 1 && <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white" disabled={submitting}>{submitting ? 'Submitting...' : 'Register as Vendor'}</button>}
         </div>
       </form>
     </div>
