@@ -121,13 +121,7 @@ const VALID_TRANSITIONS = {
   // Firestore removed. Use Sequelize/PostgreSQL models instead.
 };
 
-const requireDb = () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
-  }
-  return db;
-};
+const requireDb = () => { throw new Error('Firestore removed - use Sequelize implementations'); };
 
 const normalizeId = (value) => {
   if (!value) return null;
@@ -754,4 +748,3 @@ async function getEscrowVolumesByDate() {
 }
 
 module.exports = new EscrowService();
-module.exports.getEscrowVolumesByDate = getEscrowVolumesByDate;

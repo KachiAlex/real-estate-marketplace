@@ -191,84 +191,23 @@ const Header = () => {
               )}
 
             {/* Navigation Menu */}
-            <nav className="hidden lg:flex items-center flex-nowrap space-x-2 xl:space-x-4">
-              {/* For Sale */}
-              <div className="relative dropdown-container">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'For Sale' ? null : 'For Sale')}
-                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeDropdown === 'For Sale' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
-                  }`}
-                >
-                  <span>For Sale</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${
-                      activeDropdown === 'For Sale' ? 'rotate-180' : ''
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {activeDropdown === 'For Sale' && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                    <div className="py-2">
-                      {quickFilters['For Sale'].map((item) => (
-                        <Link
-                          key={item}
-                          to={`/properties?type=${encodeURIComponent(item)}&status=For Sale`}
-                          onClick={() => setActiveDropdown(null)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                        >
-                          {item}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* For Rent */}
-              <div className="relative dropdown-container">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'For Rent' ? null : 'For Rent')}
-                  className={`flex items-center space-x-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeDropdown === 'For Rent' ? 'text-brand-orange' : 'text-brand-blue hover:text-brand-orange'
-                  }`}
-                >
-                  <span>For Rent</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${
-                      activeDropdown === 'For Rent' ? 'rotate-180' : ''
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {activeDropdown === 'For Rent' && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48">
-                    <div className="py-2">
-                      {quickFilters['For Rent'].map((location) => (
-                        <Link
-                          key={location}
-                          to={`/properties?location=${encodeURIComponent(location)}&status=For Rent`}
-                          onClick={() => setActiveDropdown(null)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors text-gray-700"
-                        >
-                          {location}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            <nav className="hidden lg:flex items-center flex-nowrap space-x-2 xl:space-x-4">
+              {/* For Sale - direct link */}
+              <Link
+                to="/properties?status=For%20Sale"
+                className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-brand-blue hover:text-brand-orange transition-colors whitespace-nowrap"
+              >
+                For Sale
+              </Link>
+
+              {/* For Rent - direct link */}
+              <Link
+                to="/properties?status=For%20Rent"
+                className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-brand-blue hover:text-brand-orange transition-colors whitespace-nowrap"
+              >
+                For Rent
+              </Link>
 
               {/* Shortlet - link directly to shortlet listings instead of opening a locations dropdown */}
               <Link
@@ -465,11 +404,18 @@ const Header = () => {
                 Home
               </Link>
               <Link
-                to="/properties"
+                to="/properties?status=For%20Sale"
                 className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Properties
+                For Sale
+              </Link>
+              <Link
+                to="/properties?status=For%20Rent"
+                className="text-gray-700 hover:text-red-600 transition-colors duration-300 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                For Rent
               </Link>
               {/* Shortlet - direct link for mobile menu */}
               <Link

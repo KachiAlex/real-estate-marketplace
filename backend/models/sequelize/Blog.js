@@ -29,11 +29,27 @@ module.exports = (sequelize) => {
     featuredImage: {
       type: DataTypes.STRING
     },
+    featured: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
     category: {
       type: DataTypes.STRING
     },
     tags: {
       type: DataTypes.JSON
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    shares: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    comments: {
+      type: DataTypes.JSON,
+      defaultValue: []
     },
     status: {
       type: DataTypes.ENUM('draft', 'published', 'archived'),

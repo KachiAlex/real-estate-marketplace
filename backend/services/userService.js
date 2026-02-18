@@ -195,7 +195,6 @@ module.exports = {
   hashPassword,
   comparePassword,
   convertTimestamps,
-  ensureUserFromFirebase,
   listUsers,
   getUserStats,
   deleteUser

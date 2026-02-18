@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const propertySchema = new mongoose.Schema({
+// Deprecated Mongoose Property model removed — use Sequelize `models/sequelize/Property.js` instead.
+module.exports = null; // legacy model removed
   title: {
     type: String,
     required: [true, 'Property title is required'],

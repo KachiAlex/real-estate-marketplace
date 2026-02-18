@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// Deprecated NotificationTemplate removed — templates are in-memory now.
+module.exports = null; // legacy model removed
 
 const notificationTemplateSchema = new mongoose.Schema({
   name: {

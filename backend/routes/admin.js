@@ -1,3 +1,15 @@
+const express = require('express');
+const { body, validationResult, query } = require('express-validator');
+const { protect, authorize } = require('../middleware/auth');
+const { adminValidation } = require('../middleware/validation');
+const propertyService = require('../services/propertyService');
+const userService = require('../services/userService');
+const adminSettingsService = require('../services/adminSettingsService');
+const mortgageBankService = require('../services/mortgageBankService');
+const { sequelize, db } = require('../config/sequelizeDb');
+const bcrypt = require('bcryptjs');
+const router = express.Router();
+
 // @desc    Seed or reset mock data (admin/dev only)
 // @route   POST /api/admin/seed-data
 // @access  Private (Admin only)
@@ -8,8 +20,6 @@ router.post('/seed-data', async (req, res) => {
     }
     const { type } = req.body;
     // Example: type = 'properties', 'users', 'all'
-    const propertyService = require('../services/propertyService');
-    const userService = require('../services/userService');
     if (type === 'properties' || type === 'all') {
       await propertyService.seedProperties();
     }

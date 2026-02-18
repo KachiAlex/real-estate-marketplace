@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const blogSchema = new mongoose.Schema({
+// Deprecated Mongoose Blog model removed — use Sequelize `models/sequelize/Blog.js` instead.
+module.exports = null; // legacy model removed
   title: {
     type: String,
     required: [true, 'Blog title is required'],

@@ -1,9 +1,9 @@
 ﻿const express = require('express');
-const { protect, authorize } = require('../middleware/auth');
-const { sanitizeInput, validate } = require('../middleware/validation');
-const { body, param, query } = require('express-validator');
-const paymentService = require('../services/paymentService');
 
+const paymentService = require('../services/paymentService');
+const { sanitizeInput, validate } = require('../middleware/validation');
+const { protect, authorize } = require('../middleware/auth');
+const { body, param, query } = require('express-validator');
 const router = express.Router();
 
 // @desc    Get user payments

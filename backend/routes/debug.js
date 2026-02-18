@@ -1,6 +1,5 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const admin = require('firebase-admin');
 const router = express.Router();
 
 // Public debug endpoint to inspect Authorization header and token verification
@@ -28,15 +27,8 @@ router.get('/auth-check', async (req, res) => {
         result.backendJwt.error = err.message || String(err);
       }
 
-      // Try Firebase ID token verification
-      try {
-        const claims = await admin.auth().verifyIdToken(token);
-        result.firebaseIdToken.verified = true;
-        result.firebaseIdToken.uid = claims.uid || null;
-        result.firebaseIdToken.email = claims.email || null;
-      } catch (err) {
-        result.firebaseIdToken.error = err.message || String(err);
-      }
+      // Firebase ID token verification is disabled in this build
+      result.firebaseIdToken = { verified: false, error: 'Firebase auth disabled', uid: null, email: null }; 
     }
 
     return res.json({ success: true, data: result });

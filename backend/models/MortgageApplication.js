@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const mortgageApplicationSchema = new mongoose.Schema({
+// Deprecated Mongoose MortgageApplication model removed — use Sequelize `models/sequelize/MortgageApplication.js` instead.
+module.exports = null; // legacy model removed
   property: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',

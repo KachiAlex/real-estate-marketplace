@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const paymentSchema = new mongoose.Schema({
+// Deprecated Mongoose model removed — payments are now stored in PostgreSQL (add Sequelize Payment model if needed).
+module.exports = null; // legacy model removed
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

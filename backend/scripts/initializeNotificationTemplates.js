@@ -1,8 +1,12 @@
-const mongoose = require('mongoose');
-const NotificationTemplate = require('../models/NotificationTemplate');
-require('dotenv').config();
+// initializeNotificationTemplates.js — deprecated
+// Notification templates are now stored in-memory via `data/defaultNotificationTemplates` and
+// managed by `services/notificationTemplateService.js`. This legacy MongoDB seeder has been
+// removed as part of the Firestore/Mongo -> PostgreSQL migration.
 
-const defaultTemplates = [
+module.exports = async function initializeNotificationTemplates() {
+  console.warn('initializeNotificationTemplates: deprecated — templates are now in-memory (no-op)');
+  return true;
+};
   {
     name: 'Property Verified',
     type: 'property_verified',

@@ -151,11 +151,9 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/investment" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Investment />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Investment />
+      </PageWithSidebar>
     } />
     <Route path="/investment/:id" element={
       <ProtectedRoute>
@@ -165,11 +163,9 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/investments" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Investments />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Investments />
+      </PageWithSidebar>
     } />
     <Route path="/investment-opportunities" element={
       <ProtectedRoute>
@@ -186,18 +182,14 @@ const MainRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/mortgage" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Mortgage />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Mortgage />
+      </PageWithSidebar>
     } />
     <Route path="/mortgages" element={
-      <ProtectedRoute>
-        <PageWithSidebar>
-          <Mortgages />
-        </PageWithSidebar>
-      </ProtectedRoute>
+      <PageWithSidebar>
+        <Mortgages />
+      </PageWithSidebar>
     } />
     <Route path="/mortgages/applications" element={
       <ProtectedRoute>

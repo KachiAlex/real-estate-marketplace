@@ -1,63 +1,94 @@
-const { getFirestore, admin } = require('../config/firestore');
-const notificationService = require('./notificationService');
-const flutterwaveService = require('./flutterwaveService');
-const paystackService = require('./paystackService');
-const stripeService = require('./stripeService');
+// Sequelize-based paymentService.js
+const db = require('../config/sequelizeDb');
+const { Payment } = db;
 
-const COLLECTION = 'payments';
+module.exports = {
+  // List user payments with optional filters and pagination
+  async listUserPayments({ userId, status, paymentType, page = 1, limit = 20 }) {
+    const where = { userId };
+    if (status) where.status = status;
+    if (paymentType) where.paymentType = paymentType;
+    const offset = (page - 1) * limit;
+    const { rows, count } = await Payment.findAndCountAll({
+      where,
+      offset,
+      limit,
+      order: [['createdAt', 'DESC']]
+    });
+    return { data: rows, total: count };
+  },
 
-const ensureDb = () => {
-  const db = getFirestore();
-  if (!db) {
-    throw new Error('Firestore not initialized');
+  // Get payment by ID
+  async getPaymentById(id) {
+    return Payment.findByPk(id);
+  },
+
+  // Initialize a new payment (stub for provider integration)
+  async initializePayment({ user, amount, paymentMethod, paymentType, relatedEntity, description, currency }) {
+    // Generate unique reference
+    const reference = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    const payment = await Payment.create({
+      userId: user.id,
+      amount,
+      currency,
+      paymentType,
+      provider: paymentMethod,
+      reference,
+      status: 'pending',
+      metadata: { relatedEntity, description }
+    });
+    // Return payment object (add provider link in future)
+    return payment;
+  },
+
+  // Verify payment (stub)
+  async verifyPayment({ paymentId, userId, providerReference }) {
+    const payment = await Payment.findByPk(paymentId);
+    if (!payment) throw Object.assign(new Error('Payment not found'), { statusCode: 404 });
+    if (payment.userId !== userId) throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    // Simulate verification
+    payment.status = 'completed';
+    payment.metadata = { ...payment.metadata, providerReference };
+    await payment.save();
+    return payment;
+  },
+
+  // Cancel payment
+  async cancelPayment({ paymentId, userId, reason }) {
+    const payment = await Payment.findByPk(paymentId);
+    if (!payment) throw Object.assign(new Error('Payment not found'), { statusCode: 404 });
+    if (payment.userId !== userId) throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    payment.status = 'cancelled';
+    payment.metadata = { ...payment.metadata, cancelReason: reason };
+    await payment.save();
+    return payment;
+  },
+
+  // Process refund (admin only)
+  async processRefund({ paymentId, amount, reason, processedBy }) {
+    const payment = await Payment.findByPk(paymentId);
+    if (!payment) throw Object.assign(new Error('Payment not found'), { statusCode: 404 });
+    // Simulate refund
+    payment.status = 'refunded';
+    payment.metadata = { ...payment.metadata, refundAmount: amount, refundReason: reason, refundedBy: processedBy };
+    await payment.save();
+    return payment;
+  },
+
+  // Get payment statistics (admin)
+  async getPaymentStats() {
+    const total = await Payment.count();
+    const completed = await Payment.count({ where: { status: 'completed' } });
+    const refunded = await Payment.count({ where: { status: 'refunded' } });
+    return { total, completed, refunded };
+  },
+
+  // Process payment provider webhook (stub)
+  async processWebhook({ provider, headers, payload }) {
+    // Stub: log webhook
+    return { provider, received: true };
   }
-  return db;
 };
-
-const convertTimestamp = (value) => {
-  if (!value) return value;
-  return value.toDate ? value.toDate() : value;
-};
-
-const convertTimeline = (timeline = []) =>
-  timeline.map((event) => ({
-    ...event,
-    timestamp: convertTimestamp(event.timestamp)
-  }));
-
-const convertPaymentDoc = (doc) => {
-  if (!doc) return null;
-  const data = doc.data ? doc.data() : doc;
-
-  if (!data) {
-    return null;
-  }
-
-  return {
-    id: doc.id || data.id,
-    ...data,
-    createdAt: convertTimestamp(data.createdAt),
-    updatedAt: convertTimestamp(data.updatedAt),
-    timeline: convertTimeline(data.timeline),
-    refund: data.refund
-      ? {
-          ...data.refund,
-          processedAt: convertTimestamp(data.refund.processedAt)
-        }
-      : undefined,
-    netAmount: data.amount - (data.fees?.totalFees || 0)
-  };
-};
-
-const sanitizeFirestoreData = (value, fallback = null) => {
-  const target = value ?? fallback;
-  return JSON.parse(JSON.stringify(target));
-};
-
-const buildTimelineEvent = (status, description, metadata = {}) => ({
-  status,
-  description,
-  metadata,
   timestamp: admin.firestore.Timestamp.now()
 });
 

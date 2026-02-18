@@ -9,7 +9,6 @@ const socketIo = require('socket.io');
 require('dotenv').config();
 
 // Import configurations
-const { initializeFirestore } = require('./config/firestore');
 const { securityConfig } = require('./config/security');
 const { createLogger, createMorganLogger, infoLogger, warnLogger, errorLogger } = require('./config/logger');
 const rateLimit = require('express-rate-limit');
@@ -228,10 +227,8 @@ if (missingEssential.length > 0 && process.env.NODE_ENV === 'production') {
   process.exit(1);
 }
 
-// Warn if MongoDB URI is missing (but don't fail - Firestore now powers core flows)
-if (!process.env.MONGODB_URI) {
-  console.warn('⚠️ MONGODB_URI not set - Mongo-backed legacy features will be disabled');
-}
+// MongoDB / Firestore support has been removed — legacy features disabled
+// If you need to keep legacy scripts, move them to an /archive folder.
 
 // Warn about missing payment keys
 if (!process.env.FLUTTERWAVE_SECRET_KEY && process.env.NODE_ENV === 'production') {

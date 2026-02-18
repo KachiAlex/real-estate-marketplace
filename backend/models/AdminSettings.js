@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// Deprecated Mongoose AdminSettings model removed — use Sequelize `models/sequelize/AdminSettings.js` instead.
+module.exports = null; // legacy model removed
 
 const adminSettingsSchema = new mongoose.Schema({
   verificationFee: {

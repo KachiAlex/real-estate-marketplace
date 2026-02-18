@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const mortgageBankSchema = new mongoose.Schema({
+// Deprecated Mongoose MortgageBank model removed — use Sequelize `models/sequelize/MortgageBank.js` instead.
+module.exports = null; // legacy model removed
   name: {
     type: String,
     required: [true, 'Bank name is required'],

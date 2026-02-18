@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// Deprecated Mongoose Notification model removed — use Sequelize `models/sequelize/Notification.js` instead.
+module.exports = null; // legacy model removed
 
 const notificationSchema = new mongoose.Schema({
   recipient: {

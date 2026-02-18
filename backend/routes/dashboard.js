@@ -2,7 +2,7 @@ const express = require('express');
 const { protect } = require('../middleware/auth');
 const vendorOnboarding = require('../middleware/vendorOnboarding');
 const { sanitizeInput } = require('../middleware/validation');
-const { getFirestore } = require('../config/firestore');
+const db = require('../config/sequelizeDb');
 const { ensureSeedProperties } = require('../services/propertyService');
 
 const router = express.Router();
@@ -119,18 +119,11 @@ const aggregateVendorStats = (properties = []) => {
 // @access  Private
 router.get('/user', protect, sanitizeInput, async (req, res) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      return res.json({ success: true, data: buildZeroUserSummary() });
-    }
-
     await ensureSeedProperties();
-    const snapshot = await db.collection('properties').get();
-
+    const total = await db.Property.count();
     const summary = buildZeroUserSummary();
-    summary.totalProperties = snapshot.size;
+    summary.totalProperties = total;
     summary.savedProperties = Array.isArray(req.user?.favorites) ? req.user.favorites.length : 0;
-
     res.json({ success: true, data: summary });
   } catch (error) {
     console.error('User dashboard summary error:', error);
@@ -143,14 +136,9 @@ router.get('/user', protect, sanitizeInput, async (req, res) => {
 // @access  Private
 router.get('/vendor', protect, vendorOnboarding, sanitizeInput, async (req, res) => {
   try {
-    const db = getFirestore();
-    if (!db) {
-      return res.json({ success: true, data: buildZeroVendorSummary() });
-    }
-
     await ensureSeedProperties();
-    const snapshot = await db.collection('properties').get();
-    const allProperties = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const props = await db.Property.findAll();
+    const allProperties = props.map(p => p.toJSON());
 
     const identifiers = buildIdentifierSet(req.user || {});
     const vendorProperties = allProperties.filter((property) => propertyMatchesUser(property, identifiers));

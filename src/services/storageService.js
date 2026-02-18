@@ -138,18 +138,49 @@ class StorageService {
       };
     }
 
-    const result = await this.uploadFile(file, path, { userId });
-    if (result.success) {
+    // Use 'avatar' as the field name for avatar uploads
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('uploadType', 'user_avatar');
+      formData.append('metadata', JSON.stringify({ path, userId }));
+
+      const response = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.message || 'Upload failed');
+      }
+
       const avatarInfo = {
         userId,
-        avatarUrl: result.url,
+        avatarUrl: result.data?.url,
         uploadDate: new Date().toISOString(),
-        fileName: result.name
+        fileName: result.data?.originalName || file.name
       };
       localStorage.setItem(`user_avatar_${userId}`, JSON.stringify(avatarInfo));
-    }
 
-    return result;
+      return {
+        success: true,
+        url: result.data?.url,
+        path: result.data?.publicId || path,
+        name: result.data?.originalName || file.name,
+        size: result.data?.size || file.size,
+        type: result.data?.format || file.type
+      };
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      return {
+        success: false,
+        error: error.message || 'Upload failed'
+      };
+    }
   }
 
   getFallbackAvatar(userId) {

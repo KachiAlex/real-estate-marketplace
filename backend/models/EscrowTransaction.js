@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const escrowTransactionSchema = new mongoose.Schema({
+// Deprecated Mongoose EscrowTransaction model removed — use Sequelize `models/sequelize/EscrowTransaction.js` instead.
+module.exports = null; // legacy model removed
   propertyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',

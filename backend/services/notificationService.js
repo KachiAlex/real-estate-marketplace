@@ -65,6 +65,7 @@ class NotificationService {
     return { success: true, data: toJSON(n) };
   }
 
+
   async sendNotification(notification, template = null) {
     try {
       const recipient = await userService.findById(notification.userId || notification.recipient);
@@ -85,32 +86,18 @@ class NotificationService {
   }
 
   async sendEmailNotification(notification, recipient, template) {
-    try {
-      const templateDoc = template || await notificationTemplateService.getTemplateByType(notification.type);
-      const variables = { userName: [recipient.firstName, recipient.lastName].filter(Boolean).join(' ').trim() || recipient.email, ...notification.data };
-      const rendered = templateDoc ? notificationTemplateService.renderTemplate(templateDoc, variables) : null;
-      const subject = rendered?.channels?.email?.subject || notification.title;
-      const html = rendered?.channels?.email?.htmlTemplate || `<p>${notification.message}</p>`;
-      const text = rendered?.channels?.email?.textTemplate || notification.message;
-      await emailService.sendEmail(recipient.email, subject, html, text);
-    } catch (err) {
-      console.error('sendEmailNotification failed:', err.message);
-    }
+  try {
+    const templateDoc = template || await notificationTemplateService.getTemplateByType(notification.type);
+    const variables = { userName: [recipient.firstName, recipient.lastName].filter(Boolean).join(' ').trim() || recipient.email, ...notification.data };
+    const rendered = templateDoc ? notificationTemplateService.renderTemplate(templateDoc, variables) : null;
+    const subject = rendered?.channels?.email?.subject || notification.title;
+    const html = rendered?.channels?.email?.htmlTemplate || `<p>${notification.message}</p>`;
+    const text = rendered?.channels?.email?.textTemplate || notification.message;
+    await emailService.sendEmail(recipient.email, subject, html, text);
+  } catch (err) {
+    console.error('sendEmailNotification failed:', err.message);
   }
-        }
-      }
-
-      // Fallback to a simple email if template is missing or disabled
-      await emailService.sendEmail(
-        recipient.email,
-        notification.title,
-        `<p>${notification.message}</p>`,
-        notification.message
-      );
-    } catch (error) {
-      console.error('Error sending email notification:', error);
-    }
-  }
+}
 
   async sendInAppNotification(notification) {
     try {

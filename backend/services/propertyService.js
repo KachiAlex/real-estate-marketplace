@@ -156,20 +156,7 @@ module.exports = {
   return snapshot.docs.map(convertPropertyDoc);
 };
 
-const deletePropertiesByOwner = async (ownerId) => {
-  const db = getFirestore();
-  if (!db) throw new Error('Firestore not initialized');
-
-  const snapshot = await db.collection(COLLECTION)
-    .where('owner.id', '==', ownerId)
-    .get();
-
-  if (snapshot.empty) return;
-
-  const batch = db.batch();
-  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-  await batch.commit();
-};
+// deletePropertiesByOwner removed — use Sequelize `Property.destroy({ where: { ownerId } })` instead.
 
 module.exports = {
   listProperties,
@@ -180,8 +167,6 @@ module.exports = {
   deleteProperty,
   getPropertyStats,
   getPropertyStatusSummary,
-  deletePropertiesByOwner,
   listRecentProperties,
-  toggleFavorite,
-  ensureSeedProperties
+  toggleFavorite
 };

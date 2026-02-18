@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
-
-const investmentSchema = new mongoose.Schema({
+// Deprecated Mongoose Investment model removed — use Sequelize `models/sequelize/Investment.js` instead.
+module.exports = null; // legacy model removed
   title: {
     type: String,
     required: [true, 'Investment title is required'],

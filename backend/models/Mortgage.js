@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// Deprecated Mongoose Mortgage model removed — use Sequelize `models/sequelize/Mortgage.js` instead.
+module.exports = null; // legacy model removed
 
 /**
  * Mortgage Model

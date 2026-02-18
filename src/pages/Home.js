@@ -1964,7 +1964,7 @@ const Home = () => {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li><Link to="/properties" className="text-gray-400 hover:text-white transition-colors">Browse Properties</Link></li>
-                <li><Link to="/mortgage" className="text-gray-400 hover:text-white transition-colors">Mortgage Calculator</Link></li>
+                <li><Link to="/mortgages" className="text-gray-400 hover:text-white transition-colors">Mortgage Dashboard</Link></li>
                 <li><Link to="/investment" className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
               </ul>
@@ -1974,11 +1974,11 @@ const Home = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Property Types</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Luxury Apartments</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Family Houses</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Penthouses</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Beachfront Villas</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Commercial Properties</a></li>
+                <li><Link to="/properties?type=apartment&luxury=true" className="text-gray-400 hover:text-white transition-colors">Luxury Apartments</Link></li>
+                <li><Link to="/properties?type=house&family=true" className="text-gray-400 hover:text-white transition-colors">Family Houses</Link></li>
+                <li><Link to="/properties?type=penthouse" className="text-gray-400 hover:text-white transition-colors">Penthouses</Link></li>
+                <li><Link to="/properties?type=villa&beachfront=true" className="text-gray-400 hover:text-white transition-colors">Beachfront Villas</Link></li>
+                <li><Link to="/properties?type=commercial" className="text-gray-400 hover:text-white transition-colors">Commercial Properties</Link></li>
               </ul>
             </div>
 
