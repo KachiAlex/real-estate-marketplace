@@ -1,0 +1,45 @@
+name: Cypress E2E - Support Ticket
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches: ['main']
+
+jobs:
+  e2e-support-ticket:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run frontend:build
+
+      - name: Serve frontend (background)
+        run: npm run frontend:serve &
+
+      - name: Wait for frontend to be ready
+        run: |
+          for i in `seq 1 30`; do
+            if curl -sS http://localhost:5000 > /dev/null; then
+              echo "frontend available"; exit 0;
+            fi
+            sleep 1
+          done
+          echo "frontend did not start" >&2
+          exit 1
+
+      - name: Run Cypress E2E (support ticket)
+        env:
+          CYPRESS_BASE_URL: http://localhost:5000
+        run: npx cypress run --spec "cypress/e2e/support_ticket.cy.js"
