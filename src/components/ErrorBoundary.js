@@ -59,6 +59,28 @@ class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
+  handleClearCacheAndReload = async () => {
+    // Clear caches/service-workers (defensive) then reload
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const r of regs) {
+          try { await r.unregister(); } catch (e) { /* ignore */ }
+        }
+      }
+      if (window.caches && window.caches.keys) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.map(k => window.caches.delete(k)));
+      }
+    } catch (e) {
+      // ignore errors during cache cleanup
+      console.warn('Cache cleanup failed:', e);
+    } finally {
+      sessionStorage.setItem('real-estate-chunk-reload', '1');
+      window.location.reload();
+    }
+  };
+
   handleGoHome = () => {
     // Reset error state and navigate to home
     this.setState({ hasError: false, error: null, errorInfo: null });
@@ -119,6 +141,16 @@ class ErrorBoundary extends React.Component {
               >
                 Go to Home
               </button>
+
+              {/* Special recovery action for missing chunk errors */}
+              {this.state.error && typeof this.state.error.message === 'string' && (this.state.error.message.includes('ChunkLoadError') || /Loading chunk [\w-]+ failed/i.test(this.state.error.message)) && (
+                <button
+                  onClick={this.handleClearCacheAndReload}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Clear cache & reload
+                </button>
+              )}
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-200">

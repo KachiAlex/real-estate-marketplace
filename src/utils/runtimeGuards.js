@@ -29,12 +29,12 @@ const unregisterLegacyServiceWorkers = () => {
   });
 };
 
-const isChunkLoadError = (message = '') => {
+export const isChunkLoadError = (message = '') => {
   if (typeof message !== 'string') return false;
   return message.includes('ChunkLoadError') || /Loading chunk [\w-]+ failed/i.test(message);
 };
 
-const attemptChunkRecovery = () => {
+export const attemptChunkRecovery = () => {
   if (typeof window === 'undefined') return;
   if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
     return;
@@ -43,6 +43,15 @@ const attemptChunkRecovery = () => {
   sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
 
   const reloadPage = () => window.location.reload();
+
+  // Unregister service workers first to avoid stale SW serving old assets
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((r) => {
+        try { r.unregister(); } catch (e) { /* ignore */ }
+      });
+    }).catch(() => {});
+  }
 
   if (window.caches?.keys) {
     caches.keys()
