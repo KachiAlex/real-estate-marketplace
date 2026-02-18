@@ -1,6 +1,7 @@
 name: Cypress E2E - Support Ticket
 
 on:
+  workflow_dispatch: {}
   pull_request:
     branches: ['**']
   push:
