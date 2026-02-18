@@ -15,6 +15,8 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands';
+// Enable file upload support for tests
+import 'cypress-file-upload';
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
@@ -28,5 +30,18 @@ Cypress.on('uncaught:exception', (err, runnable) => {
     return false;
   }
   return true;
+});
+
+// Workaround: hide webpack-dev-server client overlay that can cover the AUT
+// and block interactions inside Cypress runner. This only runs in tests.
+Cypress.on('window:before:load', (win) => {
+  try {
+    const style = win.document.createElement('style');
+    style.setAttribute('data-cy-hide-wds-overlay', 'true');
+    style.innerHTML = `#webpack-dev-server-client-overlay { display: none !important; pointer-events: none !important; z-index: 0 !important; }`;
+    win.document.head.appendChild(style);
+  } catch (e) {
+    // ignore
+  }
 });
 

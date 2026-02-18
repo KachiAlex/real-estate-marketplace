@@ -246,6 +246,9 @@ export const PropertyProvider = ({ children }) => {
     bathrooms: '',
     amenities: []
   });
+
+  // Debug: log when PropertyProvider mounts
+  console.log('PropertyProvider mounted - authReady:', authReady, 'user:', user && user.email ? user.email : null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -320,6 +323,8 @@ export const PropertyProvider = ({ children }) => {
     setLoading(true);
     setError(null);
 
+    console.log('PropertyContext.fetchProperties - start', { opts, filters, authReady, user: user && user.email ? user.email : null });
+
     try {
       // Merge incoming options with current filters
       const effectiveFilters = { ...filters, ...opts };
@@ -331,6 +336,9 @@ export const PropertyProvider = ({ children }) => {
       try {
         const localData = localStorage.getItem('mockProperties');
         const localProps = JSON.parse(localData || '[]');
+        if (Array.isArray(localProps) && localProps.length) {
+          console.log('PropertyContext.fetchProperties - found localStorage mockProperties', { count: localProps.length });
+        }
         localProps.forEach(lp => {
           if (!allProperties.find(p => p.id === lp.id)) {
             allProperties.push({ ...lp, source: 'localStorage' });
@@ -339,6 +347,8 @@ export const PropertyProvider = ({ children }) => {
       } catch (localErr) {
         console.warn('PropertyContext: Failed to read localStorage mockProperties', localErr);
       }
+
+      console.log('PropertyContext.fetchProperties - total available before filters', { total: allProperties.length });
 
       // Apply simple filtering
       let filtered = allProperties;
@@ -361,6 +371,13 @@ export const PropertyProvider = ({ children }) => {
         filtered = filtered.filter(p => Number(p.price || 0) <= max);
       }
 
+      console.log('PropertyContext.fetchProperties - after filters', {
+        search: effectiveFilters.search || null,
+        type: effectiveFilters.type || null,
+        status: effectiveFilters.status || null,
+        totalFiltered: filtered.length
+      });
+
       // Pagination
       const page = Number(effectiveFilters.page || pagination.currentPage) || 1;
       const perPage = Number(pagination.itemsPerPage) || 12;
@@ -369,9 +386,12 @@ export const PropertyProvider = ({ children }) => {
       const start = (page - 1) * perPage;
       const pageItems = filtered.slice(start, start + perPage);
 
+      console.log('PropertyContext.fetchProperties - pagination', { page, perPage, totalItems, totalPages, returned: pageItems.length });
+
       setProperties(pageItems);
       setPagination(prev => ({ ...prev, currentPage: page, totalPages, totalItems }));
 
+      console.log('PropertyContext.fetchProperties - done', { currentPage: page, totalItems, returned: pageItems.length });
       return { totalItems, totalPages, currentPage: page };
     } catch (error) {
       console.error('Error in fetchProperties:', error);

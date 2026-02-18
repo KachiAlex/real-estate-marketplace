@@ -48,6 +48,7 @@ const LoginPage = () => {
         <div className="space-y-3">
           <label className="text-sm font-medium text-slate-200">Email</label>
           <input
+            name="email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -60,6 +61,7 @@ const LoginPage = () => {
         <div className="space-y-3">
           <label className="text-sm font-medium text-slate-200">Password</label>
           <input
+            name="password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}

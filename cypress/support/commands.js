@@ -9,11 +9,29 @@
 // ***********************************************
 
 Cypress.Commands.add('login', (email = 'test@example.com', password = 'password123') => {
-  cy.visit('/login');
-  cy.get('input[type="email"], input[name="email"]').type(email);
-  cy.get('input[type="password"], input[name="password"]').type(password);
-  cy.get('button[type="submit"]').contains('Login').click();
-  cy.wait(2000); // Wait for login to complete
+  // Derive a mock user identity from email for faster, backend-independent tests
+  const role = email.includes('vendor') ? 'vendor' : (email.includes('buyer') ? 'buyer' : 'user');
+  const id = email.split('@')[0];
+  const mockUser = {
+    id,
+    email,
+    firstName: id.split('.')[0] || 'Test',
+    lastName: 'User',
+    role,
+    roles: [role],
+    activeRole: role
+  };
+
+  // Persist tokens + currentUser so AuthContext initializes as authenticated
+  cy.window().then((win) => {
+    win.localStorage.setItem('accessToken', 'mock-access-token');
+    win.localStorage.setItem('refreshToken', 'mock-refresh-token');
+    win.localStorage.setItem('currentUser', JSON.stringify(mockUser));
+  });
+
+  // Visit root to hydrate app state from localStorage
+  cy.visit('/');
+  cy.wait(500);
 });
 
 Cypress.Commands.add('register', (userData) => {

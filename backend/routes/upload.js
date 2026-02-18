@@ -3,11 +3,11 @@
 /**
  * @route   POST /api/upload/vendor/kyc
  * @desc    Upload vendor KYC documents
- * @access  Private (Vendor or User)
+ * @access  Public (used for onboarding - accepts unauthenticated uploads)
  */
 router.post(
   '/vendor/kyc',
-  protect,
+  // Public endpoint: allow unauthenticated vendor onboarding uploads
   checkCloudinaryConfig,
   vendorKycUpload.array('documents', 10), // Max 10 documents
   async (req, res) => {

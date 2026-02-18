@@ -51,6 +51,7 @@ const SignInModal = ({ onClose }) => {
           <div>
             <label className="text-sm text-white/90">Email</label>
             <input
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -63,6 +64,7 @@ const SignInModal = ({ onClose }) => {
           <div>
             <label className="text-sm text-white/90">Password</label>
             <input
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

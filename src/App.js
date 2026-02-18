@@ -118,6 +118,15 @@ const MainRoutes = () => (
         <OnboardVendor />
       </React.Suspense>
     } />
+
+    {/* Short redirects for legacy vendor routes expected by E2E tests */}
+    <Route path="/vendor/properties" element={<Navigate to="/vendor/dashboard/properties" replace />} />
+    <Route path="/vendor/earnings" element={<Navigate to="/vendor/dashboard/earnings" replace />} />
+    <Route path="/vendor/register" element={
+      <React.Suspense fallback={<div className="flex items-center justify-center w-full h-screen"><LoadingSpinner size="lg" /></div>}>
+        <OnboardVendor />
+      </React.Suspense>
+    } />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={
       <ProtectedRoute>

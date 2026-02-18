@@ -86,10 +86,16 @@ const VendorDashboard = () => {
   } = useNotifications();
 
   useEffect(() => {
+    console.log('VendorDashboard: activeSection=', activeSection);
     if (activeSection === 'properties') {
-      fetchProperties();
+      console.log('VendorDashboard: fetching properties...');
+      fetchProperties().then(() => console.log('VendorDashboard: fetchProperties complete'));
     }
   }, [activeSection, fetchProperties]);
+
+  useEffect(() => {
+    console.log('VendorDashboard: properties length=', properties.length);
+  }, [properties]);
 
   const propertyStats = {
     properties: properties.length,
@@ -222,7 +228,7 @@ const VendorDashboard = () => {
                       </thead>
                       <tbody>
                         {properties.map((property) => (
-                          <tr key={property.id}>
+                          <tr key={property.id} data-testid="property-item">
                             <td className="px-6 py-4 whitespace-nowrap">{property.title}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{property.status}</span>
@@ -333,6 +339,7 @@ const VendorDashboard = () => {
         {activeSection === 'earnings' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Earnings</h1>
+            {console.log('VendorDashboard: rendering earnings - properties length =', properties.length)}
             {propertiesLoading ? (
               <div className="flex items-center justify-center h-32">
                 <span className="text-gray-500">Loading earnings...</span>
@@ -369,7 +376,7 @@ const VendorDashboard = () => {
                     </thead>
                     <tbody>
                       {properties.map((p) => (
-                        <tr key={p.id}>
+                        <tr key={p.id} data-testid="transaction-item">
                           <td className="px-6 py-4 whitespace-nowrap">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">₦{(p.price || 0).toLocaleString()}</td>
                           <td className="px-6 py-4 whitespace-nowrap"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">{p.status}</span></td>

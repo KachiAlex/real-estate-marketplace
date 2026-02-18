@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FaHistory, FaTimes } from 'react-icons/fa';
 
 const MemoryInput = ({
+  name,
   value,
   onChange,
   placeholder = '',
@@ -82,6 +83,7 @@ const MemoryInput = ({
   }, [storageKey]);
 
   const commonProps = {
+    name: name || storageKey,
     value: value || '', // Ensure value is never null/undefined
     onChange: (e) => onChange(e.target.value),
     onBlur: handleBlur,

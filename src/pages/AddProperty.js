@@ -567,6 +567,7 @@ const AddProperty = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Property Title</label>
                   <div className="relative">
                     <MemoryInput
+                      name="title"
                       fieldKey="title"
                       value={formData.title}
                       onChange={(val) => setFormData((p) => ({ ...p, title: val }))}
@@ -629,6 +630,7 @@ const AddProperty = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Price (₦)</label>
                   <div className="relative">
                     <MemoryInput
+                      name="price"
                       type="number"
                       fieldKey="price"
                       value={formData.price}
@@ -645,6 +647,7 @@ const AddProperty = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Description</label>
                 <MemoryInput
+                  name="description"
                   fieldKey="description"
                   value={formData.description}
                   onChange={(val) => setFormData((p) => ({ ...p, description: val }))}
@@ -1229,7 +1232,7 @@ const AddProperty = () => {
                     Adding Property...
                   </div>
                 ) : (
-                  'Add Property'
+                  'Submit Property'
                 )}
               </button>
             </div>

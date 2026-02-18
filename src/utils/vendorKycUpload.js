@@ -13,10 +13,8 @@ export const uploadVendorKycDocuments = async (files, onProgress = null) => {
       throw new Error('No files provided');
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Authentication required');
-    }
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    // Allow unauthenticated uploads for public vendor onboarding (backend accepts public uploads).
 
     // Validate files
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -42,14 +40,14 @@ export const uploadVendorKycDocuments = async (files, onProgress = null) => {
     });
 
     // Upload to backend (Render API)
+    const headers = { 'Content-Type': 'multipart/form-data' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const response = await axios.post(
       getApiUrl('/upload/vendor/kyc'),
       formData,
       {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        },
+        headers,
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

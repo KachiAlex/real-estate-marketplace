@@ -71,20 +71,33 @@ const Header = () => {
   };
 
   const handleVendorSwitch = async () => {
-    const result = await switchRole('vendor');
+    try {
+      // If the user is not yet a vendor, go to the onboarding/register page
+      if (!user || user.role !== 'vendor') {
+        setIsUserMenuOpen(false);
+        navigate('/vendor/register', { replace: true });
+        return;
+      }
 
-    // Fallback: if user is not vendor, redirect to vendor registration
-    if (!isVendor || (result && result.requiresVendorRegistration)) {
+      const result = await switchRole('vendor');
+
+      // Fallback: if server asks for vendor registration, redirect there
+      if (result && result.requiresVendorRegistration) {
+        setIsUserMenuOpen(false);
+        navigate('/vendor/register', { replace: true });
+        return;
+      }
+
+      // If result indicates success (boolean) or is a user object, treat as successful switch
+      const switchedSuccessfully = (result && result.success) || (result && (result.id || result.roles || result.role));
+      if (switchedSuccessfully) {
+        setIsUserMenuOpen(false);
+        navigate('/vendor/dashboard', { replace: true });
+      }
+    } catch (err) {
+      console.warn('Vendor switch failed (falling back to registration):', err?.message || err);
       setIsUserMenuOpen(false);
       navigate('/vendor/register', { replace: true });
-      return;
-    }
-
-    // If result indicates success (boolean) or is a user object, treat as successful switch
-    const switchedSuccessfully = (result && result.success) || (result && (result.id || result.roles || result.role));
-    if (switchedSuccessfully) {
-      setIsUserMenuOpen(false);
-      navigate('/vendor/dashboard', { replace: true });
     }
   };
 
@@ -294,6 +307,7 @@ const Header = () => {
               <>
               <div className="relative user-menu-container">
                 <button
+                  data-testid="user-menu"
                   aria-label="User menu"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 text-gray-700 hover:text-brand-orange transition-colors duration-300"
@@ -341,6 +355,19 @@ const Header = () => {
                     >
                       Dashboard
                     </Link>
+
+                    {/* Switch to Vendor (for users who can upgrade) */}
+                    {!isVendor && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVendorSwitch();
+                        }}
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                      >
+                        Switch to Vendor
+                      </button>
+                    )}
                     {user.role === 'admin' && (
                       <Link
                         to="/admin"

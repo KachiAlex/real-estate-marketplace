@@ -11,6 +11,10 @@ const steps = [
 
 export default function OnboardVendor() {
   const [step, setStep] = useState(0);
+
+  React.useEffect(() => {
+    console.log('OnboardVendor mounted - step:', step);
+  }, [step]);
   const [form, setForm] = useState({
     businessName: '',
     businessType: '',
@@ -45,6 +49,7 @@ export default function OnboardVendor() {
       let kycDocUrls = [];
       if (form.kycDocs && form.kycDocs.length > 0) {
         const uploadResult = await uploadAgentDocument(form.kycDocs);
+        console.log('OnboardVendor: uploadResult=', uploadResult);
         if (!uploadResult.success) {
           setError(uploadResult.error || 'Failed to upload KYC documents');
           setSubmitting(false);
@@ -53,7 +58,7 @@ export default function OnboardVendor() {
         kycDocUrls = uploadResult.data || [];
       }
       // 2. Submit vendor profile with KYC doc URLs
-      await updateVendorProfile({
+      const updateResult = await updateVendorProfile({
         businessName: form.businessName,
         businessType: form.businessType,
         licenseNumber: form.licenseNumber,
@@ -64,6 +69,12 @@ export default function OnboardVendor() {
         kycDocs: kycDocUrls,
         kycStatus: 'pending',
       });
+      console.log('OnboardVendor: updateResult=', updateResult);
+      if (!updateResult || !updateResult.success) {
+        setError(updateResult?.error || 'Failed to update vendor profile');
+        setSubmitting(false);
+        return;
+      }
       navigate('/vendor/dashboard');
     } catch (err) {
       setError('Failed to onboard. Please try again.');

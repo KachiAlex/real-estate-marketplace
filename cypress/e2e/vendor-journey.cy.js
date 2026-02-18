@@ -10,35 +10,53 @@ describe('Vendor Journey', () => {
   });
 
   it('should complete vendor registration', () => {
-    // Login as buyer first
-    cy.visit('/login');
-    cy.get('input[name="email"]').type('buyer@example.com');
-    cy.get('input[name="password"]').type('password123');
-    cy.contains('button', 'Login').click();
-    
-    // Switch to vendor role
+    // Login as buyer first (mocked)
+    cy.login('buyer@example.com', 'password123');
+    cy.log('login: done');
+
+    // Open user menu and switch to vendor (should navigate to /vendor/register)
     cy.get('[data-testid="user-menu"]').click();
+    cy.log('user-menu: opened');
     cy.contains('Switch to Vendor').click();
-    
-    // Fill vendor registration form
-    cy.get('input[name="businessName"]').type('Test Properties Ltd');
-    cy.get('input[name="businessType"]').type('Real Estate Agent');
-    cy.get('input[name="licenseNumber"]').type('REA123456');
-    
-    // Submit registration
+    cy.log('switch-to-vendor: clicked');
+
+    // Ensure we reached onboarding page
+    cy.url().should('include', '/vendor/register');
+    cy.log('navigated: /vendor/register');
+
+    // STEP 1 - Business Info
+    cy.get('input[name="businessName"]').clear().type('Test Properties Ltd');
+    cy.get('input[name="businessType"]').clear().type('Real Estate Agent');
+    cy.get('input[name="licenseNumber"]').clear().type('REA123456');
+    cy.get('input[name="contactEmail"]').clear().type('vendor@example.com');
+    cy.get('input[name="contactPhone"]').clear().type('+1234567890');
+    cy.log('step1: filled');
+
+    // Go to KYC Documents step
+    cy.contains('button', 'Next').click();
+    cy.log('navigated: kyc step');
+
+    // STEP 2 - Upload KYC docs
+    cy.get('input[type="file"]').attachFile('test-image.jpg');
+    cy.log('kyc: uploaded');
+
+    // Review & Submit
+    cy.contains('button', 'Next').click();
+    cy.log('navigated: review step');
+
+    // Final submit (Register as Vendor button appears on final step)
     cy.contains('button', 'Register as Vendor').click();
-    
+    cy.log('submitted: register as vendor');
+
     // Should redirect to vendor dashboard
-    cy.url().should('include', '/vendor/dashboard');
+    cy.url({ timeout: 10000 }).should('include', '/vendor/dashboard');
+    cy.log('assert: on vendor dashboard');
   });
 
   it('should add new property listing', () => {
     // Login as vendor
-    cy.visit('/login');
-    cy.get('input[name="email"]').type('vendor@example.com');
-    cy.get('input[name="password"]').type('password123');
-    cy.contains('button', 'Login').click();
-    
+    cy.login('vendor@example.com', 'password123');
+
     // Navigate to add property
     cy.visit('/add-property');
     
@@ -61,11 +79,8 @@ describe('Vendor Journey', () => {
 
   it('should manage property listings', () => {
     // Login as vendor
-    cy.visit('/login');
-    cy.get('input[name="email"]').type('vendor@example.com');
-    cy.get('input[name="password"]').type('password123');
-    cy.contains('button', 'Login').click();
-    
+    cy.login('vendor@example.com', 'password123');
+
     // Navigate to vendor properties
     cy.visit('/vendor/properties');
     
@@ -83,11 +98,8 @@ describe('Vendor Journey', () => {
 
   it('should view earnings dashboard', () => {
     // Login as vendor
-    cy.visit('/login');
-    cy.get('input[name="email"]').type('vendor@example.com');
-    cy.get('input[name="password"]').type('password123');
-    cy.contains('button', 'Login').click();
-    
+    cy.login('vendor@example.com', 'password123');
+
     // Navigate to earnings
     cy.visit('/vendor/earnings');
     
