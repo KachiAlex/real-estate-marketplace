@@ -682,11 +682,16 @@ const Home = () => {
       const vendorId = property?.vendorId || property?.ownerId || property?.owner?.id || '';
       const vendorCode = property?.vendorCode || property?.owner?.vendorCode || '';
       
-      if (vendorName && !vendorMap.has(vendorId)) {
-        vendorMap.set(vendorId, { name: vendorName, code: vendorCode });
+      if (!vendorMap.has(vendorId)) {
+        vendorMap.set(vendorId, { name: vendorName, code: vendorCode, count: 1 });
+      } else {
+        // increment count for vendor listings (used for anonymized display)
+        const entry = vendorMap.get(vendorId) || { name: vendorName, code: vendorCode, count: 0 };
+        entry.count = (entry.count || 0) + 1;
+        vendorMap.set(vendorId, entry);
       }
     });
-    return Array.from(vendorMap.entries()).map(([id, data]) => ({ id, name: data.name, code: data.code }));
+    return Array.from(vendorMap.entries()).map(([id, data]) => ({ id, name: data.name, code: data.code, count: data.count || 0 }));
   }, [properties]);
 
   const handleAmenityToggle = (amenity) => {
@@ -1112,7 +1117,7 @@ const Home = () => {
                 )}
                 {appliedVendor && (
                   <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    Vendor: {appliedVendor} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
+                    Vendor (hidden) <FaTimes className="ml-2 cursor-pointer" onClick={() => {
                       setAppliedVendor('');
                       setSelectedVendor('');
                     }} />
@@ -1180,16 +1185,18 @@ const Home = () => {
                   {uniqueVendors
                     .filter(vendor => 
                       !selectedVendor || 
-                      vendor.name.toLowerCase().includes(selectedVendor.toLowerCase())
+                      (vendor.name || '').toLowerCase().includes(selectedVendor.toLowerCase())
                     )
                     .slice(0, 5)
                     .map(vendor => (
                       <button
                         key={vendor.id}
                         onClick={() => setSelectedVendor(vendor.name)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded transition-colors"
+                        aria-label={`Select vendor (hidden) - ${vendor.count || 1} listing(s)`}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded transition-colors flex justify-between items-center"
                       >
-                        {vendor.name}
+                        <span className="truncate">Vendor</span>
+                        <span className="text-xs text-gray-400 ml-2">{(vendor.count || 1)} listing{(vendor.count || 1) !== 1 ? 's' : ''}</span>
                       </button>
                     ))}
                 </div>
