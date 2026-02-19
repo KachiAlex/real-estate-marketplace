@@ -405,6 +405,26 @@ export const VendorProvider = ({ children }) => {
     };
   };
 
+  // Attempt to sync any locally-persisted onboarded vendor to the backend
+  const syncLocalOnboardedVendor = async () => {
+    try {
+      const onboarded = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
+      if (!onboarded) return { success: false, error: 'No local onboarded vendor found' };
+
+      // Reuse updateVendorProfile which contains fallback/401 handling
+      const result = await updateVendorProfile(onboarded);
+      if (result && result.success && !result.fallback) {
+        try { localStorage.removeItem('onboardedVendor'); } catch (e) { /* ignore */ }
+        // Refresh local state
+        await fetchVendorProfile();
+      }
+      return result;
+    } catch (err) {
+      console.error('syncLocalOnboardedVendor error:', err);
+      return { success: false, error: err.message || 'Sync failed' };
+    }
+  };
+
   const value = {
     vendorProfile,
     isAgent,
@@ -419,7 +439,9 @@ export const VendorProvider = ({ children }) => {
     updateVendorProfile,
     uploadAgentDocument,
     checkDocumentStatus,
-    fetchVendorProfile
+    fetchVendorProfile,
+    // New: synchronize local onboarding -> server
+    syncLocalOnboardedVendor
   };
 
   return (

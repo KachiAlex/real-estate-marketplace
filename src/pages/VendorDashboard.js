@@ -71,7 +71,9 @@ const VendorDashboard = () => {
     vendorLoading,
     fetchVendorProfile,
     agentDocuments,
-    subscription
+    subscription,
+    // sync helper (local -> backend)
+    syncLocalOnboardedVendor
   } = useVendor();
 
   // Notification context
@@ -200,8 +202,31 @@ const VendorDashboard = () => {
                 <>
                   <div className="mb-6 flex items-center justify-between">
                     <span className="text-gray-600 text-sm">Total Properties: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{properties.length}</span></span>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => fetchProperties()}>Refresh</button>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* open add property modal */}}>Add Property</button>
+                    <div className="flex items-center gap-2">
+                      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => fetchProperties()}>Refresh</button>
+                      <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* open add property modal */}}>Add Property</button>
+                      {/* Show Sync Now when local onboarded vendor or fallback uploads exist */}
+                      {typeof window !== 'undefined' && (localStorage.getItem('onboardedVendor') || localStorage.getItem('vendorKycFallbackUploads')) && (
+                        <button
+                          className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition"
+                          onClick={async () => {
+                            try {
+                              const res = await syncLocalOnboardedVendor();
+                              if (res && res.success) {
+                                fetchVendorProfile();
+                                fetchProperties();
+                                alert('Sync completed successfully');
+                              } else {
+                                alert('Sync failed: ' + (res?.error || 'unknown'));
+                              }
+                            } catch (e) {
+                              console.error('Sync now failed', e);
+                              alert('Sync failed: ' + e.message);
+                            }
+                          }}
+                        >Sync now</button>
+                      )}
+                    </div>
                   </div>
                   {/* Property Statistics */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
