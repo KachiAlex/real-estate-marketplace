@@ -7,6 +7,7 @@ import GlobalSearch from '../GlobalSearch';
 import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
+import LocalModeBanner from '../LocalModeBanner';
 // RoleSwitcher removed
 
 const Header = () => {
@@ -174,6 +175,13 @@ const Header = () => {
         Skip to main content
       </a>
       <header className={`bg-white shadow ${isHomePage ? 'sticky top-0 z-50' : ''}`}>
+        {/* Local/offline banner (appears when fallback/local-mode is active) */}
+        <div className="w-full">
+          <React.Suspense fallback={null}>
+            {/* lazy show so header load isn't blocked */}
+            <LocalModeBanner />
+          </React.Suspense>
+        </div>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-16 md:h-20 py-2">
             <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">

@@ -89,10 +89,20 @@ export default function OnboardVendor() {
       });
       console.log('OnboardVendor: updateResult=', updateResult);
       if (!updateResult || !updateResult.success) {
-        setError(updateResult?.error || 'Failed to update vendor profile');
+        // Provide clearer failure reason to the user
+        const reason = updateResult?.error || 'Failed to update vendor profile';
+        setError(reason);
+        // Also show a persistent toast with the failure reason
+        try { const toast = (await import('react-hot-toast')).default; toast.error(reason); } catch (e) {}
         setSubmitting(false);
         return;
       }
+
+      // If onboarding succeeded but was saved locally (fallback), inform the user why
+      if (updateResult.fallback || updateResult.savedLocally || updateResult.fallback === 'local-storage' || updateResult.fallback === 'saved-locally-due-to-401') {
+        try { const toast = (await import('react-hot-toast')).default; toast('Vendor onboarding saved locally — will sync when service is restored.', { icon: '⚠️' }); } catch (e) {}
+      }
+
       navigate('/vendor/dashboard');
     } catch (err) {
       setError('Failed to onboard. Please try again.');
