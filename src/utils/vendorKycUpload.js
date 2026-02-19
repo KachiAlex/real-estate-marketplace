@@ -87,8 +87,12 @@ export const uploadVendorKycDocuments = async (files, onProgress = null) => {
       // If response did not indicate success, throw to trigger fallback handling below
       throw new Error(response.data?.message || 'Upload failed');
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || '';
-      const shouldLocalFallback = /file upload service is not configured|upload service not configured|storage service not configured|service unavailable/i.test(msg) || err?.response?.status === 503;
+      // Normalize error details
+      const status = err?.response?.status;
+      const msg = (err?.response?.data?.message || err?.message || '').toString();
+
+      // Treat network failures and server (5xx) errors as eligible for local fallback.
+      const shouldLocalFallback = !status || (status >= 500 && status < 600) || /file upload service is not configured|upload service not configured|storage service not configured|service unavailable|network error|failed to fetch/i.test(msg);
 
       if (!shouldLocalFallback) {
         // Propagate non-fallback errors to outer catch
