@@ -550,6 +550,22 @@ export const AuthProvider = ({ children }) => {
     return normalized;
   }, []);
 
+  // Update the stored/current user object in-memory and in localStorage without altering tokens
+  const setUserLocally = useCallback((partialUser) => {
+    try {
+      const merged = normalizeUser({ ...(currentUser || {}), ...(partialUser || {}) });
+      // Ensure roles array uniqueness
+      merged.roles = Array.isArray(merged.roles) ? Array.from(new Set(merged.roles)) : merged.roles || [];
+      if (!merged.activeRole && merged.roles && merged.roles.length > 0) merged.activeRole = merged.roles[0];
+      localStorage.setItem('currentUser', JSON.stringify(merged));
+      setCurrentUser(merged);
+      return merged;
+    } catch (e) {
+      console.warn('setUserLocally failed', e);
+      return null;
+    }
+  }, [currentUser]);
+
   const value = {
     currentUser,
     loading,
@@ -558,6 +574,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     loginLocally,
+    setUserLocally,
     logout,
     refreshAccessToken,
     switchRole,
