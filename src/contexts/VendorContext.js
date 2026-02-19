@@ -200,6 +200,25 @@ export const VendorProvider = ({ children }) => {
   // Update vendor profile via Render backend
   const updateVendorProfile = async (profileData) => {
     try {
+      // Prevent duplicate onboarding for already-registered users
+      if (user && (user.roles?.includes('vendor') || user.activeRole === 'vendor')) {
+        toast.info('You are already registered as a vendor');
+        return { success: false, error: 'User already a vendor', alreadyVendor: true };
+      }
+
+      // If anonymous but a local onboarded vendor already exists with same email, treat as duplicate
+      try {
+        const existingOnboard = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
+        const existingEmail = existingOnboard?.contactInfo?.email?.toLowerCase();
+        const newEmail = (profileData?.contactInfo?.email || '').toLowerCase();
+        if (!user && existingOnboard && existingEmail && newEmail && existingEmail === newEmail) {
+          toast.info('Vendor onboarding already completed (local)');
+          return { success: false, error: 'Vendor onboarding already completed (local)', alreadyVendor: true };
+        }
+      } catch (e) {
+        // ignore JSON parse errors and continue
+      }
+
       // Allow unauthenticated onboarding: persist locally so user can access vendor dashboard without signing in
       if (!user || !user.id) {
         const anon = {
@@ -245,7 +264,13 @@ export const VendorProvider = ({ children }) => {
         try {
           const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
           const updatedUser = { ...(stored || user), role: 'vendor', roles: Array.from(new Set([...(stored.roles || user.roles || []), 'vendor'])), activeRole: 'vendor' };
-          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          // Prefer using auth.setUserLocally so state is updated everywhere
+          if (auth && typeof auth.setUserLocally === 'function') {
+            auth.setUserLocally(updatedUser);
+          } else {
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          }
+
           setVendorProfile({ id: updatedUser.id || `vendor-anon-${Date.now()}`, ...profileData, kycStatus: profileData.kycStatus || 'pending' });
           setIsAgent(true);
           setAgentDocuments(profileData.kycDocs || []);
@@ -273,6 +298,21 @@ export const VendorProvider = ({ children }) => {
         setVendorProfile(anon);
         setIsAgent(true);
         setAgentDocuments(anon.kycDocs || []);
+
+        // If there is a signed-in user (no token scenario), add vendor role locally so UI behaves correctly
+        try {
+          if (user && auth && typeof auth.setUserLocally === 'function') {
+            const updated = auth.setUserLocally({
+              ...user,
+              roles: Array.from(new Set([...(user.roles || []), 'vendor'])),
+              activeRole: 'vendor'
+            });
+            console.debug('VendorContext: updated currentUser locally after onboard fallback', updated);
+          }
+        } catch (e) {
+          console.warn('Failed to update currentUser after local onboard fallback', e);
+        }
+
         toast.success('Vendor profile saved (local).');
         return { success: true };
       }
@@ -280,7 +320,21 @@ export const VendorProvider = ({ children }) => {
       try {
         const apiClient = (await import('../services/apiClient')).default;
         const response = await apiClient.put('/vendor/profile', profileData);
+
+        // If backend confirms, ensure user roles include 'vendor' locally too
         setVendorProfile(prev => ({ ...(prev || {}), ...response.data.vendor }));
+        try {
+          if (user && auth && typeof auth.setUserLocally === 'function') {
+            auth.setUserLocally({
+              ...user,
+              roles: Array.from(new Set([...(user.roles || []), 'vendor'])),
+              activeRole: 'vendor'
+            });
+          }
+        } catch (e) {
+          console.warn('Failed to update currentUser roles after backend vendor update', e);
+        }
+
         toast.success('Vendor profile updated successfully!');
         return { success: true };
       } catch (err) {
@@ -300,6 +354,20 @@ export const VendorProvider = ({ children }) => {
           setVendorProfile(anon);
           setIsAgent(true);
           setAgentDocuments(anon.kycDocs || []);
+
+          // Make current user a vendor locally so UI behaves consistently
+          try {
+            if (user && auth && typeof auth.setUserLocally === 'function') {
+              auth.setUserLocally({
+                ...user,
+                roles: Array.from(new Set([...(user.roles || []), 'vendor'])),
+                activeRole: 'vendor'
+              });
+            }
+          } catch (e) {
+            console.warn('Failed to update currentUser after 401 fallback', e);
+          }
+
           toast.success('Vendor profile saved locally (backend auth failed).');
           return { success: true, fallback: 'saved-locally-due-to-401' };
         }

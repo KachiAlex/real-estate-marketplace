@@ -29,6 +29,24 @@ export default function OnboardVendor() {
   const { currentUser } = useAuth();
   const { updateVendorProfile, uploadAgentDocument } = useVendor();
 
+  // Determine if onboarding already exists (user roles OR local onboarded fallback)
+  let _localOnboarded = false;
+  try { _localOnboarded = Boolean(JSON.parse(localStorage.getItem('onboardedVendor'))); } catch (e) { _localOnboarded = false; }
+  const alreadyOnboarded = Boolean((currentUser && (currentUser.roles?.includes('vendor') || currentUser.activeRole === 'vendor')) || _localOnboarded);
+
+  // Redirect / prevent re-onboarding if user is already vendor or local onboard exists
+  React.useEffect(() => {
+    try {
+      if (alreadyOnboarded) {
+        setError('You are already registered as a vendor. Redirecting to dashboard...');
+        setTimeout(() => navigate('/vendor/dashboard'), 1000);
+        return;
+      }
+    } catch (e) {
+      // ignore JSON parse errors
+    }
+  }, [alreadyOnboarded, navigate]);
+
   const handleNext = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
@@ -139,7 +157,15 @@ export default function OnboardVendor() {
         <div className="flex space-x-2">
           {step > 0 && <button type="button" onClick={handleBack} className="px-4 py-2 rounded bg-gray-200">Back</button>}
           {step < steps.length - 1 && <button type="button" onClick={handleNext} className="px-4 py-2 rounded bg-blue-600 text-white">Next</button>}
-          {step === steps.length - 1 && <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white" disabled={submitting}>{submitting ? 'Submitting...' : 'Register as Vendor'}</button>}
+          {step === steps.length - 1 && (
+            <button
+              type="submit"
+              className={`px-4 py-2 rounded ${alreadyOnboarded ? 'bg-gray-300 text-gray-700' : 'bg-green-600 text-white'}`}
+              disabled={submitting || alreadyOnboarded}
+            >
+              {alreadyOnboarded ? 'Already onboarded' : (submitting ? 'Submitting...' : 'Register as Vendor')}
+            </button>
+          )}
         </div>
       </form>
     </div>
