@@ -402,6 +402,21 @@ export const PropertyProvider = ({ children }) => {
     }
   }, [filters, pagination.itemsPerPage]);
 
+  // Preload properties on provider mount so direct routes like /property/:id work
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        console.log('PropertyProvider: preloading properties on mount');
+        await fetchProperties();
+        if (mounted) console.log('PropertyProvider: preload complete');
+      } catch (err) {
+        console.warn('PropertyProvider: preload failed', err?.message || err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [fetchProperties]);
+
   // Add new property
   const addProperty = useCallback(async (propertyData) => {
     setLoading(true);
