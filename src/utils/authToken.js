@@ -12,7 +12,7 @@ const readToken = () => {
   }
 };
 
-export const getAuthToken = async () => readToken();
+export const getAuthToken = () => readToken();
 
 export const getAuthHeaders = async () => {
   const token = await getAuthToken();

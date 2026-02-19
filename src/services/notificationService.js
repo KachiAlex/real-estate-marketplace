@@ -19,7 +19,7 @@ class NotificationService {
       return;
     }
 
-    const token = await getAuthToken();
+    const token = getAuthToken();
     if (!token) {
       console.warn('NotificationService: No authentication token found');
       return;
