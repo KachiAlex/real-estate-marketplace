@@ -41,10 +41,12 @@ export const uploadVendorKycDocuments = async (files, onProgress = null) => {
 
     // Upload to backend (Render API)
     const headers = { 'Content-Type': 'multipart/form-data' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await axios.post(
-      getApiUrl('/upload/vendor/kyc'),
+    // Use centralized API client so Authorization + refresh logic is handled consistently
+    const apiClient = await import('../services/apiClient').then(m => m.default);
+
+    const response = await apiClient.post(
+      '/upload/vendor/kyc',
       formData,
       {
         headers,

@@ -259,11 +259,8 @@ export const VendorProvider = ({ children }) => {
       }
 
       try {
-        const response = await axios.put(
-          getApiUrl(`/vendor/profile`),
-          profileData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const apiClient = (await import('../services/apiClient')).default;
+        const response = await apiClient.put('/vendor/profile', profileData);
         setVendorProfile(prev => ({ ...(prev || {}), ...response.data.vendor }));
         toast.success('Vendor profile updated successfully!');
         return { success: true };
