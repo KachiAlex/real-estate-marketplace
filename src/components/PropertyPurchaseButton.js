@@ -46,6 +46,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
   return (
     <>
       <button
+        data-testid="buy-with-escrow-btn"
         onClick={handlePurchaseClick}
         className={`w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 ${className}`}
       >
