@@ -82,7 +82,7 @@ const removeEscrowPaymentEntry = (paymentId) => {
   }
 };
 
-const markEscrowTransactionFunded = (escrowId, reference, method = 'flutterwave') => {
+const markEscrowTransactionFunded = (escrowId, reference, method = 'paystack') => {
   if (!escrowId || typeof window === 'undefined') return;
   try {
     const existingTransactions = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
@@ -127,7 +127,7 @@ const EscrowPaymentFlow = ({
   property: providedProperty = null,
   investment: providedInvestment = null,
   transactionType: providedTransactionType = 'purchase',
-  defaultPaymentMethod = 'flutterwave',
+  defaultPaymentMethod = 'paystack',
   onClose
 }) => {
   const navigate = useNavigate();
@@ -144,7 +144,7 @@ const EscrowPaymentFlow = ({
   const [loading, setLoading] = useState(!(providedProperty || providedInvestment));
   const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
   const [paymentData, setPaymentData] = useState({
-    paymentMethod: defaultPaymentMethod || 'flutterwave',
+    paymentMethod: 'paystack',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -311,7 +311,7 @@ const EscrowPaymentFlow = ({
         markEscrowTransactionFunded(
           payload.escrowId || activeEscrowId,
           payload.reference || payload.txRef,
-          payload.provider || payload.method || 'flutterwave'
+          payload.provider || payload.method || 'paystack'
         );
         setActiveEscrowId(payload.escrowId || activeEscrowId);
         setPendingPayment(null);
@@ -416,7 +416,7 @@ const EscrowPaymentFlow = ({
         method: 'POST',
         headers,
         body: JSON.stringify({
-          providerReference: pendingPayment.txRef || pendingPayment.metadata?.flutterwave?.txRef || pendingPayment.reference,
+          providerReference: pendingPayment.txRef || pendingPayment.reference,
           txRef: pendingPayment.txRef || pendingPayment.reference,
           status: paymentStatus
         })
@@ -430,14 +430,14 @@ const EscrowPaymentFlow = ({
       const providerStatus = (data.data?.status || '').toLowerCase();
       if (providerStatus === 'completed' || providerStatus === 'success' || providerStatus === 'successful') {
         setPaymentStatus('completed');
-        markEscrowTransactionFunded(activeEscrowId, pendingPayment.reference || pendingPayment.txRef, pendingPayment?.paymentMethod || 'flutterwave');
+        markEscrowTransactionFunded(activeEscrowId, pendingPayment.reference || pendingPayment.txRef, pendingPayment?.paymentMethod || 'paystack');
         removeEscrowPaymentEntry(pendingPayment.id);
         setPendingPayment(null);
         setCheckoutUrl('');
         toast.success('Payment verified successfully!');
       } else if (providerStatus === 'processing' || providerStatus === 'pending') {
         setPaymentStatus('processing');
-        toast(`${paymentData.paymentMethod === 'paystack' ? 'Paystack' : 'Flutterwave'} is still processing this payment. Please try again shortly.`);
+        toast('Payment is still processing. Please try again shortly.');
       } else {
         setPaymentStatus('failed');
         throw new Error('Payment could not be verified. Please try another attempt.');
@@ -451,109 +451,7 @@ const EscrowPaymentFlow = ({
     }
   };
 
-  const handleProcessTestPayment = async () => {
-    console.log('🔥 EscrowPaymentFlow: handleProcessTestPayment called');
-    
-    try {
-      if (!user || (!user.id && !user.uid)) {
-        toast.error('Please login to complete this transaction');
-        return;
-      }
 
-      setLoading(true);
-      setPaymentError('');
-
-      const currentItem = property || investment;
-      const itemPriceValue = currentItem ? (property ? property.price : (investment?.minInvestment || investment?.minimumInvestment || 0)) : 0;
-      const itemTitleValue = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
-      const itemId = property ? property.id : investment?.id;
-
-      if (!itemId || !itemPriceValue || itemPriceValue <= 0) {
-        toast.error('Invalid item or price');
-        setLoading(false);
-        return;
-      }
-
-      const sellerId = property?.owner?.id || property?.ownerId || investment?.vendorId || investment?.sponsorId || null;
-      
-      console.log('🔥 EscrowPaymentFlow: Creating escrow transaction for test payment...');
-      const escrowResult = await createEscrowTransaction(
-        itemId,
-        itemPriceValue,
-        user.uid || user.id,
-        sellerId,
-        {
-          type: transactionType === 'investment' ? 'investment' : 'property',
-          investmentData: investment ? {
-            ...investment,
-            title: investment.title || investment.investmentTitle,
-            investmentTitle: investment.investmentTitle || investment.title,
-            expectedROI: investment.expectedROI || investment.expectedReturn || 0,
-            expectedReturn: investment.expectedReturn || investment.expectedROI || 0,
-            lockPeriod: investment.lockPeriod || investment.termMonths || investment.duration || 0,
-            termMonths: investment.termMonths || investment.duration || investment.lockPeriod || 0,
-            duration: investment.duration || investment.termMonths || investment.lockPeriod || 0,
-            vendorId: investment.vendorId || investment.sponsorId,
-            sponsorId: investment.sponsorId || investment.vendorId,
-            sponsor: investment.sponsor || investment.vendor,
-            vendor: investment.vendor || investment.sponsor,
-            propertyLocation: investment.propertyLocation || (investment.location?.address ? `${investment.location.address}, ${investment.location.city}` : 'N/A')
-          } : null
-        }
-      );
-
-      if (!escrowResult.success) {
-        toast.error(escrowResult.error || 'Failed to create escrow transaction');
-        setLoading(false);
-        return;
-      }
-
-      const escrowId = escrowResult.id || escrowResult.data?.id;
-      if (!escrowId) {
-        toast.error('Failed to get escrow transaction ID');
-        setLoading(false);
-        return;
-      }
-
-      // Simulate successful test payment
-      console.log('✅ EscrowPaymentFlow: Simulating test payment completion...');
-      
-      const testReference = `TEST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      markEscrowTransactionFunded(escrowId, testReference, 'test');
-      
-      const entryToSave = {
-        escrowId,
-        paymentId: `test_${escrowId}`,
-        reference: testReference,
-        txRef: testReference,
-        propertyId: property?.id,
-        investmentId: investment?.id,
-        paymentMethod: 'test',
-        status: 'completed',
-        checkoutUrl: '',
-        storedAt: Date.now(),
-        isTestPayment: true
-      };
-
-      saveEscrowPaymentEntry(entryToSave);
-      setPendingPayment(entryToSave);
-      setPaymentStatus('completed');
-      setStep(3);
-
-      toast.success('Test payment completed successfully!');
-
-      if (investmentId) {
-        localStorage.setItem('pendingInvestmentProject', JSON.stringify(investment));
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error('❌ EscrowPaymentFlow: Test payment error:', error);
-      toast.error(`Test payment failed: ${error.message || 'An error occurred'}`);
-      setLoading(false);
-    }
-  };
 
   const handleProcessPayment = async () => {
     console.log('🔥 EscrowPaymentFlow: handleProcessPayment called');
@@ -579,12 +477,8 @@ const EscrowPaymentFlow = ({
           toast.error('Please fill in all payment details');
           return;
         }
-      } else if (paymentData.paymentMethod === 'test') {
-        console.log('🔥 EscrowPaymentFlow: Using test payment method');
-        handleProcessTestPayment();
-        return;
       } else {
-        console.log(`🔥 EscrowPaymentFlow: Using ${paymentData.paymentMethod || 'flutterwave'} payment, skipping card validation`);
+        console.log(`🔥 EscrowPaymentFlow: Using ${paymentData.paymentMethod || 'paystack'} payment, skipping card validation`);
       }
 
       console.log('🔥 EscrowPaymentFlow: Setting loading state...');
@@ -668,7 +562,7 @@ const EscrowPaymentFlow = ({
 
         const payload = {
           amount: itemPriceValue,
-          paymentMethod: paymentData.paymentMethod || 'flutterwave',
+          paymentMethod: paymentData.paymentMethod || 'paystack',
           paymentType: 'escrow',
           relatedEntity: {
             type: transactionType === 'investment' ? 'investment' : 'property',
@@ -735,7 +629,7 @@ const EscrowPaymentFlow = ({
           txRef: providerReference,
           propertyId: property?.id,
           investmentId: investment?.id,
-          paymentMethod: paymentData.paymentMethod || 'flutterwave',
+          paymentMethod: paymentData.paymentMethod || 'paystack',
           status: 'processing',
           checkoutUrl: authorizationUrl || '',
           storedAt: Date.now()
@@ -748,7 +642,7 @@ const EscrowPaymentFlow = ({
         setPaymentStatus('processing');
         setStep(2);
 
-        // If Paystack — use client-side PaystackPop SDK for native popup; otherwise fallback to iframe URL (Flutterwave)
+        // Use client-side PaystackPop SDK for native popup (Paystack is the only supported provider)
         if (paymentData.paymentMethod === 'paystack') {
           try {
             const userEmail = user?.email || user?.username || '';
@@ -806,12 +700,12 @@ const EscrowPaymentFlow = ({
             toast.error('Unable to launch Paystack.');
           }
         } else {
-          // fallback: open provider authorization URL inside iframe (existing behaviour for Flutterwave)
+          // fallback: open provider authorization URL inside iframe (used only if provider returns an authorization link)
           if (!authorizationUrl) {
             throw new Error('Payment authorization link missing from response');
           }
           openCheckoutWindow(authorizationUrl);
-          toast.success(`${paymentData.paymentMethod === 'paystack' ? 'Paystack' : 'Flutterwave'} checkout launched. Complete payment to proceed.`);
+          toast.success('Checkout launched. Complete payment to proceed.');
         }
 
         if (investmentId) {
@@ -996,21 +890,7 @@ const EscrowPaymentFlow = ({
             {/* Payment Method Selection */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-900">Payment Method</label>
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'flutterwave' }))}
-                  className={`p-4 border-2 rounded-lg transition ${
-                    paymentData.paymentMethod === 'flutterwave'
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-center">
-                    <FaCreditCard className="mx-auto text-xl mb-2 text-blue-600" />
-                    <p className="font-medium text-gray-900 text-sm">Flutterwave</p>
-                  </div>
-                </button>
+              <div className="grid grid-cols-1 gap-3 max-w-xs">
                 <button
                   type="button"
                   onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'paystack' }))}
@@ -1025,86 +905,38 @@ const EscrowPaymentFlow = ({
                     <p className="font-medium text-gray-900 text-sm">Paystack</p>
                   </div>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'test' }))}
-                  className={`p-4 border-2 rounded-lg transition ${
-                    paymentData.paymentMethod === 'test'
-                      ? 'border-green-600 bg-green-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-center">
-                    <FaCheck className="mx-auto text-xl mb-2 text-green-600" />
-                    <p className="font-medium text-gray-900 text-sm">Test Payment</p>
-                  </div>
-                </button>
               </div>
             </div>
 
-            {['flutterwave','paystack'].includes(paymentData.paymentMethod) && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">{paymentData.paymentMethod === 'paystack' ? 'Paystack Checkout' : 'Flutterwave Checkout'}</h2>
-                  <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('🔥 EscrowPaymentFlow: Button clicked!');
-                    console.log('🔥 EscrowPaymentFlow: loading:', loading);
-                    console.log('🔥 EscrowPaymentFlow: isInitializingPayment:', isInitializingPayment);
-                    console.log('🔥 EscrowPaymentFlow: step:', step);
-                    handleProcessPayment();
-                  }}
-                  disabled={loading || isInitializingPayment}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
-                >
-                  {isInitializingPayment ? (
-                    <>
-                      <FaCreditCard className="animate-spin" />
-                      <span>Initializing {paymentData.paymentMethod === 'paystack' ? 'Paystack' : 'Flutterwave'}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaCreditCard />
-                      <span>Re-launch {paymentData.paymentMethod === 'paystack' ? 'Paystack' : 'Flutterwave'} Checkout</span>
-                    </>
-                  )}
-                </button>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Paystack Checkout</h2>
+                <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
               </div>
-            )}
 
-            {paymentData.paymentMethod === 'test' && (
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-900 font-semibold">Test Payment Mode</p>
-                  <p className="text-xs text-green-800 mt-1">This will simulate a successful payment for testing purposes.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentData(prev => ({ ...prev, paymentMethod: 'test' }));
-                    handleProcessPayment();
-                  }}
-                  disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70 hover:bg-green-700 transition"
-                >
-                  {loading ? (
-                    <>
-                      <FaSpinner className="animate-spin" />
-                      <span>Processing Test Payment...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaCheck />
-                      <span>Complete Test Payment</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => {
+                  handleProcessPayment();
+                }}
+                disabled={loading || isInitializingPayment}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
+              >
+                {isInitializingPayment ? (
+                  <>
+                    <FaCreditCard className="animate-spin" />
+                    <span>Initializing Paystack...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaCreditCard />
+                    <span>Launch Paystack Checkout</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+
 
             {checkoutUrl && (
               <button
@@ -1122,7 +954,7 @@ const EscrowPaymentFlow = ({
                 <p className="text-sm text-blue-800 mt-1">
                   Reference: {pendingPayment.txRef || pendingPayment.reference}
                 </p>
-                <p className="text-xs text-blue-700 mt-2">Please complete the {paymentData.paymentMethod === 'paystack' ? 'Paystack' : 'Flutterwave'} checkout or click verify once done.</p>
+                <p className="text-xs text-blue-700 mt-2">Please complete the checkout or click verify once done.</p>
 
                 <div className="mt-4 flex flex-col gap-3">
                   <button
@@ -1270,12 +1102,12 @@ const EscrowPaymentFlow = ({
           </div>
         </div>
 
-        {/* Flutterwave Checkout Modal */}
+        {/* Provider Checkout Modal (Paystack only) */}
         {showCheckoutModal && checkoutUrl && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-5xl lg:max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">{paymentData.paymentMethod === 'paystack' ? 'Paystack Payment' : 'Flutterwave Payment'}</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Paystack Checkout</h3>
                 <button
                   onClick={() => setShowCheckoutModal(false)}
                   className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors"
@@ -1289,7 +1121,7 @@ const EscrowPaymentFlow = ({
               <div className="flex-1 overflow-hidden">
                 <iframe
                   src={checkoutUrl}
-                  title={paymentData.paymentMethod === 'paystack' ? 'Paystack Checkout' : 'Flutterwave Checkout'}
+                  title="Payment Checkout"
                   className="w-full h-[75vh] min-h-[640px] border-none"
                   allow="payment"
                   sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
@@ -1306,12 +1138,12 @@ const EscrowPaymentFlow = ({
     <div className="min-h-screen bg-gray-50 py-8">
       {content}
       
-      {/* Flutterwave Checkout Modal - Full Page */}
+      {/* Provider Checkout Modal (Paystack) - Full Page */}
       {showCheckoutModal && checkoutUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full md:max-w-5xl lg:max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">{paymentData.paymentMethod === 'paystack' ? 'Paystack Payment' : 'Flutterwave Payment'}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Paystack Checkout</h3>
               <button
                 onClick={() => setShowCheckoutModal(false)}
                 className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors"
@@ -1325,7 +1157,7 @@ const EscrowPaymentFlow = ({
             <div className="flex-1 overflow-hidden">
               <iframe
                 src={checkoutUrl}
-                title={paymentData.paymentMethod === 'paystack' ? 'Paystack Checkout' : 'Flutterwave Checkout'}
+                title="Payment Checkout"
                 className="w-full h-[75vh] min-h-[640px] border-none"
                 allow="payment"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
