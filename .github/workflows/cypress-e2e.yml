@@ -42,7 +42,7 @@ jobs:
           echo "frontend did not start" >&2
           exit 1
 
-      - name: Run Cypress E2E (support ticket)
+      - name: Run Cypress E2E (smoke + payments)
         env:
           CYPRESS_BASE_URL: http://localhost:5000
-        run: npx cypress run --spec "cypress/e2e/support_ticket.cy.js"
+        run: npx cypress run --spec "cypress/e2e/support_ticket.cy.js,cypress/e2e/escrow-payments.cy.js,cypress/e2e/property-direct.cy.js"
