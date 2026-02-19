@@ -590,8 +590,31 @@ const EscrowPaymentFlow = ({
         });
 
         console.log('🔥 EscrowPaymentFlow: Response status:', response.status);
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
         console.log('🔥 EscrowPaymentFlow: Response data:', data);
+
+        // If payments route is missing (404) allow a safe dev/local fallback so Paystack can be launched for demos
+        const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local'));
+        if (response.status === 404 && isLocalDev) {
+          console.warn('Payments initialize endpoint returned 404 — using client-side fallback for Paystack (dev only)');
+          const fakeRef = `LOCALPSK_${Date.now()}`;
+          // Emulate the shape of a successful backend initialize response
+          Object.assign(data, {
+            success: true,
+            data: {
+              payment: { id: `local-${Date.now()}`, reference: fakeRef },
+              providerData: { txRef: fakeRef }
+            }
+          });
+        }
+
+        // Friendly handling when payments route is missing on production
+        if (response.status === 404 && !isLocalDev) {
+          const msg = 'Payment service is not available (endpoint missing). Please contact the administrator.';
+          setPaymentError(msg);
+          setIsInitializingPayment(false);
+          throw new Error(msg);
+        }
 
         if (!response.ok || !data.success) {
           // Try to extract a provider-reported maximum charge or friendly message
