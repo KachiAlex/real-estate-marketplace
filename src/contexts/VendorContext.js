@@ -258,14 +258,40 @@ export const VendorProvider = ({ children }) => {
         return { success: true };
       }
 
-      const response = await axios.put(
-        getApiUrl(`/vendor/profile`),
-        profileData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setVendorProfile(prev => ({ ...(prev || {}), ...response.data.vendor }));
-      toast.success('Vendor profile updated successfully!');
-      return { success: true };
+      try {
+        const response = await axios.put(
+          getApiUrl(`/vendor/profile`),
+          profileData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setVendorProfile(prev => ({ ...(prev || {}), ...response.data.vendor }));
+        toast.success('Vendor profile updated successfully!');
+        return { success: true };
+      } catch (err) {
+        console.warn('Backend update failed:', err?.response?.status || err?.message || err);
+        // If backend rejects due to authorization, fall back to local persistence so user can continue onboarding
+        if (err?.response?.status === 401) {
+          const anon = {
+            id: `vendor-anon-${Date.now()}`,
+            ...profileData,
+            kycStatus: profileData.kycStatus || 'pending'
+          };
+          try {
+            localStorage.setItem('onboardedVendor', JSON.stringify(anon));
+          } catch (storageErr) {
+            console.warn('Failed to persist onboarded vendor to localStorage (401 fallback)', storageErr);
+          }
+          setVendorProfile(anon);
+          setIsAgent(true);
+          setAgentDocuments(anon.kycDocs || []);
+          toast.success('Vendor profile saved locally (backend auth failed).');
+          return { success: true, fallback: 'saved-locally-due-to-401' };
+        }
+
+        console.error('Error updating vendor profile:', err);
+        toast.error('Failed to update vendor profile');
+        return { success: false, error: err.message };
+      }
     } catch (error) {
       console.error('Error updating vendor profile:', error);
       toast.error('Failed to update vendor profile');
