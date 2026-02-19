@@ -39,6 +39,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
     }
 
     // If signed in, open the in-page Escrow payment modal (default to Paystack)
+    console.log('PropertyPurchaseButton: user signed-in — opening escrow modal for propertyId=', propertyId);
     setShowPaymentFlow(true);
   };
 
@@ -57,6 +58,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
         <EscrowPaymentFlow
           property={property}
           defaultPaymentMethod="paystack"
+          autoStartPayment={true}
           onClose={() => setShowPaymentFlow(false)}
           isModal={true}
         />

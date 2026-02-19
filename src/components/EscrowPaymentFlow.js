@@ -128,6 +128,7 @@ const EscrowPaymentFlow = ({
   investment: providedInvestment = null,
   transactionType: providedTransactionType = 'purchase',
   defaultPaymentMethod = 'paystack',
+  autoStartPayment = false,
   onClose
 }) => {
   const navigate = useNavigate();
@@ -144,7 +145,7 @@ const EscrowPaymentFlow = ({
   const [loading, setLoading] = useState(!(providedProperty || providedInvestment));
   const [step, setStep] = useState(1); // 1: Review, 2: Payment Details, 3: Confirmation
   const [paymentData, setPaymentData] = useState({
-    paymentMethod: 'paystack',
+    paymentMethod: defaultPaymentMethod || 'paystack',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -292,6 +293,26 @@ const EscrowPaymentFlow = ({
       }
     };
   }, [propertyId, investmentId, user, fetchProperty, getInvestmentById, navigate, transactionType, clearAuthRedirect, providedProperty, providedInvestment, investmentIdFromParams]);
+
+  // If the modal is opened via the one-click flow, auto-advance and initialize payment
+  useEffect(() => {
+    if (!autoStartPayment) return;
+    if (loading) return;
+    if (!property && !investment) return;
+    if (step !== 1) return; // only trigger from review step
+
+    // Advance to payment and start the provider flow automatically
+    console.log('🔥 EscrowPaymentFlow: autoStartPayment triggered — advancing to payment and initializing provider');
+    setStep(2);
+    // Small timeout to ensure UI updates before starting heavy async ops
+    setTimeout(() => {
+      try {
+        handleProcessPayment();
+      } catch (err) {
+        console.error('Auto-start payment failed', err);
+      }
+    }, 250);
+  }, [autoStartPayment, loading, property, investment, step]);
 
   useEffect(() => {
     hydratePendingPayment();
