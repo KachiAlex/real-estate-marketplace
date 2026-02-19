@@ -81,7 +81,8 @@ export const useVendor = () => {
 };
 
 export const VendorProvider = ({ children }) => {
-  const { currentUser, loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const { currentUser, loading: authLoading } = auth;
   const user = currentUser;
   const authReady = !authLoading;
   const [vendorProfile, setVendorProfile] = useState(null);
@@ -211,9 +212,27 @@ export const VendorProvider = ({ children }) => {
         } catch (err) {
           console.warn('Failed to persist onboarded vendor to localStorage', err);
         }
+
+        // Persist vendor profile for UI immediately and create a temporary local session
         setVendorProfile(anon);
         setIsAgent(true);
         setAgentDocuments(anon.kycDocs || []);
+
+        // Create a temporary local authenticated session so header, role-switch and protected UI behave
+        try {
+          if (typeof auth?.loginLocally === 'function') {
+            auth.loginLocally({
+              id: anon.id,
+              email: anon.contactInfo?.email || '',
+              displayName: anon.businessName || anon.contactInfo?.email || 'Vendor (local)',
+              role: 'vendor',
+              vendorData: anon
+            });
+          }
+        } catch (e) {
+          console.warn('Failed to create local session after onboarding', e);
+        }
+
         toast.success('Vendor profile saved (local).');
         return { success: true };
       }

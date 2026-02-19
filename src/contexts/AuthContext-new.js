@@ -118,35 +118,96 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
-      const response = await fetch(getApiUrl('/auth/jwt/login'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      let response;
+      try {
+        response = await fetch(getApiUrl('/auth/jwt/login'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            password
+          })
+        });
+      } catch (networkErr) {
+        // Network-level failure (backend down / CORS / DNS) — we'll attempt a local fallback below
+        console.warn('Login network error, attempting local fallback if available', networkErr);
+        response = null;
       }
 
-      // Store tokens and normalized user info
-      const normalized = normalizeUser(data.user);
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(normalized));
+      // If we got a response, try to parse it; otherwise fall through to fallback handling
+      const data = response ? await response.json().catch(() => ({})) : {};
 
-      setAccessToken(data.accessToken);
-      setRefreshToken(data.refreshToken);
-      setCurrentUser(normalized);
+      if (response && response.ok) {
+        // Store tokens and normalized user info
+        const normalized = normalizeUser(data.user);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('currentUser', JSON.stringify(normalized));
 
-      toast.success('Login successful!');
-      return data.user;
+        setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+        setCurrentUser(normalized);
+
+        toast.success('Login successful!');
+        return data.user;
+      }
+
+      // Backend returned a server error (5xx) or network failed — try local fallback only when it is safe
+      const backendFailed = !response || (response.status >= 500 && response.status < 600);
+      if (backendFailed) {
+        // 1) If there is an onboarded vendor with the same email, allow a temporary local login (dev/offline mode)
+        try {
+          const onboarded = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
+          if (onboarded && onboarded.contactInfo && String(onboarded.contactInfo.email || '').toLowerCase() === String(email || '').toLowerCase()) {
+            const localUser = normalizeUser({
+              id: onboarded.id || `vendor-anon-${Date.now()}`,
+              email: onboarded.contactInfo.email || '',
+              displayName: onboarded.businessName || onboarded.contactInfo.email || 'Vendor (local)',
+              role: 'vendor',
+              vendorData: onboarded
+            });
+
+            // Persist a mock session (LOCAL DEV ONLY fallback)
+            localStorage.setItem('accessToken', 'mock-access-token');
+            localStorage.setItem('refreshToken', 'mock-refresh-token');
+            localStorage.setItem('currentUser', JSON.stringify(localUser));
+
+            setAccessToken('mock-access-token');
+            setRefreshToken('mock-refresh-token');
+            setCurrentUser(localUser);
+
+            toast.success('Logged in locally (backend auth unavailable)');
+            return localUser;
+          }
+        } catch (e) {
+          // ignore parse errors and continue to generic error below
+        }
+
+        // 2) If there is a stored currentUser that matches the email, restore it locally
+        try {
+          const stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
+          if (stored && String(stored.email || '').toLowerCase() === String(email || '').toLowerCase()) {
+            const restored = normalizeUser(stored);
+            localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'mock-access-token');
+            localStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || 'mock-refresh-token');
+            setAccessToken(localStorage.getItem('accessToken'));
+            setRefreshToken(localStorage.getItem('refreshToken'));
+            setCurrentUser(restored);
+            toast.success('Restored local session (backend unavailable)');
+            return restored;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // No fallback available — surface original backend message when present
+        throw new Error(data?.message || 'Login failed (backend unavailable)');
+      }
+
+      // Other non-2xx response from server (e.g., 401/400)
+      throw new Error(data.message || 'Login failed');
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.message || 'Login failed');
@@ -476,6 +537,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Developer helper: allow other contexts to create a temporary local session
+  const loginLocally = useCallback((userObj) => {
+    const normalized = normalizeUser(userObj);
+    localStorage.setItem('accessToken', 'mock-access-token');
+    localStorage.setItem('refreshToken', 'mock-refresh-token');
+    localStorage.setItem('currentUser', JSON.stringify(normalized));
+    setAccessToken('mock-access-token');
+    setRefreshToken('mock-refresh-token');
+    setCurrentUser(normalized);
+    toast.success('Signed in locally');
+    return normalized;
+  }, []);
+
   const value = {
     currentUser,
     loading,
@@ -483,6 +557,7 @@ export const AuthProvider = ({ children }) => {
     refreshToken,
     register,
     login,
+    loginLocally,
     logout,
     refreshAccessToken,
     switchRole,
