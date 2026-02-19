@@ -278,6 +278,59 @@ router.get('/me', verifyToken, async (req, res) => {
   }
 });
 
+// @desc    Update user profile (JWT endpoints)
+// @route   PUT /api/auth/jwt/update-profile
+// @access  Private (requires valid JWT)
+router.put('/update-profile', verifyToken, [
+  // same validation as /api/auth/profile
+  body('firstName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
+  body('lastName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
+  body('phone').optional().matches(/^([+]?\d{1,4}[-.\s]?)?(\(?\d{2,4}\)?[-.\s]?){1,4}\d{3,4}$/).withMessage('Please provide a valid phone number')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { firstName, lastName, phone, avatar } = req.body;
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const updates = {};
+    if (firstName) updates.firstName = firstName;
+    if (lastName) updates.lastName = lastName;
+    if (phone) updates.phone = phone;
+    if (avatar !== undefined) updates.avatar = avatar;
+
+    await user.update(updates);
+
+    // Return updated user (same shape as /me)
+    const updated = await User.findByPk(req.userId);
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: updated.id,
+        email: updated.email,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        phone: updated.phone,
+        role: updated.role,
+        roles: updated.roles,
+        avatar: updated.avatar,
+        isVerified: updated.isVerified,
+        isActive: updated.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Update profile (jwt) error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: error.message });
+  }
+});
+
 // @desc    Exchange Google OAuth token for JWT
 // @route   POST /api/auth/jwt/google
 // @access  Public
