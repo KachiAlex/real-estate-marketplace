@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import { getApiBaseUrl } from '../utils/apiConfig';
 import apiClient from './apiClient';
+import { getAuthToken } from '../utils/authToken';
 
 class NotificationService {
   constructor() {
@@ -18,7 +19,7 @@ class NotificationService {
       return;
     }
 
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    const token = await getAuthToken();
     if (!token) {
       console.warn('NotificationService: No authentication token found');
       return;
@@ -27,8 +28,8 @@ class NotificationService {
     // Connect to Socket.IO server
     this.socket = io(getApiBaseUrl(), {
       auth: {
-        token: token,
-        userId: userId
+        token,
+        userId
       },
       transports: ['websocket', 'polling']
     });
@@ -141,7 +142,7 @@ class NotificationService {
   // API methods for notifications
   async getNotifications(options = {}) {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const queryParams = new URLSearchParams(options).toString();
       const resp = await apiClient.get(`/notifications?${queryParams}`);
@@ -154,7 +155,7 @@ class NotificationService {
 
   async markAsRead(notificationId) {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.put(`/notifications/${notificationId}/read`);
       return resp.data;
@@ -166,7 +167,7 @@ class NotificationService {
 
   async markAllAsRead() {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.put('/notifications/read-all');
       return resp.data;
@@ -178,7 +179,7 @@ class NotificationService {
 
   async archiveNotification(notificationId) {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.put(`/notifications/${notificationId}/archive`);
       return resp.data;
@@ -190,7 +191,7 @@ class NotificationService {
 
   async deleteNotification(notificationId) {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.delete(`/notifications/${notificationId}`);
       return resp.data;
@@ -205,7 +206,7 @@ class NotificationService {
       if (!notifications.length) {
         return { success: false, message: 'No notifications to persist' };
       }
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) {
         return { success: false, message: 'Missing auth token' };
       }
@@ -220,7 +221,7 @@ class NotificationService {
 
   async getUnreadCount() {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.get('/notifications/unread/count');
       return resp.data;
@@ -233,7 +234,7 @@ class NotificationService {
   // Create test notification (admin only)
   async createTestNotification(notificationData) {
     try {
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const accessToken = await getAuthToken();
       if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.post('/notifications/test', notificationData);
       return resp.data;

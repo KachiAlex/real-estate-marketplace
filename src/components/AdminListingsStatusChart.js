@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import apiClient from '../services/apiClient';
 import { Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,15 +21,10 @@ const AdminListingsStatusChart = () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/admin/properties/status-summary', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch property status summary');
-        const json = await res.json();
-        setStatusData(json.data || { total: 0, pending: 0, approved: 0, rejected: 0 });
+        const res = await apiClient.get('/admin/properties/status-summary');
+        setStatusData(res.data?.data || { total: 0, pending: 0, approved: 0, rejected: 0 });
       } catch (e) {
-        setError(e.message);
+        setError(e.message || 'Failed to fetch property status summary');
       } finally {
         setLoading(false);
       }

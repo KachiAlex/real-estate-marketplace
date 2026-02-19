@@ -19,15 +19,10 @@ const AdminProfileModal = ({ isOpen, onClose }) => {
     setError(null);
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/admin/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch admin profile');
-        const json = await res.json();
-        setFormData(json.data || {});
+        const res = await apiClient.get('/admin/profile');
+        setFormData(res.data?.data || {});
       } catch (e) {
-        setError(e.message);
+        setError(e.message || 'Failed to fetch admin profile');
       } finally {
         setLoading(false);
       }
@@ -61,15 +56,10 @@ const AdminProfileModal = ({ isOpen, onClose }) => {
     // Re-fetch profile to reset form
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/admin/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch admin profile');
-        const json = await res.json();
-        setFormData(json.data || {});
+        const res = await apiClient.get('/admin/profile');
+        setFormData(res.data?.data || {});
       } catch (e) {
-        setError(e.message);
+        setError(e.message || 'Failed to fetch admin profile');
       } finally {
         setLoading(false);
       }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import apiClient from '../services/apiClient';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -31,15 +32,10 @@ const AdminEscrowVolumeChart = () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/admin/escrow/volumes', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch escrow volumes');
-        const json = await res.json();
-        setVolumes(json.data || []);
+        const res = await apiClient.get('/admin/escrow/volumes');
+        setVolumes(res.data?.data || []);
       } catch (e) {
-        setError(e.message);
+        setError(e.message || 'Failed to fetch escrow volumes');
       } finally {
         setLoading(false);
       }

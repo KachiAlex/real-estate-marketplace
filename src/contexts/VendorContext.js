@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import { getAuthToken } from '../utils/authToken';
 import { getApiUrl } from '../utils/apiConfig';
 import { uploadVendorKycDocuments } from '../utils/vendorKycUpload';
 
@@ -219,7 +219,7 @@ export const VendorProvider = ({ children }) => {
       }
 
       // Short-circuit for mocked/local test users (Cypress uses mock-access-token/currentUser in localStorage)
-      const mockToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const mockToken = await getAuthToken();
       const isMockAuth = mockToken === 'mock-access-token' || (user && typeof user.email === 'string' && user.email.endsWith('@example.com'));
       if (user && isMockAuth) {
         // Update local currentUser -> vendor and persist vendor profile locally for E2E
@@ -239,7 +239,7 @@ export const VendorProvider = ({ children }) => {
 
       // If user exists but we don't have a backend JWT/token available, treat this as a public onboarding
       // and persist the vendor profile locally instead of calling the protected backend route.
-      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const token = await getAuthToken();
       if (!token) {
         const anon = {
           id: `vendor-anon-${Date.now()}`,

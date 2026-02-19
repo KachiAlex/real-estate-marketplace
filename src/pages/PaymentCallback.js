@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getAuthToken } from '../utils/authToken';
 
 const CALLBACK_STORAGE_KEY = 'propertyVerificationPayments';
 
@@ -65,15 +66,8 @@ const PaymentCallback = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callbackInfo]);
 
-  const buildHeaders = () => {
-    const token = user?.token || (() => {
-      try {
-        return localStorage.getItem('token');
-      } catch {
-        return null;
-      }
-    })();
-
+  const buildHeaders = async () => {
+    const token = user?.token || await getAuthToken();
     const fallbackEmail = user?.email;
 
     if (!token && !fallbackEmail) {
@@ -94,7 +88,7 @@ const PaymentCallback = () => {
   };
 
   const verifyPayment = async (entry, paymentStatus, storedEntries) => {
-    const headers = buildHeaders();
+    const headers = await buildHeaders();
 
     if (!headers) {
       setStatus('error');

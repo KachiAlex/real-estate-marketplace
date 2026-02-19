@@ -3,6 +3,7 @@ import { FaCheckCircle, FaSpinner, FaExclamationTriangle, FaShieldAlt, FaCreditC
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
 import SimplePaymentModal from './SimplePaymentModal';
+import { getAuthToken } from '../utils/authToken';
 
 const sanitizePropertyUrl = (rawValue) => {
   if (!rawValue) return '';
@@ -70,16 +71,6 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   const [paymentError, setPaymentError] = useState('');
   const [isPaymentInitializing, setIsPaymentInitializing] = useState(false);
   const [providerLimit, setProviderLimit] = useState(null);
-
-  const getStoredToken = () => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem('token');
-    } catch (storageError) {
-      console.warn('PropertyVerification: unable to read token from storage', storageError);
-      return null;
-    }
-  };
 
   const readStoredPayments = () => {
     if (typeof window === 'undefined') return [];
@@ -241,8 +232,8 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     return () => window.removeEventListener('message', handlePaymentMessage);
   }, [hydratePendingPaymentFromStorage]);
 
-  const buildAuthHeaders = () => {
-    const token = user?.token || getStoredToken();
+  const buildAuthHeaders = async () => {
+    const token = user?.token || await getAuthToken();
     const fallbackEmail = user?.email;
 
     if (!token && !fallbackEmail) {
@@ -267,7 +258,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     console.log('🔥 User:', user);
     console.log('🔥 Verification fee:', verificationFee);
     
-    const headers = buildAuthHeaders();
+    const headers = await buildAuthHeaders();
     console.log('🔥 Headers:', headers);
 
     if (!headers) {
@@ -389,7 +380,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       return;
     }
 
-    const headers = buildAuthHeaders();
+    const headers = await buildAuthHeaders();
     if (!headers) {
       setPaymentError('Please sign in as a vendor/agent before verifying payment.');
       return;

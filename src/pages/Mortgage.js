@@ -6,7 +6,7 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useMortgage } from '../contexts/MortgageContext';
 import { FaHome, FaMoneyBillWave, FaPercentage, FaCalendar, FaArrowRight, FaBed, FaBath, FaRuler, FaFilter, FaRedo, FaCheck, FaClock, FaTimes, FaFileAlt, FaStar, FaArrowDown, FaArrowUp, FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { uploadMortgageDocuments } from '../utils/mortgageDocumentUpload';
 import { getApiUrl } from '../utils/apiConfig';
 
@@ -76,14 +76,8 @@ const Mortgage = () => {
   useEffect(() => {
     const loadBanks = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await axios.get(getApiUrl('/mortgage-banks'), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (response.data.success) {
+        const response = await apiClient.get('/mortgage-banks');
+        if (response.data?.success) {
           setBanks(response.data.data || []);
         }
       } catch (error) {
@@ -158,11 +152,6 @@ const Mortgage = () => {
     setIsUploading(false);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required. Please login again.');
-      }
-
       // Upload documents first if any files are provided
       let documents = [];
       if (bankStatements && bankStatements.length > 0) {
@@ -188,20 +177,11 @@ const Mortgage = () => {
       }
 
       // Submit prequalification request to backend
-      const response = await axios.post(
-        getApiUrl('/mortgages/prequalify'),
-        {
-          mortgageBankId: selectedBankId,
-          employmentDetails: employmentDetails,
-          documents: documents
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await apiClient.post('/mortgages/prequalify', {
+        mortgageBankId: selectedBankId,
+        employmentDetails: employmentDetails,
+        documents: documents
+      });
 
       if (response.data && response.data.success) {
         const { data } = response.data;
@@ -329,11 +309,6 @@ const Mortgage = () => {
     setIsUploading(false);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required. Please login again.');
-      }
-
       // Upload documents first if any files are provided
       let documents = [];
       if (bankStatements && bankStatements.length > 0) {
@@ -359,25 +334,16 @@ const Mortgage = () => {
       }
 
       // Submit to backend API only (no localStorage)
-      const response = await axios.post(
-        getApiUrl('/mortgages/apply'),
-        {
-          propertyId: propertyId, // Proper ID format (id or _id)
-          mortgageBankId: selectedBankId,
-          requestedAmount: requestedAmount,
-          downPayment: downPayment,
-          loanTermYears: loanTermYears,
-          interestRate: defaultInterestRate,
-          employmentDetails: employmentDetails,
-          documents: documents // Now contains Cloudinary URLs
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await apiClient.post('/mortgages/apply', {
+        propertyId: propertyId, // Proper ID format (id or _id)
+        mortgageBankId: selectedBankId,
+        requestedAmount: requestedAmount,
+        downPayment: downPayment,
+        loanTermYears: loanTermYears,
+        interestRate: defaultInterestRate,
+        employmentDetails: employmentDetails,
+        documents: documents // Now contains Cloudinary URLs
+      });
 
       if (response.data && response.data.success) {
         // Success - reset form and show success message

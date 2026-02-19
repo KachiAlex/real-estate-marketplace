@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaShieldAlt, FaMoneyBillWave, FaCreditCard } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
-import { authenticatedFetch } from '../utils/authToken';
+import { authenticatedFetch, getAuthToken } from '../utils/authToken';
 import SimplePaymentModal from './SimplePaymentModal';
 
 const PropertyVerification = ({ property, onClose, onSuccess }) => {
@@ -139,7 +139,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
 
     try {
       // DEBUG: Check token before sending
-      const token = localStorage.getItem('token') || localStorage.getItem('firebaseToken');
+      const token = await getAuthToken();
       console.log('DEBUG: Verification submission', {
         hasToken: !!token,
         tokenLength: token?.length,

@@ -7,6 +7,7 @@ import { useInvestment } from '../contexts/InvestmentContext';
 import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+import { getAuthToken } from '../utils/authToken';
 
 const ESCROW_PAYMENT_STORAGE_KEY = 'escrowPayments';
 
@@ -33,17 +34,8 @@ const saveEscrowPaymentEntry = (entry) => {
   }
 };
 
-const getStoredToken = () => {
-  if (typeof window === 'undefined') return null;
-  try {
-    return window.localStorage.getItem('token');
-  } catch {
-    return null;
-  }
-};
-
-const buildAuthHeaders = (user) => {
-  const token = user?.token || getStoredToken();
+const buildAuthHeaders = async (user) => {
+  const token = user?.token || await getAuthToken();
   const fallbackEmail = user?.email;
 
   if (!token && !fallbackEmail) {
@@ -404,7 +396,7 @@ const EscrowPaymentFlow = ({
       return;
     }
 
-    const headers = buildAuthHeaders(user);
+    const headers = await buildAuthHeaders(user);
     if (!headers) {
       toast.error('Please login again to verify payment.');
       return;
@@ -654,7 +646,7 @@ const EscrowPaymentFlow = ({
         return;
       }
 
-      const headers = buildAuthHeaders(user);
+      const headers = await buildAuthHeaders(user);
       if (!headers) {
         toast.error('Unable to determine authentication headers. Please login again.');
         setLoading(false);

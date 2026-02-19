@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaBuilding, FaFileAlt, FaChartLine, FaUsers, FaCheckCircle, FaTimesCircle, FaClock, FaPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 
 const MortgageBankDashboard = () => {
@@ -60,14 +60,11 @@ const MortgageBankDashboard = () => {
   const loadBankData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      // Get bank profile
-      const response = await axios.get(getApiUrl('/mortgage-banks'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
 
-      if (response.data.success && response.data.data.length > 0) {
+      // Get bank profile
+      const response = await apiClient.get('/mortgage-banks');
+
+      if (response.data?.success && response.data.data.length > 0) {
         // Find bank associated with current user
         const userBank = response.data.data.find(
           b => b.userAccount?._id === user.id || b.userAccount?.id === user.id
@@ -90,12 +87,9 @@ const MortgageBankDashboard = () => {
 
   const loadApplications = async (currentBank) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(getApiUrl('/mortgages'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/mortgages');
 
-      if (response.data.success) {
+      if (response.data?.success) {
         const apps = response.data.data || [];
         setApplications(apps);
         setStatistics({
@@ -154,26 +148,19 @@ const MortgageBankDashboard = () => {
 
     setIsReviewing(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        getApiUrl(`/mortgages/${selectedApplication._id}/review`),
-        {
-          decision: reviewDecision,
-          notes: reviewNotes.trim() || undefined,
-          conditions: reviewConditions.filter(c => c.trim()).length > 0 ? reviewConditions.filter(c => c.trim()) : undefined,
-          loanTerms: reviewDecision === 'approved' ? {
-            approvedAmount: parseFloat(reviewLoanTerms.approvedAmount),
-            interestRate: parseFloat(reviewLoanTerms.interestRate),
-            loanTermYears: parseFloat(reviewLoanTerms.loanTermYears),
-            monthlyPayment: reviewLoanTerms.monthlyPayment ? parseFloat(reviewLoanTerms.monthlyPayment) : undefined
-          } : undefined
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await apiClient.put(`/mortgages/${selectedApplication._id}/review`, {
+        decision: reviewDecision,
+        notes: reviewNotes.trim() || undefined,
+        conditions: reviewConditions.filter(c => c.trim()).length > 0 ? reviewConditions.filter(c => c.trim()) : undefined,
+        loanTerms: reviewDecision === 'approved' ? {
+          approvedAmount: parseFloat(reviewLoanTerms.approvedAmount),
+          interestRate: parseFloat(reviewLoanTerms.interestRate),
+          loanTermYears: parseFloat(reviewLoanTerms.loanTermYears),
+          monthlyPayment: reviewLoanTerms.monthlyPayment ? parseFloat(reviewLoanTerms.monthlyPayment) : undefined
+        } : undefined
+      });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         toast.success(`Application ${reviewDecision} successfully!`);
         resetReviewForm();
         // Reload applications
@@ -198,28 +185,23 @@ const MortgageBankDashboard = () => {
     if (!bank) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        getApiUrl(`/mortgage-banks/${bank._id}/products`),
-        {
-          name: newProduct.name,
-          description: newProduct.description,
-          minLoanAmount: parseFloat(newProduct.minLoanAmount),
-          maxLoanAmount: parseFloat(newProduct.maxLoanAmount),
-          minDownPaymentPercent: parseFloat(newProduct.minDownPaymentPercent),
-          maxLoanTerm: parseFloat(newProduct.maxLoanTerm),
-          interestRate: parseFloat(newProduct.interestRate),
-          interestRateType: newProduct.interestRateType,
-          eligibilityCriteria: {
-            minMonthlyIncome: parseFloat(newProduct.eligibilityCriteria.minMonthlyIncome) || 0,
-            minCreditScore: parseFloat(newProduct.eligibilityCriteria.minCreditScore) || 0,
-            employmentDuration: parseFloat(newProduct.eligibilityCriteria.employmentDuration) || 0
-          }
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.post(`/mortgage-banks/${bank._id}/products`, {
+        name: newProduct.name,
+        description: newProduct.description,
+        minLoanAmount: parseFloat(newProduct.minLoanAmount),
+        maxLoanAmount: parseFloat(newProduct.maxLoanAmount),
+        minDownPaymentPercent: parseFloat(newProduct.minDownPaymentPercent),
+        maxLoanTerm: parseFloat(newProduct.maxLoanTerm),
+        interestRate: parseFloat(newProduct.interestRate),
+        interestRateType: newProduct.interestRateType,
+        eligibilityCriteria: {
+          minMonthlyIncome: parseFloat(newProduct.eligibilityCriteria.minMonthlyIncome) || 0,
+          minCreditScore: parseFloat(newProduct.eligibilityCriteria.minCreditScore) || 0,
+          employmentDuration: parseFloat(newProduct.eligibilityCriteria.employmentDuration) || 0
+        }
+      });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         toast.success('Mortgage product added successfully!');
         setShowProductModal(false);
         setNewProduct({

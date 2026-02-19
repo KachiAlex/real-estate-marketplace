@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
@@ -903,16 +903,6 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
-  // Admin functions
-  const getAuthHeaders = () => {
-    try {
-      const token = localStorage.getItem('token');
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    } catch (error) {
-      return {};
-    }
-  };
-
   const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
     setLoading(true);
     setError(null);
@@ -925,31 +915,17 @@ export const PropertyProvider = ({ children }) => {
       if (verificationStatus) queryParams.append('verificationStatus', verificationStatus);
       
       const queryString = queryParams.toString();
-      const url = getApiUrl(`/admin/properties${queryString ? `?${queryString}` : ''}`);
-      const authHeaders = await getAuthHeaders();
-      const headers = {
-        'Content-Type': 'application/json',
-        ...authHeaders
-      };
 
-      if (!headers.Authorization) {
+      // Call the centralized API client (handles Authorization + refresh)
+      const resp = await apiClient.get(`/admin/properties${queryString ? `?${queryString}` : ''}`);
+      if (resp.status === 401 || !resp.data) {
         const authError = new Error('Admin authentication required');
         authError.code = 'AUTH_REQUIRED';
         setError('Admin authentication required. Showing cached data instead.');
         throw authError;
       }
 
-      const response = await fetch(url, { headers });
-
-      if (response.status === 401) {
-        const authError = new Error('Admin authentication required');
-        authError.code = 'AUTH_REQUIRED';
-        setError('Admin authentication required. Showing cached data instead.');
-        throw authError;
-      }
-
-      const data = await response.json();
-      
+      const data = resp.data;
       if (data.success) {
         console.log('PropertyContext: Admin properties fetched from API:', data.data);
         setProperties(data.data);

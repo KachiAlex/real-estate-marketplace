@@ -13,7 +13,6 @@ export const uploadVendorKycDocuments = async (files, onProgress = null) => {
       throw new Error('No files provided');
     }
 
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
     // Allow unauthenticated uploads for public vendor onboarding (backend accepts public uploads).
 
     // Validate files

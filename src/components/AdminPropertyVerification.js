@@ -25,7 +25,9 @@ import {
   FaFileAlt
 } from 'react-icons/fa';
 import { useProperty } from '../contexts/PropertyContext';
+import apiClient from '../services/apiClient';
 import { getApiBaseUrl, getApiUrl } from '../utils/apiConfig';
+import { getAuthToken } from '../utils/authToken';
 
 const normalizeDateValue = (value) => {
   if (!value) return null;
@@ -153,30 +155,22 @@ const AdminPropertyVerification = () => {
 
   const loadAdminSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       if (!token) {
         setError('Admin authentication required. Using default fee settings.');
         return;
       }
-      
-      const response = await fetch(getApiUrl('/admin/settings'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.status === 401) {
+
+      const response = await apiClient.get('/admin/settings');
+      if (response.status === 401 || !response.data) {
         setError('Admin authentication expired. Using default fee settings.');
         return;
       }
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setVerificationFee(data.data.verificationFee || 50000);
-          setVendorListingFee(data.data.vendorListingFee || 100000);
-        }
+
+      const data = response.data;
+      if (data.success && data.data) {
+        setVerificationFee(data.data.verificationFee || 50000);
+        setVendorListingFee(data.data.vendorListingFee || 100000);
       }
     } catch (error) {
       console.error('Error loading admin settings:', error);
@@ -267,33 +261,22 @@ const AdminPropertyVerification = () => {
   const handleSaveVerificationFee = async () => {
     try {
       setSavingFee(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(getApiUrl('/admin/settings'), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          verificationFee: parseInt(verificationFee),
-          vendorListingFee: parseInt(vendorListingFee)
-        })
+      const token = await getAuthToken();
+      if (!token) throw new Error('Admin authentication required');
+
+      const response = await apiClient.put('/admin/settings', {
+        verificationFee: parseInt(verificationFee),
+        vendorListingFee: parseInt(vendorListingFee)
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          alert('Settings updated successfully!');
-        } else {
-          throw new Error(data.message || 'Failed to save settings');
-        }
+
+      if (response.data?.success) {
+        alert('Settings updated successfully!');
       } else {
-        throw new Error('Failed to save settings');
+        throw new Error(response.data?.message || 'Failed to save settings');
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings: ' + error.message);
+      alert('Failed to save settings: ' + (error.message || 'Unknown error'));
     } finally {
       setSavingFee(false);
     }

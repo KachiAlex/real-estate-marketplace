@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import storageService from '../services/storageService';
 import { getApiUrl } from '../utils/apiConfig';
+import { getAuthToken } from '../utils/authToken';
 
 const Profile = () => {
   const { currentUser, updateUserProfile } = useAuth();
@@ -98,7 +98,7 @@ const Profile = () => {
       const avatarToSave = avatarPreview && !avatarPreview.startsWith('data:') ? avatarPreview : (formData.avatar || user?.avatar || '');
       
       // Update profile via backend API if available, otherwise use local update
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       if (token) {
         try {
           const apiClient = (await import('../services/apiClient')).default;

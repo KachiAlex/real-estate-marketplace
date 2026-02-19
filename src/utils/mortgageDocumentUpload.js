@@ -3,7 +3,7 @@
  * Handles uploading documents for mortgage applications to Cloudinary via backend
  */
 
-;
+import { getAuthToken } from './authToken';
 
 /**
  * Upload mortgage documents to backend (which uploads to Cloudinary)
@@ -18,7 +18,7 @@ export const uploadMortgageDocuments = async (files, applicationId = null, onPro
       throw new Error('No files provided');
     }
 
-    const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    const accessToken = await getAuthToken();
     if (!accessToken) {
       throw new Error('Authentication required');
     }

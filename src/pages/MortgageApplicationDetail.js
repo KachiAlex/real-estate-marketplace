@@ -19,7 +19,7 @@ import {
   FaDownload
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 
 const MortgageApplicationDetail = () => {
@@ -51,18 +51,8 @@ const MortgageApplicationDetail = () => {
       
       // If not in context, fetch from API
       if (!app) {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-
-        const response = await axios.get(getApiUrl(`/mortgages/${id}`), {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        if (response.data && response.data.success) {
+        const response = await apiClient.get(`/mortgages/${id}`);
+        if (response.data?.success) {
           app = response.data.data;
         } else {
           throw new Error('Application not found');
