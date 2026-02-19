@@ -7,7 +7,7 @@ const userService = require('../services/userService');
 const adminSettingsService = require('../services/adminSettingsService');
 const mortgageBankService = require('../services/mortgageBankService');
 const { sequelize, db } = require('../config/sequelizeDb');
-const bcrypt = require('bcryptjs');
+/* bcrypt imported below; avoid duplicate declaration */
 const router = express.Router();
 
 // @desc    Seed or reset mock data (admin/dev only)
@@ -119,19 +119,10 @@ router.get('/properties/status-summary', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-const express = require('express');
-const { body, validationResult, query } = require('express-validator');
-const { protect, authorize } = require('../middleware/auth');
-const { adminValidation } = require('../middleware/validation');
-const propertyService = require('../services/propertyService');
-const userService = require('../services/userService');
-const adminSettingsService = require('../services/adminSettingsService');
-const mortgageBankService = require('../services/mortgageBankService');
 
-const router = express.Router();
 // Update existing admin user by email (TEMP: Sequelize/Postgres, no auth middleware for testing)
-const { sequelize, db } = require('../config/sequelizeDb');
-const bcrypt = require('bcryptjs');
+// Reuse bcrypt imported earlier in the file via services/userService which already requires bcrypt.
+/* bcrypt is intentionally not redeclared here */
 router.put('/update-admin', [
   body('email').isEmail().withMessage('Valid email required'),
   body('firstName').optional().notEmpty().withMessage('First name required'),

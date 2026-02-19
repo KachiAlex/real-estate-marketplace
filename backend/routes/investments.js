@@ -1,7 +1,7 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
-const { param } = require('express-validator');
+const { param, body } = require('express-validator');
 
 
 const investmentService = require('../services/investmentService');

@@ -69,7 +69,6 @@ class EscrowService {
 
     const transaction = await EscrowModel.create({ propertyId, buyerId, sellerId, amount, currency, paymentMethod, status: 'pending' });
 
-    // Best-effort notification to seller
     try {
       await notificationService.createNotification({ recipient: sellerId, type: 'escrow_payment_received', title: 'Escrow created', message: `An escrow transaction was created for property ${property.title || property.id}`, data: { escrowId: transaction.id } });
     } catch (e) {
@@ -87,11 +86,9 @@ class EscrowService {
       throw error;
     }
 
-    // Simple status transition validation (allow any for now)
     await tx.update({ status });
     const updated = await EscrowModel.findByPk(transactionId);
 
-    // notify participants (best-effort)
     try {
       await notificationService.createNotification({ recipient: updated.buyerId, type: 'escrow_status_changed', title: `Escrow ${status}`, message: `Escrow ${updated.id} status changed to ${status}` });
       await notificationService.createNotification({ recipient: updated.sellerId, type: 'escrow_status_changed', title: `Escrow ${status}`, message: `Escrow ${updated.id} status changed to ${status}` });
@@ -104,117 +101,6 @@ class EscrowService {
 }
 
 module.exports = new EscrowService();
-const propertyService = require('./propertyService');
-const notificationService = require('./notificationService');
-const userService = require('./userService');
-
-const COLLECTION = 'escrowTransactions';
-const STATUS_PIPELINE = ['initiated', 'pending', 'active', 'completed', 'cancelled', 'disputed', 'refunded'];
-const ACTIVE_STATUSES = ['initiated', 'pending', 'active'];
-const VALID_TRANSITIONS = {
-  initiated: ['pending', 'cancelled'],
-  pending: ['active', 'cancelled'],
-  active: ['completed', 'disputed', 'cancelled'],
-  disputed: ['completed', 'cancelled', 'refunded'],
-  completed: [],
-  cancelled: [],
-  // Firestore removed. Use Sequelize/PostgreSQL models instead.
-};
-
-const requireDb = () => { throw new Error('Firestore removed - use Sequelize implementations'); };
-
-const normalizeId = (value) => {
-  if (!value) return null;
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    if (value.id) return value.id;
-    if (value._id) return value._id.toString();
-    if (value.uid) return value.uid;
-  }
-  // requireDb removed. Use Sequelize/PostgreSQL models directly.
-
-const convertEscrowDoc = (doc) => {
-  if (!doc) return null;
-  const data = doc.data ? doc.data() : doc;
-  const id = doc.id || data.id;
-  const escrow = { id, ...data };
-
-  ['createdAt', 'updatedAt', 'expectedCompletion', 'actualCompletion']
-    .forEach((field) => {
-      if (escrow[field]) {
-        escrow[field] = convertTimestamp(escrow[field]);
-      }
-  // convertTimestamp removed. Use native Date or Sequelize timestamps.
-      if (escrow.dispute[field]) {
-  // convertEscrowDoc removed. Use Sequelize/PostgreSQL models directly.
-  performedBy: normalizeId(performedBy),
-  metadata,
-  timestamp: new Date().toISOString()
-      // TODO: Implement listTransactions using Sequelize/PostgreSQL
-      throw new Error('Not implemented: listTransactions (PostgreSQL)');
-const ensureParticipants = (buyerId, sellerId) => {
-  const participants = new Set();
-  if (buyerId) participants.add(buyerId);
-  if (sellerId) participants.add(sellerId);
-  return Array.from(participants);
-};
-
-const formatCurrency = (amount) => {
-  if (!Number.isFinite(amount)) return amount;
-  return Number(amount).toLocaleString('en-NG');
-};
-
-const getEscrowNotificationPayload = (escrow, status) => {
-  switch (status) {
-    case 'pending':
-      return {
-        type: 'escrow_payment_received',
-        title: 'Payment Received',
-        message: `Payment of ₦${formatCurrency(escrow.amount)} has been received for ${escrow.propertySnapshot?.title || 'the property'}`
-      };
-    case 'active':
-      return {
-        type: 'escrow_active',
-        title: 'Escrow Active',
-        message: `Escrow transaction for ${escrow.propertySnapshot?.title || 'the property'} is now active`
-      };
-    case 'completed':
-      return {
-        type: 'escrow_completed',
-        title: 'Transaction Completed',
-        message: `Escrow transaction for ${escrow.propertySnapshot?.title || 'the property'} has been completed`
-      };
-    case 'disputed':
-      return {
-        type: 'escrow_disputed',
-        title: 'Transaction Disputed',
-        message: `Escrow transaction for ${escrow.propertySnapshot?.title || 'the property'} has been disputed`
-      };
-    case 'cancelled':
-      return {
-        type: 'escrow_cancelled',
-        title: 'Transaction Cancelled',
-      // TODO: Implement getTransactionById using Sequelize/PostgreSQL
-      throw new Error('Not implemented: getTransactionById (PostgreSQL)');
-      return {
-        type: 'escrow_resolved',
-        title: 'Refund Processed',
-        message: `Escrow transaction for ${escrow.propertySnapshot?.title || 'the property'} has been refunded`
-      };
-    default:
-      return null;
-  }
-};
-
-const generateTransactionId = () => `ESC${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-const generatePaymentReference = () => `PAY${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-class EscrowService {
-  async listTransactions({ user, status, type, page = 1, limit = 20 } = {}) {
-    const db = requireDb();
-    let query = db.collection(COLLECTION);
-
-    const isAdmin = user?.role === 'admin';
     const userId = normalizeId(user?._id || user?.id || user);
 
     if (!isAdmin) {

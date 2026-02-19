@@ -146,27 +146,5 @@ module.exports = {
   listRecentProperties
 };
 
-  await ensureSeedProperties();
-
-  const snapshot = await db.collection(COLLECTION)
-    .orderBy('createdAt', 'desc')
-    .limit(limit)
-    .get();
-
-  return snapshot.docs.map(convertPropertyDoc);
-};
-
 // deletePropertiesByOwner removed — use Sequelize `Property.destroy({ where: { ownerId } })` instead.
 
-module.exports = {
-  listProperties,
-  getPropertyById,
-  createProperty,
-  updateProperty,
-  updatePropertyVerification,
-  deleteProperty,
-  getPropertyStats,
-  getPropertyStatusSummary,
-  listRecentProperties,
-  toggleFavorite
-};

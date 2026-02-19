@@ -4,7 +4,7 @@ const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
 const escrowService = require('../services/escrowService');
 
-const router = express.Router();
+const router = require('express').Router();
 
 const getUserId = (user = {}) => user.id || user._id;
 const validateEscrowId = param('id')

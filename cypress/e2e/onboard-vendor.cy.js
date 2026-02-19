@@ -35,7 +35,25 @@ describe('Public Vendor Onboarding (unauthenticated)', () => {
       expect(onboarded.licenseNumber).to.equal('REA123456');
     });
 
-    // Dashboard overview should be visible
-    cy.contains(/Dashboard Overview|Properties/i, { timeout: 10000 }).should('be.visible');
+    // Dashboard overview should be visible (renamed to Overview)
+    cy.contains(/^Overview$/i, { timeout: 10000 }).should('be.visible');
+
+    // Now simulate user logging in with the same email and assert auto-sync occurs
+    // We'll use the login page and a test account that the app treats as mock-auth
+    cy.visit('/auth/login');
+    cy.get('input[name="email"]').type('vendor-contact@example.com');
+    cy.get('input[name="password"]').type('password123');
+    cy.contains('button', 'Sign in').click();
+
+    // After login the vendor dashboard should still be accessible and the onboarded vendor should be removed from localStorage
+    cy.url({ timeout: 10000 }).should('include', '/vendor/dashboard');
+    cy.window().then((win) => {
+      const onboarded = JSON.parse(win.localStorage.getItem('onboardedVendor') || 'null');
+      expect(onboarded).to.be.null;
+    });
+
+    // My Properties should show at least one property for this vendor (auto-synced)
+    cy.contains('Total Properties', { timeout: 10000 }).should('be.visible');
+    cy.get('[data-testid="property-item"]').should('have.length.greaterThan', 0);
   });
 });

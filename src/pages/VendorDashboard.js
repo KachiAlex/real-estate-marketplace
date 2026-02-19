@@ -6,6 +6,7 @@ import { FaHome, FaEnvelope, FaCalendar, FaMoneyBillWave, FaUsers, FaFileContrac
 import { useNotifications } from '../contexts/NotificationContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useVendor } from '../contexts/VendorContext';
+import PriceTrendsChart from '../components/PriceTrendsChart';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 const sections = [
@@ -106,12 +107,55 @@ const VendorDashboard = () => {
     console.log('VendorDashboard: properties length=', properties.length);
   }, [properties]);
 
+  const [dashboardStats, setDashboardStats] = useState({
+    totalProperties: properties.length,
+    activeInquiries: 0,
+    scheduledViewings: 0,
+    escrowTransactions: 0,
+    totalEarnings: properties.reduce((sum, p) => sum + (p.price || 0), 0),
+    averagePrice: 0,
+    medianPrice: 0
+  });
+
+  useEffect(() => {
+    // Build quick metrics derived from localStorage + properties (works in demo/offline mode)
+    const propIds = properties.map(p => p.id);
+
+    const inquiries = JSON.parse(localStorage.getItem('inquiries') || '[]');
+    const activeInquiries = inquiries.filter(inq => propIds.includes(inq.propertyId)).filter(inq => {
+      const st = (inq.status || '').toLowerCase();
+      return st === 'new' || st === 'pending' || st === 'contacted';
+    }).length;
+
+    const viewingRequests = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+    const scheduledViewings = viewingRequests.filter(v => propIds.includes(v.propertyId) && ['pending','pending_vendor_confirmation','accepted','confirmed','proposed_new_time'].includes((v.status||'').toLowerCase())).length;
+
+    const escrows = JSON.parse(localStorage.getItem('escrowTransactions') || '[]');
+    const escrowTransactions = escrows.filter(t => propIds.includes(t.propertyId) || t.sellerId === vendorProfile?.id).length;
+
+    const prices = properties.map(p => p.price || 0).sort((a, b) => a - b);
+    const totalEarnings = properties.reduce((s, p) => s + (p.price || 0), 0);
+    const averagePrice = prices.length ? Math.round(prices.reduce((s, v) => s + v, 0) / prices.length) : 0;
+    const medianPrice = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
+
+    setDashboardStats({
+      totalProperties: properties.length,
+      activeInquiries,
+      scheduledViewings,
+      escrowTransactions,
+      totalEarnings,
+      averagePrice,
+      medianPrice
+    });
+  }, [properties, vendorProfile, notifications]);
+
   const propertyStats = {
-    properties: properties.length,
-    earnings: properties.reduce((sum, p) => sum + (p.price || 0), 0),
-    inquiries: 0, // Placeholder, replace with real inquiries count if available
-    inspections: 0 // Placeholder, replace with real inspections count if available
+    properties: dashboardStats.totalProperties,
+    earnings: dashboardStats.totalEarnings,
+    inquiries: dashboardStats.activeInquiries,
+    inspections: dashboardStats.scheduledViewings
   };
+
   const recentActivity = notifications.slice(0, 4).map(n => `${n.title}: ${n.message}`);
 
   return (
@@ -141,7 +185,7 @@ const VendorDashboard = () => {
           <Route path="/vendor/dashboard" element={<Navigate to="/vendor/dashboard/overview" replace />} />
           <Route path="/vendor/dashboard/overview" element={
             <div>
-              <h1 className="text-2xl font-bold mb-4">Dashboard Overview</h1>
+              <h1 className="text-2xl font-bold mb-4">Overview</h1>
               {propertiesLoading ? (
                 <div className="flex items-center justify-center h-32">
                   <span className="text-gray-500">Loading dashboard...</span>
@@ -151,39 +195,68 @@ const VendorDashboard = () => {
                   {/* Quick Stats */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                      <div className="text-lg font-bold text-blue-600">{propertyStats.properties}</div>
+                      <div className="text-lg font-bold text-blue-600">{dashboardStats.totalProperties}</div>
                       <div className="text-xs text-gray-500 mt-1">Properties</div>
                     </div>
+
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                      <div className="text-lg font-bold text-green-600">₦{propertyStats.earnings.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 mt-1">Earnings (Sum of Prices)</div>
+                      <div className="text-lg font-bold text-yellow-600">{dashboardStats.activeInquiries}</div>
+                      <div className="text-xs text-gray-500 mt-1">Active Inquiries</div>
                     </div>
+
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                      <div className="text-lg font-bold text-yellow-600">{propertyStats.inquiries}</div>
-                      <div className="text-xs text-gray-500 mt-1">Inquiries</div>
+                      <div className="text-lg font-bold text-teal-600">{dashboardStats.scheduledViewings}</div>
+                      <div className="text-xs text-gray-500 mt-1">Scheduled Viewings</div>
                     </div>
+
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                      <div className="text-lg font-bold text-gray-600">{propertyStats.inspections}</div>
-                      <div className="text-xs text-gray-500 mt-1">Inspection Requests</div>
+                      <div className="text-lg font-bold text-purple-600">{dashboardStats.escrowTransactions}</div>
+                      <div className="text-xs text-gray-500 mt-1">Escrow Transactions</div>
                     </div>
                   </div>
-                  {/* Recent Activity */}
-                  <div className="bg-white rounded-xl shadow border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-                    <ul className="space-y-3">
-                      {recentActivity.length === 0 ? (
-                        <li className="text-sm text-gray-400">No recent activity.</li>
-                      ) : recentActivity.map((item, idx) => (
-                        <li key={idx} className="text-sm text-gray-700">{item}</li>
-                      ))}
-                    </ul>
+
+                  {/* Market Insight Section */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <PriceTrendsChart />
+
+                    <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Market Insight</h3>
+                        <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+                          <FaHome className="w-4 h-4 text-brand-blue" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 mb-4">
+                        <div className="text-sm text-gray-600">Average Listing Price</div>
+                        <div className="text-xl font-bold">₦{dashboardStats.averagePrice.toLocaleString()}</div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="text-sm text-gray-600">Median Listing Price</div>
+                        <div className="text-lg font-semibold">₦{dashboardStats.medianPrice.toLocaleString()}</div>
+                      </div>
+
+                      <div className="mt-6">
+                        <h4 className="text-sm font-medium text-gray-600 mb-2">Recent Activity</h4>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {recentActivity.length === 0 ? (
+                            <li className="text-sm text-gray-400">No recent activity.</li>
+                          ) : recentActivity.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
+
                   {/* Quick Actions */}
                   <div className="flex space-x-4">
                     <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition" onClick={() => {/* add property logic */}}>Add Property</button>
                     <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition" onClick={() => {/* request payout logic */}}>Request Payout</button>
                     <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition" onClick={() => {/* view notifications logic */}}>View Notifications</button>
                   </div>
+
                   <div className="mt-4 text-xs text-gray-400">Quick stats, recent activity, and shortcuts to key actions.</div>
                 </>
               )}

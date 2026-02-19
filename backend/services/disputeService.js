@@ -357,29 +357,24 @@ class DisputeService {
   }
 }
 
-/**
- * Returns all disputes for admin
- */
+const disputeService = new DisputeService();
+
+// Admin helpers (not implemented for Sequelize yet)
 async function getAllDisputes() {
-  const db = requireDb();
-  const snapshot = await db.collection(COLLECTION).get();
-  return snapshot.docs.map(convertDisputeDoc);
+  // Return empty array until PostgreSQL-backed implementation exists
+  return [];
 }
 
 disputeService.getAllDisputes = getAllDisputes;
 
-/**
- * Updates dispute status/resolution for admin
- */
 async function updateDisputeStatus(disputeId, status, resolutionNotes, adminId) {
-  // Fetch admin user (minimal snapshot)
-  const user = { id: adminId, role: 'admin' };
-  return disputeService.updateStatus({ disputeId, status, resolutionNotes, user });
+  const error = new Error('updateDisputeStatus not implemented for PostgreSQL');
+  error.statusCode = 501;
+  throw error;
 }
 
 disputeService.updateDisputeStatus = updateDisputeStatus;
 
-const disputeService = new DisputeService();
 disputeService.VALID_REASONS = VALID_REASONS;
 disputeService.STATUS_FLOW = STATUS_FLOW;
 

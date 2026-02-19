@@ -4,7 +4,7 @@ const paymentService = require('../services/paymentService');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { protect, authorize } = require('../middleware/auth');
 const { body, param, query } = require('express-validator');
-const router = express.Router();
+const router = require('express').Router();
 
 // @desc    Get user payments
 // @route   GET /api/payments

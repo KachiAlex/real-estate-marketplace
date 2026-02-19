@@ -4,7 +4,7 @@ const { protect, authorize } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const disputeService = require('../services/disputeService');
 
-const router = express.Router();
+const router = require('express').Router();
 
 const handleError = (res, error, fallbackMessage) => {
   console.error('[disputes] ', fallbackMessage, error);

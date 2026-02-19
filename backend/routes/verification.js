@@ -4,7 +4,7 @@ const { sanitizeInput, validate, verificationValidation } = require('../middlewa
 const verificationService = require('../services/verificationService');
 const adminSettingsService = require('../services/adminSettingsService');
 
-const router = express.Router();
+const router = require('express').Router();
 
 router.get('/config', async (req, res) => {
   try {

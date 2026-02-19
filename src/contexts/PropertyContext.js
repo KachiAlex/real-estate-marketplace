@@ -414,7 +414,26 @@ export const PropertyProvider = ({ children }) => {
         console.warn('PropertyProvider: preload failed', err?.message || err);
       }
     })();
-    return () => { mounted = false; };
+
+    // Listen for events that should refresh the properties list immediately
+    const handleAuthLogin = (e) => {
+      console.debug('PropertyProvider: auth:login event received, refreshing properties', e?.detail?.email);
+      fetchProperties().catch(() => {});
+    };
+
+    const handleVendorSync = (e) => {
+      console.debug('PropertyProvider: vendor:localSyncComplete event received, refreshing properties', e?.detail?.email);
+      fetchProperties().catch(() => {});
+    };
+
+    window.addEventListener('auth:login', handleAuthLogin);
+    window.addEventListener('vendor:localSyncComplete', handleVendorSync);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('auth:login', handleAuthLogin);
+      window.removeEventListener('vendor:localSyncComplete', handleVendorSync);
+    };
   }, [fetchProperties]);
 
   // Add new property

@@ -95,7 +95,38 @@ export const VendorProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && user.roles?.includes('vendor')) {
+      // If the signed-in user has vendor role, ensure we load profile and
+      // attempt to auto-sync any locally persisted public onboarding that
+      // was performed earlier (onboard-vendor public flow).
       fetchVendorProfile();
+
+      (async () => {
+        try {
+          const onboardedRaw = localStorage.getItem('onboardedVendor');
+          if (!onboardedRaw) return;
+          const onboarded = JSON.parse(onboardedRaw);
+          const onboardEmail = String(onboarded?.contactInfo?.email || '').toLowerCase();
+          const userEmail = String(user?.email || '').toLowerCase();
+          if (!onboardEmail || !userEmail || onboardEmail !== userEmail) return;
+
+          // Prevent repeated attempts during the same session
+          const syncKey = `vendorAutoSync:${userEmail}`;
+          if (sessionStorage.getItem(syncKey)) return;
+          sessionStorage.setItem(syncKey, '1');
+
+          const res = await syncLocalOnboardedVendor();
+          if (res && res.success) {
+            // Ensure fresh vendor/profile and properties are loaded after successful sync
+            await fetchVendorProfile();
+            try { window.dispatchEvent(new CustomEvent('vendor:localSyncComplete', { detail: { email: userEmail } })); } catch (e) { /* ignore */ }
+          } else {
+            console.warn('VendorProvider: auto-sync returned no-op or failed', res);
+          }
+        } catch (err) {
+          console.error('VendorProvider: auto-sync onboarded vendor failed', err);
+        }
+      })();
+
     } else {
       setLoading(false);
     }

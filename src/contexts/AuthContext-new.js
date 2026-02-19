@@ -149,60 +149,65 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(data.accessToken);
         setRefreshToken(data.refreshToken);
         setCurrentUser(normalized);
+        // Notify other contexts that a login just occurred (used to auto-sync local onboarding)
+        try { window.dispatchEvent(new CustomEvent('auth:login', { detail: normalized })); } catch (e) { /* ignore */ }
 
         toast.success('Login successful!');
         return data.user;
       }
 
-      // Backend returned a server error (5xx) or network failed — try local fallback only when it is safe
+      // Backend returned a server error (5xx) or network failed
       const backendFailed = !response || (response.status >= 500 && response.status < 600);
       if (backendFailed) {
-        // 1) If there is an onboarded vendor with the same email, allow a temporary local login (dev/offline mode)
-        try {
-          const onboarded = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
-          if (onboarded && onboarded.contactInfo && String(onboarded.contactInfo.email || '').toLowerCase() === String(email || '').toLowerCase()) {
-            const localUser = normalizeUser({
-              id: onboarded.id || `vendor-anon-${Date.now()}`,
-              email: onboarded.contactInfo.email || '',
-              displayName: onboarded.businessName || onboarded.contactInfo.email || 'Vendor (local)',
-              role: 'vendor',
-              vendorData: onboarded
-            });
+        // In non-production only: allow local fallbacks for developer/E2E convenience
+        if (process.env.NODE_ENV !== 'production') {
+          // 1) If there is an onboarded vendor with the same email, allow a temporary local login (dev/offline mode)
+          try {
+            const onboarded = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
+            if (onboarded && onboarded.contactInfo && String(onboarded.contactInfo.email || '').toLowerCase() === String(email || '').toLowerCase()) {
+              const localUser = normalizeUser({
+                id: onboarded.id || `vendor-anon-${Date.now()}`,
+                email: onboarded.contactInfo.email || '',
+                displayName: onboarded.businessName || onboarded.contactInfo.email || 'Vendor (local)',
+                role: 'vendor',
+                vendorData: onboarded
+              });
 
-            // Persist a mock session (LOCAL DEV ONLY fallback)
-            localStorage.setItem('accessToken', 'mock-access-token');
-            localStorage.setItem('refreshToken', 'mock-refresh-token');
-            localStorage.setItem('currentUser', JSON.stringify(localUser));
+              // Persist a mock session (LOCAL DEV ONLY fallback)
+              localStorage.setItem('accessToken', 'mock-access-token');
+              localStorage.setItem('refreshToken', 'mock-refresh-token');
+              localStorage.setItem('currentUser', JSON.stringify(localUser));
 
-            setAccessToken('mock-access-token');
-            setRefreshToken('mock-refresh-token');
-            setCurrentUser(localUser);
+              setAccessToken('mock-access-token');
+              setRefreshToken('mock-refresh-token');
+              setCurrentUser(localUser);
 
-            toast.success('Logged in locally (backend auth unavailable)');
-            return localUser;
+              toast.success('Logged in locally (backend auth unavailable)');
+              return localUser;
+            }
+          } catch (e) {
+            // ignore parse errors and continue to generic error below
           }
-        } catch (e) {
-          // ignore parse errors and continue to generic error below
+
+          // 2) If there is a stored currentUser that matches the email, restore it locally
+          try {
+            const stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (stored && String(stored.email || '').toLowerCase() === String(email || '').toLowerCase()) {
+              const restored = normalizeUser(stored);
+              localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'mock-access-token');
+              localStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || 'mock-refresh-token');
+              setAccessToken(localStorage.getItem('accessToken'));
+              setRefreshToken(localStorage.getItem('refreshToken'));
+              setCurrentUser(restored);
+              toast.success('Restored local session (backend unavailable)');
+              return restored;
+            }
+          } catch (e) {
+            // ignore
+          }
         }
 
-        // 2) If there is a stored currentUser that matches the email, restore it locally
-        try {
-          const stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
-          if (stored && String(stored.email || '').toLowerCase() === String(email || '').toLowerCase()) {
-            const restored = normalizeUser(stored);
-            localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'mock-access-token');
-            localStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || 'mock-refresh-token');
-            setAccessToken(localStorage.getItem('accessToken'));
-            setRefreshToken(localStorage.getItem('refreshToken'));
-            setCurrentUser(restored);
-            toast.success('Restored local session (backend unavailable)');
-            return restored;
-          }
-        } catch (e) {
-          // ignore
-        }
-
-        // No fallback available — surface original backend message when present
+        // No fallback available in production — surface original backend message when present
         throw new Error(data?.message || 'Login failed (backend unavailable)');
       }
 

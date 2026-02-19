@@ -5,7 +5,7 @@ const { sanitizeInput } = require('../middleware/validation');
 const db = require('../config/sequelizeDb');
 const { ensureSeedProperties } = require('../services/propertyService');
 
-const router = express.Router();
+const router = require('express').Router();
 
 const buildZeroUserSummary = () => ({
   totalProperties: 0,
