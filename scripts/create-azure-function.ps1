@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Provision Azure resources and a Node‑18 Consumption Function App for `generateUploadSas`.
+  Provision Azure resources and a Node-18 Consumption Function App for `generateUploadSas`.
 
 .DESCRIPTION
   Creates Resource Group (if missing), Storage account + container, and a Function App (Consumption, Node 18).
@@ -34,7 +34,7 @@ function EnsureLoggedIn {
   try {
     az account show -o none 2>$null
   } catch {
-    Write-Host "Not logged in to Azure CLI — opening browser for az login..." -ForegroundColor Yellow
+    Write-Host "Not logged in to Azure CLI - opening browser for az login..." -ForegroundColor Yellow
     az login | Out-Null
   }
 }
@@ -86,7 +86,7 @@ $publishJsonPath = Join-Path -Path (Get-Location) -ChildPath "publishProfiles.js
 Write-Host "Saving Function App publishing profiles to: $publishJsonPath" -ForegroundColor Cyan
 az functionapp deployment list-publishing-profiles -g $ResourceGroup -n $FunctionAppName -o json > $publishJsonPath
 
-# Function URL may not exist until code is deployed — show host name instead
+# Function URL may not exist until code is deployed - show host name instead
 $hostname = az functionapp show -g $ResourceGroup -n $FunctionAppName --query defaultHostName -o tsv
 Write-Host "Function App created: $FunctionAppName (host: $hostname)" -ForegroundColor Green
 
