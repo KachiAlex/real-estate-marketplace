@@ -118,27 +118,40 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ 
-      where: { email: email.toLowerCase() },
-      attributes: {
-        include: ['password'] // Include password for comparison
+    // Find user by email (robust: handle databases missing optional columns like `suspendedAt`)
+    let user = null;
+    try {
+      user = await User.findOne({
+        where: { email: email.toLowerCase() },
+        attributes: { include: ['password'] }
+      });
+    } catch (dbErr) {
+      console.warn('User.findOne failed — attempting fallback SELECT (possible missing column):', dbErr.message);
+      // Fallback: do a minimal raw SELECT that only references commonly present columns
+      try {
+        const fallbackSql = 'SELECT id, email, password, "firstName", "lastName", phone, role, roles, avatar, "isVerified" FROM "users" WHERE email = :email LIMIT 1';
+        const [rows] = await User.sequelize.query(fallbackSql, { replacements: { email: email.toLowerCase() } });
+        user = (rows && rows[0]) ? rows[0] : null; // plain object
+      } catch (fallbackErr) {
+        console.error('Fallback SELECT failed:', fallbackErr);
+        throw dbErr; // rethrow original DB error to surface it
       }
-    });
+    }
 
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid email or password' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
       });
     }
 
-    // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password || '');
+    // Compare passwords (user may be a Sequelize instance or plain object from fallback)
+    const hashed = (user.password || '');
+    const isPasswordValid = await bcrypt.compare(password, hashed);
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid email or password' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
       });
     }
 
@@ -146,8 +159,17 @@ router.post('/login', [
     const accessToken = generateToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
 
-    // Update last login
-    await user.update({ lastLogin: new Date() });
+    // Update last login: prefer Sequelize instance update; otherwise fetch instance to update
+    try {
+      if (typeof user.update === 'function') {
+        await user.update({ lastLogin: new Date() });
+      } else {
+        const userInst = await User.findByPk(user.id);
+        if (userInst) await userInst.update({ lastLogin: new Date() });
+      }
+    } catch (updateErr) {
+      console.warn('Failed to update lastLogin (non-fatal):', updateErr.message);
+    }
 
     res.json({
       success: true,
