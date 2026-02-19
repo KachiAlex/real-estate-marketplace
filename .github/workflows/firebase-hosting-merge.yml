@@ -9,6 +9,8 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    env:
+      REACT_APP_API_URL: "https://real-estate-marketplace-1-k8jp.onrender.com"
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build

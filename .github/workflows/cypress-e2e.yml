@@ -10,6 +10,8 @@ on:
 jobs:
   e2e-support-ticket:
     runs-on: ubuntu-latest
+    env:
+      REACT_APP_API_URL: "https://real-estate-marketplace-1-k8jp.onrender.com"
 
     steps:
       - name: Checkout repository
