@@ -3,8 +3,7 @@
  * Handles uploading documents for mortgage applications to Cloudinary via backend
  */
 
-import axios from 'axios';
-import { getApiUrl } from './apiConfig';
+;
 
 /**
  * Upload mortgage documents to backend (which uploads to Cloudinary)

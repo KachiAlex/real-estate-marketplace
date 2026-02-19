@@ -1,9 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { FiUpload, FiX, FiFile, FiImage, FiVideo, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import toast from 'react-hot-toast';
-import { getApiBaseUrl } from '../utils/apiConfig';
-
 // Use centralized apiClient for uploads and deletes (handles Authorization + refresh)
 
 /**

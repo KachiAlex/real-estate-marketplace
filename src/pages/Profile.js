@@ -98,17 +98,18 @@ const Profile = () => {
       const avatarToSave = avatarPreview && !avatarPreview.startsWith('data:') ? avatarPreview : (formData.avatar || user?.avatar || '');
       
       // Update profile via backend API if available, otherwise use local update
-      const apiClient = (await import('../services/apiClient')).default;
-      try {
-        const response = await apiClient.put('/auth/profile', {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          avatar: avatarToSave
-        });
-          
-          if (response.data.success) {
-            // Use the avatar from the response if available, otherwise use what we sent
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const apiClient = (await import('../services/apiClient')).default;
+          const response = await apiClient.put('/auth/profile', {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            avatar: avatarToSave
+          });
+
+          if (response.data?.success) {
             const updatedAvatar = response.data.user?.avatar || response.data.data?.avatar || avatarToSave;
             await updateUserProfile({
               firstName: formData.firstName,
@@ -116,20 +117,17 @@ const Profile = () => {
               phone: formData.phone,
               avatar: updatedAvatar
             });
-            // Update formData and preview to ensure consistency
             setFormData(prev => ({ ...prev, avatar: updatedAvatar }));
             setAvatarPreview(updatedAvatar);
           }
         } catch (apiError) {
           console.error('API update failed, using local update:', apiError);
-          // Fallback to local update
           await updateUserProfile({
             firstName: formData.firstName,
             lastName: formData.lastName,
             phone: formData.phone,
             avatar: avatarToSave
           });
-          // Update formData and preview
           setFormData(prev => ({ ...prev, avatar: avatarToSave }));
           setAvatarPreview(avatarToSave);
         }

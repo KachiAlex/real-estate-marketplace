@@ -1,4 +1,3 @@
-const OnboardVendor = lazy(() => import('./pages/OnboardVendor'));
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
@@ -35,6 +34,7 @@ const AddProperty = lazy(() => import('./pages/AddProperty'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const About = lazy(() => import('./pages/About'));
+const OnboardVendor = lazy(() => import('./pages/OnboardVendor'));
 // Blog pages removed — redirecting to properties instead
 const ProfessionalServicesEnquiry = lazy(() => import('./pages/ProfessionalServicesEnquiry'));
 const Escrow = lazy(() => import('./pages/Escrow'));

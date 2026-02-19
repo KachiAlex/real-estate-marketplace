@@ -190,8 +190,8 @@ class NotificationService {
 
   async deleteNotification(notificationId) {
     try {
-      const token = localStorage.getItem('token');
-      
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.delete(`/notifications/${notificationId}`);
       return resp.data;
     } catch (error) {
@@ -220,8 +220,8 @@ class NotificationService {
 
   async getUnreadCount() {
     try {
-      const token = localStorage.getItem('token');
-      
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.get('/notifications/unread/count');
       return resp.data;
     } catch (error) {
@@ -233,8 +233,8 @@ class NotificationService {
   // Create test notification (admin only)
   async createTestNotification(notificationData) {
     try {
-      const token = localStorage.getItem('token');
-      
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
       const resp = await apiClient.post('/notifications/test', notificationData);
       return resp.data;
     } catch (error) {
