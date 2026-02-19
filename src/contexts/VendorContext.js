@@ -5,6 +5,24 @@ import axios from 'axios';
 import { getApiUrl } from '../utils/apiConfig';
 import { uploadVendorKycDocuments } from '../utils/vendorKycUpload';
 
+// Backend-only mode: stubbed datastore helpers (mirror of PropertyContext stubs)
+const auth = { currentUser: null };
+const db = null;
+const collection = (...args) => ({ __stub: true, path: args.join('/') });
+const doc = (...args) => ({ __stub: true, path: args.join('/') });
+const query = (...args) => ({ __stub: true, args });
+const where = () => ({ __stub: true });
+const orderBy = () => ({ __stub: true });
+const limit = () => ({ __stub: true });
+const startAfter = () => ({ __stub: true });
+const serverTimestamp = () => new Date().toISOString();
+const getDoc = async () => ({ exists: () => false, data: () => null });
+const getDocs = async () => ({ docs: [] });
+const setDoc = async () => {};
+const deleteDoc = async () => {};
+const updateDoc = async () => {};
+const addDoc = async () => ({ id: `stub_${Date.now()}`, ref: {} });
+
 const VendorContext = createContext();
 
 // Mock vendor data
