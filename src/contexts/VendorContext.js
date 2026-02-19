@@ -219,7 +219,27 @@ export const VendorProvider = ({ children }) => {
         return { success: true };
       }
 
+      // If user exists but we don't have a backend JWT/token available, treat this as a public onboarding
+      // and persist the vendor profile locally instead of calling the protected backend route.
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (!token) {
+        const anon = {
+          id: `vendor-anon-${Date.now()}`,
+          ...profileData,
+          kycStatus: profileData.kycStatus || 'pending'
+        };
+        try {
+          localStorage.setItem('onboardedVendor', JSON.stringify(anon));
+        } catch (err) {
+          console.warn('Failed to persist onboarded vendor to localStorage (fallback)', err);
+        }
+        setVendorProfile(anon);
+        setIsAgent(true);
+        setAgentDocuments(anon.kycDocs || []);
+        toast.success('Vendor profile saved (local).');
+        return { success: true };
+      }
+
       const response = await axios.put(
         getApiUrl(`/vendor/profile`),
         profileData,

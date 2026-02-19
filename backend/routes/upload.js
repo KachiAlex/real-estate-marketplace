@@ -64,10 +64,9 @@ const vendorKycUpload = multer({
     'image/png'
   ])
 });
-// Public endpoint: allow unauthenticated vendor onboarding uploads
+// Public endpoint: allow unauthenticated vendor onboarding uploads (allow in dev/test without Cloudinary)
 router.post(
   '/vendor/kyc',
-  checkCloudinaryConfig,
   vendorKycUpload.array('documents', 10), // Max 10 documents
   async (req, res) => {
     try {

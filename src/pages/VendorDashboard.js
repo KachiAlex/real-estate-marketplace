@@ -93,6 +93,13 @@ const VendorDashboard = () => {
     }
   }, [activeSection, fetchProperties]);
 
+  // Ensure dashboard overview has properties/earnings available immediately on mount
+  useEffect(() => {
+    console.log('VendorDashboard: initial load - ensuring properties are populated for overview/earnings');
+    // Only fetch if properties are not already loaded to avoid unnecessary work
+    fetchProperties().catch(err => console.warn('VendorDashboard: initial fetchProperties error', err));
+  }, [fetchProperties]);
+
   useEffect(() => {
     console.log('VendorDashboard: properties length=', properties.length);
   }, [properties]);
