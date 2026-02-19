@@ -38,8 +38,8 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
       return;
     }
 
-    // If signed in, go to the escrow payment route
-    navigate(target);
+    // If signed in, open the in-page Escrow payment modal (default to Paystack)
+    setShowPaymentFlow(true);
   };
 
   return (
@@ -56,6 +56,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
       {showPaymentFlow && (
         <EscrowPaymentFlow
           property={property}
+          defaultPaymentMethod="paystack"
           onClose={() => setShowPaymentFlow(false)}
           isModal={true}
         />
