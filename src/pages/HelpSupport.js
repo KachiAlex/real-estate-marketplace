@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
-import { authenticatedFetch } from '../utils/authToken';
+import apiClient from '../services/apiClient';
 import CreateTicketModal from '../components/support/CreateTicketModal';
 
 const HelpSupport = () => {
@@ -417,23 +417,17 @@ const HelpSupport = () => {
         category: contactForm.category
       };
 
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const resp = await apiClient.post('/support/inquiry', payload);
 
-      if (resp.ok) {
-        const data = await resp.json();
-        toast.success(data?.message || 'Support ticket submitted. We will respond soon.');
+      if (resp?.data?.success) {
+        toast.success(resp.data?.message || 'Support ticket submitted. We will respond soon.');
         setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
-        // refresh tickets after successful submit
         if (typeof loadTickets === 'function') loadTickets();
-      } else if (resp.status === 401) {
+      } else if (resp?.status === 401 || resp?.data?.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else {
-        const err = await resp.json().catch(() => ({}));
-        toast.error(err.error || `Failed to submit ticket (${resp.status})`);
+        const err = resp?.data || {};
+        toast.error(err.error || 'Failed to submit ticket');
       }
     } catch (error) {
       console.error('Support ticket submit error:', error);
@@ -451,13 +445,11 @@ const HelpSupport = () => {
     setTicketsLoading(true);
     setTicketsError(null);
     try {
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiries'));
-      if (!resp.ok) {
-        if (resp.status === 401) throw new Error('Authentication required');
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || `Failed to load tickets (${resp.status})`);
+      const resp = await apiClient.get('/support/inquiries');
+      const data = resp.data || {};
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to load tickets');
       }
-      const data = await resp.json();
       setTickets(data.data || []);
     } catch (err) {
       console.error('Failed to load tickets:', err);
@@ -498,18 +490,8 @@ const HelpSupport = () => {
 
     // Send message to support inquiry system (use same path as contact form)
     try {
-      const response = await authenticatedFetch(getApiUrl('/support/inquiry'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: messageText,
-          category: 'general_inquiry'
-        })
-      });
-      
-      if (response.ok) {
+      const resp = await apiClient.post('/support/inquiry', { message: messageText, category: 'general_inquiry' });
+      if (resp?.data?.success) {
         const confirmMessage = {
           id: Date.now() + 1,
           text: '✓ Your message has been sent to our support team. You will receive a response shortly.',
@@ -518,11 +500,11 @@ const HelpSupport = () => {
           isConfirmation: true
         };
         setChatMessages(prev => [...prev, confirmMessage]);
-      } else if (response.status === 401) {
+      } else if (resp?.status === 401 || resp?.data?.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        const errorData = resp?.data || {};
+        throw new Error(errorData.error || 'Server error');
       }
     } catch (error) {
       console.error('Error sending message:', error);

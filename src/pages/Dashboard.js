@@ -8,8 +8,7 @@ import { useMortgage } from '../contexts/MortgageContext';
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
-import { authenticatedFetch } from '../utils/authToken';
-import { getApiUrl } from '../utils/apiConfig';
+import apiClient from '../services/apiClient';
 
 const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
@@ -459,19 +458,15 @@ const Dashboard = () => {
             return;
           }
 
-          // Use authenticatedFetch which handles token refresh automatically
-          const res = await authenticatedFetch(getApiUrl('/dashboard/user'), {
-            method: 'GET'
-          });
-
-          if (res.ok) {
-            const data = await res.json();
+          // Use apiClient which handles token refresh + retry
+          try {
+            const resp = await apiClient.get('/dashboard/user');
+            const data = resp.data || {};
             if (data.success) {
               const backend = data.data || {};
               const backendInvestmentSummary = backend.investments || {};
               const backendEscrowSummary = backend.escrow || {};
 
-              // Merge backend data with local data (prefer local for real-time updates)
               setDashboardStats(prev => ({
                 ...prev,
                 totalProperties: backend.totalProperties ?? totalProperties,
@@ -488,10 +483,12 @@ const Dashboard = () => {
               }));
               return;
             }
-          } else if (res.status === 401) {
-            // Suppress 401 errors - expected for mock users
-            console.log('Dashboard: API returned 401 - using local data only');
-            // Non-fatal - fall through to local data
+          } catch (err) {
+            if (err?.response?.status === 401) {
+              console.log('Dashboard: API returned 401 - using local data only');
+            } else {
+              console.log('Dashboard: Error fetching backend stats (using local data)', err?.message || err);
+            }
           }
         } catch (error) {
           // Suppress errors for mock users

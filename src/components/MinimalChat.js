@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import { authenticatedFetch } from '../utils/authToken';
+import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
@@ -16,10 +16,9 @@ export default function MinimalChat({ userId, peerId }) {
     let isMounted = true;
     async function fetchMessages() {
       try {
-        const res = await authenticatedFetch(getApiUrl(`/messages/${userId}/${peerId}`));
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-        const data = await res.json();
-        if (isMounted && Array.isArray(data.messages)) {
+        const resp = await apiClient.get(`/messages/${userId}/${peerId}`);
+        const data = resp.data;
+        if (isMounted && Array.isArray(data?.messages)) {
           setMessages(data.messages);
         }
       } catch (err) {
@@ -80,15 +79,11 @@ export default function MinimalChat({ userId, peerId }) {
 
     // Persist via API
     try {
-      const res = await authenticatedFetch(getApiUrl('/chat/send'), {
-        method: 'POST',
-        body: JSON.stringify({ to: peerId, text: optimistic.text }),
-      });
-      if (!res.ok) throw new Error(`Send failed: ${res.status}`);
-      const saved = await res.json();
+      const resp = await apiClient.post('/chat/send', { to: peerId, text: optimistic.text });
+      const saved = resp.data?.message || resp.data;
 
       // Replace optimistic message with saved message (server id/timestamp)
-      setMessages((prev) => prev.map(m => (m.id === tempId ? saved.message || saved : m)));
+      setMessages((prev) => prev.map(m => (m.id === tempId ? saved : m)));
       setStatus((prev) => ({ ...prev, [saved.message?.id || saved.id || tempId]: { delivered: true, read: false } }));
     } catch (err) {
       console.error('MinimalChat: failed to persist message', err);

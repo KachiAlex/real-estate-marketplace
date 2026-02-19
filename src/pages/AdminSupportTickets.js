@@ -16,12 +16,9 @@ const AdminSupportTickets = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await authenticatedFetch(getApiUrl('/admin/support/inquiries'));
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || `Failed to load (${resp.status})`);
-      }
-      const data = await resp.json();
+      const resp = await apiClient.get('/admin/support/inquiries');
+      const data = resp.data || {};
+      if (!data?.success) throw new Error(data?.message || 'Failed to load tickets');
       setTickets(data.data || []);
     } catch (err) {
       console.error('Admin tickets load error:', err);
@@ -38,18 +35,10 @@ const AdminSupportTickets = () => {
   const updateTicket = async (id, updates) => {
     setUpdating(true);
     try {
-      const resp = await authenticatedFetch(getApiUrl(`/admin/support/inquiries/${id}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || `Update failed (${resp.status})`);
-      }
-      const data = await resp.json();
+      const resp = await apiClient.put(`/admin/support/inquiries/${id}`, updates);
+      const data = resp.data || {};
+      if (!data?.success) throw new Error(data?.message || 'Update failed');
       toast.success(data.message || 'Ticket updated');
-      // update local copy
       setTickets(prev => prev.map(t => (t.id === id ? { ...t, ...data.data } : t)));
     } catch (err) {
       console.error('Update ticket error:', err);
@@ -160,9 +149,9 @@ const AdminSupportTickets = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await authenticatedFetch(getApiUrl('/support/admin/inquiries'));
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`);
-      const data = await res.json();
+      const res = await apiClient.get('/support/admin/inquiries');
+      const data = res.data || {};
+      if (!data?.success) throw new Error(data?.message || 'Failed to load');
       setTickets(data.data || []);
     } catch (err) {
       console.error('AdminSupportTickets load error', err);
@@ -178,13 +167,9 @@ const AdminSupportTickets = () => {
 
   const updateTicket = async (id, updates) => {
     try {
-      const res = await authenticatedFetch(getApiUrl(`/support/admin/inquiries/${id}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!res.ok) throw new Error(`Update failed (${res.status})`);
-      const json = await res.json();
+      const res = await apiClient.put(`/support/admin/inquiries/${id}`, updates);
+      const json = res.data || {};
+      if (!json?.success) throw new Error(json?.message || 'Update failed');
       toast.success(json.message || 'Ticket updated');
       load();
       setSelected(null);

@@ -1,7 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { authenticatedFetch } from '../utils/authToken';
-import { getApiUrl } from '../utils/apiConfig';
+import apiClient from '../services/apiClient';
 import MinimalChat from '../components/MinimalChat';
 import { FaEnvelope, FaSearch } from 'react-icons/fa';
 
@@ -16,8 +15,8 @@ const Messages = () => {
     const fetchConversations = async () => {
       setLoading(true);
       try {
-        const res = await authenticatedFetch(getApiUrl('/chat/conversations'));
-        const payload = await res.json();
+        const resp = await apiClient.get('/chat/conversations');
+        const payload = resp.data || {};
         const data = Array.isArray(payload?.data) ? payload.data : [];
         setConversations(data);
       } catch (err) {

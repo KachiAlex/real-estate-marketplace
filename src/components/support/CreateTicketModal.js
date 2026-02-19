@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../../utils/apiConfig';
-import { authenticatedFetch } from '../../utils/authToken';
+import apiClient from '../../services/apiClient';
 
 const CreateTicketModal = ({ onClose, onSuccess }) => {
   const { currentUser } = useAuth();
@@ -33,24 +33,18 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         priority: form.priority
       };
 
-      const resp = await authenticatedFetch(getApiUrl('/support/inquiry'), {
-        method: 'POST',
-        // Do not override headers, let authenticatedFetch set Authorization
-        body: JSON.stringify(payload)
-      });
+      const resp = await apiClient.post('/support/inquiry', payload);
 
-      if (resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        toast.success(data?.message || 'Support ticket submitted. We will respond by email.');
+      if (resp?.data?.success) {
+        toast.success(resp.data?.message || 'Support ticket submitted. We will respond by email.');
         setForm({ subject: '', category: '', priority: 'medium', message: '' });
         if (onSuccess) onSuccess();
         if (onClose) onClose();
-      } else if (resp.status === 401) {
+      } else if (resp?.status === 401 || resp?.data?.status === 401) {
         toast.error('Authentication required. Please log in again.');
-        // Do not redirect to login modal after submission attempt
       } else {
-        const err = await resp.json().catch(() => ({}));
-        toast.error(err.error || `Failed to submit ticket (${resp.status})`);
+        const err = resp?.data || {};
+        toast.error(err.error || `Failed to submit ticket`);
       }
     } catch (error) {
       console.error('Create ticket error:', error);

@@ -1,5 +1,5 @@
 import { getApiUrl } from '../utils/apiConfig';
-import { authenticatedFetch } from '../utils/authToken';
+import apiClient from '../services/apiClient';
 
 // Chat service for handling admin chat support functionality
 
@@ -13,15 +13,12 @@ export const chatService = {
       if (filters.category) queryParams.append('category', filters.category);
       if (filters.search) queryParams.append('search', filters.search);
       
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations?${queryParams.toString()}`)
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
+      const resp = await apiClient.get(`/admin/chat/conversations?${queryParams.toString()}`);
+      const data = resp.data;
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to fetch conversations');
       }
-      
-      return await response.json();
+      return data;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       throw error;
@@ -31,15 +28,12 @@ export const chatService = {
   // Get a specific conversation with messages
   getConversation: async (conversationId) => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations/${conversationId}`)
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversation');
+      const resp = await apiClient.get(`/admin/chat/conversations/${conversationId}`);
+      const data = resp.data;
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to fetch conversation');
       }
-      
-      return await response.json();
+      return data;
     } catch (error) {
       console.error('Error fetching conversation:', error);
       throw error;
@@ -49,23 +43,8 @@ export const chatService = {
   // Send a message as admin
   sendMessage: async (conversationId, message, isAdmin = true) => {
     try {
-      const response = await authenticatedFetch(getApiUrl('/admin/chat/send'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          conversationId,
-          message,
-          isAdmin
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post('/admin/chat/send', { conversationId, message, isAdmin });
+      return resp.data;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -75,18 +54,8 @@ export const chatService = {
   // Mark conversation as read
   markAsRead: async (conversationId) => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations/${conversationId}/read`),
-        {
-          method: 'POST'
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to mark conversation as read');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post(`/admin/chat/conversations/${conversationId}/read`);
+      return resp.data;
     } catch (error) {
       console.error('Error marking conversation as read:', error);
       throw error;
@@ -96,22 +65,8 @@ export const chatService = {
   // Assign conversation to admin
   assignConversation: async (conversationId, adminId) => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations/${conversationId}/assign`),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ adminId })
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to assign conversation');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post(`/admin/chat/conversations/${conversationId}/assign`, { adminId });
+      return resp.data;
     } catch (error) {
       console.error('Error assigning conversation:', error);
       throw error;
@@ -121,22 +76,8 @@ export const chatService = {
   // Update conversation priority
   updatePriority: async (conversationId, priority) => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations/${conversationId}/priority`),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ priority })
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to update priority');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post(`/admin/chat/conversations/${conversationId}/priority`, { priority });
+      return resp.data;
     } catch (error) {
       console.error('Error updating priority:', error);
       throw error;
@@ -146,18 +87,8 @@ export const chatService = {
   // Archive conversation
   archiveConversation: async (conversationId) => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl(`/admin/chat/conversations/${conversationId}/archive`),
-        {
-          method: 'POST'
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to archive conversation');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post(`/admin/chat/conversations/${conversationId}/archive`);
+      return resp.data;
     } catch (error) {
       console.error('Error archiving conversation:', error);
       throw error;
@@ -167,15 +98,9 @@ export const chatService = {
   // Get chat statistics
   getChatStats: async () => {
     try {
-      const response = await authenticatedFetch(
-        getApiUrl('/admin/chat/stats')
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch chat statistics');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.get('/admin/chat/stats');
+      if (!resp?.data || !resp.data.success) throw new Error('Failed to fetch chat statistics');
+      return resp.data;
     } catch (error) {
       console.error('Error fetching chat stats:', error);
       throw error;
@@ -185,24 +110,8 @@ export const chatService = {
   // Create new conversation (for when buyer/vendor initiates chat)
   createConversation: async (userId, message, category, propertyId = null) => {
     try {
-      const response = await authenticatedFetch(getApiUrl('/admin/chat/conversations'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          message,
-          category,
-          propertyId
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create conversation');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post('/admin/chat/conversations', { userId, message, category, propertyId });
+      return resp.data;
     } catch (error) {
       console.error('Error creating conversation:', error);
       throw error;
@@ -230,23 +139,8 @@ export const chatService = {
   // Add canned response
   addCannedResponse: async (title, message, category) => {
     try {
-      const response = await authenticatedFetch(getApiUrl('/admin/chat/canned-responses'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          message,
-          category
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to add canned response');
-      }
-      
-      return await response.json();
+      const resp = await apiClient.post('/admin/chat/canned-responses', { title, message, category });
+      return resp.data;
     } catch (error) {
       console.error('Error adding canned response:', error);
       throw error;
