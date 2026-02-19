@@ -282,13 +282,9 @@ const AdminDataSeeder = () => {
   const seedProperties = async () => {
     setIsSeeding(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/seed-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: 'properties' })
-      });
-      if (!res.ok) throw new Error('Failed to seed properties');
+      const apiClient = (await import('../services/apiClient')).default;
+      const res = await apiClient.post('/admin/seed-data', { type: 'properties' });
+      if (!res?.data?.success) throw new Error(res?.data?.message || 'Failed to seed properties');
       toast.success('Successfully seeded properties!');
     } catch (error) {
       console.error('Error seeding properties:', error);
@@ -301,13 +297,9 @@ const AdminDataSeeder = () => {
   const seedUsers = async () => {
     setIsSeeding(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/seed-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: 'users' })
-      });
-      if (!res.ok) throw new Error('Failed to seed users');
+      const apiClient = (await import('../services/apiClient')).default;
+      const res = await apiClient.post('/admin/seed-data', { type: 'users' });
+      if (!res?.data?.success) throw new Error(res?.data?.message || 'Failed to seed users');
       toast.success('Successfully seeded users!');
     } catch (error) {
       console.error('Error seeding users:', error);
@@ -320,13 +312,9 @@ const AdminDataSeeder = () => {
   const seedAllData = async () => {
     setIsSeeding(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/seed-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: 'all' })
-      });
-      if (!res.ok) throw new Error('Failed to seed all data');
+      const apiClient = (await import('../services/apiClient')).default;
+      const res = await apiClient.post('/admin/seed-data', { type: 'all' });
+      if (!res?.data?.success) throw new Error(res?.data?.message || 'Failed to seed all data');
       toast.success('Successfully seeded all data!');
     } catch (error) {
       console.error('Error seeding all data:', error);

@@ -1,3 +1,5 @@
+import apiClient from './apiClient';
+
 class StorageService {
   async uploadFile(file, path, metadata = {}) {
     try {
@@ -6,16 +8,12 @@ class StorageService {
       formData.append('uploadType', 'generic');
       formData.append('metadata', JSON.stringify({ path, ...metadata }));
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: formData
+      const response = await apiClient.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
+      const result = response.data;
+      if (!result?.success) {
         throw new Error(result?.message || 'Upload failed');
       }
 
@@ -43,16 +41,12 @@ class StorageService {
       formData.append('uploadType', 'multiple');
       formData.append('metadata', JSON.stringify({ basePath, ...metadata }));
 
-      const response = await fetch('/api/upload/multiple', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: formData
+      const response = await apiClient.post('/upload/multiple', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
+      const result = response.data;
+      if (!result?.success) {
         throw new Error(result?.message || 'Upload failed');
       }
 
@@ -92,16 +86,12 @@ class StorageService {
         userId
       }));
 
-      const response = await fetch('/api/upload/multiple', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: formData
+      const response = await apiClient.post('/upload/multiple', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
+      const result = response.data;
+      if (!result?.success) {
         throw new Error(result?.message || 'Upload failed');
       }
 
@@ -145,16 +135,12 @@ class StorageService {
       formData.append('uploadType', 'user_avatar');
       formData.append('metadata', JSON.stringify({ path, userId }));
 
-      const response = await fetch('/api/upload/avatar', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: formData
+      const response = await apiClient.post('/upload/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
+      const result = response.data;
+      if (!result?.success) {
         throw new Error(result?.message || 'Upload failed');
       }
 
@@ -173,7 +159,7 @@ class StorageService {
         name: result.data?.originalName || file.name,
         size: result.data?.size || file.size,
         type: result.data?.format || file.type
-      };
+      }; 
     } catch (error) {
       console.error('Error uploading avatar:', error);
       return {
@@ -218,16 +204,12 @@ class StorageService {
         userId
       }));
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: formData
+      const response = await apiClient.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
+      const result = response.data;
+      if (!result?.success) {
         throw new Error(result?.message || 'Upload failed');
       }
 

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaBuilding, FaCheckCircle, FaTimesCircle, FaClock, FaEye, FaFileAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-import { getApiBaseUrl } from '../utils/apiConfig';
-
-const API_BASE_URL = getApiBaseUrl();
+import apiClient from '../services/apiClient';
 
 const AdminMortgageBankVerification = () => {
   const [banks, setBanks] = useState([]);
@@ -21,18 +18,10 @@ const AdminMortgageBankVerification = () => {
   const loadBanks = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const url = filterStatus === 'all' 
-        ? `${API_BASE_URL}/api/admin/mortgage-banks`
-        : `${API_BASE_URL}/api/admin/mortgage-banks?status=${filterStatus}`;
-
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setBanks(response.data.data);
+      const url = filterStatus === 'all' ? '/admin/mortgage-banks' : `/admin/mortgage-banks?status=${filterStatus}`;
+      const response = await apiClient.get(url);
+      if (response.data?.success) {
+        setBanks(response.data.data || []);
       }
     } catch (error) {
       console.error('Error loading banks:', error);
@@ -44,17 +33,12 @@ const AdminMortgageBankVerification = () => {
 
   const handleVerify = async (bankId, status) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `${API_BASE_URL}/api/admin/mortgage-banks/${bankId}/verify`,
-        {
-          verificationStatus: status,
-          verificationNotes: verificationNotes
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.put(`/admin/mortgage-banks/${bankId}/verify`, {
+        verificationStatus: status,
+        verificationNotes: verificationNotes
+      });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         toast.success(`Bank ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
         setShowModal(false);
         setSelectedBank(null);

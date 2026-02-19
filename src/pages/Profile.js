@@ -98,23 +98,14 @@ const Profile = () => {
       const avatarToSave = avatarPreview && !avatarPreview.startsWith('data:') ? avatarPreview : (formData.avatar || user?.avatar || '');
       
       // Update profile via backend API if available, otherwise use local update
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await axios.put(
-            getApiUrl('/auth/profile'),
-            {
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              phone: formData.phone,
-              avatar: avatarToSave
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            }
-          );
+      const apiClient = (await import('../services/apiClient')).default;
+      try {
+        const response = await apiClient.put('/auth/profile', {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          avatar: avatarToSave
+        });
           
           if (response.data.success) {
             // Use the avatar from the response if available, otherwise use what we sent
@@ -215,21 +206,11 @@ const Profile = () => {
         toast.error('Upload failed. Using local preview until sync.');
       }
 
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          await axios.put(
-            getApiUrl('/auth/profile'),
-            { avatar: avatarUrl },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            }
-          );
-        } catch (apiError) {
-          console.error('Backend API update error:', apiError);
-        }
+      try {
+        const apiClient = (await import('../services/apiClient')).default;
+        await apiClient.put('/auth/profile', { avatar: avatarUrl });
+      } catch (apiError) {
+        console.error('Backend API update error:', apiError);
       }
 
       try {

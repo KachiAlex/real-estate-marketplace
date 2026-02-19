@@ -19,10 +19,11 @@ export const uploadMortgageDocuments = async (files, applicationId = null, onPro
       throw new Error('No files provided');
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!accessToken) {
       throw new Error('Authentication required');
     }
+    const apiClient = (await import('../services/apiClient')).default;
 
     // Validate files
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -61,14 +62,11 @@ export const uploadMortgageDocuments = async (files, applicationId = null, onPro
     }
 
     // Upload to backend
-    const response = await axios.post(
-      getApiUrl('/upload/mortgage/documents'),
+    const response = await apiClient.post(
+      '/upload/mortgage/documents',
       formData,
       {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaUser, FaEnvelope, FaShieldAlt, FaCalendarAlt, FaCamera, FaEdit, FaSave, FaPhone } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import apiClient from '../services/apiClient';
 
 
 const AdminProfileModal = ({ isOpen, onClose }) => {
@@ -43,13 +44,8 @@ const AdminProfileModal = ({ isOpen, onClose }) => {
     setSaving(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(formData)
-      });
-      if (!res.ok) throw new Error('Failed to update profile');
+      const res = await apiClient.put('/admin/profile', formData);
+      if (!res?.data?.success) throw new Error(res?.data?.message || 'Failed to update profile');
       setIsEditing(false);
     } catch (e) {
       setError(e.message);

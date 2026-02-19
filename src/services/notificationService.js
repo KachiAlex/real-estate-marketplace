@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import { getApiBaseUrl } from '../utils/apiConfig';
+import apiClient from './apiClient';
 
 class NotificationService {
   constructor() {
@@ -17,7 +18,7 @@ class NotificationService {
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
     if (!token) {
       console.warn('NotificationService: No authentication token found');
       return;
@@ -140,18 +141,11 @@ class NotificationService {
   // API methods for notifications
   async getNotifications(options = {}) {
     try {
-      const token = localStorage.getItem('token');
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
       const queryParams = new URLSearchParams(options).toString();
-      
-      const response = await fetch(`/api/notifications?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const resp = await apiClient.get(`/notifications?${queryParams}`);
+      return resp.data;
     } catch (error) {
       console.error('Error fetching notifications:', error);
       return { success: false, error: error.message };
@@ -160,18 +154,10 @@ class NotificationService {
 
   async markAsRead(notificationId) {
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
+      const resp = await apiClient.put(`/notifications/${notificationId}/read`);
+      return resp.data;
     } catch (error) {
       console.error('Error marking notification as read:', error);
       return { success: false, error: error.message };
@@ -180,18 +166,10 @@ class NotificationService {
 
   async markAllAsRead() {
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('/api/notifications/read-all', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
+      const resp = await apiClient.put('/notifications/read-all');
+      return resp.data;
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       return { success: false, error: error.message };
@@ -200,18 +178,10 @@ class NotificationService {
 
   async archiveNotification(notificationId) {
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`/api/notifications/${notificationId}/archive`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) return { success: false, message: 'Not authenticated' };
+      const resp = await apiClient.put(`/notifications/${notificationId}/archive`);
+      return resp.data;
     } catch (error) {
       console.error('Error archiving notification:', error);
       return { success: false, error: error.message };
@@ -222,16 +192,8 @@ class NotificationService {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const resp = await apiClient.delete(`/notifications/${notificationId}`);
+      return resp.data;
     } catch (error) {
       console.error('Error deleting notification:', error);
       return { success: false, error: error.message };
@@ -243,22 +205,13 @@ class NotificationService {
       if (!notifications.length) {
         return { success: false, message: 'No notifications to persist' };
       }
-      const token = localStorage.getItem('token');
-      if (!token) {
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!accessToken) {
         return { success: false, message: 'Missing auth token' };
       }
 
-      const response = await fetch('/api/notifications/inspection', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ notifications })
-      });
-
-      const result = await response.json();
-      return result;
+      const resp = await apiClient.post('/notifications/inspection', { notifications });
+      return resp.data;
     } catch (error) {
       console.error('Error creating inspection notifications:', error);
       return { success: false, error: error.message };
@@ -269,15 +222,8 @@ class NotificationService {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('/api/notifications/unread/count', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      return result;
+      const resp = await apiClient.get('/notifications/unread/count');
+      return resp.data;
     } catch (error) {
       console.error('Error getting unread count:', error);
       return { success: false, error: error.message };
@@ -289,17 +235,8 @@ class NotificationService {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('/api/notifications/test', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(notificationData)
-      });
-
-      const result = await response.json();
-      return result;
+      const resp = await apiClient.post('/notifications/test', notificationData);
+      return resp.data;
     } catch (error) {
       console.error('Error creating test notification:', error);
       return { success: false, error: error.message };

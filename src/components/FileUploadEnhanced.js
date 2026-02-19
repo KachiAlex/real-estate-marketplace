@@ -4,7 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { getApiBaseUrl } from '../utils/apiConfig';
 
-const API_URL = getApiBaseUrl();
+// Use centralized apiClient for uploads and deletes (handles Authorization + refresh)
 
 /**
  * Enhanced File Upload Component
@@ -105,11 +105,7 @@ const FileUploadEnhanced = ({
   // Delete uploaded file
   const deleteUploadedFile = async (publicId, fileIndex) => {
     try {
-      const token = localStorage.getItem('token');
-      
-      await axios.delete(`${API_URL}/api/upload/${encodeURIComponent(publicId)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/upload/${encodeURIComponent(publicId)}`);
 
       setUploadedFiles(prev => prev.filter((_, index) => index !== fileIndex));
       toast.success('File deleted successfully');
@@ -171,13 +167,9 @@ const FileUploadEnhanced = ({
     }
 
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.post(`${API_URL}${endpoint}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`
-        },
+      const relativeEndpoint = endpoint.replace(/^\/api/, '');
+      const response = await apiClient.post(relativeEndpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(prev => ({
