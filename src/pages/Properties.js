@@ -954,28 +954,7 @@ const Properties = () => {
               placeholder="Name, email, or Vendor ID (VND-XXXXX)..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            {uniqueVendors.length > 0 && selectedVendor && (
-              <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow-lg">
-                {uniqueVendors
-                  .filter(vendor => 
-                    vendor.name.toLowerCase().includes(selectedVendor.toLowerCase()) ||
-                    (vendor.code && vendor.code.toLowerCase().includes(selectedVendor.toLowerCase()))
-                  )
-                  .slice(0, 5)
-                  .map((vendor, index) => (
-                    <button
-                      key={vendor.code || vendor.name || `vendor-${index}`}
-                      onClick={() => setSelectedVendor(vendor.code || vendor.name)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      <span>{vendor.name || 'Unknown Vendor'}</span>
-                      {vendor.code && (
-                        <span className="ml-2 text-xs text-blue-600 font-mono">({vendor.code})</span>
-                      )}
-                    </button>
-                  ))}
-              </div>
-            )}
+            {/* Vendor suggestion list intentionally removed — keep text input only */}
           </div>
 
           {/* Action Buttons */}

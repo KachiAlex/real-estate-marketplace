@@ -148,6 +148,12 @@ code {
 
   .property-price {
     @apply text-2xl font-bold text-gray-900 mb-2;
+    /* Prevent large prices from wrapping to the next line */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
   }
 
   .property-title {
