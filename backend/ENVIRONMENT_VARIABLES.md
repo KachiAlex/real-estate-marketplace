@@ -53,6 +53,18 @@ CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
 ```
 
+### Azure Blob + Function (SAS uploads)
+```env
+AZURE_STORAGE_ACCOUNT_NAME=yourstorageaccount
+AZURE_STORAGE_ACCOUNT_KEY=your-storage-account-key
+AZURE_BLOB_CONTAINER=uploads
+AZURE_FUNCTION_URL=https://<your-function-app>.azurewebsites.net/api/generateUploadSas
+```
+
+Notes:
+- Add `AZURE_FUNCTION_URL` to point backend to the deployed Azure Function (recommended for production).
+- Store `AZURE_STORAGE_ACCOUNT_KEY` securely (do not commit it to git).
+
 ### Payment Gateways
 ```env
 STRIPE_SECRET_KEY=your-stripe-secret-key

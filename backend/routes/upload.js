@@ -21,6 +21,8 @@ const {
   generateImageVariants
 } = require('../services/uploadService');
 const { errorLogger, infoLogger } = require('../config/logger');
+const axios = require('axios');
+const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } = require('@azure/storage-blob');
 
 const router = express.Router();
 
@@ -411,6 +413,61 @@ router.post(
         message: error.message || 'Failed to upload documents',
         ...(process.env.NODE_ENV === 'development' && { error: error.message })
       });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/upload/sas
+ * @desc    Generate short‑lived SAS URL for direct client upload to Azure Blob
+ * @access  Private
+ */
+router.post(
+  '/sas',
+  protect,
+  validate([
+    body('filename').notEmpty().withMessage('filename is required'),
+    body('container').optional().isString(),
+    body('expiresInMinutes').optional().isInt({ min: 1, max: 1440 })
+  ]),
+  async (req, res) => {
+    try {
+      const { filename, container = process.env.AZURE_BLOB_CONTAINER || 'uploads', expiresInMinutes = 15 } = req.body;
+
+      if (!filename) {
+        return res.status(400).json({ success: false, message: 'filename is required' });
+      }
+
+      // Production flow: proxy to Azure Function if configured
+      if (process.env.AZURE_FUNCTION_URL) {
+        const resp = await axios.post(process.env.AZURE_FUNCTION_URL, { filename, container, expiresInMinutes });
+        return res.status(resp.status).json(resp.data);
+      }
+
+      // Fallback (local dev): generate SAS token using account key
+      const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+      const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+      if (!accountName || !accountKey) {
+        return res.status(500).json({ success: false, message: 'Azure storage not configured' });
+      }
+
+      const sharedKey = new StorageSharedKeyCredential(accountName, accountKey);
+      const expiresOn = new Date(Date.now() + Number(expiresInMinutes) * 60 * 1000);
+
+      const sasToken = generateBlobSASQueryParameters({
+        containerName: container,
+        blobName: filename,
+        expiresOn,
+        permissions: BlobSASPermissions.parse('cw')
+      }, sharedKey).toString();
+
+      const blobUrl = `https://${accountName}.blob.core.windows.net/${container}/${filename}`;
+      const uploadUrl = `${blobUrl}?${sasToken}`;
+
+      res.json({ success: true, data: { uploadUrl, blobUrl, expiresOn: expiresOn.toISOString() } });
+    } catch (error) {
+      errorLogger(error, req, { context: 'Generate upload SAS' });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 );

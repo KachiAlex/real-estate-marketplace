@@ -126,7 +126,8 @@ The server will start on `http://localhost:5000`
 - `/api/investments` - Investment management (to be implemented)
 - `/api/escrow` - Escrow transactions (to be implemented)
 - `/api/payments` - Payment processing (to be implemented)
-- `/api/upload` - File uploads (to be implemented)
+- `/api/upload` - File uploads (Cloudinary by default; Azure SAS available)
+- `POST /api/upload/sas` - Generate short‑lived SAS URL for direct client upload to Azure Blob (requires auth)
 
 ## Database Models
 

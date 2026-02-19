@@ -1,0 +1,11 @@
+{
+  "name": "azure-functions-upload",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.14.2"
+  }
+}
