@@ -21,6 +21,8 @@ const AdminDisputesManagement = ({ disputes }) => {
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [resolutionType, setResolutionType] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Enhanced mock disputes data with more details
   const enhancedDisputes = disputes.map(dispute => ({

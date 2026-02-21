@@ -27,7 +27,7 @@ const VendorSidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar();
   
   const menuItems = [
-    { path: '/vendor/dashboard', label: 'Dashboard', icon: FaHome },
+    { path: '/vendor/dashboard', label: 'Overview', icon: FaHome },
     { path: '/vendor/properties', label: 'My Properties', icon: FaBuilding },
     { path: '/vendor/inspection-requests', label: 'Inspection Requests', icon: FaBell },
     { path: '/vendor/earnings', label: 'Earnings', icon: FaDollarSign },

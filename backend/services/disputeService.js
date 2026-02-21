@@ -111,13 +111,14 @@ class DisputeService {
 
     let escrowSnapshot = null;
     if (escrowId) {
-      const escrowRef = await db.collection('escrowTransactions').doc(escrowId).get();
-      if (!escrowRef.exists) {
+      // Use Sequelize-backed EscrowTransaction model
+      const escrow = await require('../config/sequelizeDb').EscrowTransaction.findByPk(escrowId);
+      if (!escrow) {
         const error = new Error('Escrow transaction not found');
         error.statusCode = 404;
         throw error;
       }
-      escrowSnapshot = convertDisputeDoc(escrowRef);
+      escrowSnapshot = escrow.toJSON();
     }
 
     const participants = new Set([userId]);

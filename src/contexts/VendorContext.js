@@ -349,6 +349,9 @@ export const VendorProvider = ({ children }) => {
       }
 
       try {
+        // Debug: notify user + console about backend update attempt
+        try { toast.info('Attempting backend vendor update...'); } catch (e) { /* ignore */ }
+        console.debug('VendorContext: attempting PUT /vendor/profile', profileData);
         const apiClient = (await import('../services/apiClient')).default;
         const response = await apiClient.put('/vendor/profile', profileData);
 
@@ -366,7 +369,35 @@ export const VendorProvider = ({ children }) => {
           console.warn('Failed to update currentUser roles after backend vendor update', e);
         }
 
-        toast.success('Vendor profile updated successfully!');
+        // Refresh authoritative user object from server so frontend reflects persisted role
+        try {
+          const token = auth && auth.accessToken ? auth.accessToken : (await getAuthToken());
+          if (token) {
+            const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (meResp.ok) {
+              const meData = await meResp.json();
+              const serverUser = meData.user || meData;
+              try {
+                if (auth && typeof auth.setUserLocally === 'function') {
+                  auth.setUserLocally(serverUser);
+                }
+              } catch (e) {
+                console.warn('Failed to set server user locally after vendor update', e);
+              }
+              // Clear any local fallback onboarding now that server persisted the profile
+              try { localStorage.removeItem('onboardedVendor'); } catch (e) { /* ignore */ }
+              try { window.dispatchEvent(new CustomEvent('vendor:localSyncComplete', { detail: { email: serverUser?.email || user?.email } })); } catch (e) { /* ignore */ }
+              try { toast.success('User refreshed from server'); } catch (e) { /* ignore */ }
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to refresh currentUser after vendor update', e);
+        }
+
+        try { toast.success('Vendor profile updated successfully!'); } catch (e) { /* ignore */ }
         return { success: true };
       } catch (err) {
         console.warn('Backend update failed:', err?.response?.status || err?.message || err);

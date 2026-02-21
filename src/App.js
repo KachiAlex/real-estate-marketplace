@@ -17,6 +17,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import PropertyArkAssistant from './components/PropertyArkAssistant';
 import AITourGuide from './components/AITourGuide';
 import ErrorBoundary from './components/ErrorBoundary';
+import retryImport from './utils/retryImport';
 
 // Eager imports
 import Home from './pages/Home';
@@ -26,51 +27,52 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import SignInModal from './components/auth/SignInModal';
 import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
-// Lazy imports
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Properties = lazy(() => import('./pages/Properties'));
-const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
-const AddProperty = lazy(() => import('./pages/AddProperty'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const Profile = lazy(() => import('./pages/Profile'));
-const About = lazy(() => import('./pages/About'));
-const OnboardVendor = lazy(() => import('./pages/OnboardVendor'));
+// Lazy imports (wrapped with retryImport to mitigate transient chunk load failures)
+const Dashboard = lazy(() => retryImport(() => import('./pages/Dashboard')));
+const Properties = lazy(() => retryImport(() => import('./pages/Properties')));
+const PropertyDetail = lazy(() => retryImport(() => import('./pages/PropertyDetail')));
+const AddProperty = lazy(() => retryImport(() => import('./pages/AddProperty')));
+const AdminDashboard = lazy(() => retryImport(() => import('./pages/AdminDashboard')));
+const AdminKycReview = lazy(() => retryImport(() => import('./pages/admin/KycReview')));
+const Profile = lazy(() => retryImport(() => import('./pages/Profile')));
+const About = lazy(() => retryImport(() => import('./pages/About')));
+const OnboardVendor = lazy(() => retryImport(() => import('./pages/OnboardVendor')));
 // Blog pages removed — redirecting to properties instead
-const ProfessionalServicesEnquiry = lazy(() => import('./pages/ProfessionalServicesEnquiry'));
-const Escrow = lazy(() => import('./pages/Escrow'));
-const Investments = lazy(() => import('./pages/Investments'));
-const InvestmentDetail = lazy(() => import('./pages/InvestmentDetail'));
-const InvestmentOpportunities = lazy(() => import('./pages/InvestmentOpportunities'));
-const InvestmentCompanyDashboard = lazy(() => import('./pages/InvestmentCompanyDashboard'));
-const EscrowTransaction = lazy(() => import('./pages/EscrowTransaction'));
-const InvestorDashboard = lazy(() => import('./pages/InvestorDashboard'));
-const Mortgages = lazy(() => import('./pages/Mortgages'));
-const SearchResults = lazy(() => import('./pages/SearchResults'));
-const SavedProperties = lazy(() => import('./pages/SavedProperties'));
-const MyInquiries = lazy(() => import('./pages/MyInquiries'));
-const PropertyAlerts = lazy(() => import('./pages/PropertyAlerts'));
-const Messages = lazy(() => import('./pages/Messages'));
-const Investment = lazy(() => import('./pages/Investment'));
-const Mortgage = lazy(() => import('./pages/Mortgage'));
-const MortgageApplications = lazy(() => import('./pages/MortgageApplications'));
-const MortgageApplicationDetail = lazy(() => import('./pages/MortgageApplicationDetail'));
-const HelpSupport = lazy(() => import('./pages/HelpSupport'));
-const BillingPayments = lazy(() => import('./pages/BillingPayments'));
-const EscrowPaymentFlow = lazy(() => import('./components/EscrowPaymentFlow'));
-const VendorInspectionRequests = lazy(() => import('./pages/VendorInspectionRequests'));
-const BuyerInspectionRequests = lazy(() => import('./pages/BuyerInspectionRequests'));
-const MortgageBankRegister = lazy(() => import('./pages/MortgageBankRegister'));
-const MortgageBankDashboard = lazy(() => import('./pages/MortgageBankDashboard'));
-const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
-const VendorEarnings = lazy(() => import('./pages/VendorEarnings'));
-const VendorTeam = lazy(() => import('./pages/VendorTeam'));
-const VendorContracts = lazy(() => import('./pages/VendorContracts'));
-const VendorProfile = lazy(() => import('./pages/VendorProfile'));
-const VendorNotifications = lazy(() => import('./pages/VendorNotifications'));
-const VendorHelp = lazy(() => import('./pages/VendorHelp'));
-const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
+const ProfessionalServicesEnquiry = lazy(() => retryImport(() => import('./pages/ProfessionalServicesEnquiry')));
+const Escrow = lazy(() => retryImport(() => import('./pages/Escrow')));
+const Investments = lazy(() => retryImport(() => import('./pages/Investments')));
+const InvestmentDetail = lazy(() => retryImport(() => import('./pages/InvestmentDetail')));
+const InvestmentOpportunities = lazy(() => retryImport(() => import('./pages/InvestmentOpportunities')));
+const InvestmentCompanyDashboard = lazy(() => retryImport(() => import('./pages/InvestmentCompanyDashboard')));
+const EscrowTransaction = lazy(() => retryImport(() => import('./pages/EscrowTransaction')));
+const InvestorDashboard = lazy(() => retryImport(() => import('./pages/InvestorDashboard')));
+const Mortgages = lazy(() => retryImport(() => import('./pages/Mortgages')));
+const SearchResults = lazy(() => retryImport(() => import('./pages/SearchResults')));
+const SavedProperties = lazy(() => retryImport(() => import('./pages/SavedProperties')));
+const MyInquiries = lazy(() => retryImport(() => import('./pages/MyInquiries')));
+const PropertyAlerts = lazy(() => retryImport(() => import('./pages/PropertyAlerts')));
+const Messages = lazy(() => retryImport(() => import('./pages/Messages')));
+const Investment = lazy(() => retryImport(() => import('./pages/Investment')));
+const Mortgage = lazy(() => retryImport(() => import('./pages/Mortgage')));
+const MortgageApplications = lazy(() => retryImport(() => import('./pages/MortgageApplications')));
+const MortgageApplicationDetail = lazy(() => retryImport(() => import('./pages/MortgageApplicationDetail')));
+const HelpSupport = lazy(() => retryImport(() => import('./pages/HelpSupport')));
+const BillingPayments = lazy(() => retryImport(() => import('./pages/BillingPayments')));
+const EscrowPaymentFlow = lazy(() => retryImport(() => import('./components/EscrowPaymentFlow')));
+const VendorInspectionRequests = lazy(() => retryImport(() => import('./pages/VendorInspectionRequests')));
+const BuyerInspectionRequests = lazy(() => retryImport(() => import('./pages/BuyerInspectionRequests')));
+const MortgageBankRegister = lazy(() => retryImport(() => import('./pages/MortgageBankRegister')));
+const MortgageBankDashboard = lazy(() => retryImport(() => import('./pages/MortgageBankDashboard')));
+const VendorDashboard = lazy(() => retryImport(() => import('./pages/VendorDashboard')));
+const VendorEarnings = lazy(() => retryImport(() => import('./pages/VendorEarnings')));
+const VendorTeam = lazy(() => retryImport(() => import('./pages/VendorTeam')));
+const VendorContracts = lazy(() => retryImport(() => import('./pages/VendorContracts')));
+const VendorProfile = lazy(() => retryImport(() => import('./pages/VendorProfile')));
+const VendorNotifications = lazy(() => retryImport(() => import('./pages/VendorNotifications')));
+const VendorHelp = lazy(() => retryImport(() => import('./pages/VendorHelp')));
+const PaymentCallback = lazy(() => retryImport(() => import('./pages/PaymentCallback')));
 // VendorOnboardingDashboard removed
-const VendorRenewSubscription = lazy(() => import('./pages/VendorRenewSubscription'));
+const VendorRenewSubscription = lazy(() => retryImport(() => import('./pages/VendorRenewSubscription')));
 
 const PageWithSidebar = ({ children, id }) => (
   <div className="flex w-full">
@@ -252,6 +254,11 @@ const MainRoutes = () => (
     <Route path="/admin" element={
       <ProtectedRoute>
         <AdminDashboard />
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/vendors/kyc" element={
+      <ProtectedRoute>
+        <AdminKycReview />
       </ProtectedRoute>
     } />
     <Route path="/profile" element={

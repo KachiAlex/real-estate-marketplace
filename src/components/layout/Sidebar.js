@@ -30,6 +30,8 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
+  const isAdmin = user?.role === 'admin' || (Array.isArray(user?.roles) && user.roles.includes('admin'));
+
   // Close mobile sidebar when route changes (but not on initial mount)
   useEffect(() => {
     // Only close if pathname actually changed (not on initial mount)
@@ -141,6 +143,11 @@ const Sidebar = () => {
            { path: '/billing-payments', label: 'Billing & Payments', icon: FaFileInvoiceDollar },
            { path: '/help-support', label: 'Help & Support', icon: FaHelp },
   ];
+
+            if (isAdmin) {
+              // Insert admin KYC review near the top of the menu
+              menuItems.splice(1, 0, { path: '/admin/vendors/kyc', label: 'KYC Review', icon: FaFileContract });
+            }
 
   return (
     <>

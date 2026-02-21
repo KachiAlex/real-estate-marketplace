@@ -5,7 +5,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 const { requireAnyRole, checkOwnership } = require('../middleware/roleValidation');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param } = require('express-validator');
@@ -13,6 +13,7 @@ const {
   uploadPropertyImages,
   uploadPropertyVideos,
   uploadPropertyDocuments,
+  uploadMultipleFiles,
   uploadAvatar,
   uploadMortgageDocuments,
   deleteFile,
@@ -20,6 +21,7 @@ const {
   isConfigured,
   generateImageVariants
 } = require('../services/uploadService');
+const db = require('../config/sequelizeDb');
 const { errorLogger, infoLogger } = require('../config/logger');
 const axios = require('axios');
 const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } = require('@azure/storage-blob');
@@ -69,6 +71,7 @@ const vendorKycUpload = multer({
 // Public endpoint: allow unauthenticated vendor onboarding uploads (allow in dev/test without Cloudinary)
 router.post(
   '/vendor/kyc',
+  optionalAuth,
   vendorKycUpload.array('documents', 10), // Max 10 documents
   async (req, res) => {
     try {
@@ -78,12 +81,72 @@ router.post(
           message: 'No files provided'
         });
       }
-      // Simulate upload to cloud (replace with actual upload logic)
+      // If Cloudinary (or other configured upload service) is available, upload directly
+      if (isConfigured && isConfigured()) {
+        try {
+          const result = await uploadMultipleFiles(req.files, 'documents', { folder: 'vendor/kyc' });
+          const uploaded = (result && result.data && result.data.uploaded) || [];
+          // Ensure original filenames are preserved in response (uploadMultipleFiles returns data without originalname)
+          const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
+          // If the request included an authenticated user, attach uploaded docs to their vendorData
+          if (req.user && req.user.id) {
+            try {
+              const user = await db.User.findByPk(req.user.id);
+              if (user) {
+                let vendorData = user.vendorData || {};
+                try { vendorData = typeof vendorData === 'string' ? JSON.parse(vendorData) : vendorData; } catch (e) { vendorData = vendorData || {}; }
+                vendorData.kycDocs = Array.isArray(vendorData.kycDocs) ? vendorData.kycDocs.concat(uploadedWithNames) : uploadedWithNames;
+                vendorData.kycStatus = 'submitted';
+                vendorData.updatedAt = new Date();
+
+                // Preserve existing roles and set vendor flags
+                let existingRoles = user.roles;
+                try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
+                existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
+
+                await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+              }
+            } catch (attachErr) {
+              console.error('Failed to persist KYC uploads to user vendorData:', attachErr && attachErr.message ? attachErr.message : attachErr);
+            }
+          }
+          return res.json({ success: true, data: { uploaded: uploadedWithNames } });
+        } catch (cloudErr) {
+          // If cloud upload fails, fall back to returning temp paths but still clean up handled below
+          console.error('Cloud upload failed, falling back to temp files:', cloudErr);
+        }
+      }
+
+      // Fallback: return local temp file references (kept for dev/offline flows)
       const uploaded = req.files.map(file => ({
         url: `/uploads/${file.filename}`,
         name: file.originalname,
-        publicId: file.filename
+        publicId: file.filename,
+        resourceType: 'local'
       }));
+
+      // If authenticated, attach local temp references to vendorData so frontend can see them
+      if (req.user && req.user.id) {
+        try {
+          const user = await db.User.findByPk(req.user.id);
+          if (user) {
+            let vendorData = user.vendorData || {};
+            try { vendorData = typeof vendorData === 'string' ? JSON.parse(vendorData) : vendorData; } catch (e) { vendorData = vendorData || {}; }
+            vendorData.kycDocs = Array.isArray(vendorData.kycDocs) ? vendorData.kycDocs.concat(uploaded) : uploaded;
+            vendorData.kycStatus = 'submitted';
+            vendorData.updatedAt = new Date();
+
+            let existingRoles = user.roles;
+            try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
+            existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
+
+            await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+          }
+        } catch (attachErr) {
+          console.error('Failed to persist local KYC uploads to user vendorData:', attachErr && attachErr.message ? attachErr.message : attachErr);
+        }
+      }
+
       res.json({
         success: true,
         data: { uploaded }
@@ -103,6 +166,24 @@ router.post(
     }
   }
 );
+
+// Provide Cloudinary signed upload params for direct client uploads
+router.get('/vendor/kyc/signed', async (req, res) => {
+  try {
+    const { cloudinary } = require('../config/cloudinary');
+    const { isConfigured } = require('../services/uploadService');
+    if (!isConfigured()) {
+      return res.status(503).json({ success: false, message: 'Upload service not configured' });
+    }
+    const timestamp = Math.floor(Date.now() / 1000);
+    // For signature we sign only timestamp for simple direct uploads; adjust params as needed
+    const signature = cloudinary.utils.api_sign_request({ timestamp }, process.env.CLOUDINARY_API_SECRET);
+    res.json({ success: true, data: { api_key: process.env.CLOUDINARY_API_KEY, cloud_name: process.env.CLOUDINARY_CLOUD_NAME, timestamp, signature } });
+  } catch (e) {
+    console.error('Signed upload error:', e);
+    res.status(500).json({ success: false, message: 'Failed to create signed upload' });
+  }
+});
 const imageUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB

@@ -2,7 +2,7 @@ const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
-const escrowService = require('../services/escrowService');
+const escrowService = require('../services/escrowService.clean');
 
 const router = require('express').Router();
 

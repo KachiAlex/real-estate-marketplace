@@ -26,7 +26,7 @@ export default function OnboardVendor() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, accessToken } = useAuth();
   const { updateVendorProfile, uploadAgentDocument } = useVendor();
 
   // Determine if onboarding already exists (user roles OR local onboarded fallback)
@@ -63,6 +63,29 @@ export default function OnboardVendor() {
     setSubmitting(true);
     setError('');
     try {
+      // If the user is not authenticated, persist the onboarding data and
+      // redirect to login so we can perform the authoritative backend update
+      // after the user signs in. We intentionally do not persist File objects
+      // to localStorage (they can't be serialized); KYC docs will need to be
+      // re-uploaded after login, but the vendor role will be assigned once
+      // the profile data is synced.
+      if (!currentUser || !accessToken) {
+        const anon = {
+          id: `vendor-anon-${Date.now()}`,
+          businessName: form.businessName,
+          businessType: form.businessType,
+          licenseNumber: form.licenseNumber,
+          contactInfo: { email: form.contactEmail, phone: form.contactPhone },
+          kycDocs: [],
+          kycStatus: 'pending'
+        };
+        try { localStorage.setItem('onboardedVendor', JSON.stringify(anon)); } catch (e) { /* ignore */ }
+        try { const toast = (await import('react-hot-toast')).default; toast('Saved onboarding details — please sign in to complete registration', { icon: 'ℹ️' }); } catch (e) {}
+        // Redirect to login; after successful login VendorProvider will auto-sync
+        navigate('/auth/login');
+        setSubmitting(false);
+        return;
+      }
       // 1. Upload KYC documents to backend
       let kycDocUrls = [];
       if (form.kycDocs && form.kycDocs.length > 0) {

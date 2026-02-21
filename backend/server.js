@@ -1,7 +1,11 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-require('dotenv').config();
+// Load environment variables from the project root, not backend directory.
+// This ensures the centralized .env (which contains DB credentials, JWT secrets, etc.)
+// is always sourced regardless of the working directory used by npm scripts.
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 // Import configurations
 const { securityConfig } = require('./config/security');
@@ -414,6 +418,19 @@ app.get('/api/health', (req, res) => {
     message: 'Real Estate API is running',
     timestamp: new Date().toISOString()
   });
+});
+
+// DB health check (returns whether Sequelize has an active connection)
+app.get('/api/health/db', (req, res) => {
+  try {
+    const dbStatus = {
+      connected: !!(db && db.isConnected),
+      timestamp: new Date().toISOString()
+    };
+    return res.json({ success: true, db: dbStatus });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to read DB health', error: err.message });
+  }
 });
 
 // Mock blog data

@@ -163,7 +163,26 @@ const Header = () => {
     };
   }, [activeDropdown, isUserMenuOpen]);
 
-  // Always render the full header (do not return a minimal header for dashboard routes)
+  // Render a compact header for vendor dashboard routes: only avatar + vendor name
+  if (isVendorContext && location.pathname.startsWith('/vendor/dashboard')) {
+    return (
+      <header className={`bg-white shadow ${isHomePage ? 'sticky top-0 z-50' : ''}`}>
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center h-16 py-2">
+            <div className="flex-1" />
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </div>
+              <div className="hidden sm:block text-sm font-medium text-gray-900">
+                {user?.firstName || user?.displayName?.split(' ')[0] || 'Vendor'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>

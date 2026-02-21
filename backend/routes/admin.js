@@ -98,7 +98,7 @@ router.patch('/disputes/:id', async (req, res) => {
 // @access  Private (Admin only)
 router.get('/escrow/volumes', async (req, res) => {
   try {
-    const volumes = await require('../services/escrowService').getEscrowVolumesByDate();
+    const volumes = await require('../services/escrowService.clean').getEscrowVolumesByDate();
     res.json({ success: true, data: volumes });
   } catch (error) {
     console.error('Admin escrow volumes error:', error);
@@ -306,6 +306,68 @@ router.get('/properties', [
     });
   }
 });
+
+// --- KYC admin endpoints ---
+// List vendor accounts with pending or required KYC
+router.get('/vendors/pending', protect, authorize('admin'), async (req, res) => {
+  try {
+    const rows = await require('../config/sequelizeDb').sequelize.query(
+      `SELECT id, email, role, "vendorData"::text as vendorDataText FROM users WHERE ("vendorData"->>'kycStatus') IN ('pending','required') ORDER BY updatedAt DESC LIMIT 200`,
+      { type: require('../config/sequelizeDb').sequelize.QueryTypes.SELECT }
+    );
+    const list = rows.map(r => ({ id: r.id, email: r.email, vendorData: (() => { try { return JSON.parse(r.vendorDataText); } catch(e){ return null; } })() }));
+    res.json({ success: true, data: list });
+  } catch (e) {
+    console.error('Admin vendors pending error:', e);
+    res.status(500).json({ success: false, message: 'Failed to list pending vendors' });
+  }
+});
+
+// Approve vendor KYC
+router.post('/vendors/:id/kyc/approve', protect, authorize('admin'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const db = require('../config/sequelizeDb');
+    const rows = await db.sequelize.query(`SELECT id, "vendorData"::text as vendorText FROM users WHERE id = :id LIMIT 1`, { replacements: { id: userId }, type: db.sequelize.QueryTypes.SELECT });
+    if (!rows || !rows.length) return res.status(404).json({ success: false, message: 'User not found' });
+    const r = rows[0];
+    let vd = {};
+    try { vd = r.vendortext ? JSON.parse(r.vendortext) : {}; } catch (e) { vd = {}; }
+    vd.kycStatus = 'approved';
+    vd.kycReviewedBy = req.user?.id || 'admin';
+    vd.kycReviewedAt = new Date();
+    vd.onboardingComplete = true;
+    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json, role = 'vendor', roles = :roles::json, activeRole = 'vendor' WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), roles: JSON.stringify(['vendor']), id: userId } });
+    res.json({ success: true, message: 'KYC approved' });
+  } catch (e) {
+    console.error('Approve KYC error:', e);
+    res.status(500).json({ success: false, message: 'Failed to approve KYC' });
+  }
+});
+
+// Reject vendor KYC with optional notes
+router.post('/vendors/:id/kyc/reject', protect, authorize('admin'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { notes } = req.body;
+    const db = require('../config/sequelizeDb');
+    const rows = await db.sequelize.query(`SELECT id, "vendorData"::text as vendorText FROM users WHERE id = :id LIMIT 1`, { replacements: { id: userId }, type: db.sequelize.QueryTypes.SELECT });
+    if (!rows || !rows.length) return res.status(404).json({ success: false, message: 'User not found' });
+    const r = rows[0];
+    let vd = {};
+    try { vd = r.vendortext ? JSON.parse(r.vendortext) : {}; } catch (e) { vd = {}; }
+    vd.kycStatus = 'rejected';
+    vd.kycReviewedBy = req.user?.id || 'admin';
+    vd.kycReviewedAt = new Date();
+    vd.kycRejectionNotes = notes || null;
+    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), id: userId } });
+    res.json({ success: true, message: 'KYC rejected' });
+  } catch (e) {
+    console.error('Reject KYC error:', e);
+    res.status(500).json({ success: false, message: 'Failed to reject KYC' });
+  }
+});
+
 
 // @desc    Verify/approve/reject property
 // @route   PUT /api/admin/properties/:id/verify

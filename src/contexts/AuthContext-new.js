@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Register new user
-  const register = useCallback(async (email, password, firstName, lastName, phone = '') => {
+  const register = useCallback(async (email, password, firstName, lastName, phone = '', options = {}) => {
     try {
       setLoading(true);
       const response = await fetch(getApiUrl('/auth/jwt/register'), {
@@ -83,7 +83,8 @@ export const AuthProvider = ({ children }) => {
           firstName,
           lastName,
           phone: phone || null,
-          role: 'user'
+          roles: options.roles || ['user'],
+          vendorKycDocs: options.vendorKycDocs || undefined
         })
       });
 

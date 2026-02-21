@@ -1,16 +1,41 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const path = require('path');
+// load env from workspace root (two levels up from config folder)
+require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 /**
  * PostgreSQL Database Connection Configuration using Sequelize
  * For the Firestore to PostgreSQL migration
  */
 
-// Database connection URL - from environment or fallback
-const DATABASE_URL = process.env.DATABASE_URL || 
-  `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'password'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'real_estate_db'}`;
+// Database connection URL - prefer explicit DATABASE_URL; otherwise construct
+// from DB_* variables only when provided. If neither is present, throw an
+// explicit error to avoid accidentally using local defaults (which can lead
+// to confusing auth failures against 'postgres').
+let DATABASE_URL;
+if (process.env.DATABASE_URL) {
+  DATABASE_URL = process.env.DATABASE_URL;
+} else if (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME) {
+  DATABASE_URL = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`;
+} else {
+  console.error('Missing DATABASE_URL and incomplete DB_* env vars. Set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME.');
+  throw new Error('DATABASE configuration missing: set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME');
+}
 
-const sequelize = new Sequelize(DATABASE_URL, {
+console.log('Using DATABASE_URL for Sequelize:', DATABASE_URL && DATABASE_URL.replace(/:[^:]+@/, ':*****@'));
+
+// Resolve SSL settings explicitly so startup logs are clear
+// When the variable is undefined we treat it as "false" to avoid
+// forcing SSL during local development when no .env is present.
+const DB_REQUIRE_SSL = process.env.DB_REQUIRE_SSL || 'false';
+// force SSL in production regardless of the variable
+const resolvedRequireSSL = (DB_REQUIRE_SSL === 'true') || process.env.NODE_ENV === 'production';
+const resolvedRejectUnauthorized = process.env.DB_REJECT_UNAUTHORIZED !== 'false';
+
+console.log('Sequelize DB SSL config -> require:', resolvedRequireSSL, 'rejectUnauthorized:', resolvedRejectUnauthorized);
+
+// Build Sequelize options and only include ssl dialectOptions when SSL is required
+const sequelizeOptions = {
   dialect: 'postgres',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
@@ -18,14 +43,19 @@ const sequelize = new Sequelize(DATABASE_URL, {
     min: 0,
     acquire: 30000,
     idle: 10000
-  },
-  dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production' ? {
-      require: true,
-      rejectUnauthorized: false
-    } : false
   }
-});
+};
+
+if (resolvedRequireSSL) {
+  sequelizeOptions.dialectOptions = {
+    ssl: {
+      require: true,
+      rejectUnauthorized: resolvedRejectUnauthorized
+    }
+  };
+}
+
+const sequelize = new Sequelize(DATABASE_URL, sequelizeOptions);
 
 // Import all model factory functions from sequelize models
 const {
@@ -177,3 +207,59 @@ db.EscrowTransaction.hasOne(db.DisputeResolution, { foreignKey: 'escrowId', as: 
 db.DisputeResolution.belongsTo(db.EscrowTransaction, { foreignKey: 'escrowId', as: 'escrow' });
 
 module.exports = db;
+
+// --- Connection management: retry, backoff, periodic reconnect ---
+const MAX_RETRIES = Number(process.env.DB_CONNECT_RETRIES || 5);
+const RETRY_BASE_MS = Number(process.env.DB_RETRY_BASE_MS || 1000); // base for exponential backoff
+const RECONNECT_INTERVAL_MS = Number(process.env.DB_RECONNECT_INTERVAL_MS || 30000);
+
+db.isConnected = false;
+
+async function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function connectWithRetry(maxRetries = MAX_RETRIES) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      await sequelize.authenticate();
+      db.isConnected = true;
+      console.log('✅ PostgreSQL connected via Sequelize');
+      return;
+    } catch (err) {
+      attempt += 1;
+      db.isConnected = false;
+      const wait = RETRY_BASE_MS * Math.pow(2, attempt - 1);
+      console.error(`Postgres connection attempt ${attempt}/${maxRetries} failed: ${err.message}. Retrying in ${wait}ms...`);
+      await delay(wait);
+    }
+  }
+
+  console.error('⚠️  Could not connect to Postgres after retries; will keep attempting every', RECONNECT_INTERVAL_MS, 'ms');
+  // Keep periodically attempting to reconnect in background
+  setInterval(async () => {
+    try {
+      await sequelize.authenticate();
+      if (!db.isConnected) console.log('🔁 Reconnected to PostgreSQL');
+      db.isConnected = true;
+    } catch (e) {
+      db.isConnected = false;
+      console.log('Postgres reconnect attempt failed:', e.message);
+    }
+  }, RECONNECT_INTERVAL_MS);
+}
+
+// Start initial connection attempts without blocking module export
+connectWithRetry().catch((e) => console.error('Unexpected error during Postgres connect attempts:', e));
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  try {
+    await sequelize.close();
+    console.log('Sequelize connection closed');
+  } catch (e) {
+    /* ignore */
+  }
+  process.exit(0);
+});

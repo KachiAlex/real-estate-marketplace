@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
 import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../utils/apiConfig';
+import { uploadToCloudinaryDirect } from '../../utils/cloudinaryDirectUpload';
 
 const RegisterPage = ({ isModal = false, onClose }) => {
   const { register, loading, signInWithGooglePopup } = useAuth();
@@ -17,6 +19,9 @@ const RegisterPage = ({ isModal = false, onClose }) => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [roles, setRoles] = useState(['user']);
+  const [vendorFiles, setVendorFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -35,7 +40,11 @@ const RegisterPage = ({ isModal = false, onClose }) => {
 
     try {
       setError('');
-      await register(form.email.trim(), form.password, form.firstName.trim(), form.lastName.trim(), form.phone.trim());
+      const options = { roles };
+      if (roles.includes('vendor') && vendorFiles.length) {
+        options.vendorKycDocs = vendorFiles.map(f => ({ url: f.url, name: f.name, publicId: f.publicId }));
+      }
+      await register(form.email.trim(), form.password, form.firstName.trim(), form.lastName.trim(), form.phone.trim(), options);
       toast.success('Account created successfully.');
       // Redirect to intended destination if set (e.g., escrow flow)
       const redirect = sessionStorage.getItem('authRedirect');
@@ -47,6 +56,69 @@ const RegisterPage = ({ isModal = false, onClose }) => {
       }
     } catch (submitError) {
       setError(submitError.message || 'Unable to register at this time.');
+    }
+  };
+
+  const toggleRole = (r) => {
+    setRoles(prev => {
+      const s = new Set(prev || []);
+      if (s.has(r)) s.delete(r); else s.add(r);
+      // Ensure at least 'user' exists if none selected
+      if (s.size === 0) s.add('user');
+      return Array.from(s);
+    });
+  };
+
+  const handleVendorFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      // Try to obtain signed upload params for direct client upload
+      let signedResp = null;
+      try {
+        signedResp = await fetch(getApiUrl('/upload/vendor/kyc/signed'));
+      } catch (err) {
+        signedResp = null;
+      }
+
+      if (signedResp && signedResp.ok) {
+        const signedJson = await signedResp.json().catch(() => null);
+        const signedParams = signedJson && signedJson.data;
+        if (signedParams) {
+          const uploads = [];
+          for (const f of files) {
+            try {
+              const upl = await uploadToCloudinaryDirect(f, signedParams);
+              uploads.push(upl);
+            } catch (err) {
+              console.warn('Direct upload failed for file', f.name, err);
+            }
+          }
+          if (uploads.length) {
+            setVendorFiles(prev => [...prev, ...uploads]);
+            toast.success('KYC documents uploaded');
+            setUploading(false);
+            return;
+          }
+          // if direct uploads failed, fall through to server upload
+        }
+      }
+
+      // Fallback: upload to server endpoint which stores temp files
+      const formData = new FormData();
+      files.forEach(f => formData.append('documents', f));
+      const resp = await fetch(getApiUrl('/upload/vendor/kyc'), { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.message || 'Upload failed');
+      const uploaded = (data.data && data.data.uploaded) || [];
+      setVendorFiles(prev => [...prev, ...uploaded]);
+      toast.success('KYC documents uploaded');
+    } catch (err) {
+      console.error('Upload error', err);
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -90,6 +162,37 @@ const RegisterPage = ({ isModal = false, onClose }) => {
             />
           </label>
         </div>
+
+        <div className="text-sm text-slate-200">
+          <span className="font-medium">Register as</span>
+          <div className="mt-2 flex gap-3">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={roles.includes('user')} onChange={() => toggleRole('user')} />
+              <span>Buyer</span>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={roles.includes('vendor')} onChange={() => toggleRole('vendor')} />
+              <span>Vendor</span>
+            </label>
+          </div>
+        </div>
+
+        {roles.includes('vendor') && (
+          <div>
+            <label className="text-sm text-slate-200">
+              <span className="font-medium">Upload NIN / KYC document (required for vendors)</span>
+              <input type="file" onChange={handleVendorFiles} multiple className="mt-2 block w-full text-sm text-white/70" />
+            </label>
+            {uploading && <div className="text-sm text-amber-200">Uploading...</div>}
+            {vendorFiles.length > 0 && (
+              <ul className="mt-2 text-sm text-slate-200">
+                {vendorFiles.map((f, i) => (
+                  <li key={i}>{f.name || f.url}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <label className="text-sm text-slate-200">
           <span className="font-medium">Email</span>

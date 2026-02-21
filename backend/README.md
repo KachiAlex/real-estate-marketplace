@@ -58,6 +58,17 @@ A comprehensive backend API for the Real Estate Marketplace application built wi
    # MongoDB Configuration
    MONGODB_URI=mongodb://localhost:27017/real-estate
 
+   # (optional) PostgreSQL configuration for new SQL features
+   # - set DB_REQUIRE_SSL=false when running Postgres locally without SSL
+   DB_USER=postgres
+   DB_PASSWORD=password
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=real_estate_db
+   DB_REQUIRE_SSL=false
+   DB_REJECT_UNAUTHORIZED=false
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/real_estate_db
+
    # JWT Configuration
    JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
    JWT_EXPIRE=30d

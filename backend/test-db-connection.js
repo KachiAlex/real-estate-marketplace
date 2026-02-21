@@ -6,8 +6,15 @@
 require('dotenv').config();
 const { Sequelize } = require('sequelize');
 
-const DATABASE_URL = process.env.DATABASE_URL || 
-  `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'password'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'propertyark'}`;
+let DATABASE_URL;
+if (process.env.DATABASE_URL) {
+  DATABASE_URL = process.env.DATABASE_URL;
+} else if (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME) {
+  DATABASE_URL = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`;
+} else {
+  console.error('Missing DATABASE_URL and incomplete DB_* env vars. Set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME.');
+  throw new Error('DATABASE configuration missing: set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME');
+}
 
 console.log('🔍 Testing PostgreSQL Database Connection...\n');
 console.log(`📍 Database: ${process.env.DB_NAME || 'propertyark'}`);
