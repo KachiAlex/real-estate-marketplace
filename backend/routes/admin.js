@@ -337,7 +337,7 @@ router.post('/vendors/:id/kyc/approve', protect, authorize('admin'), async (req,
     vd.kycReviewedBy = req.user?.id || 'admin';
     vd.kycReviewedAt = new Date();
     vd.onboardingComplete = true;
-    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json, role = 'vendor', roles = :roles::json, activeRole = 'vendor' WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), roles: JSON.stringify(['vendor']), id: userId } });
+    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json, role = 'vendor', "roles" = :roles::json, "activeRole" = 'vendor' WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), roles: JSON.stringify(['vendor']), id: userId } });
     res.json({ success: true, message: 'KYC approved' });
   } catch (e) {
     console.error('Approve KYC error:', e);
