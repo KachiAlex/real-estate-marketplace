@@ -85,7 +85,7 @@ const aggregateVendorStats = (properties = []) => {
       acc.pendingListings += 1;
     }
 
-    if (verificationStatus === 'approved' && (status === 'for-sale' || status === 'for-rent')) {
+    if (verificationStatus === 'verified' && (status === 'for-sale' || status === 'for-rent')) {
       acc.activeListings += 1;
     }
 

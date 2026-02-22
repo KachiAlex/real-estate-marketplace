@@ -1,0 +1,80 @@
+[2026-02-22T03:41:00.971Z] GET /api/properties error:
+Error: Intentional debug error from /api/properties (debug=true)
+    at D:\real-estate-marketplace\backend\routes\properties.js:29:13
+    at Layer.handle [as handle_request] (D:\real-estate-marketplace\backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\real-estate-marketplace\backend\node_modules\express\lib\router\route.js:149:13)
+    at middleware (D:\real-estate-marketplace\backend\node_modules\express-validator\lib\middlewares\check.js:16:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+---
+[2026-02-22T03:48:07.248Z] GET /api/properties error:
+Error: Intentional debug error from /api/properties (debug=true)
+    at D:\real-estate-marketplace\backend\routes\properties.js:29:13
+    at Layer.handle [as handle_request] (D:\real-estate-marketplace\backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\real-estate-marketplace\backend\node_modules\express\lib\router\route.js:149:13)
+    at middleware (D:\real-estate-marketplace\backend\node_modules\express-validator\lib\middlewares\check.js:16:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+---
+[2026-02-22T04:03:57.543Z] propertyService.listProperties error:
+Error
+    at Query.run (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at D:\real-estate-marketplace\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async Property.aggregate (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1277:19)
+    at async Property.count (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1306:20)
+    at async Object.listProperties (D:\real-estate-marketplace\backend\services\propertyService.js:45:15)
+    at async D:\real-estate-marketplace\backend\routes\properties.js:50:47
+---
+[2026-02-22T04:03:57.581Z] GET /api/properties error:
+Error
+    at Query.run (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at D:\real-estate-marketplace\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async Property.aggregate (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1277:19)
+    at async Property.count (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1306:20)
+    at async Object.listProperties (D:\real-estate-marketplace\backend\services\propertyService.js:45:15)
+    at async D:\real-estate-marketplace\backend\routes\properties.js:50:47
+---
+[2026-02-22T04:13:54.035Z] propertyService.listProperties error:
+{
+  "message": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\"",
+  "name": "SequelizeDatabaseError",
+  "stack": "Error\n    at Query.run (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\query.js:50:25)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\sequelize.js:315:28\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async PostgresQueryInterface.rawSelect (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\abstract\\query-interface.js:434:18)\n    at async Property.aggregate (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1277:19)\n    at async Property.count (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1306:20)\n    at async Object.listProperties (D:\\real-estate-marketplace\\backend\\services\\propertyService.js:45:15)\n    at async D:\\real-estate-marketplace\\backend\\routes\\properties.js:50:47",
+  "sql": "SELECT count(*) AS \"count\" FROM \"properties\" AS \"Property\" WHERE \"Property\".\"verificationStatus\" = 'approved';",
+  "parent": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\"",
+  "original": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\""
+}
+---
+[2026-02-22T04:13:54.488Z] GET /api/properties error:
+Error
+    at Query.run (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at D:\real-estate-marketplace\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async Property.aggregate (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1277:19)
+    at async Property.count (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1306:20)
+    at async Object.listProperties (D:\real-estate-marketplace\backend\services\propertyService.js:45:15)
+    at async D:\real-estate-marketplace\backend\routes\properties.js:50:47
+---
+[2026-02-22T04:19:46.735Z] propertyService.listProperties error:
+{
+  "message": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\"",
+  "name": "SequelizeDatabaseError",
+  "stack": "Error\n    at Query.run (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\query.js:50:25)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\sequelize.js:315:28\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async PostgresQueryInterface.rawSelect (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\abstract\\query-interface.js:434:18)\n    at async Property.aggregate (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1277:19)\n    at async Property.count (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1306:20)\n    at async Object.listProperties (D:\\real-estate-marketplace\\backend\\services\\propertyService.js:45:15)\n    at async D:\\real-estate-marketplace\\backend\\routes\\properties.js:50:47",
+  "sql": "SELECT count(*) AS \"count\" FROM \"properties\" AS \"Property\" WHERE \"Property\".\"verificationStatus\" = 'approved';",
+  "parent": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\"",
+  "original": "invalid input value for enum \"enum_properties_verificationStatus\": \"approved\""
+}
+---
+[2026-02-22T04:19:46.853Z] GET /api/properties error:
+Error
+    at Query.run (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at D:\real-estate-marketplace\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async Property.aggregate (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1277:19)
+    at async Property.count (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\model.js:1306:20)
+    at async Object.listProperties (D:\real-estate-marketplace\backend\services\propertyService.js:45:15)
+    at async D:\real-estate-marketplace\backend\routes\properties.js:50:47
+---
