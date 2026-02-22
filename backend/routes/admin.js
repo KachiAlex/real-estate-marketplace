@@ -332,7 +332,7 @@ router.post('/vendors/:id/kyc/approve', protect, authorize('admin'), async (req,
     if (!rows || !rows.length) return res.status(404).json({ success: false, message: 'User not found' });
     const r = rows[0];
     let vd = {};
-    try { vd = r.vendortext ? JSON.parse(r.vendortext) : {}; } catch (e) { vd = {}; }
+    try { vd = r.vendorText ? JSON.parse(r.vendorText) : {}; } catch (e) { vd = {}; }
     vd.kycStatus = 'approved';
     vd.kycReviewedBy = req.user?.id || 'admin';
     vd.kycReviewedAt = new Date();
@@ -355,7 +355,7 @@ router.post('/vendors/:id/kyc/reject', protect, authorize('admin'), async (req, 
     if (!rows || !rows.length) return res.status(404).json({ success: false, message: 'User not found' });
     const r = rows[0];
     let vd = {};
-    try { vd = r.vendortext ? JSON.parse(r.vendortext) : {}; } catch (e) { vd = {}; }
+    try { vd = r.vendorText ? JSON.parse(r.vendorText) : {}; } catch (e) { vd = {}; }
     vd.kycStatus = 'rejected';
     vd.kycReviewedBy = req.user?.id || 'admin';
     vd.kycReviewedAt = new Date();
