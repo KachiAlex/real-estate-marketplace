@@ -312,7 +312,7 @@ router.get('/properties', [
 router.get('/vendors/pending', protect, authorize('admin'), async (req, res) => {
   try {
     const rows = await require('../config/sequelizeDb').sequelize.query(
-      `SELECT id, email, role, "vendorData"::text as vendorDataText FROM users WHERE ("vendorData"->>'kycStatus') IN ('pending','required') ORDER BY updatedAt DESC LIMIT 200`,
+      `SELECT id, email, role, "vendorData"::text as vendorDataText FROM users WHERE ("vendorData"->>'kycStatus') IN ('pending','required') ORDER BY "updatedAt" DESC LIMIT 200`,
       { type: require('../config/sequelizeDb').sequelize.QueryTypes.SELECT }
     );
     const list = rows.map(r => ({ id: r.id, email: r.email, vendorData: (() => { try { return JSON.parse(r.vendorDataText); } catch(e){ return null; } })() }));
