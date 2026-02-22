@@ -258,7 +258,7 @@ router.get('/stats', async (req, res) => {
 // @access  Private (Admin only)
 router.get('/properties', [
   query('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'sold', 'rented']).withMessage('Invalid status'),
-  query('verificationStatus').optional().isIn(['pending', 'approved', 'rejected']).withMessage('Invalid verification status'),
+  query('verificationStatus').optional().isIn(['pending', 'verified', 'rejected']).withMessage('Invalid verification status'),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
 ], async (req, res) => {
@@ -373,7 +373,7 @@ router.post('/vendors/:id/kyc/reject', protect, authorize('admin'), async (req, 
 // @route   PUT /api/admin/properties/:id/verify
 // @access  Private (Admin only)
 router.put('/properties/:id/verify', [
-  body('verificationStatus').isIn(['approved', 'rejected']).withMessage('Invalid verification status'),
+  body('verificationStatus').isIn(['verified', 'rejected']).withMessage('Invalid verification status'),
   body('verificationNotes').optional().trim().isLength({ max: 500 }).withMessage('Verification notes cannot exceed 500 characters')
 ], async (req, res) => {
   try {
@@ -691,7 +691,7 @@ router.get('/mortgage-banks', async (req, res) => {
 // @route   PUT /api/admin/mortgage-banks/:id/verify
 // @access  Private (Admin only)
 router.put('/mortgage-banks/:id/verify', [
-  body('verificationStatus').isIn(['approved', 'rejected']).withMessage('Verification status must be approved or rejected'),
+  body('verificationStatus').isIn(['verified', 'rejected']).withMessage('Verification status must be verified or rejected'),
   body('verificationNotes').optional().trim().isLength({ max: 1000 }).withMessage('Verification notes cannot exceed 1000 characters')
 ], async (req, res) => {
   try {

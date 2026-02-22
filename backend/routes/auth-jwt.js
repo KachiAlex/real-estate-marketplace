@@ -46,6 +46,7 @@ router.post('/register', [
       });
     }
 
+    // TEMP LOGGING: capture incoming register requests for debugging
     const { email, password, firstName, lastName, phone, role, roles, vendorKycDocs } = req.body;
 
     // Check if user already exists. Use safe fallback raw query if model references missing columns
@@ -115,6 +116,7 @@ router.post('/register', [
             console.error('Local fallback registration failed:', localErr);
           }
         }
+        console.error('Existing user check failed:', dbErr, rawErr);
         return res.status(500).json({ success: false, message: 'Registration failed', error: dbErr.message });
       }
     }
@@ -261,6 +263,7 @@ router.post('/register', [
             console.error('Local fallback registration failed:', localErr);
           }
         }
+        console.error('Raw user insert failed:', createErr, rawInsertErr);
         return res.status(500).json({ success: false, message: 'Registration failed', error: msg });
       }
     }
@@ -545,7 +548,9 @@ router.get('/me', verifyToken, async (req, res) => {
         roles: user.roles,
         avatar: user.avatar,
         isVerified: user.isVerified,
-        isActive: user.isActive
+        isActive: user.isActive,
+        kycStatus: user.kycStatus || (user.vendorData && user.vendorData.kycStatus) || null,
+        vendorData: user.vendorData || null
       }
     });
   } catch (error) {

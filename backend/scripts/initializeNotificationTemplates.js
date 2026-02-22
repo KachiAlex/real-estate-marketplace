@@ -13,7 +13,7 @@ module.exports = async function initializeNotificationTemplates() {
     channels: {
       email: {
         enabled: true,
-        subject: 'Property Approved - {{propertyTitle}}',
+        subject: 'Property Verified - {{propertyTitle}}',
         htmlTemplate: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2d3748;">🎉 Great News!</h2>
@@ -23,7 +23,7 @@ module.exports = async function initializeNotificationTemplates() {
               <h3 style="margin-top: 0;">Property Details:</h3>
               <p><strong>Location:</strong> {{propertyLocation}}</p>
               <p><strong>Price:</strong> ₦{{propertyPrice}}</p>
-              <p><strong>Approved on:</strong> {{verificationDate}}</p>
+              <p><strong>Verified on:</strong> {{verificationDate}}</p>
             </div>
             <p>Your property is now visible to potential buyers and renters. You can manage your listing from your dashboard.</p>
             <div style="text-align: center; margin: 30px 0;">
@@ -36,12 +36,12 @@ module.exports = async function initializeNotificationTemplates() {
       },
       inApp: {
         enabled: true,
-        title: 'Property Approved',
-        message: 'Your property "{{propertyTitle}}" has been approved and is now live!'
+        title: 'Property Verified',
+        message: 'Your property "{{propertyTitle}}" has been verified and is now live!'
       },
       push: {
         enabled: true,
-        title: 'Property Approved',
+        title: 'Property Verified',
         body: 'Your property "{{propertyTitle}}" is now live on the marketplace!'
       }
     },
