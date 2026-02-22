@@ -16,6 +16,10 @@ const listProperties = async ({
   sort = 'createdAt',
   order = 'desc'
 } = {}) => {
+  const fs = require('fs');
+  const path = require('path');
+  const logPath = path.resolve(__dirname, '..', 'server_error.log');
+  try {
   const where = {};
   if (status) where.status = status;
   if (verificationStatus) where.verificationStatus = verificationStatus;
@@ -38,7 +42,7 @@ const listProperties = async ({
   const stats = {
     total: await PropertyModel.count(),
     pending: await PropertyModel.count({ where: { verificationStatus: 'pending' } }),
-    approved: await PropertyModel.count({ where: { verificationStatus: 'approved' } }),
+    verified: await PropertyModel.count({ where: { verificationStatus: 'verified' } }),
     rejected: await PropertyModel.count({ where: { verificationStatus: 'rejected' } })
   };
 
@@ -52,6 +56,23 @@ const listProperties = async ({
     },
     stats
   };
+  } catch (err) {
+    try {
+      const details = {
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+        sql: err.sql || (err.parent && err.parent.sql) || null,
+        parent: err.parent && (err.parent.message || err.parent.detail) || null,
+        original: err.original && err.original.message || null
+      };
+      const entry = `[${new Date().toISOString()}] propertyService.listProperties error:\n${JSON.stringify(details, null, 2)}\n---\n`;
+      fs.appendFileSync(logPath, entry, { encoding: 'utf8' });
+    } catch (fsErr) {
+      // ignore
+    }
+    throw err;
+  }
 };
 
 const getPropertyById = async (propertyId) => {
@@ -81,7 +102,7 @@ const updateProperty = async (propertyId, updates) => {
 const updatePropertyVerification = async (propertyId, { status, notes, adminId }) => {
   const p = await PropertyModel.findByPk(propertyId);
   if (!p) return null;
-  await p.update({ verificationStatus: status, verificationNotes: notes || '', isVerified: status === 'approved', verifiedBy: adminId, verifiedAt: new Date() });
+  await p.update({ verificationStatus: status, verificationNotes: notes || '', isVerified: status === 'verified', verifiedBy: adminId, verifiedAt: new Date() });
   return (await PropertyModel.findByPk(propertyId)).toJSON();
 };
 

@@ -18,8 +18,22 @@ if (process.env.DATABASE_URL) {
 } else if (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME) {
   DATABASE_URL = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`;
 } else {
-  console.error('Missing DATABASE_URL and incomplete DB_* env vars. Set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME.');
-  throw new Error('DATABASE configuration missing: set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME');
+  // If running in development, fall back to a local Postgres instance on a
+  // developer-friendly port to avoid accidental connection attempts to
+  // production. This makes local dev smoother when no explicit DATABASE_URL
+  // is provided. In non-development environments we still throw to avoid
+  // silently using defaults.
+  if (process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true') {
+    const localPort = process.env.DB_PORT || 15432;
+    const localUser = process.env.DB_USER || 'postgres';
+    const localPass = process.env.DB_PASSWORD || 'password';
+    const localDb = process.env.DB_NAME || 'real_estate_db';
+    DATABASE_URL = `postgresql://${localUser}:${localPass}@localhost:${localPort}/${localDb}`;
+    console.warn('No DATABASE_URL provided — falling back to local DB for development:', DATABASE_URL.replace(/:[^:]+@/, ':*****@'));
+  } else {
+    console.error('Missing DATABASE_URL and incomplete DB_* env vars. Set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME.');
+    throw new Error('DATABASE configuration missing: set DATABASE_URL or DB_USER/DB_PASSWORD/DB_HOST/DB_NAME');
+  }
 }
 
 console.log('Using DATABASE_URL for Sequelize:', DATABASE_URL && DATABASE_URL.replace(/:[^:]+@/, ':*****@'));

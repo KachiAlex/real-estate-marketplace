@@ -1,4 +1,6 @@
 const morgan = require('morgan');
+const fs = require('fs');
+const path = require('path');
 
 // Custom token for user ID
 morgan.token('user-id', (req) => {
@@ -107,6 +109,13 @@ const errorLogger = (error, req = null, additionalInfo = {}) => {
     }
     if (Object.keys(additionalInfo).length > 0) {
       console.error('Additional Info:', additionalInfo);
+    }
+    try {
+      const logPath = path.resolve(__dirname, '..', 'server_error.log');
+      const entry = `[${new Date().toISOString()}] ERROR: ${error.message}\n${error.stack || ''}\nAdditional: ${JSON.stringify(additionalInfo)}\n---\n`;
+      fs.appendFileSync(logPath, entry, { encoding: 'utf8' });
+    } catch (fsErr) {
+      console.error('Failed to write server_error.log:', fsErr.message);
     }
   }
 };

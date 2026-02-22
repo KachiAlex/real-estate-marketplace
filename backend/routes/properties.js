@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult, query, param } = require('express-validator');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
 const propertyService = require('../services/propertyService');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -21,6 +23,11 @@ router.get('/', optionalAuth, [
   query('state').optional().trim().notEmpty().withMessage('State cannot be empty')
 ], async (req, res) => {
   try {
+    console.log('GET /api/properties called with query:', req.query);
+    // Developer debug helper: force an error when `debug=true` to capture stack traces
+    if (String(req.query.debug).toLowerCase() === 'true' || String(req.query.debug) === '1') {
+      throw new Error('Intentional debug error from /api/properties (debug=true)');
+    }
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -57,7 +64,14 @@ router.get('/', optionalAuth, [
       stats
     });
   } catch (error) {
-    console.error('Get properties error:', error);
+    console.error('Get properties error:', error && error.stack ? error.stack : error);
+    try {
+      const logPath = path.resolve(__dirname, '..', 'server_error.log');
+      const entry = `[${new Date().toISOString()}] GET /api/properties error:\n${error && error.stack ? error.stack : String(error)}\n---\n`;
+      fs.appendFileSync(logPath, entry, { encoding: 'utf8' });
+    } catch (fsErr) {
+      console.error('Failed to write properties error to server_error.log:', fsErr.message);
+    }
     res.status(500).json({
       success: false,
       message: 'Server error'
