@@ -313,22 +313,23 @@ class NotificationService {
   }
 
   async createPropertyVerificationNotification(property, user, isApproved, admin, notes = '') {
+    const isVerified = Boolean(isApproved);
     const notificationData = {
       recipient: normalizeId(user),
       sender: normalizeId(admin),
-      type: isApproved ? 'property_verified' : 'property_rejected',
-      title: isApproved ? 'Property Approved' : 'Property Rejected',
-      message: isApproved
-        ? `Your property "${property.title}" has been approved and is now live on the marketplace.`
+      type: isVerified ? 'property_verified' : 'property_rejected',
+      title: isVerified ? 'Property Verified' : 'Property Rejected',
+      message: isVerified
+        ? `Your property "${property.title}" has been verified and is now live on the marketplace.`
         : `Your property "${property.title}" has been rejected. ${notes ? `Reason: ${notes}` : ''}`,
       data: {
         propertyId: property.id || property._id,
         propertyTitle: property.title,
-        isApproved,
+        isVerified,
         notes,
         adminName: admin ? `${admin.firstName || ''} ${admin.lastName || ''}`.trim() : undefined
       },
-      priority: isApproved ? 'medium' : 'high',
+      priority: isVerified ? 'medium' : 'high',
       channels: {
         email: true,
         inApp: true,

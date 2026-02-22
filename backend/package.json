@@ -12,6 +12,10 @@
     "migrate": "node migration/run-migration.js",
     "verify-migration": "node verify-migration.js",
     "test-db": "node test-db-connection.js"
+    ,"db:local:start": "docker compose -f docker/local-postgres.yml up -d",
+    "db:local:stop": "docker compose -f docker/local-postgres.yml down",
+    "db:migrate:local": "node migrations/add_verified_to_verification_enums.js",
+    "start:with-local-db": "node run_server_with_env.js \"postgresql://postgres:password@localhost:15432/real_estate_db\" false false"
   },
   "keywords": [
     "real-estate",
