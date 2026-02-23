@@ -155,13 +155,13 @@ exports.userValidation = {
       body('phone')
         .optional()
         // Accept any string of digits when provided
-        .matches(/^\d+$/)
+          .matches(/^\+?\d+$/)
         .withMessage('Please provide a valid phone number'),
     
     body('phone')
       .optional()
       // Accept any string of digits when provided
-      .matches(/^\d+$/)
+          .matches(/^\+?\d+$/)
       .withMessage('Please provide a valid phone number'),
       .trim()
       .isLength({ min: 2, max: 50 })
