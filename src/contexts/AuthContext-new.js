@@ -38,7 +38,34 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(null);
 
   // Initialize auth state from localStorage on mount
-  }, [accessToken, currentUser]);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const storedAccessToken = localStorage.getItem('accessToken');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        const storedUser = localStorage.getItem('currentUser');
+
+        if (storedAccessToken && storedRefreshToken && storedUser) {
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+          try {
+            setCurrentUser(normalizeUser(JSON.parse(storedUser)));
+          } catch (e) {
+            setCurrentUser(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('currentUser');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   // This is a placeholder function - actual redirect handling is done in ProtectedRoute
   const setAuthRedirect = useCallback((url) => {
