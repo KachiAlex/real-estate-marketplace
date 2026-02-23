@@ -79,7 +79,8 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Registration failed');
       const u = normalizeUser(data.user);
-      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      const tokenVal = data.accessToken || data.token || null;
+      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
       if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
       if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Registration successful');
@@ -94,7 +95,8 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
-      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      const tokenVal = data.accessToken || data.token || null;
+      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
       if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
       if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Login successful');
@@ -125,7 +127,8 @@ export const AuthProvider = ({ children }) => {
       if ((!resp || resp.status === 404) && !resp?.ok) { try { resp = await fetch(altUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }) }); } catch (e) { resp = null; } }
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) { await logout(); return null; }
-      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); return data.accessToken; }
+      const tokenVal = data.accessToken || data.token || null;
+      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); return tokenVal; }
       localStorage.removeItem('accessToken'); setAccessToken(null); return null;
     } catch (e) { console.error(e); await logout(); return null; }
   }, [refreshToken, logout]);
@@ -188,7 +191,8 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Google sign-in failed');
       const u = normalizeUser(data.user);
-      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      const tokenVal = data.accessToken || data.token || null;
+      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
       if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
       if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Signed in with Google');
