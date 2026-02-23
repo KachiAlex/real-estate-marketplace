@@ -14,7 +14,8 @@ const RegisterPage = ({ isModal = false, onClose }) => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    countryCode: '+234',
+    phoneNumber: '',
     password: '',
     confirmPassword: ''
   });
@@ -49,7 +50,8 @@ const RegisterPage = ({ isModal = false, onClose }) => {
         password: form.password,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
-        phone: form.phone.trim(),
+        countryCode: form.countryCode?.trim(),
+        phoneNumber: form.phoneNumber?.trim(),
         ...options
       });
       toast.success('Account created successfully.');
@@ -212,16 +214,43 @@ const RegisterPage = ({ isModal = false, onClose }) => {
           />
         </label>
 
-        <label className="text-sm text-slate-200">
-          <span className="font-medium">Phone (optional)</span>
-          <input
-            type="text"
-            value={form.phone}
-            onChange={handleChange('phone')}
-            className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
-            placeholder="+1 234 567 8900"
-          />
-        </label>
+        <div className="grid gap-2 md:grid-cols-3 items-end">
+          <label className="text-sm text-slate-200 md:col-span-1">
+            <span className="font-medium">Country</span>
+            <select
+              value={form.countryCode}
+              onChange={handleChange('countryCode')}
+              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+            >
+              <option value="+234">🇳🇬 +234 (Nigeria)</option>
+              <option value="+1">🇺🇸 +1 (United States)</option>
+              <option value="+44">🇬🇧 +44 (United Kingdom)</option>
+              <option value="+233">🇬🇭 +233 (Ghana)</option>
+              <option value="+27">🇿🇦 +27 (South Africa)</option>
+              <option value="+91">🇮🇳 +91 (India)</option>
+              <option value="+61">🇦🇺 +61 (Australia)</option>
+              <option value="+20">🇪🇬 +20 (Egypt)</option>
+              <option value="+7">🇷🇺 +7 (Russia)</option>
+              <option value="+49">🇩🇪 +49 (Germany)</option>
+              <option value="+33">🇫🇷 +33 (France)</option>
+              <option value="+82">🇰🇷 +82 (South Korea)</option>
+              <option value="+86">🇨🇳 +86 (China)</option>
+              <option value="+971">🇦🇪 +971 (UAE)</option>
+              <option value="+234">Other (enter manually)</option>
+            </select>
+          </label>
+
+          <label className="text-sm text-slate-200 md:col-span-2">
+            <span className="font-medium">Phone number (no country code)</span>
+            <input
+              type="text"
+              value={form.phoneNumber}
+              onChange={handleChange('phoneNumber')}
+              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+              placeholder="8147704016"
+            />
+          </label>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm text-slate-200">
