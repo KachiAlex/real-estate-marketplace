@@ -36,8 +36,9 @@ const saveEscrowPaymentEntry = (entry) => {
 };
 
 const buildAuthHeaders = async (user) => {
-  const token = user?.token || await getAuthToken();
-  const fallbackEmail = user?.email;
+  // Try multiple token locations for robustness across environments
+  const token = user?.accessToken || user?.token || await getAuthToken() || (typeof window !== 'undefined' ? (localStorage.getItem('accessToken') || localStorage.getItem('token')) : null);
+  const fallbackEmail = user?.email || (user && (user.username || user.email));
 
   if (!token && !fallbackEmail) {
     return null;

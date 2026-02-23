@@ -233,8 +233,8 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   }, [hydratePendingPaymentFromStorage]);
 
   const buildAuthHeaders = async () => {
-    const token = user?.token || await getAuthToken();
-    const fallbackEmail = user?.email;
+    const token = user?.accessToken || user?.token || await getAuthToken() || (typeof window !== 'undefined' ? (localStorage.getItem('accessToken') || localStorage.getItem('token')) : null);
+    const fallbackEmail = user?.email || (user && (user.username || user.email));
 
     if (!token && !fallbackEmail) {
       return null;
