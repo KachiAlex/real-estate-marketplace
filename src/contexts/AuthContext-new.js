@@ -52,18 +52,24 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const tryFetchAuth = async (path, options = {}) => {
-    try {
-      const res = await fetch(getApiUrl(path), options);
-      if (res && res.status !== 404) return res;
-    } catch (e) {
-      // ignore and fallback
-    }
-    try {
-      const alt = path.replace('/auth/jwt', '/auth');
-      return await fetch(getApiUrl(alt), options);
-    } catch (e) {
+      // Prefer the canonical /auth/* endpoints first to avoid noisy 404s,
+      // but fall back to /auth/jwt/* for environments that still expose them.
+      try {
+        const alt = path.replace('/auth/jwt', '/auth');
+        const resAlt = await fetch(getApiUrl(alt), options);
+        if (resAlt && resAlt.status !== 404) return resAlt;
+      } catch (e) {
+        // ignore and try jwt path
+      }
+
+      try {
+        const res = await fetch(getApiUrl(path), options);
+        if (res && res.status !== 404) return res;
+      } catch (e) {
+        // ignore
+      }
+
       return null;
-    }
   };
 
   const register = useCallback(async (payload) => {
