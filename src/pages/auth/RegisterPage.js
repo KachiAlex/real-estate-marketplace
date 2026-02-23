@@ -44,7 +44,14 @@ const RegisterPage = ({ isModal = false, onClose }) => {
       if (roles.includes('vendor') && vendorFiles.length) {
         options.vendorKycDocs = vendorFiles.map(f => ({ url: f.url, name: f.name, publicId: f.publicId }));
       }
-      await register(form.email.trim(), form.password, form.firstName.trim(), form.lastName.trim(), form.phone.trim(), options);
+      await register({
+        email: form.email.trim(),
+        password: form.password,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        phone: form.phone.trim(),
+        ...options
+      });
       toast.success('Account created successfully.');
       // Redirect to intended destination if set (e.g., escrow flow)
       const redirect = sessionStorage.getItem('authRedirect');
