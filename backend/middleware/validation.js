@@ -153,10 +153,18 @@ exports.userValidation = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
       body('phone')
-        .optional()
-        // Accept any string of digits when provided
+          .optional()
+          // Accept any string of digits when provided
           .matches(/^\+?\d+$/)
-        .withMessage('Please provide a valid phone number'),
+          .withMessage('Please provide a valid phone number'),
+        body('countryCode')
+          .optional()
+          .matches(/^\+?\d{1,4}$/)
+          .withMessage('Please provide a valid country code'),
+        body('phoneNumber')
+          .optional()
+          .matches(/^\d+$/)
+          .withMessage('Please provide a valid phone number'),
     
     body('phone')
       .optional()

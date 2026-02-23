@@ -47,7 +47,14 @@ router.post('/register', [
       });
     }
 
-    const { firstName, lastName, email, password, phone } = req.body;
+    let { firstName, lastName, email, password, phone, countryCode, phoneNumber } = req.body;
+    // If countryCode and phoneNumber are provided, normalize into a single phone string
+    if (countryCode && phoneNumber) {
+      const cc = String(countryCode).trim();
+      const pn = String(phoneNumber).trim();
+      const normalizedCC = cc.startsWith('+') ? cc : `+${cc}`;
+      phone = `${normalizedCC}${pn}`;
+    }
 
     // Check if user already exists
     const existingUser = await userService.findByEmail(email);

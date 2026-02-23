@@ -49,7 +49,14 @@ router.post('/register', [
     }
 
     // TEMP LOGGING: capture incoming register requests for debugging
-    const { email, password, firstName, lastName, phone, role, roles, vendorKycDocs } = req.body;
+    let { email, password, firstName, lastName, phone, role, roles, vendorKycDocs, countryCode, phoneNumber } = req.body;
+    // If countryCode and phoneNumber are provided, normalize into a single phone string
+    if (countryCode && phoneNumber) {
+      const cc = String(countryCode).trim();
+      const pn = String(phoneNumber).trim();
+      const normalizedCC = cc.startsWith('+') ? cc : `+${cc}`;
+      phone = `${normalizedCC}${pn}`;
+    }
 
     // Check if user already exists. Use safe fallback raw query if model references missing columns
     let existingUser = null;
