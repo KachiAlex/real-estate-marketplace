@@ -370,32 +370,43 @@ export const VendorProvider = ({ children }) => {
         }
 
         // Refresh authoritative user object from server so frontend reflects persisted role
-        try {
-          const token = auth && auth.accessToken ? auth.accessToken : (await getAuthToken());
-          if (token) {
-            const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
-              method: 'GET',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (meResp.ok) {
-              const meData = await meResp.json();
-              const serverUser = meData.user || meData;
-              try {
-                if (auth && typeof auth.setUserLocally === 'function') {
-                  auth.setUserLocally(serverUser);
+            try {
+              const token = auth && auth.accessToken ? auth.accessToken : (await getAuthToken());
+              if (token) {
+                // Try jwt/me then fallback to /auth/me
+                let meResp = null;
+                try {
+                  meResp = await fetch(getApiUrl('/auth/jwt/me'), { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
+                } catch (e) {
+                  meResp = null;
                 }
-              } catch (e) {
-                console.warn('Failed to set server user locally after vendor update', e);
+                if (!meResp || meResp.status === 404) {
+                  try {
+                    meResp = await fetch(getApiUrl('/auth/me'), { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
+                  } catch (e) {
+                    meResp = null;
+                  }
+                }
+
+                if (meResp && meResp.ok) {
+                  const meData = await meResp.json().catch(() => ({}));
+                  const serverUser = meData.user || meData;
+                  try {
+                    if (auth && typeof auth.setUserLocally === 'function') {
+                      auth.setUserLocally(serverUser);
+                    }
+                  } catch (e) {
+                    console.warn('Failed to set server user locally after vendor update', e);
+                  }
+                  // Clear any local fallback onboarding now that server persisted the profile
+                  try { localStorage.removeItem('onboardedVendor'); } catch (e) { /* ignore */ }
+                  try { window.dispatchEvent(new CustomEvent('vendor:localSyncComplete', { detail: { email: serverUser?.email || user?.email } })); } catch (e) { /* ignore */ }
+                  try { toast.success('User refreshed from server'); } catch (e) { /* ignore */ }
+                }
               }
-              // Clear any local fallback onboarding now that server persisted the profile
-              try { localStorage.removeItem('onboardedVendor'); } catch (e) { /* ignore */ }
-              try { window.dispatchEvent(new CustomEvent('vendor:localSyncComplete', { detail: { email: serverUser?.email || user?.email } })); } catch (e) { /* ignore */ }
-              try { toast.success('User refreshed from server'); } catch (e) { /* ignore */ }
+            } catch (e) {
+              console.warn('Failed to refresh currentUser after vendor update', e);
             }
-          }
-        } catch (e) {
-          console.warn('Failed to refresh currentUser after vendor update', e);
-        }
 
         try { toast.success('Vendor profile updated successfully!'); } catch (e) { /* ignore */ }
         return { success: true };

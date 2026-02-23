@@ -68,11 +68,29 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Helper: try `/auth/jwt/*` first then fall back to `/auth/*` when 404 or network error
+  const tryFetchAuth = async (path, options = {}) => {
+    try {
+      const resp = await fetch(getApiUrl(path), options);
+      if (resp && resp.status !== 404) return resp;
+    } catch (e) {
+      // network failed, try fallback
+    }
+
+    // fallback to non-jwt path
+    try {
+      const alt = path.replace('/auth/jwt', '/auth');
+      return await fetch(getApiUrl(alt), options);
+    } catch (e) {
+      return null;
+    }
+  };
+
   // Register new user
   const register = useCallback(async (email, password, firstName, lastName, phone = '', options = {}) => {
     try {
       setLoading(true);
-      const response = await fetch(getApiUrl('/auth/jwt/register'), {
+      const response = await tryFetchAuth('/auth/jwt/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -121,7 +139,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       let response;
       try {
-        response = await fetch(getApiUrl('/auth/jwt/login'), {
+        response = await tryFetchAuth('/auth/jwt/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -231,7 +249,7 @@ export const AuthProvider = ({ children }) => {
       // Call logout endpoint (optional, mainly for logging)
       if (accessToken) {
         try {
-          await fetch(getApiUrl('/auth/jwt/logout'), {
+          await tryFetchAuth('/auth/jwt/logout', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -270,7 +288,7 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
-      const response = await fetch(getApiUrl('/auth/jwt/refresh'), {
+      const response = await tryFetchAuth('/auth/jwt/refresh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -319,7 +337,7 @@ export const AuthProvider = ({ children }) => {
         return updatedUser;
       }
 
-      const response = await fetch(getApiUrl('/auth/jwt/switch-role'), {
+      const response = await tryFetchAuth('/auth/jwt/switch-role', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -431,7 +449,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [accessToken, currentUser]);
 
-  // Set auth redirect URL (for future redirect after login)
+        const response = await tryFetchAuth('/auth/jwt/update-profile', {
   // This is a placeholder function - actual redirect handling is done in ProtectedRoute
   const setAuthRedirect = useCallback((url) => {
     // Store the redirect URL for after login
@@ -502,7 +520,7 @@ export const AuthProvider = ({ children }) => {
           if (e.origin !== window.location.origin) return;
           const data = e.data || {};
           if (data.type === 'google_oauth_result') {
-            clearTimeout(timer);
+        const cfgResp = await tryFetchAuth('/auth/jwt/google-config');
             window.removeEventListener('message', handler);
             resolve(data);
           }
@@ -546,7 +564,7 @@ export const AuthProvider = ({ children }) => {
   // Developer helper: allow other contexts to create a temporary local session
   const loginLocally = useCallback((userObj) => {
     const normalized = normalizeUser(userObj);
-    localStorage.setItem('accessToken', 'mock-access-token');
+      const resp = await tryFetchAuth('/auth/jwt/google', {
     localStorage.setItem('refreshToken', 'mock-refresh-token');
     localStorage.setItem('currentUser', JSON.stringify(normalized));
     setAccessToken('mock-access-token');
@@ -588,7 +606,7 @@ export const AuthProvider = ({ children }) => {
     registerAsVendor,
     signInWithGooglePopup,
     setAuthRedirect,
-    // Aliases and computed properties
+          await tryFetchAuth('/auth/jwt/logout', {
     user: currentUser,
     isBuyer,
     isVendor
