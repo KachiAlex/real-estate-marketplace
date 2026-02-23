@@ -64,12 +64,43 @@ client.interceptors.response.use(
           localStorage.removeItem('refreshToken');
           return Promise.reject(error);
         }
+        // Call refresh endpoint (try jwt path first, then fallback to non-jwt)
+        const performRefresh = async (token) => {
+          const base = API_BASE.replace(/\/api$/, '');
+          const jwtUrl = `${base}/auth/jwt/refresh`;
+          const altUrl = `${base}/auth/refresh`;
+          try {
+            const r = await axios.post(jwtUrl, { refreshToken: token }, { withCredentials: true });
+            if (r?.data) return r.data;
+            if (r?.status === 404) {
+              const r2 = await axios.post(altUrl, { refreshToken: token }, { withCredentials: true });
+              return r2?.data || null;
+            }
+            return r?.data || null;
+          } catch (e) {
+            // If first call returned 404 or failed, try fallback once
+            if (e?.response?.status === 404) {
+              try {
+                const r2 = await axios.post(altUrl, { refreshToken: token }, { withCredentials: true });
+                return r2?.data || null;
+              } catch (e2) {
+                return null;
+              }
+            }
+            // For other errors, attempt fallback as a last resort
+            try {
+              const r2 = await axios.post(altUrl, { refreshToken: token }, { withCredentials: true });
+              return r2?.data || null;
+            } catch (e2) {
+              return null;
+            }
+          }
+        };
 
-        // Call refresh endpoint (backend returns new accessToken)
-        const resp = await axios.post(`${API_BASE.replace(/\/api$/, '')}/auth/jwt/refresh`, { refreshToken }, { withCredentials: true });
+        const resp = await performRefresh(refreshToken);
 
-        if (resp?.data?.accessToken) {
-          const newToken = resp.data.accessToken;
+        if (resp && resp.accessToken) {
+          const newToken = resp.accessToken;
           localStorage.setItem('accessToken', newToken);
           // resolve queued requests
           processQueue(null, newToken);
