@@ -35,7 +35,7 @@ router.post('/register', [
   body('lastName').trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
   body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').optional().matches(/^(\+0?1\s)?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/).withMessage('Please provide a valid phone number')
+  body('phone').optional().matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
   try {
     // Check for validation errors
@@ -283,7 +283,7 @@ router.get('/me', protect, async (req, res) => {
 router.put('/profile', protect, [
   body('firstName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
   body('lastName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
-  body('phone').optional().matches(/^(\+0?1\s)?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/).withMessage('Please provide a valid phone number')
+  body('phone').optional().matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
   try {
     // Check for validation errors
