@@ -79,10 +79,9 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Registration failed');
       const u = normalizeUser(data.user);
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(u));
-      setAccessToken(data.accessToken); setRefreshToken(data.refreshToken); setCurrentUser(u);
+      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
+      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Registration successful');
       return u;
     } catch (e) { toast.error(e.message || 'Registration failed'); throw e; } finally { setLoading(false); }
@@ -95,10 +94,9 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(u));
-      setAccessToken(data.accessToken); setRefreshToken(data.refreshToken); setCurrentUser(u);
+      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
+      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Login successful');
       return u;
     } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }
@@ -127,7 +125,8 @@ export const AuthProvider = ({ children }) => {
       if ((!resp || resp.status === 404) && !resp?.ok) { try { resp = await fetch(altUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }) }); } catch (e) { resp = null; } }
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) { await logout(); return null; }
-      localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); return data.accessToken;
+      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); return data.accessToken; }
+      localStorage.removeItem('accessToken'); setAccessToken(null); return null;
     } catch (e) { console.error(e); await logout(); return null; }
   }, [refreshToken, logout]);
 
@@ -189,8 +188,9 @@ export const AuthProvider = ({ children }) => {
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Google sign-in failed');
       const u = normalizeUser(data.user);
-      localStorage.setItem('accessToken', data.accessToken); localStorage.setItem('refreshToken', data.refreshToken); localStorage.setItem('currentUser', JSON.stringify(u));
-      setAccessToken(data.accessToken); setRefreshToken(data.refreshToken); setCurrentUser(u);
+      if (data.accessToken) { localStorage.setItem('accessToken', data.accessToken); setAccessToken(data.accessToken); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
+      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
+      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
       toast.success('Signed in with Google');
       return u;
     } catch (e) { toast.error(e.message || 'Google sign-in failed'); throw e; } finally { setLoading(false); }

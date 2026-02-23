@@ -14,8 +14,9 @@ export const Login = () => {
     setError('');
     try {
       const resp = await client.post('/auth/login', { email, password });
-      if (resp.data && (resp.data.token || resp.data.accessToken)) {
-        localStorage.setItem('accessToken', resp.data.token || resp.data.accessToken);
+      const token = resp.data?.token ?? resp.data?.accessToken ?? resp.data?.access_token;
+      if (token) {
+        localStorage.setItem('accessToken', token);
         window.location.href = '/dashboard';
       } else {
         setError(resp.data?.message || 'Login failed');
