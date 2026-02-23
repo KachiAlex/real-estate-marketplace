@@ -67,8 +67,9 @@ client.interceptors.response.use(
         // Call refresh endpoint (try jwt path first, then fallback to non-jwt)
         const performRefresh = async (token) => {
           const base = API_BASE.replace(/\/api$/, '');
-          const jwtUrl = `${base}/auth/jwt/refresh`;
-          const altUrl = `${base}/auth/refresh`;
+          // Ensure refresh endpoints include the /api prefix (server mounts routes under /api)
+          const jwtUrl = `${base}/api/auth/jwt/refresh`;
+          const altUrl = `${base}/api/auth/refresh`;
           try {
             const r = await axios.post(jwtUrl, { refreshToken: token }, { withCredentials: true });
             if (r?.data) return r.data;
