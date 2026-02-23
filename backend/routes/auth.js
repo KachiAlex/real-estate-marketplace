@@ -49,7 +49,7 @@ router.post('/register', [
       });
     }
 
-    let { firstName, lastName, email, password, phone, countryCode, phoneNumber } = req.body;
+    let { firstName, lastName, email, password, phone, countryCode, phoneNumber, roles, role } = req.body;
     // If countryCode and phoneNumber are provided, normalize into a single phone string
     if (countryCode && phoneNumber) {
       const cc = String(countryCode).trim();
@@ -57,6 +57,10 @@ router.post('/register', [
       const normalizedCC = cc.startsWith('+') ? cc : `+${cc}`;
       phone = `${normalizedCC}${pn}`;
     }
+    // Normalize roles using roleUtils
+    const { normalizeRoles } = require('../utils/roleUtils');
+    const resolvedRoles = normalizeRoles(Array.isArray(roles) && roles.length ? roles : role ? [role] : ['user']);
+    const primaryRole = resolvedRoles.includes('vendor') ? 'vendor' : (resolvedRoles[0] || 'user');
 
     // Check if user already exists
     const existingUser = await userService.findByEmail(email);
@@ -73,7 +77,10 @@ router.post('/register', [
       lastName,
       email,
       password,
-      phone
+      phone,
+      role: primaryRole,
+      roles: resolvedRoles,
+      activeRole: primaryRole
     });
 
     // Generate token

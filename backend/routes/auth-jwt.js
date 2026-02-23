@@ -143,16 +143,9 @@ router.post('/register', [
     const REQUIRE_KYC_ON_REGISTER = (process.env.REQUIRE_KYC_ON_REGISTER || 'false') === 'true';
 
     // Resolve roles array and primary role
-    let resolvedRoles = [];
-    if (Array.isArray(roles) && roles.length) {
-      resolvedRoles = roles.map(r => String(r).trim()).filter(Boolean);
-    } else if (role) {
-      resolvedRoles = [String(role).trim()];
-    } else {
-      resolvedRoles = ['user'];
-    }
-    // Always include the base 'user' role so vendors remain buyers as well
-    if (!resolvedRoles.includes('user')) resolvedRoles.push('user');
+    const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
+    let resolvedRoles = normalizeRoles(Array.isArray(roles) && roles.length ? roles : role ? [role] : ['user']);
+    const primaryRole = chooseActiveRole(null, resolvedRoles.includes('vendor') ? 'vendor' : resolvedRoles[0], resolvedRoles);
     const primaryRole = resolvedRoles.includes('vendor') ? 'vendor' : (resolvedRoles[0] || 'user');
 
     // Build initial vendorData if user selected vendor at registration and provided KYC docs
