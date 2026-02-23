@@ -151,6 +151,8 @@ router.post('/register', [
     } else {
       resolvedRoles = ['user'];
     }
+    // Always include the base 'user' role so vendors remain buyers as well
+    if (!resolvedRoles.includes('user')) resolvedRoles.push('user');
     const primaryRole = resolvedRoles.includes('vendor') ? 'vendor' : (resolvedRoles[0] || 'user');
 
     // Build initial vendorData if user selected vendor at registration and provided KYC docs
