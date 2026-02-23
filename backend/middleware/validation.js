@@ -152,11 +152,11 @@ exports.userValidation = {
       .withMessage('Password must be at least 6 characters long')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-    
-    body('phone')
-      .optional()
-      .matches(/^(\+234|234|0)?[789][01]\d{8}$/)
-      .withMessage('Please provide a valid Nigerian phone number'),
+      body('phone')
+        .optional()
+        // Accept common Nigerian phone formats: +234XXXXXXXXXX, 234XXXXXXXXXX, 0XXXXXXXXXX, or XXXXXXXXXX
+        .matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/)
+        .withMessage('Please provide a valid phone number'),
     
     body('role')
       .optional()
@@ -187,6 +187,11 @@ exports.userValidation = {
       .optional()
       .matches(/^(\+234|234|0)?[789][01]\d{8}$/)
       .withMessage('Please provide a valid Nigerian phone number'),
+      body('phone')
+        .optional()
+        // Accept common Nigerian phone formats: +234XXXXXXXXXX, 234XXXXXXXXXX, 0XXXXXXXXXX, or XXXXXXXXXX
+        .matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/)
+        .withMessage('Please provide a valid phone number'),
     
     body('role')
       .optional()
