@@ -7,7 +7,7 @@ import { getApiUrl } from '../utils/apiConfig';
 import { getAuthToken } from '../utils/authToken';
 
 const Profile = () => {
-  const { currentUser, updateUserProfile } = useAuth();
+  const { currentUser, updateUserProfile, addRole } = useAuth();
   const user = currentUser;
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -22,7 +22,10 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
   const [success, setSuccess] = useState(false);
+  const [kycUploading, setKycUploading] = useState(false);
+  const [kycFiles, setKycFiles] = useState([]);
   const fileInputRef = useRef(null);
+  const kycInputRef = useRef(null);
 
   // Sync form data and avatar preview when user changes
   // But don't overwrite if we have a preview that's different (user just uploaded)
@@ -158,6 +161,10 @@ const Profile = () => {
     fileInputRef.current?.click();
   };
 
+  const handleKycSelect = () => {
+    kycInputRef.current?.click();
+  };
+
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -259,6 +266,58 @@ const Profile = () => {
     } catch (error) {
       console.error('Error removing avatar:', error);
       toast.error('Failed to remove profile picture');
+    }
+  };
+
+  const handleKycChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files || files.length === 0) return;
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = [
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain',
+      'image/jpeg', 'image/jpg', 'image/png'
+    ];
+
+    for (const f of files) {
+      if (!allowedTypes.includes(f.type)) {
+        toast.error('Unsupported file format for KYC');
+        if (kycInputRef.current) kycInputRef.current.value = '';
+        return;
+      }
+      if (f.size > maxSize) {
+        toast.error('Each KYC file must be smaller than 10MB');
+        if (kycInputRef.current) kycInputRef.current.value = '';
+        return;
+      }
+    }
+
+    setKycFiles(files);
+    setKycUploading(true);
+    try {
+      const token = await getAuthToken();
+      if (!token) throw new Error('Please sign in to submit KYC documents');
+
+      const formData = new FormData();
+      files.forEach(f => formData.append('documents', f));
+
+      const resp = await fetch(getApiUrl('/upload/vendor/kyc'), {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (!resp || !resp.ok) throw new Error(data.message || 'KYC upload failed');
+
+      toast.success('KYC uploaded');
+      try { await addRole('vendor', true); } catch (err) { console.warn('addRole failed', err); }
+    } catch (err) {
+      console.error('KYC upload error', err);
+      toast.error(err.message || 'KYC upload failed');
+    } finally {
+      setKycUploading(false);
+      if (kycInputRef.current) kycInputRef.current.value = '';
     }
   };
 
@@ -632,7 +691,48 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Quick Actions section removed as requested */}
+            {/* Become Vendor / KYC Upload */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendor Onboarding</h3>
+              <div className="space-y-3">
+                {user?.roles?.includes('vendor') ? (
+                  <div>
+                    <p className="text-sm text-gray-600">You are a vendor</p>
+                    <p className="text-sm text-gray-500">KYC status: {user?.vendorData?.kycStatus || 'N/A'}</p>
+                    <button
+                      type="button"
+                      onClick={handleKycSelect}
+                      disabled={kycUploading}
+                      className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {kycUploading ? 'Uploading...' : 'Upload Additional KYC Documents'}
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-gray-600">Become a vendor to list properties and receive payments.</p>
+                    <button
+                      type="button"
+                      onClick={handleKycSelect}
+                      disabled={kycUploading}
+                      className="mt-3 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {kycUploading ? 'Uploading...' : 'Become a Vendor (Submit KYC)'}
+                    </button>
+                  </div>
+                )}
+
+                <input
+                  ref={kycInputRef}
+                  type="file"
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/jpg,image/png"
+                  onChange={handleKycChange}
+                  className="hidden"
+                  multiple
+                  disabled={kycUploading}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
