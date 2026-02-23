@@ -7,10 +7,10 @@ const securityConfig = {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://paystack.com', 'https://js.paystack.co'],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://js.paystack.co'],
         imgSrc: ["'self'", 'data:', 'https:', 'http:'],
-        connectSrc: ["'self'", 'https://api.cloudinary.com', 'https://api-kzs3jdpe7a-uc.a.run.app'],
+        connectSrc: ["'self'", 'https://api.cloudinary.com', 'https://api-kzs3jdpe7a-uc.a.run.app', 'https://api.paystack.co'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'", 'https://res.cloudinary.com'],
