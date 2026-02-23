@@ -224,6 +224,37 @@ export const AuthProvider = ({ children }) => {
 
   const registerAsVendor = useCallback(async (vendorInfo) => { try { return await switchRole('vendor'); } catch (e) { throw e; } }, [switchRole]);
 
+  const manageRole = useCallback(async ({ action, role, setActive = false, targetId = null }) => {
+    if (!accessToken) throw new Error('Not authenticated');
+    const id = targetId || currentUser?.id;
+    if (!id) throw new Error('User ID missing');
+    try {
+      const resp = await fetch(getApiUrl(`/users/${id}/roles`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({ action, role, setActive })
+      });
+      const data = resp ? await resp.json().catch(() => ({})) : {};
+      if (!resp || !resp.ok) throw new Error(data.message || 'Role update failed');
+      const updatedUser = normalizeUser(data.user || data);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      toast.success('Roles updated');
+      return updatedUser;
+    } catch (e) {
+      toast.error(e.message || 'Role update failed');
+      throw e;
+    }
+  }, [accessToken, currentUser]);
+
+  const addRole = useCallback(async (role, setActive = false, targetId = null) => {
+    return await manageRole({ action: 'add', role, setActive, targetId });
+  }, [manageRole]);
+
+  const removeRole = useCallback(async (role, targetId = null) => {
+    return await manageRole({ action: 'remove', role, setActive: false, targetId });
+  }, [manageRole]);
+
   const value = {
     currentUser,
     loading,
@@ -236,6 +267,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshAccessToken,
     switchRole,
+    addRole,
+    removeRole,
     updateUserProfile,
     registerAsVendor,
     signInWithGooglePopup,
