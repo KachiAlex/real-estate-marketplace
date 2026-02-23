@@ -35,8 +35,8 @@ router.post('/register', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  // Accept E.164-like phone numbers (optional): +{countrycode}{number} (7-15 digits) or local variants
-  body('phone').optional().matches(/^\+?\d{7,15}$/).withMessage('Please provide a valid phone number')
+  // Accept any numeric string for phone (optional)
+  body('phone').optional().matches(/^\d+$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

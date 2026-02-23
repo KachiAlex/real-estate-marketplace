@@ -154,19 +154,15 @@ exports.userValidation = {
       .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
       body('phone')
         .optional()
-        // Accept common Nigerian phone formats: +234XXXXXXXXXX, 234XXXXXXXXXX, 0XXXXXXXXXX, or XXXXXXXXXX
-        .matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/)
+        // Accept any string of digits when provided
+        .matches(/^\d+$/)
         .withMessage('Please provide a valid phone number'),
     
-    body('role')
+    body('phone')
       .optional()
-      .isIn(['user', 'agent', 'admin'])
-      .withMessage('Role must be user, agent, or admin')
-  ],
-
-  update: [
-    body('firstName')
-      .optional()
+      // Accept any string of digits when provided
+      .matches(/^\d+$/)
+      .withMessage('Please provide a valid phone number'),
       .trim()
       .isLength({ min: 2, max: 50 })
       .withMessage('First name must be between 2 and 50 characters'),
