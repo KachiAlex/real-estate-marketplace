@@ -38,180 +38,173 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(null);
 
   // Initialize auth state from localStorage on mount
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedAccessToken = localStorage.getItem('accessToken');
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-        const storedUser = localStorage.getItem('currentUser');
+  }, [accessToken, currentUser]);
 
-        if (storedAccessToken && storedRefreshToken && storedUser) {
-          setAccessToken(storedAccessToken);
-          setRefreshToken(storedRefreshToken);
-          try {
-            setCurrentUser(normalizeUser(JSON.parse(storedUser)));
-          } catch (e) {
-            setCurrentUser(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        // Clear corrupted data
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('currentUser');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
+  // This is a placeholder function - actual redirect handling is done in ProtectedRoute
+  const setAuthRedirect = useCallback((url) => {
+    if (url) sessionStorage.setItem('authRedirect', url);
   }, []);
 
-  // Helper: try `/auth/jwt/*` first then fall back to `/auth/*` when 404 or network error
-  const tryFetchAuth = async (path, options = {}) => {
+  // Register as vendor (uses switchRole)
+  const registerAsVendor = useCallback(async (vendorInfo) => {
     try {
-      const resp = await fetch(getApiUrl(path), options);
-      if (resp && resp.status !== 404) return resp;
-    } catch (e) {
-      // network failed, try fallback
+      const result = await switchRole('vendor');
+      return { success: true, user: result, navigateTo: '/vendor/dashboard' };
+    } catch (error) {
+      console.error('Vendor registration error:', error);
+      return { success: false, error: error.message };
     }
+  }, [switchRole]);
 
-    // fallback to non-jwt path
-    try {
-      const alt = path.replace('/auth/jwt', '/auth');
-      return await fetch(getApiUrl(alt), options);
-    } catch (e) {
-      return null;
-    }
-  };
-
-  // Register new user
-  const register = useCallback(async (email, password, firstName, lastName, phone = '', options = {}) => {
+  // Sign in with Google via popup and exchange id_token for JWT
+  const signInWithGooglePopup = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await tryFetchAuth('/auth/jwt/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName,
-          phone: phone || null,
-          roles: options.roles || ['user'],
-          vendorKycDocs: options.vendorKycDocs || undefined
-        })
-      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+      // Fetch client ID from backend config endpoint
+      let clientId = null;
+      try {
+        const cfgResp = await tryFetchAuth('/auth/jwt/google-config');
+        if (cfgResp && cfgResp.ok) {
+          const cfg = await cfgResp.json();
+          clientId = cfg.clientId || cfg.client_id || cfg.clientID || null;
+        }
+      } catch (e) {
+        // ignore
       }
 
-      // Store tokens and normalized user info
-      const normalized = normalizeUser(data.user);
+      if (!clientId) throw new Error('Google client ID is not configured');
+
+      const redirectUri = `${window.location.origin}/auth/google-popup-callback`;
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'id_token token',
+        scope: 'openid profile email',
+        prompt: 'select_account'
+      });
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+      const width = 500;
+      const height = 650;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+      const popup = window.open(authUrl, 'google_oauth', `width=${width},height=${height},left=${left},top=${top}`);
+      if (!popup) throw new Error('Popup blocked by browser');
+
+      const result = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener('message', handler);
+          reject(new Error('Timed out waiting for Google authentication'));
+        }, 2 * 60 * 1000);
+
+        const handler = (e) => {
+          if (e.origin !== window.location.origin) return;
+          const data = e.data || {};
+          if (data.type === 'google_oauth_result') {
+            window.removeEventListener('message', handler);
+            clearTimeout(timer);
+            resolve(data);
+          }
+        };
+
+        window.addEventListener('message', handler);
+      });
+
+      const idToken = result?.idToken || result?.id_token;
+      if (!idToken) throw new Error('No ID token returned from Google');
+
+      const resp = await tryFetchAuth('/auth/jwt/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ googleToken: idToken })
+      });
+
+      const data = resp ? await resp.json().catch(() => ({})) : {};
+      if (!resp || !resp.ok) throw new Error(data.message || 'Google sign-in failed');
+
+      // Persist tokens and user
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('currentUser', JSON.stringify(normalized));
+      localStorage.setItem('currentUser', JSON.stringify(normalizeUser(data.user)));
 
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
-      setCurrentUser(normalized);
+      setCurrentUser(normalizeUser(data.user));
 
-      toast.success('Registration successful!');
+      toast.success('Signed in with Google');
       return data.user;
     } catch (error) {
-      console.error('Register error:', error);
-      toast.error(error.message || 'Registration failed');
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'Google sign-in failed');
       throw error;
     } finally {
       setLoading(false);
     }
+  }, [switchRole]);
+
+  // Developer helper: allow other contexts to create a temporary local session
+  const loginLocally = useCallback((userObj) => {
+    const normalized = normalizeUser(userObj);
+    localStorage.setItem('accessToken', 'mock-access-token');
+    localStorage.setItem('refreshToken', 'mock-refresh-token');
+    localStorage.setItem('currentUser', JSON.stringify(normalized));
+    setAccessToken('mock-access-token');
+    setRefreshToken('mock-refresh-token');
+    setCurrentUser(normalized);
+    toast.success('Signed in locally');
+    return normalized;
   }, []);
 
-  // Login user
-  const login = useCallback(async (email, password) => {
+  // Update the stored/current user object in-memory and in localStorage without altering tokens
+  const setUserLocally = useCallback((partialUser) => {
     try {
-      setLoading(true);
-      let response;
-      try {
-        response = await tryFetchAuth('/auth/jwt/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email,
-            password
-          })
-        });
-      } catch (networkErr) {
-        // Network-level failure (backend down / CORS / DNS) — we'll attempt a local fallback below
-        console.warn('Login network error, attempting local fallback if available', networkErr);
-        response = null;
-      }
+      const merged = normalizeUser({ ...(currentUser || {}), ...(partialUser || {}) });
+      merged.roles = Array.isArray(merged.roles) ? Array.from(new Set(merged.roles)) : merged.roles || [];
+      if (!merged.activeRole && merged.roles && merged.roles.length > 0) merged.activeRole = merged.roles[0];
+      localStorage.setItem('currentUser', JSON.stringify(merged));
+      setCurrentUser(merged);
+      return merged;
+    } catch (e) {
+      console.warn('setUserLocally failed', e);
+      return null;
+    }
+  }, [currentUser]);
 
-      // If we got a response, try to parse it; otherwise fall through to fallback handling
-      const data = response ? await response.json().catch(() => ({})) : {};
+  const value = {
+    currentUser,
+    loading,
+    accessToken,
+    refreshToken,
+    register,
+    login,
+    loginLocally,
+    setUserLocally,
+    logout,
+    refreshAccessToken,
+    switchRole,
+    updateUserProfile,
+    registerAsVendor,
+    signInWithGooglePopup,
+    setAuthRedirect,
+    user: currentUser,
+    isBuyer,
+    isVendor
+  };
 
-      if (response && response.ok) {
-        // Store tokens and normalized user info
-        const normalized = normalizeUser(data.user);
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        localStorage.setItem('currentUser', JSON.stringify(normalized));
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-        setAccessToken(data.accessToken);
-        setRefreshToken(data.refreshToken);
-        setCurrentUser(normalized);
-        // Notify other contexts that a login just occurred (used to auto-sync local onboarding)
-        try { window.dispatchEvent(new CustomEvent('auth:login', { detail: normalized })); } catch (e) { /* ignore */ }
-
-        toast.success('Login successful!');
-        return data.user;
-      }
-
-      // Backend returned a server error (5xx) or network failed
-      const backendFailed = !response || (response.status >= 500 && response.status < 600);
-      if (backendFailed) {
-        // In non-production only: allow local fallbacks for developer/E2E convenience
-        if (process.env.NODE_ENV !== 'production') {
-          // 1) If there is an onboarded vendor with the same email, allow a temporary local login (dev/offline mode)
-          try {
-            const onboarded = JSON.parse(localStorage.getItem('onboardedVendor') || 'null');
-            if (onboarded && onboarded.contactInfo && String(onboarded.contactInfo.email || '').toLowerCase() === String(email || '').toLowerCase()) {
-              const localUser = normalizeUser({
-                id: onboarded.id || `vendor-anon-${Date.now()}`,
-                email: onboarded.contactInfo.email || '',
-                displayName: onboarded.businessName || onboarded.contactInfo.email || 'Vendor (local)',
-                role: 'vendor',
-                vendorData: onboarded
-              });
-
-              // Persist a mock session (LOCAL DEV ONLY fallback)
-              localStorage.setItem('accessToken', 'mock-access-token');
-              localStorage.setItem('refreshToken', 'mock-refresh-token');
-              localStorage.setItem('currentUser', JSON.stringify(localUser));
-
-              setAccessToken('mock-access-token');
-              setRefreshToken('mock-refresh-token');
-              setCurrentUser(localUser);
-
-              toast.success('Logged in locally (backend auth unavailable)');
-              return localUser;
-            }
-          } catch (e) {
-            // ignore parse errors and continue to generic error below
-          }
-
-          // 2) If there is a stored currentUser that matches the email, restore it locally
-          try {
-            const stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            if (stored && String(stored.email || '').toLowerCase() === String(email || '').toLowerCase()) {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    console.warn('useAuth called outside AuthProvider. Using default values.');
+    return defaultContextValue;
+  }
+  return context;
+};
               const restored = normalizeUser(stored);
               localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'mock-access-token');
               localStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || 'mock-refresh-token');
