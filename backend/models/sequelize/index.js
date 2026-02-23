@@ -23,4 +23,5 @@ module.exports = {
   DisputeResolution: require('./DisputeResolution'),
   InspectionRequest: require('./InspectionRequest'),
   AdminSettings: require('./AdminSettings')
+  ,Payment: require('./Payment')
 };
