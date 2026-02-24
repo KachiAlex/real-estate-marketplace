@@ -108,7 +108,7 @@ router.post(
           const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
 
           // If debug query flag is present, include raw diagnostics from the upload service for investigation
-          if (req.query && req.query.debug === 'true') {
+          if (process.env.UPLOAD_DEBUG_ALWAYS === 'true' || (req.query && req.query.debug === 'true')) {
             try {
               console.log('DEBUG uploadMultipleFiles result:', JSON.stringify(result && result.data));
             } catch (e) {}
@@ -175,7 +175,7 @@ router.post(
         }
       }
 
-      if (req.query && req.query.debug === 'true') {
+      if (process.env.UPLOAD_DEBUG_ALWAYS === 'true' || (req.query && req.query.debug === 'true')) {
         return res.json({ success: true, data: { uploaded }, debug: lastUploadResult });
       }
 
