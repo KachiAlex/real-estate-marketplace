@@ -156,6 +156,18 @@ const uploadMultipleFiles = async (files, category = 'images', options = {}) => 
       // ignore any issues building debug info
     }
 
+    // If there were failures, log detailed reasons to help debugging Cloudinary responses
+    try {
+      if (failed.length > 0) {
+        const detailed = results
+          .filter(r => r.status === 'rejected')
+          .map(r => ({ message: r.reason && (r.reason.message || String(r.reason)), stack: r.reason && r.reason.stack }));
+        errorLogger(new Error('Some uploads failed'), null, { context: 'uploadMultipleFiles failures', detailed });
+      }
+    } catch (logErr) {
+      // best effort
+    }
+
     return {
       success: successful.length > 0,
       data
