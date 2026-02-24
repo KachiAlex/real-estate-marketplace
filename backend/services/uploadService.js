@@ -22,13 +22,26 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       throw new Error('Cloudinary is not configured. Please set environment variables.');
     }
 
+    // Normalize category keys to match `securityConfig.allowedFileTypes` and `fileSizeLimits`
+    const normalizeCategory = (cat) => {
+      const c = String(cat || '').toLowerCase();
+      if (c.includes('image') || c === 'avatars' || c === 'avatars') return 'images';
+      if (c.includes('video')) return 'videos';
+      if (c.includes('mortgage')) return 'mortgageDocument';
+      if (c.includes('document')) return 'documents';
+      return c.endsWith('s') ? c : `${c}s`;
+    };
+
+    const securityCategory = normalizeCategory(category);
+
     // Validate file type
-    if (!isValidFileType(file.mimetype, category.replace('s', ''))) {
-      throw new Error(`Invalid file type. Allowed types: ${uploadOptions[category]?.allowed_formats?.join(', ')}`);
+    if (!isValidFileType(file.mimetype, securityCategory)) {
+      const allowed = (require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []).map(Boolean);
+      throw new Error(`Invalid file type. Allowed types: ${(require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []).map(t => t.split('/').pop()).join(', ')}`);
     }
 
     // Validate file size
-    if (!isValidFileSize(file.size, category.replace('s', ''))) {
+    if (!isValidFileSize(file.size, securityCategory)) {
       const maxSizeMB = (uploadOptions[category]?.max_file_size || 10485760) / 1048576;
       throw new Error(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
     }
