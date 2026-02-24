@@ -104,6 +104,11 @@ router.post(
           }
           // Ensure original filenames are preserved in response (uploadMultipleFiles returns data without originalname)
           const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
+
+          // If debug query flag is present, include raw diagnostics from the upload service for investigation
+          if (req.query && req.query.debug === 'true') {
+            return res.json({ success: true, data: { uploaded: uploadedWithNames, diagnostics: result && result.data } });
+          }
           // If the request included an authenticated user, attach uploaded docs to their vendorData
           if (req.user && req.user.id) {
             try {
