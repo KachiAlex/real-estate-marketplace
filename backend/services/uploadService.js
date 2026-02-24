@@ -113,14 +113,23 @@ const uploadMultipleFiles = async (files, category = 'images', options = {}) => 
       console.warn('uploadMultipleFiles - some uploads failed:', failed);
     }
 
+    const data = {
+      uploaded: successful,
+      failed,
+      totalUploaded: successful.length,
+      totalFailed: failed.length
+    };
+
+    // Include lightweight debug info about each promise result to aid investigation
+    try {
+      data.results = results.map(r => ({ status: r.status, reason: r.reason ? (r.reason.message || String(r.reason)) : undefined, value: r.status === 'fulfilled' ? r.value && r.value.data : undefined }));
+    } catch (e) {
+      // ignore any issues building debug info
+    }
+
     return {
       success: successful.length > 0,
-      data: {
-        uploaded: successful,
-        failed,
-        totalUploaded: successful.length,
-        totalFailed: failed.length
-      }
+      data
     };
   } catch (error) {
     errorLogger(error, null, { context: 'Multiple file upload' });
