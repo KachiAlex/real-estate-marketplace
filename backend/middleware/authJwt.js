@@ -30,8 +30,8 @@ const verifyToken = (req, res, next) => {
       process.env.JWT_SECRET || 'your-secret-key-change-in-production'
     );
 
-    // Attach userId to request
-    req.userId = decoded.userId;
+    // Attach userId to request. Accept common JWT id fields to avoid token format mismatches.
+    req.userId = decoded.userId || decoded.id || decoded.sub;
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
