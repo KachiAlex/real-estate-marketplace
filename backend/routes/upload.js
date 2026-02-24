@@ -109,6 +109,9 @@ router.post(
 
           // If debug query flag is present, include raw diagnostics from the upload service for investigation
           if (req.query && req.query.debug === 'true') {
+            try {
+              console.log('DEBUG uploadMultipleFiles result:', JSON.stringify(result && result.data));
+            } catch (e) {}
             return res.json({ success: true, data: { uploaded: uploadedWithNames, diagnostics: result && result.data } });
           }
           // If the request included an authenticated user, attach uploaded docs to their vendorData
