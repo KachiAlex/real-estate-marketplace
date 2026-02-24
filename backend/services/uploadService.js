@@ -109,6 +109,10 @@ const uploadMultipleFiles = async (files, category = 'images', options = {}) => 
       .filter(result => result.status === 'rejected')
       .map(result => result.reason?.message || 'Upload failed');
 
+    if (failed.length > 0) {
+      console.warn('uploadMultipleFiles - some uploads failed:', failed);
+    }
+
     return {
       success: successful.length > 0,
       data: {

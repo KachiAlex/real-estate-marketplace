@@ -150,6 +150,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Apply input sanitization to all routes
 app.use(sanitizeMiddleware);
 
+// Serve uploaded files (including fake Cloudinary uploads in dev)
+const uploadsStatic = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsStatic));
+
 // Runtime config endpoints (safe; returns 204 when not configured)
 const configRoutes = require('./routes/config');
 app.use('/api/config', configRoutes);

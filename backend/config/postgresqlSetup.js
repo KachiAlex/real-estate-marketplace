@@ -31,35 +31,62 @@ const initializeDatabase = async () => {
     // Import Sequelize if available
     const Sequelize = require('sequelize');
     const config = require('./sequelizeDb');
-    
-    // Try to connect to PostgreSQL
+
+    // Use the existing sequelize instance and models
     sequelize = config.sequelize;
     db = config.db;
 
-    try {
-      await sequelize.authenticate();
-      console.log('✅ PostgreSQL database connection established');
-      
-      // Sync models (create tables if they don't exist)
-      await sequelize.sync({ alter: false });
-      console.log('✅ Database models synchronized');
+    // Bounded retry with exponential backoff; optionally fail-fast in non-dev
+    const MAX_RETRIES = Number(process.env.DB_CONNECT_RETRIES || 8);
+    const RETRY_BASE_MS = Number(process.env.DB_RETRY_BASE_MS || 1000);
+    let attempt = 0;
 
-      return {
-        sequelize,
-        db,
-        isConnected: true,
-        error: null
-      };
-    } catch (connectionError) {
-      console.warn('⚠️ Could not connect to PostgreSQL:', connectionError.message);
-      console.log('Backend will continue with Firestore for now.');
-      return {
-        sequelize: null,
-        db: null,
-        isConnected: false,
-        error: connectionError.message
-      };
+    while (attempt < MAX_RETRIES) {
+      try {
+        await sequelize.authenticate();
+        console.log('✅ PostgreSQL database connection established');
+
+        // Sync models (create tables if they don't exist)
+        try {
+          await sequelize.sync({ alter: false });
+          console.log('✅ Database models synchronized');
+        } catch (syncErr) {
+          console.warn('Database connected but model sync failed:', syncErr.message);
+        }
+
+        return {
+          sequelize,
+          db,
+          isConnected: true,
+          error: null
+        };
+      } catch (connectionError) {
+        attempt += 1;
+        const wait = RETRY_BASE_MS * Math.pow(2, attempt - 1);
+        console.warn(`Postgres connect attempt ${attempt}/${MAX_RETRIES} failed: ${connectionError.message}. Retrying in ${wait}ms...`);
+        // Wait before next attempt
+        await new Promise((res) => setTimeout(res, wait));
+      }
     }
+
+    // If we reach here, all retries failed
+    const failFast = process.env.FAIL_ON_DB === 'true' || process.env.NODE_ENV === 'production' && process.env.FAIL_ON_DB !== 'false';
+    const errMessage = `Could not connect to PostgreSQL after ${MAX_RETRIES} attempts`;
+    console.error('⚠️', errMessage);
+
+    if (failFast) {
+      // In production with fail-fast enabled, surface error so process manager restarts the service
+      throw new Error(errMessage);
+    }
+
+    // Otherwise return gracefully so the backend can continue using fallback storages
+    console.log('Continuing without PostgreSQL (falling back to Firestore/local JSON).');
+    return {
+      sequelize: null,
+      db: null,
+      isConnected: false,
+      error: errMessage
+    };
   } catch (error) {
     console.error('❌ Error initializing PostgreSQL:', error.message);
     return {

@@ -1,20 +1,98 @@
-const cloudinary = require('cloudinary').v2;
+const realCloudinary = require('cloudinary').v2;
+const crypto = require('crypto');
+const fs = require('fs').promises;
+const path = require('path');
 
-// Configure Cloudinary
-if (process.env.CLOUDINARY_URL) {
-  // If CLOUDINARY_URL is provided, let the SDK parse it
-  cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
-} else {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
-  });
+let cloudinary = realCloudinary;
+
+// Dev-mode fake Cloudinary shim: when CLOUDINARY_FAKE=true we provide a minimal
+// in-process implementation that signs upload params and stores uploaded files
+// under ./uploads/cloudinaryMock so dev flows and signed endpoints work without
+// real Cloudinary credentials.
+if (process.env.CLOUDINARY_FAKE === 'true') {
+  const uploadsDir = path.join(__dirname, '..', 'uploads', 'cloudinaryMock');
+  fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
+
+  const fakeUploader = {
+    uploader: {
+      upload: async (filePath, options = {}) => {
+        // copy file into uploads/cloudinaryMock and return a fake secure_url/public_id
+        const filename = path.basename(filePath);
+        const dest = path.join(uploadsDir, `${Date.now()}-${Math.random().toString(36).slice(2)}-${filename}`);
+        try {
+          await fs.copyFile(filePath, dest);
+        } catch (e) {
+          throw new Error('Failed to copy file to fake cloud storage: ' + e.message);
+        }
+        const publicId = path.basename(dest).replace(/\.[^.]+$/, '');
+        return {
+          secure_url: `/uploads/cloudinaryMock/${path.basename(dest)}`,
+          public_id: publicId,
+          format: path.extname(filename).replace('.', ''),
+          bytes: (await fs.stat(dest)).size,
+          width: null,
+          height: null,
+          resource_type: options.resource_type || 'image'
+        };
+      },
+      destroy: async (publicId, opts = {}) => {
+        // best effort: delete matching files in cloudinaryMock folder
+        try {
+          const files = await fs.readdir(uploadsDir);
+          const matches = files.filter(f => f.includes(publicId));
+          for (const m of matches) await fs.unlink(path.join(uploadsDir, m)).catch(() => {});
+          return { result: matches.length > 0 ? 'ok' : 'not_found' };
+        } catch (e) {
+          return { result: 'error' };
+        }
+      }
+    },
+    api: {
+      delete_resources: async (publicIds, opts = {}) => {
+        const deleted = {};
+        for (const id of publicIds) {
+          try {
+            const files = await fs.readdir(uploadsDir);
+            const matches = files.filter(f => f.includes(id));
+            for (const m of matches) await fs.unlink(path.join(uploadsDir, m)).catch(() => {});
+            deleted[id] = matches.length > 0 ? 'deleted' : 'not_found';
+          } catch (e) {
+            deleted[id] = 'error';
+          }
+        }
+        return { deleted };
+      }
+    },
+    utils: {
+      // Simple Cloudinary-like signature for params object: build string of key=val sorted
+      api_sign_request: (paramsToSign, apiSecret) => {
+        const keys = Object.keys(paramsToSign).sort();
+        const toSign = keys.map(k => `${k}=${paramsToSign[k]}`).join('&');
+        return crypto.createHash('sha1').update(toSign + (apiSecret || process.env.CLOUDINARY_API_SECRET || 'fake_secret')).digest('hex');
+      }
+    }
+  };
+
+  cloudinary = fakeUploader;
+}
+
+// Configure real Cloudinary when not using the fake shim
+if (process.env.CLOUDINARY_FAKE !== 'true') {
+  if (process.env.CLOUDINARY_URL) {
+    realCloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
+  } else {
+    realCloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true
+    });
+  }
 }
 
 // Validate configuration: accept either individual keys or a single CLOUDINARY_URL
 const isConfigured = () => {
+  if (process.env.CLOUDINARY_FAKE === 'true') return true;
   return !!(
     process.env.CLOUDINARY_URL || (
       process.env.CLOUDINARY_CLOUD_NAME &&

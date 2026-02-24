@@ -134,69 +134,36 @@ exports.userValidation = {
       .withMessage('First name is required')
       .isLength({ min: 2, max: 50 })
       .withMessage('First name must be between 2 and 50 characters'),
-    
+
     body('lastName')
       .trim()
       .notEmpty()
       .withMessage('Last name is required')
       .isLength({ min: 2, max: 50 })
       .withMessage('Last name must be between 2 and 50 characters'),
-    
+
     body('email')
       .isEmail()
       .withMessage('Please provide a valid email')
       .normalizeEmail(),
-    
+
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-      body('phone')
-          .optional()
-          // Accept any string of digits when provided
-          .matches(/^\+?\d+$/)
-          .withMessage('Please provide a valid phone number'),
-        body('countryCode')
-          .optional()
-          .matches(/^\+?\d{1,4}$/)
-          .withMessage('Please provide a valid country code'),
-        body('phoneNumber')
-          .optional()
-          .matches(/^\d+$/)
-          .withMessage('Please provide a valid phone number'),
-    
+
     body('phone')
       .optional()
-      // Accept any string of digits when provided
-          .matches(/^\+?\d+$/)
+      .trim()
+      .matches(/^\+?\d+$/)
       .withMessage('Please provide a valid phone number'),
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('First name must be between 2 and 50 characters'),
-    
-    body('lastName')
+
+    body('countryCode')
       .optional()
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Last name must be between 2 and 50 characters'),
-    
-    body('email')
-      .optional()
-      .isEmail()
-      .withMessage('Please provide a valid email')
-      .normalizeEmail(),
-    
-    body('phone')
-      .optional()
-      .matches(/^(\+234|234|0)?[789][01]\d{8}$/)
-      .withMessage('Please provide a valid Nigerian phone number'),
-      body('phone')
-        .optional()
-        // Accept common Nigerian phone formats: +234XXXXXXXXXX, 234XXXXXXXXXX, 0XXXXXXXXXX, or XXXXXXXXXX
-        .matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/)
-        .withMessage('Please provide a valid phone number'),
-    
+      .matches(/^\+?\d{1,4}$/)
+      .withMessage('Please provide a valid country code'),
+
     body('role')
       .optional()
       .isIn(['user', 'agent', 'admin'])
@@ -385,8 +352,41 @@ exports.sanitizeInput = (req, res, next) => {
 exports.sensitiveOperationLimiter = (req, res, next) => {
   // This would be implemented with a more sophisticated rate limiting system
   // For now, we'll use a simple approach
-  const key = `${req.ip}-${req.user?.id || 'anonymous'}`;
+  const key = `${req.ip}-${(req.user && req.user.id) || 'anonymous'}`;
   
+  // In a real implementation, you'd use Redis or similar
+  // For now, just pass through
+  next();
+};
+
+// Sanitization middleware
+exports.sanitizeInput = (req, res, next) => {
+  // Remove any potential XSS attempts
+  const sanitize = (obj) => {
+    for (let key in obj) {
+      if (typeof obj[key] === 'string') {
+        obj[key] = obj[key].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        obj[key] = obj[key].replace(/javascript:/gi, '');
+        obj[key] = obj[key].replace(/on\w+\s*=/gi, '');
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        sanitize(obj[key]);
+      }
+    }
+  };
+  
+  sanitize(req.body);
+  sanitize(req.query);
+  sanitize(req.params);
+  
+  next();
+};
+
+// Rate limiting for sensitive operations
+exports.sensitiveOperationLimiter = (req, res, next) => {
+  // This would be implemented with a more sophisticated rate limiting system
+  // For now, we'll use a simple approach
+  const key = `${req.ip}-${(req.user && req.user.id) || 'anonymous'}`;
+
   // In a real implementation, you'd use Redis or similar
   // For now, just pass through
   next();

@@ -118,9 +118,23 @@ const RegisterPage = ({ isModal = false, onClose }) => {
       const formData = new FormData();
       files.forEach(f => formData.append('documents', f));
       const resp = await fetch(getApiUrl('/upload/vendor/kyc'), { method: 'POST', body: formData });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.message || 'Upload failed');
-      const uploaded = (data.data && data.data.uploaded) || [];
+      // Safely parse JSON responses; if server returned HTML (404/500 page), capture text for debugging
+      let uploaded = [];
+      try {
+        const text = await resp.text();
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+        if (!resp.ok) {
+          const serverMsg = (parsed && (parsed.message || parsed.error)) || text || 'Upload failed';
+          console.error('Upload failed response:', { status: resp.status, body: text });
+          throw new Error(serverMsg);
+        }
+        const data = parsed || {};
+        uploaded = (data.data && data.data.uploaded) || [];
+      } catch (err) {
+        console.error('Upload error parsing response', err);
+        throw err;
+      }
       setVendorFiles(prev => [...prev, ...uploaded]);
       toast.success('KYC documents uploaded');
     } catch (err) {

@@ -146,7 +146,6 @@ router.post('/register', [
     const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
     let resolvedRoles = normalizeRoles(Array.isArray(roles) && roles.length ? roles : role ? [role] : ['user']);
     const primaryRole = chooseActiveRole(null, resolvedRoles.includes('vendor') ? 'vendor' : resolvedRoles[0], resolvedRoles);
-    const primaryRole = resolvedRoles.includes('vendor') ? 'vendor' : (resolvedRoles[0] || 'user');
 
     // Build initial vendorData if user selected vendor at registration and provided KYC docs
     let initialVendorData = null;
