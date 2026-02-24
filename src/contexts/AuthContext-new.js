@@ -25,8 +25,27 @@ const AuthContext = createContext(defaultContextValue);
 const normalizeUser = (u) => {
   if (!u) return u;
   const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
-  const activeRole = u.role || u.userType || (roles.length > 0 ? roles[0] : undefined);
-  return { ...u, roles, activeRole };
+  // Ensure roles is an array of lowercased, trimmed values
+  const normRoles = Array.isArray(roles) ? roles.map(r => String(r).trim().toLowerCase()) : [];
+
+  // Default active role logic:
+  // - If an explicit activeRole is provided, respect it.
+  // - If the user has both 'user' and 'vendor' roles and no explicit activeRole, default to 'user'.
+  // - Otherwise prefer explicit `role` or `userType`, then fall back to first role.
+  let activeRole = u.activeRole || null;
+  if (!activeRole) {
+    if (normRoles.includes('user') && normRoles.includes('vendor')) {
+      activeRole = 'user';
+    } else if (u.role) {
+      activeRole = u.role;
+    } else if (u.userType) {
+      activeRole = u.userType;
+    } else {
+      activeRole = normRoles[0] || undefined;
+    }
+  }
+
+  return { ...u, roles: normRoles, activeRole };
 };
 
 export const AuthProvider = ({ children }) => {

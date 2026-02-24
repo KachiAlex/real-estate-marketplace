@@ -9,6 +9,12 @@ const path = require('path');
 const { verifyToken } = require('../middleware/authJwt');
 
 const router = express.Router();
+const util = require('util');
+const debugLogPath = path.resolve(__dirname, '..', 'tmp', 'login-debug.log');
+try { fs.mkdirSync(path.dirname(debugLogPath), { recursive: true }); } catch(e) {}
+const appendDebug = (msg) => {
+  try { fs.appendFileSync(debugLogPath, `${new Date().toISOString()} ${msg}\n`); } catch(e) { /* ignore */ }
+};
 
 // determine whether SSL was expected (mimics sequelizeDb resolvedRequireSSL)
 const LOCAL_DB_REQUIRE_SSL = (process.env.DB_REQUIRE_SSL === 'true') || process.env.NODE_ENV === 'production';
@@ -49,7 +55,7 @@ router.post('/register', [
     }
 
     // TEMP LOGGING: capture incoming register requests for debugging
-    let { email, password, firstName, lastName, phone, role, roles, vendorKycDocs, countryCode, phoneNumber } = req.body;
+    let { email, password, firstName, lastName, phone, role, roles, vendorKycDocs, countryCode, phoneNumber, buyer, vendor } = req.body;
     // If countryCode and phoneNumber are provided, normalize into a single phone string
     if (countryCode && phoneNumber) {
       const cc = String(countryCode).trim();
@@ -144,8 +150,27 @@ router.post('/register', [
 
     // Resolve roles array and primary role
     const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
-    let resolvedRoles = normalizeRoles(Array.isArray(roles) && roles.length ? roles : role ? [role] : ['user']);
-    const primaryRole = chooseActiveRole(null, resolvedRoles.includes('vendor') ? 'vendor' : resolvedRoles[0], resolvedRoles);
+    // Determine if registration UI explicitly marked both buyer and vendor.
+    const buyerFlag = buyer === true || String(buyer).toLowerCase() === 'true';
+    const vendorFlag = vendor === true || String(vendor).toLowerCase() === 'true';
+
+    // If both buyer and vendor were selected in the register modal, enforce roles ['user','vendor']
+    let resolvedRoles;
+    if (buyerFlag && vendorFlag) {
+      resolvedRoles = normalizeRoles(['user', 'vendor']);
+    } else {
+      resolvedRoles = normalizeRoles(Array.isArray(roles) && roles.length ? roles : role ? [role] : ['user']);
+    }
+    // If a user requested the vendor role at signup, keep their primary role as 'user'
+    // until KYC verification completes. We still persist 'vendor' in `roles` so UI
+    // and flows can reflect pending vendor status, but do not make vendor the
+    // active/primary role automatically to avoid exposing vendor-only features.
+    let primaryRole;
+    if (resolvedRoles.includes('vendor')) {
+      primaryRole = chooseActiveRole(null, 'user', resolvedRoles);
+    } else {
+      primaryRole = chooseActiveRole(null, resolvedRoles[0], resolvedRoles);
+    }
 
     // Build initial vendorData if user selected vendor at registration and provided KYC docs
     let initialVendorData = null;
@@ -158,7 +183,9 @@ router.post('/register', [
       initialVendorData = {
         contactInfo: { email: email.toLowerCase() },
         kycDocs: Array.isArray(vendorKycDocs) ? vendorKycDocs : [],
-        kycStatus: (Array.isArray(vendorKycDocs) && vendorKycDocs.length) ? 'pending' : 'required',
+        // Mark vendor KYC as 'pending' when role is requested; onboardingComplete is true only
+        // when KYC documents were provided at signup.
+        kycStatus: 'pending',
         onboardingComplete: Array.isArray(vendorKycDocs) && vendorKycDocs.length ? true : false,
         updatedAt: new Date()
       };
@@ -371,8 +398,10 @@ router.post('/login', [
   body('password').notEmpty()
 ], async (req, res) => {
   try {
+    appendDebug('login:start');
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      appendDebug('validation:failed ' + JSON.stringify(errors.array()));
       return res.status(400).json({ 
         success: false, 
         message: 'Validation failed',
@@ -381,6 +410,7 @@ router.post('/login', [
     }
 
     const { email, password } = req.body;
+    appendDebug('received body: ' + JSON.stringify({ email: email }));
 
     // Find user by email (robust: handle databases missing optional columns like `suspendedAt`)
     let user = null;
@@ -398,11 +428,51 @@ router.post('/login', [
         user = (rows && rows[0]) ? rows[0] : null; // plain object
       } catch (fallbackErr) {
         console.error('Fallback SELECT failed:', fallbackErr);
-        throw dbErr; // rethrow original DB error to surface it
+        // If DB connection/auth errors occur, attempt local JSON user fallback (development)
+        const connErrorPattern = /password authentication failed|could not connect|sequeli?zeconnectionerror|connection refused/i;
+        const errPayload = `${dbErr && dbErr.message ? dbErr.message : ''} ${dbErr && dbErr.name ? dbErr.name : ''} ${JSON.stringify(dbErr && (dbErr.parent || dbErr.original) ? (dbErr.parent || dbErr.original) : {})}`;
+        const isConnErr = connErrorPattern.test(String(errPayload).toLowerCase()) || (dbErr && dbErr.name && String(dbErr.name).toLowerCase().includes('connectionrefused')) || (dbErr && dbErr.parent && String(dbErr.parent.code || '').toLowerCase().includes('econnrefused'));
+        if (isConnErr) {
+          try {
+            const usersPath = path.resolve(__dirname, '..', 'data', 'local_users.json');
+            let users = [];
+            if (fs.existsSync(usersPath)) {
+              try { users = JSON.parse(fs.readFileSync(usersPath, 'utf8') || '[]'); } catch (e) { users = []; }
+            }
+            const found = users.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
+            if (found) {
+              user = found;
+            }
+          } catch (localErr) {
+            console.warn('Local user fallback during findOne failed', localErr && localErr.message);
+          }
+          // continue — if user remains null, outer code will handle 401
+        } else {
+          throw dbErr; // rethrow original DB error to surface it
+        }
       }
     }
 
     if (!user) {
+      appendDebug('user:not-found-in-db, checking local json');
+      // Try local JSON fallback (development): backend may be running without Postgres
+      try {
+        const usersPath = path.resolve(__dirname, '..', 'data', 'local_users.json');
+        if (fs.existsSync(usersPath)) {
+          const list = JSON.parse(fs.readFileSync(usersPath, 'utf8') || '[]');
+          const found = list.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
+          if (found) {
+            // Use the local user object as 'user'
+            user = found;
+          }
+        }
+      } catch (localErr) {
+        console.warn('Local user lookup failed', localErr && localErr.message);
+      }
+    }
+
+    if (!user) {
+      appendDebug('user:still-not-found -> returning 401');
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -411,8 +481,11 @@ router.post('/login', [
 
     // Compare passwords (user may be a Sequelize instance or plain object from fallback)
     const hashed = (user.password || '');
+    appendDebug('user:found id=' + (user.id || user.email) + ' hashedLength=' + (hashed ? hashed.length : 0));
     const isPasswordValid = await bcrypt.compare(password, hashed);
+    appendDebug('password:compare result=' + isPasswordValid);
     if (!isPasswordValid) {
+      appendDebug('password:invalid -> returning 401');
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -453,12 +526,18 @@ router.post('/login', [
       }
     });
   } catch (error) {
+    appendDebug('login:error ' + (error && error.message ? error.message : JSON.stringify(error || {})));
     console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Login failed',
-      error: error.message 
-    });
+    try {
+      console.error('Login error (detailed):', util.inspect(error, { depth: 5 }));
+    } catch (inspectErr) {
+      console.error('Failed to inspect error object:', inspectErr);
+    }
+
+    const errMsg = (error && error.message) ? error.message : (typeof error === 'string' ? error : JSON.stringify(error || {}));
+    const payload = { success: false, message: 'Login failed', error: errMsg };
+    if (process.env.NODE_ENV !== 'production' && error && error.stack) payload.stack = error.stack;
+    res.status(500).json(payload);
   }
 });
 
@@ -530,7 +609,32 @@ router.post('/refresh', async (req, res) => {
 // @access  Private (requires valid JWT)
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await User.findByPk(req.userId);
+    let user = null;
+    // Try DB lookup first; handle invalid UUIDs or DB errors by falling back to local JSON
+    try {
+      user = await User.findByPk(req.userId);
+    } catch (dbErr) {
+      const msg = dbErr && dbErr.message ? dbErr.message : String(dbErr || '');
+      console.warn('/me: DB lookup failed, attempting local fallback:', msg);
+      // fall through to local JSON below
+      user = null;
+    }
+
+    // If DB lookup returned null or userId looks like a local fallback id, try local_users.json
+    if (!user) {
+      try {
+        const usersPath = path.resolve(__dirname, '..', 'data', 'local_users.json');
+        if (fs.existsSync(usersPath)) {
+          const list = JSON.parse(fs.readFileSync(usersPath, 'utf8') || '[]');
+          const found = list.find(u => (u.id || '') === String(req.userId) || ((u.email || '').toLowerCase() === (req.userEmail || '').toLowerCase()));
+          if (found) {
+            user = found;
+          }
+        }
+      } catch (localErr) {
+        console.warn('/me: local_users.json lookup failed', localErr && localErr.message);
+      }
+    }
 
     if (!user) {
       return res.status(404).json({ 
@@ -549,6 +653,7 @@ router.get('/me', verifyToken, async (req, res) => {
         phone: user.phone,
         role: user.role,
         roles: user.roles,
+        activeRole: user.activeRole || user.role,
         avatar: user.avatar,
         isVerified: user.isVerified,
         isActive: user.isActive,
@@ -763,38 +868,52 @@ router.post('/logout', verifyToken, (req, res) => {
 // @access  Private (requires valid JWT)
 router.post('/switch-role', verifyToken, async (req, res) => {
   try {
-    const { role } = req.body;
-    if (!role || !['buyer', 'vendor', 'admin'].includes(role)) {
+    let { role } = req.body;
+    const allowed = ['user', 'buyer', 'vendor', 'admin'];
+    if (!role || !allowed.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
+
+    // Normalize aliases: accept 'buyer' as 'user' internally
+    if (role === 'buyer') role = 'user';
+
     const user = await User.findByPk(req.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    // Add role to roles array if not present
-    let roles = Array.isArray(user.roles) ? user.roles : [user.role];
+
+    // Ensure roles is an array and normalized
+    let roles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
     if (!roles.includes(role)) roles.push(role);
-    // Update user role and roles
-    await user.update({ role, roles });
+    roles = Array.from(new Set(roles));
+
+    // Update user role, roles and persist activeRole
+    await user.update({ role, roles, activeRole: role });
+
+    // Reload user to reflect DB changes
+    const updated = await User.findByPk(req.userId);
+
     // Generate new tokens
-    const accessToken = generateToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateToken(updated.id);
+    const refreshToken = generateRefreshToken(updated.id);
+
     res.json({
       success: true,
       message: 'Role switched successfully',
       accessToken,
       refreshToken,
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        roles: user.roles,
-        avatar: user.avatar,
-        isVerified: user.isVerified,
-        isActive: user.isActive
+        id: updated.id,
+        email: updated.email,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        phone: updated.phone,
+        role: updated.role,
+        roles: updated.roles,
+        activeRole: updated.activeRole || role,
+        avatar: updated.avatar,
+        isVerified: updated.isVerified,
+        isActive: updated.isActive
       }
     });
   } catch (error) {

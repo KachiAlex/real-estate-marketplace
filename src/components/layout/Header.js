@@ -8,10 +8,12 @@ import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 import LocalModeBanner from '../LocalModeBanner';
+import BecomeVendorModal from '../BecomeVendorModal';
 // RoleSwitcher removed
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
+  const [showBecomeVendorModal, setShowBecomeVendorModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleMobileSidebar } = useSidebar();
@@ -329,7 +331,7 @@ const Header = () => {
           )}
 
           {/* Desktop User Menu */}
-          <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
+            <div className="hidden md:flex items-center space-x-2 xl:space-x-4 flex-shrink-0">
             {user ? (
               <>
               <div className="relative user-menu-container">
@@ -360,8 +362,33 @@ const Header = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 user-menu-dropdown" onClick={(e) => e.stopPropagation()}>
                     {/* Active role badge and switcher */}
-                    {/* Centralized role switcher component */}
-                    {/* RoleSwitcher removed */}
+                    {user?.roles && user.roles.length > 1 && (
+                      <div className="px-4 py-2 flex items-center justify-between border-b border-gray-100">
+                        <div className="text-xs text-gray-500">Active role</div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-gray-700">{user.activeRole === 'vendor' ? 'Vendor' : 'Buyer'}</div>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const newRole = user.activeRole === 'vendor' ? 'user' : 'vendor';
+                              try {
+                                // optimistic UI: close menu while switching
+                                setIsUserMenuOpen(false);
+                                await switchRole(newRole);
+                              } catch (err) {
+                                console.warn('Role switch failed', err);
+                                setIsUserMenuOpen(false);
+                              }
+                            }}
+                            aria-label="Toggle active role"
+                            className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <span className={`absolute left-0 right-0 h-6 rounded-full ${user.activeRole === 'vendor' ? 'bg-brand-orange' : 'bg-gray-200'}`} />
+                            <span className={`relative inline-block w-5 h-5 transform bg-white rounded-full shadow transition-transform ${user.activeRole === 'vendor' ? 'translate-x-5' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <Link
                       to={profilePath}
                       onClick={(e) => {
@@ -385,15 +412,27 @@ const Header = () => {
 
                     {/* Switch to Vendor (for users who can upgrade) */}
                     {!isVendor && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVendorSwitch();
-                        }}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-                      >
-                        Switch to Vendor
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVendorSwitch();
+                          }}
+                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                        >
+                          Switch to Vendor
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBecomeVendorModal(true);
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+                        >
+                          Become a vendor
+                        </button>
+                      </>
                     )}
                     {user.role === 'admin' && (
                       <Link
@@ -581,6 +620,8 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      <BecomeVendorModal isOpen={showBecomeVendorModal} onClose={() => setShowBecomeVendorModal(false)} />
 
       {/* Vendor Registration Modal */}
       {showVendorRegistrationModal && (
