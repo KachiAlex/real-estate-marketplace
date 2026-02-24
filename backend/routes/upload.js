@@ -86,7 +86,7 @@ router.post(
       if (isConfigured && isConfigured()) {
         try {
           const result = await uploadMultipleFiles(req.files, 'documents', { folder: 'vendor/kyc' });
-          lastUploadResult = result;
+          lastUploadResult = result && result.data ? result.data : result;
           const uploaded = (result && result.data && result.data.uploaded) || [];
           // If Cloudinary returned failures or no uploaded items, log details for debugging
           try {
@@ -112,7 +112,7 @@ router.post(
             try {
               console.log('DEBUG uploadMultipleFiles result:', JSON.stringify(result && result.data));
             } catch (e) {}
-            return res.json({ success: true, data: { uploaded: uploadedWithNames, diagnostics: result && result.data } });
+            return res.json({ success: true, data: { uploaded: uploadedWithNames, diagnostics: result && result.data }, debug: lastUploadResult });
           }
           // If the request included an authenticated user, attach uploaded docs to their vendorData
           if (req.user && req.user.id) {
