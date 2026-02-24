@@ -75,6 +75,7 @@ router.post(
   vendorKycUpload.array('documents', 10), // Max 10 documents
   async (req, res) => {
     try {
+      let lastUploadResult = null;
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({
           success: false,
@@ -85,6 +86,7 @@ router.post(
       if (isConfigured && isConfigured()) {
         try {
           const result = await uploadMultipleFiles(req.files, 'documents', { folder: 'vendor/kyc' });
+          lastUploadResult = result;
           const uploaded = (result && result.data && result.data.uploaded) || [];
           // If Cloudinary returned failures or no uploaded items, log details for debugging
           try {
@@ -135,6 +137,7 @@ router.post(
         } catch (cloudErr) {
           // If cloud upload fails, fall back to returning temp paths but still clean up handled below
           console.error('Cloud upload failed, falling back to temp files:', cloudErr);
+          lastUploadResult = { error: cloudErr && (cloudErr.message || String(cloudErr)) };
         }
       }
 
@@ -179,11 +182,18 @@ router.post(
           fs.unlink(file.path).catch(() => {});
         });
       }
-      res.status(500).json({
+      const responseBody = {
         success: false,
-        message: error.message || 'Failed to upload KYC documents',
-        ...(process.env.NODE_ENV === 'development' && { error: error.message })
-      });
+        message: error.message || 'Failed to upload KYC documents'
+      };
+      if (req.query && req.query.debug === 'true') {
+        responseBody.debug = {
+          error: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          lastUploadResult
+        };
+      }
+      res.status(500).json(responseBody);
     }
   }
 );
