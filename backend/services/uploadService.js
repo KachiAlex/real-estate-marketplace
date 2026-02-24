@@ -36,8 +36,12 @@ const uploadFile = async (file, category = 'images', options = {}) => {
 
     // Validate file type
     if (!isValidFileType(file.mimetype, securityCategory)) {
-      const allowed = (require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []).map(Boolean);
-      throw new Error(`Invalid file type. Allowed types: ${(require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []).map(t => t.split('/').pop()).join(', ')}`);
+      const allowedList = (require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []);
+      // Log diagnostic info to help debug mismatched mimetypes
+      try {
+        infoLogger('Rejected file type', { filename: file.originalname, mimetype: file.mimetype, expected: allowedList });
+      } catch (e) {}
+      throw new Error(`Invalid file type. Allowed types: ${allowedList.map(t => t.split('/').pop()).join(', ')}`);
     }
 
     // Validate file size
