@@ -107,13 +107,7 @@ router.post(
           // Ensure original filenames are preserved in response (uploadMultipleFiles returns data without originalname)
           const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
 
-          // If debug query flag is present, include raw diagnostics from the upload service for investigation
-          if (process.env.UPLOAD_DEBUG_ALWAYS === 'true' || (req.query && req.query.debug === 'true')) {
-            try {
-              console.log('DEBUG uploadMultipleFiles result:', JSON.stringify(result && result.data));
-            } catch (e) {}
-            return res.json({ success: true, data: { uploaded: uploadedWithNames, diagnostics: result && result.data }, debug: lastUploadResult });
-          }
+          // don't expose internal diagnostics in production responses
           // If the request included an authenticated user, attach uploaded docs to their vendorData
           if (req.user && req.user.id) {
             try {
@@ -175,10 +169,6 @@ router.post(
         }
       }
 
-      if (process.env.UPLOAD_DEBUG_ALWAYS === 'true' || (req.query && req.query.debug === 'true')) {
-        return res.json({ success: true, data: { uploaded }, debug: lastUploadResult });
-      }
-
       res.json({
         success: true,
         data: { uploaded }
@@ -194,13 +184,7 @@ router.post(
         success: false,
         message: error.message || 'Failed to upload KYC documents'
       };
-      if (req.query && req.query.debug === 'true') {
-        responseBody.debug = {
-          error: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-          lastUploadResult
-        };
-      }
+      // Do not include internal diagnostics in error responses. See server logs for details.
       res.status(500).json(responseBody);
     }
   }
@@ -643,7 +627,8 @@ router.delete(
  */
 router.post(
   '/delete-multiple',
-  protect,
+  // Allow optional auth for dev flows; in production this remains protected
+  optionalAuth,
   validate([
     body('publicIds').isArray({ min: 1 }).withMessage('At least one public ID required'),
     body('resourceType').optional().isIn(['image', 'video', 'raw']).withMessage('Invalid resource type')
@@ -652,10 +637,16 @@ router.post(
     try {
       const { publicIds, resourceType = 'image' } = req.body;
 
+      // In dev with CLOUDINARY_FAKE, allow unauthenticated delete requests (for testing only)
+      const allowAnonymous = process.env.CLOUDINARY_FAKE === 'true' && !req.user;
+      if (!req.user && !allowAnonymous) {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
+      }
+
       const result = await deleteMultipleFiles(publicIds, resourceType);
 
       infoLogger('Multiple files deleted', {
-        userId: req.user.id,
+        userId: req.user ? req.user.id : 'anonymous',
         count: result.data.totalDeleted,
         resourceType
       });
