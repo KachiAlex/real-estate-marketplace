@@ -62,13 +62,24 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       throw new Error(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
     }
 
-    // Prepare upload options
+    // Prepare upload options and ensure resource_type defaults match category
     const uploadConfig = {
       ...uploadOptions[category],
       ...options,
       use_filename: true,
       unique_filename: true,
     };
+
+    // Ensure resource_type is explicitly set to avoid Cloudinary errors
+    if (!uploadConfig.resource_type) {
+      if (securityCategory === 'documents' || securityCategory === 'mortgagedocuments' || securityCategory === 'mortgageDocument') {
+        uploadConfig.resource_type = 'raw';
+      } else if (securityCategory === 'videos') {
+        uploadConfig.resource_type = 'video';
+      } else {
+        uploadConfig.resource_type = 'image';
+      }
+    }
 
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(file.path, uploadConfig);
