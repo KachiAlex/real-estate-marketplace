@@ -86,6 +86,22 @@ router.post(
         try {
           const result = await uploadMultipleFiles(req.files, 'documents', { folder: 'vendor/kyc' });
           const uploaded = (result && result.data && result.data.uploaded) || [];
+          // If Cloudinary returned failures or no uploaded items, log details for debugging
+          try {
+            const totalUploaded = result && result.data && typeof result.data.totalUploaded === 'number' ? result.data.totalUploaded : (uploaded && uploaded.length) || 0;
+            const totalFailed = result && result.data && typeof result.data.totalFailed === 'number' ? result.data.totalFailed : (result && result.data && result.data.failed ? result.data.failed.length : 0);
+            if (totalUploaded === 0 && totalFailed > 0) {
+              errorLogger(new Error('Cloud upload returned no uploaded files'), req, {
+                context: 'Vendor KYC cloud upload empty result',
+                totalUploaded,
+                totalFailed,
+                failures: result.data.failed,
+                files: req.files.map(f => ({ originalname: f.originalname, mimetype: f.mimetype, size: f.size, path: f.path }))
+              });
+            }
+          } catch (logErr) {
+            console.error('Failed to log cloud upload diagnostics:', logErr && logErr.message ? logErr.message : logErr);
+          }
           // Ensure original filenames are preserved in response (uploadMultipleFiles returns data without originalname)
           const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
           // If the request included an authenticated user, attach uploaded docs to their vendorData
