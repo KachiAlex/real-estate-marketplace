@@ -41,7 +41,19 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       try {
         infoLogger('Rejected file type', { filename: file.originalname, mimetype: file.mimetype, expected: allowedList });
       } catch (e) {}
-      throw new Error(`Invalid file type. Allowed types: ${allowedList.map(t => t.split('/').pop()).join(', ')}`);
+      // Fallback: accept by file extension if mimetype is unreliable (some clients/proxies strip mimetype)
+      try {
+        const path = require('path');
+        const ext = (path.extname(file.originalname) || '').replace('.', '').toLowerCase();
+        const allowedExts = allowedList.map(t => t.split('/').pop().toLowerCase());
+        if (ext && allowedExts.includes(ext)) {
+          infoLogger('Accepted file by extension fallback', { filename: file.originalname, ext, allowedExts });
+        } else {
+          throw new Error(`Invalid file type. Allowed types: ${allowedList.map(t => t.split('/').pop()).join(', ')}`);
+        }
+      } catch (e) {
+        throw e;
+      }
     }
 
     // Validate file size
