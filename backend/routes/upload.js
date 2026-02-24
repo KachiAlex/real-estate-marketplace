@@ -125,12 +125,12 @@ router.post(
                 vendorData.kycStatus = 'submitted';
                 vendorData.updatedAt = new Date();
 
-                // Preserve existing roles and set vendor flags
+                // Preserve existing roles and ensure `vendor` is present, but do NOT change activeRole here
                 let existingRoles = user.roles;
                 try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
                 existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
 
-                await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+                await user.update({ roles: existingRoles, vendorData });
               }
             } catch (attachErr) {
               console.error('Failed to persist KYC uploads to user vendorData:', attachErr && attachErr.message ? attachErr.message : attachErr);
@@ -167,11 +167,16 @@ router.post(
             try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
             existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
 
-            await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+            // Keep user's current active role unchanged; only ensure `vendor` is present in roles
+            await user.update({ roles: existingRoles, vendorData });
           }
         } catch (attachErr) {
           console.error('Failed to persist local KYC uploads to user vendorData:', attachErr && attachErr.message ? attachErr.message : attachErr);
         }
+      }
+
+      if (req.query && req.query.debug === 'true') {
+        return res.json({ success: true, data: { uploaded }, debug: lastUploadResult });
       }
 
       res.json({
