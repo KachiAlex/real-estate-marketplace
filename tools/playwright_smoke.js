@@ -102,9 +102,20 @@ const { chromium, request } = require('playwright');
 
     // Launch browser. Allow overriding headless via env `HEADLESS` (default: false for debugging).
     const HEADLESS = (process.env.HEADLESS || 'false').toLowerCase() === 'true';
+    const NAV_TIMEOUT = parseInt(process.env.NAV_TIMEOUT || '60000', 10); // 60s default
+    const NAV_RETRIES = parseInt(process.env.NAV_RETRIES || '3', 10);
+    const extraArgs = HEADLESS ? [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-extensions',
+      '--disable-features=site-per-process'
+    ] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'];
+
     const browser = await chromium.launch({
       headless: HEADLESS,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+      args: extraArgs,
       slowMo: HEADLESS ? 0 : 50
     });
     const context = await browser.newContext();
@@ -139,8 +150,23 @@ const { chromium, request } = require('playwright');
           try { localStorage.setItem('currentUser', JSON.stringify(u)); } catch (e) { /* ignore */ }
         }, user2);
 
-        // Navigate to a stable route and wait
-        await page.goto(`${FRONTEND_BASE}/`, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
+        // Navigate to a stable route and wait, with retries for CI stability
+        let navOk = false;
+        for (let attempt = 1; attempt <= NAV_RETRIES; attempt++) {
+          try {
+            console.log(`Navigating to ${FRONTEND_BASE}/ (attempt ${attempt})`);
+            await page.goto(`${FRONTEND_BASE}/`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+            navOk = true;
+            break;
+          } catch (e) {
+            console.warn(`Navigation attempt ${attempt} failed:`, e && e.message);
+            if (attempt < NAV_RETRIES) await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
+        if (!navOk) {
+          console.warn('Navigation failed after retries; capturing debug artifacts');
+          try { await page.screenshot({ path: 'tools/playwright_debug_nav_failed.png', fullPage: true }); console.log('Saved screenshot: tools/playwright_debug_nav_failed.png'); } catch (e) {}
+        }
 
         const stored = await page.evaluate(() => {
           try { return JSON.parse(localStorage.getItem('currentUser')) || null; } catch (e) { return null; }
