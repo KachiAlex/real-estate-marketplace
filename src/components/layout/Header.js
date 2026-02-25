@@ -9,7 +9,7 @@ import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 import LocalModeBanner from '../LocalModeBanner';
 import BecomeVendorModal from '../BecomeVendorModal.js';
-// RoleSwitcher removed
+import DashboardSwitch from '../DashboardSwitch';
 
 const Header = () => {
   const { user, logout, isBuyer, isVendor, switchRole, registerAsVendor, signInWithGooglePopup } = useAuth();
@@ -160,31 +160,9 @@ const Header = () => {
 
     // Use click instead of mousedown to allow button clicks to register first
     document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [activeDropdown, isUserMenuOpen]);
+    // ...existing code...
 
-  // Render a compact header for vendor dashboard routes: only avatar + vendor name
-  if (isVendorContext && location.pathname.startsWith('/vendor/dashboard')) {
-    return (
-      <header className={`bg-white shadow ${isHomePage ? 'sticky top-0 z-50' : ''}`}>
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center h-16 py-2">
-            <div className="flex-1" />
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </div>
-              <div className="hidden sm:block text-sm font-medium text-gray-900">
-                {user?.firstName || user?.displayName?.split(' ')[0] || 'Vendor'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    );
-  }
+
 
   return (
     <>
@@ -227,14 +205,16 @@ const Header = () => {
                     } catch (err) {}
                   }}
                 />
-
                 <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
                   <FaHome className="text-white text-xl" />
                 </div>
               </Link>
+              {/* Dashboard switch for users with both roles */}
+
+              <DashboardSwitch />
+            </div>
 
             {/* Navigation Menu */}
-
             <nav className="hidden lg:flex items-center flex-nowrap space-x-2 xl:space-x-4">
               {/* For Sale - direct link */}
               <Link
@@ -401,7 +381,7 @@ const Header = () => {
                       Profile
                     </Link>
                     <Link
-                      to={isVendorContext ? '/vendor/dashboard' : '/dashboard'}
+                      to={(user && Array.isArray(user.roles) && user.roles.includes('vendor') && !user.roles.includes('user') && !user.roles.includes('buyer')) ? '/vendor/dashboard' : (isVendorContext ? '/vendor/dashboard' : '/dashboard')}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsUserMenuOpen(false);
@@ -487,6 +467,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Navigation */}
+        </header>
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-4">
@@ -620,7 +601,6 @@ const Header = () => {
             </nav>
           </div>
         )}
-      </div>
 
       <BecomeVendorModal isOpen={showBecomeVendorModal} onClose={() => setShowBecomeVendorModal(false)} />
 
@@ -695,9 +675,8 @@ const Header = () => {
           onResultClick={handleResultClick}
         />
       )}
-    </header>
     </>
   );
-};
+}
 
-export default Header; 
+export default Header;
