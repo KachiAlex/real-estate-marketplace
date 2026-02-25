@@ -1,6 +1,7 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
 const vendorOnboarding = require('../middleware/vendorOnboarding');
+const { requireAnyRole } = require('../middleware/roleValidation');
 const { sanitizeInput } = require('../middleware/validation');
 const db = require('../config/sequelizeDb');
 const { ensureSeedProperties } = require('../services/propertyService');
@@ -117,7 +118,7 @@ const aggregateVendorStats = (properties = []) => {
 // @desc    Get authenticated user's dashboard summary (buyer)
 // @route   GET /api/dashboard/user
 // @access  Private
-router.get('/user', protect, sanitizeInput, async (req, res) => {
+router.get('/user', protect, requireAnyRole(['user', 'buyer']), sanitizeInput, async (req, res) => {
   try {
     await ensureSeedProperties();
     const total = await db.Property.count();
@@ -134,7 +135,7 @@ router.get('/user', protect, sanitizeInput, async (req, res) => {
 // @desc    Get authenticated vendor's dashboard summary
 // @route   GET /api/dashboard/vendor
 // @access  Private
-router.get('/vendor', protect, vendorOnboarding, sanitizeInput, async (req, res) => {
+router.get('/vendor', protect, requireAnyRole(['vendor']), vendorOnboarding, sanitizeInput, async (req, res) => {
   try {
     await ensureSeedProperties();
     const props = await db.Property.findAll();

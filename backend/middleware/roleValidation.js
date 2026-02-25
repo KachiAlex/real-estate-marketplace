@@ -35,11 +35,33 @@ const hasRole = (user, requiredRole) => {
  * Check if user has any of the required roles
  */
 const hasAnyRole = (user, roles = []) => {
-  if (!user || !user.role) {
-    return false;
+  if (!user) return false;
+
+  // If user has a single `role` string, use existing hasRole logic
+  if (user.role) {
+    return roles.some(role => hasRole(user, role));
   }
 
-  return roles.some(role => hasRole(user, role));
+  // If user has a `roles` array, check array membership or hierarchy
+  if (Array.isArray(user.roles) && user.roles.length > 0) {
+    // normalize roles to strings
+    const normalized = user.roles.map(r => String(r).trim().toLowerCase());
+
+    // direct membership
+    for (const required of roles) {
+      if (normalized.includes(String(required).trim().toLowerCase())) return true;
+    }
+
+    // fallback: compare by hierarchy levels if possible
+    const highestUserLevel = normalized.reduce((acc, r) => {
+      const lvl = ROLE_HIERARCHY[r] || 0;
+      return Math.max(acc, lvl);
+    }, 0);
+
+    return roles.some(reqRole => (ROLE_HIERARCHY[reqRole] || 0) <= highestUserLevel);
+  }
+
+  return false;
 };
 
 /**

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import RoleSwitcher from '../components/RoleSwitcher';
+// ...existing code...
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -14,6 +14,18 @@ const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // If this account is vendor-only (no buyer/user role), redirect to vendor dashboard
+  useEffect(() => {
+    try {
+      if (user && Array.isArray(user.roles) && user.roles.includes('vendor') && !user.roles.includes('user') && !user.roles.includes('buyer')) {
+        navigate('/vendor/dashboard', { replace: true });
+      }
+    } catch (err) {
+      // swallow navigation errors during tests
+      console.warn('Dashboard redirect guard error', err);
+    }
+  }, [user, navigate]);
   const { properties, loading, toggleFavorite } = useProperty();
   const { userInvestments, getUserInvestmentSummary } = useInvestment();
   const { getUserMortgages, getPaymentSummary, getUserApplications, getApplicationsByStatus } = useMortgage();
@@ -618,7 +630,7 @@ const Dashboard = () => {
             </p>
             {/* Switch to Vendor Button */}
             <div className="mb-4">
-              <RoleSwitcher buttonLabel="Switch to Vendor" />
+              {/* Dashboard switch removed */}
             </div>
 
         {/* Stats Cards */}

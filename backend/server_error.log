@@ -377,3 +377,31 @@ Error: Cloud upload returned no uploaded files
     at D:\real-estate-marketplace\backend\routes\upload.js:96:27
 Additional: {"context":"Vendor KYC cloud upload empty result","totalUploaded":0,"totalFailed":1,"failures":["Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain"],"files":[{"originalname":"1.png","mimetype":"image/png","size":151025,"path":"D:\\real-estate-marketplace\\backend\\uploads\\temp\\1771989020128-670466493.png"}]}
 ---
+[2026-02-25T06:16:02.510Z] ERROR: EBADF: bad file descriptor, write
+Error: EBADF: bad file descriptor, write
+    at writeSync (node:fs:933:3)
+    at SyncWriteStream._write (node:internal/fs/sync_write_stream:27:5)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+    at console.value (node:internal/console/constructor:303:16)
+    at console.log (node:internal/console/constructor:378:26)
+    at Server.<anonymous> (D:\real-estate-marketplace\backend\server.js:724:13)
+    at Object.onceWrapper (node:events:638:28)
+    at Server.emit (node:events:536:35)
+Additional: {"context":"Uncaught Exception"}
+---
+[2026-02-25T06:31:41.102Z] ERROR: EBADF: bad file descriptor, write
+Error: EBADF: bad file descriptor, write
+    at writeSync (node:fs:933:3)
+    at SyncWriteStream._write (node:internal/fs/sync_write_stream:27:5)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+    at console.value (node:internal/console/constructor:303:16)
+    at console.log (node:internal/console/constructor:378:26)
+    at Server.<anonymous> (D:\real-estate-marketplace\backend\server.js:724:13)
+    at Object.onceWrapper (node:events:638:28)
+    at Server.emit (node:events:536:35)
+Additional: {"context":"Uncaught Exception"}
+---

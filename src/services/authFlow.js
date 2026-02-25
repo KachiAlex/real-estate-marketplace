@@ -19,6 +19,12 @@ const sanitizeRedirectUrl = (url, user) => {
     return '/dashboard';
   }
 
+  // Prevent vendor-only users from being redirected to buyer dashboard
+  const isVendorOnly = user && Array.isArray(user.roles) && user.roles.includes('vendor') && !user.roles.includes('user') && !user.roles.includes('buyer');
+  if (isVendorOnly && url.startsWith('/dashboard')) {
+    return '/vendor/dashboard';
+  }
+
   return url;
 };
 
@@ -56,6 +62,13 @@ export const handlePostAuth = (result, navigate, setLoggedInUser, setShowRoleSel
       setShowRoleSelection(true);
       return { handled: true, showRoleSelection: true };
     }
+  }
+
+  // If the user is a vendor-only account (no buyer/user role), force vendor dashboard
+  if (user && Array.isArray(user.roles) && user.roles.includes('vendor') && !user.roles.includes('user') && !user.roles.includes('buyer')) {
+    const next = safeRedirectUrl || '/vendor/dashboard';
+    navigate(next, { replace: true });
+    return { handled: true, redirect: next };
   }
 
   // Single role or no roles, proceed with normal redirect
@@ -197,4 +210,5 @@ export const getDefaultRedirectPath = (user, redirectUrl) => {
   // Default fallback
   return '/dashboard';
 };
+
 
