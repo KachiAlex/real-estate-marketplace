@@ -206,31 +206,32 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-16 md:h-20 py-2">
             <div className="flex items-center flex-shrink-0 space-x-2 sm:space-x-4 lg:space-x-6">
-              {/* Logo: Hide on dashboard routes */}
-              {!isDashboardRoute && (
-                <Link to="/" className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none">
-                  <img
-                    src={'/logo.png?v=4.0'}
-                    alt="PropertyArk Logo"
-                    className="w-auto h-20 sm:h-24 md:h-28"
-                    style={{
-                      maxHeight: '7rem',
-                      backgroundColor: 'transparent',
-                      mixBlendMode: 'normal',
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                    onError={(e) => {
+              {/* Logo: show a smaller logo when on dashboard routes to keep header compact */}
+              <Link to="/" className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none">
+                <img
+                  src={'/logo.png?v=4.0'}
+                  alt="PropertyArk Logo"
+                  className={`w-auto ${isDashboardRoute ? 'h-8 sm:h-8' : 'h-20 sm:h-24 md:h-28'}`}
+                  style={{
+                    maxHeight: isDashboardRoute ? '2rem' : '7rem',
+                    backgroundColor: 'transparent',
+                    mixBlendMode: 'normal',
+                    border: 'none',
+                    outline: 'none'
+                  }}
+                  onError={(e) => {
+                    // if image fails, hide it and show a simple initials / icon badge
+                    try {
                       e.target.style.display = 'none';
                       if (e.target && e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
+                    } catch (err) {}
+                  }}
+                />
 
-                  <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
-                    <FaHome className="text-white text-xl" />
-                  </div>
-                </Link>
-              )}
+                <div className="w-10 h-10 bg-brand-orange rounded-lg flex items-center justify-center" style={{ display: 'none' }}>
+                  <FaHome className="text-white text-xl" />
+                </div>
+              </Link>
 
             {/* Navigation Menu */}
 

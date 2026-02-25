@@ -24,8 +24,34 @@ const Profile = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Overview</h2>
-              <p className="text-sm text-gray-600">This is a simplified profile overview for smoke build checks.</p>
-              <pre className="mt-4 text-xs bg-gray-100 p-3 rounded">{JSON.stringify(currentUser || {}, null, 2)}</pre>
+              <p className="text-sm text-gray-600">Manage your basic account details below.</p>
+
+              {!currentUser ? (
+                <p className="text-sm text-gray-600">No user data available.</p>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">First name</div>
+                    <div className="font-medium text-gray-900">{currentUser.firstName || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Last name</div>
+                    <div className="font-medium text-gray-900">{currentUser.lastName || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Email</div>
+                    <div className="font-medium text-gray-900">{currentUser.email || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Role</div>
+                    <div className="font-medium text-gray-900">{Array.isArray(currentUser.roles) ? currentUser.roles.join(', ') : (currentUser.role || 'user')}</div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-gray-500">Member ID</div>
+                    <div className="font-mono text-xs text-gray-700 break-words">{currentUser.id}</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
