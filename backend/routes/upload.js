@@ -627,8 +627,7 @@ router.delete(
  */
 router.post(
   '/delete-multiple',
-  // Allow optional auth for dev flows; in production this remains protected
-  optionalAuth,
+  protect,
   validate([
     body('publicIds').isArray({ min: 1 }).withMessage('At least one public ID required'),
     body('resourceType').optional().isIn(['image', 'video', 'raw']).withMessage('Invalid resource type')
@@ -637,16 +636,15 @@ router.post(
     try {
       const { publicIds, resourceType = 'image' } = req.body;
 
-      // In dev with CLOUDINARY_FAKE, allow unauthenticated delete requests (for testing only)
-      const allowAnonymous = process.env.CLOUDINARY_FAKE === 'true' && !req.user;
-      if (!req.user && !allowAnonymous) {
+      // Require authentication for delete-multiple in all environments
+      if (!req.user) {
         return res.status(401).json({ success: false, message: 'Authentication required' });
       }
 
       const result = await deleteMultipleFiles(publicIds, resourceType);
 
       infoLogger('Multiple files deleted', {
-        userId: req.user ? req.user.id : 'anonymous',
+        userId: req.user.id,
         count: result.data.totalDeleted,
         resourceType
       });

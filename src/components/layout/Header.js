@@ -8,7 +8,7 @@ import { useGlobalSearch } from '../../hooks/useGlobalSearch';
 import AdminProfileModal from '../AdminProfileModalNew';
 import toast from 'react-hot-toast';
 import LocalModeBanner from '../LocalModeBanner';
-import BecomeVendorModal from '../BecomeVendorModal';
+import BecomeVendorModal from '../BecomeVendorModal.js';
 // RoleSwitcher removed
 
 const Header = () => {
@@ -210,7 +210,7 @@ const Header = () => {
               {!isDashboardRoute && (
                 <Link to="/" className="flex items-center flex-shrink-0 focus:outline-none focus:ring-0 border-none">
                   <img
-                    src={`${process.env.PUBLIC_URL}/logo.png?v=4.0`}
+                    src={'/logo.png?v=4.0'}
                     alt="PropertyArk Logo"
                     className="w-auto h-20 sm:h-24 md:h-28"
                     style={{

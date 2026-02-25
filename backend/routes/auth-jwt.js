@@ -687,6 +687,108 @@ router.put('/update-profile', verifyToken, [
     }
 
     const { firstName, lastName, phone, avatar } = req.body;
+    // Handle local fallback users (development/test) whose ids are like 'local-...'
+    if (typeof req.userId === 'string' && req.userId.startsWith('local-')) {
+      const fs = require('fs');
+      const path = require('path');
+      const localPath = path.join(__dirname, '..', 'data', 'local_users.json');
+      let locals = [];
+      try {
+        locals = JSON.parse(fs.readFileSync(localPath, 'utf8')) || [];
+      } catch (e) {
+        locals = [];
+      }
+      const idx = locals.findIndex(u => u.id === req.userId);
+      if (idx >= 0) {
+        const lu = locals[idx];
+        let localRoles = Array.isArray(lu.roles) ? lu.roles.map(r => String(r).toLowerCase()) : [String(lu.role || 'user').toLowerCase()];
+        if (!localRoles.includes(role)) localRoles.push(role);
+        localRoles = Array.from(new Set(localRoles));
+        lu.role = role;
+        lu.roles = localRoles;
+        lu.activeRole = role;
+        try {
+          fs.writeFileSync(localPath, JSON.stringify(locals, null, 2));
+        } catch (e) {
+          // ignore write errors in dev
+        }
+
+        // Generate tokens using the same helpers and return updated user payload
+        const accessToken = generateToken(lu.id);
+        const refreshToken = generateRefreshToken(lu.id);
+        return res.json({
+          success: true,
+          message: 'Role switched successfully',
+          accessToken,
+          refreshToken,
+          user: {
+            id: lu.id,
+            email: lu.email,
+            firstName: lu.firstName,
+            lastName: lu.lastName,
+            phone: lu.phone,
+            role: lu.role,
+            roles: lu.roles,
+            activeRole: lu.activeRole || role,
+            avatar: lu.avatar,
+            isVerified: lu.isVerified,
+            isActive: lu.isActive
+          }
+        });
+      }
+    }
+
+    // Handle local fallback users (development/test) whose ids are like 'local-...'
+    if (typeof req.userId === 'string' && req.userId.startsWith('local-')) {
+      const fs = require('fs');
+      const path = require('path');
+      const localPath = path.join(__dirname, '..', 'data', 'local_users.json');
+      let locals = [];
+      try {
+        locals = JSON.parse(fs.readFileSync(localPath, 'utf8')) || [];
+      } catch (e) {
+        locals = [];
+      }
+      const idx = locals.findIndex(u => u.id === req.userId);
+      if (idx >= 0) {
+        const lu = locals[idx];
+        let localRoles = Array.isArray(lu.roles) ? lu.roles.map(r => String(r).toLowerCase()) : [String(lu.role || 'user').toLowerCase()];
+        if (!localRoles.includes(role)) localRoles.push(role);
+        localRoles = Array.from(new Set(localRoles));
+        lu.role = role;
+        lu.roles = localRoles;
+        lu.activeRole = role;
+        try {
+          fs.writeFileSync(localPath, JSON.stringify(locals, null, 2));
+        } catch (e) {
+          // ignore write errors in dev
+        }
+
+        // Generate tokens using the same helpers and return updated user payload
+        const accessToken = generateToken(lu.id);
+        const refreshToken = generateRefreshToken(lu.id);
+        return res.json({
+          success: true,
+          message: 'Role switched successfully',
+          accessToken,
+          refreshToken,
+          user: {
+            id: lu.id,
+            email: lu.email,
+            firstName: lu.firstName,
+            lastName: lu.lastName,
+            phone: lu.phone,
+            role: lu.role,
+            roles: lu.roles,
+            activeRole: lu.activeRole || role,
+            avatar: lu.avatar,
+            isVerified: lu.isVerified,
+            isActive: lu.isActive
+          }
+        });
+      }
+    }
+
     const user = await User.findByPk(req.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -876,6 +978,52 @@ router.post('/switch-role', verifyToken, async (req, res) => {
 
     // Normalize aliases: accept 'buyer' as 'user' internally
     if (role === 'buyer') role = 'user';
+
+    // Handle local fallback users (development/test) whose ids are like 'local-...'
+    if (typeof req.userId === 'string' && req.userId.startsWith('local-')) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const localPath = path.join(__dirname, '..', 'data', 'local_users.json');
+        let locals = [];
+        try { locals = JSON.parse(fs.readFileSync(localPath, 'utf8') || '[]'); } catch (e) { locals = []; }
+        const idx = locals.findIndex(u => u.id === req.userId);
+        if (idx >= 0) {
+          const lu = locals[idx];
+          let localRoles = Array.isArray(lu.roles) ? lu.roles.map(r => String(r).toLowerCase()) : [String(lu.role || 'user').toLowerCase()];
+          if (!localRoles.includes(role)) localRoles.push(role);
+          localRoles = Array.from(new Set(localRoles));
+          lu.role = role;
+          lu.roles = localRoles;
+          lu.activeRole = role;
+          try { fs.writeFileSync(localPath, JSON.stringify(locals, null, 2)); } catch (e) { /* ignore dev write errors */ }
+
+          const accessToken = generateToken(lu.id);
+          const refreshToken = generateRefreshToken(lu.id);
+          return res.json({
+            success: true,
+            message: 'Role switched successfully',
+            accessToken,
+            refreshToken,
+            user: {
+              id: lu.id,
+              email: lu.email,
+              firstName: lu.firstName,
+              lastName: lu.lastName,
+              phone: lu.phone,
+              role: lu.role,
+              roles: lu.roles,
+              activeRole: lu.activeRole || role,
+              avatar: lu.avatar,
+              isVerified: lu.isVerified,
+              isActive: lu.isActive
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('switch-role: local fallback handling failed', err && err.message);
+      }
+    }
 
     const user = await User.findByPk(req.userId);
     if (!user) {

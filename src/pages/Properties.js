@@ -389,11 +389,18 @@ const Properties = () => {
     const minArea = searchParams.get('minArea');
     const maxArea = searchParams.get('maxArea');
     const features = searchParams.get('features');
+    const vendorParam = searchParams.get('vendor');
     
     // Apply search query parameter (general text search)
     if (searchParam) {
       setSearchQuery(searchParam);
       setAppliedSearchQuery(searchParam);
+    }
+
+    // Apply vendor parameter (search by vendor name or id)
+    if (vendorParam) {
+      setSelectedVendor(vendorParam);
+      setAppliedVendor(vendorParam);
     }
     
     // Apply location filter (normalize location name)

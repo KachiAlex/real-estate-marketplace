@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="43.427" tests="4" failures="2">
+  <testsuite name="Root Suite" timestamp="2026-02-25T02:22:21" tests="0" file="cypress\e2e\vendor-journey.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Vendor Journey" timestamp="2026-02-25T02:22:21" tests="4" time="43.391" failures="2">
+    <testcase name="Vendor Journey should complete vendor registration" time="11.014" classname="should complete vendor registration">
+    </testcase>
+    <testcase name="Vendor Journey should add new property listing" time="5.027" classname="should add new property listing">
+    </testcase>
+    <testcase name="Vendor Journey should manage property listings" time="0.000" classname="should manage property listings">
+      <failure message="Timed out retrying after 10000ms: Expected to find element: `[data-testid=&quot;property-item&quot;]`, but never found it." type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 10000ms: Expected to find element: `[data-testid="property-item"]`, but never found it.
+    at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/vendor-journey.cy.js:88:44)]]></failure>
+    </testcase>
+    <testcase name="Vendor Journey should view earnings dashboard" time="0.000" classname="should view earnings dashboard">
+      <failure message="Timed out retrying after 10000ms: Expected to find content: &apos;/earnings|revenue|total/i&apos; but never did." type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 10000ms: Expected to find content: '/earnings|revenue|total/i' but never did.
+    at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/vendor-journey.cy.js:107:43)]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

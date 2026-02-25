@@ -1174,33 +1174,17 @@ const Home = () => {
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2">Search by Vendor</label>
               <input
-                type="text"
-                value={selectedVendor}
-                onChange={(e) => setSelectedVendor(e.target.value)}
-                placeholder="Enter vendor name..."
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              {uniqueVendors.length > 0 && (
-                <div className="mt-2 max-h-40 overflow-y-auto">
-                  {uniqueVendors
-                    .filter(vendor => 
-                      !selectedVendor || 
-                      (vendor.name || '').toLowerCase().includes(selectedVendor.toLowerCase())
-                    )
-                    .slice(0, 5)
-                    .map(vendor => (
-                      <button
-                        key={vendor.id}
-                        onClick={() => setSelectedVendor(vendor.name)}
-                        aria-label={`Select vendor (hidden) - ${vendor.count || 1} listing(s)`}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded transition-colors flex justify-between items-center"
-                      >
-                        <span className="truncate">Vendor</span>
-                        <span className="text-xs text-gray-400 ml-2">{(vendor.count || 1)} listing{(vendor.count || 1) !== 1 ? 's' : ''}</span>
-                      </button>
-                    ))}
-                </div>
-              )}
+                  type="text"
+                  value={selectedVendor}
+                  onChange={(e) => setSelectedVendor(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && selectedVendor && selectedVendor.trim()) {
+                      navigate(`/properties?vendor=${encodeURIComponent(selectedVendor.trim())}`);
+                    }
+                  }}
+                  placeholder="Enter vendor name..."
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
             </div>
 
             {/* Price Range */}

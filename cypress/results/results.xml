@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="21.238" tests="1" failures="1">
+  <testsuite name="Root Suite" timestamp="2026-02-25T02:15:30" tests="0" file="cypress\e2e\vendor-onboard-sync.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Onboarding → Login → Auto-sync → My Properties" timestamp="2026-02-25T02:15:30" tests="1" time="21.209" failures="1">
+    <testcase name="Onboarding → Login → Auto-sync → My Properties auto-syncs a locally onboarded vendor when they later log in" time="0.000" classname="auto-syncs a locally onboarded vendor when they later log in">
+      <failure message="Timed out retrying after 10000ms: expected &apos;http://localhost:3001/auth/login&apos; to include &apos;/vendor/dashboard&apos;" type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 10000ms: expected 'http://localhost:3001/auth/login' to include '/vendor/dashboard'
+    at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/vendor-onboard-sync.cy.js:38:31)]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

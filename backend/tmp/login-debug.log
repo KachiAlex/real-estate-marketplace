@@ -1,0 +1,164 @@
+2026-02-24T12:31:55.606Z login:start
+2026-02-24T12:31:55.629Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T12:31:55.758Z login:error {"name":"SequelizeConnectionRefusedError","parent":{"code":"ECONNREFUSED"},"original":{"code":"ECONNREFUSED"}}
+2026-02-24T12:34:11.164Z login:start
+2026-02-24T12:34:11.188Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T12:34:11.222Z login:error {"name":"SequelizeConnectionRefusedError","parent":{"code":"ECONNREFUSED"},"original":{"code":"ECONNREFUSED"}}
+2026-02-24T12:36:03.415Z login:start
+2026-02-24T12:36:03.447Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T12:36:03.560Z login:error {"name":"SequelizeConnectionRefusedError","parent":{"code":"ECONNREFUSED"},"original":{"code":"ECONNREFUSED"}}
+2026-02-24T13:58:26.940Z login:start
+2026-02-24T13:58:26.994Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T13:58:28.571Z user:not-found-in-db, checking local json
+2026-02-24T13:58:28.621Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T13:58:29.161Z password:compare result=true
+2026-02-24T14:02:30.194Z login:start
+2026-02-24T14:02:30.241Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T14:02:34.641Z user:not-found-in-db, checking local json
+2026-02-24T14:02:34.676Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T14:02:35.359Z password:compare result=true
+2026-02-24T14:09:14.884Z login:start
+2026-02-24T14:09:15.099Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T16:32:13.853Z login:start
+2026-02-24T16:32:13.920Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T16:32:13.926Z user:not-found-in-db, checking local json
+2026-02-24T16:32:13.960Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T16:32:14.215Z password:compare result=true
+2026-02-24T17:10:34.829Z login:start
+2026-02-24T17:10:34.878Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T17:10:35.187Z user:not-found-in-db, checking local json
+2026-02-24T17:10:35.235Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T17:10:35.585Z password:compare result=true
+2026-02-24T17:29:31.022Z login:start
+2026-02-24T17:29:31.070Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T17:29:32.381Z user:not-found-in-db, checking local json
+2026-02-24T17:29:32.402Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T17:29:32.745Z password:compare result=true
+2026-02-24T17:43:41.887Z login:start
+2026-02-24T17:43:41.976Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T17:43:43.456Z user:not-found-in-db, checking local json
+2026-02-24T17:43:43.536Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T17:43:43.795Z password:compare result=true
+2026-02-24T17:44:18.695Z login:start
+2026-02-24T17:44:18.710Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T17:44:18.836Z user:not-found-in-db, checking local json
+2026-02-24T17:44:18.845Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T17:44:19.051Z password:compare result=true
+2026-02-24T17:50:37.423Z login:start
+2026-02-24T17:50:37.489Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T17:50:38.055Z user:not-found-in-db, checking local json
+2026-02-24T17:50:38.090Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T17:50:38.304Z password:compare result=true
+2026-02-24T18:30:26.617Z login:start
+2026-02-24T18:30:26.650Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T18:30:26.759Z user:not-found-in-db, checking local json
+2026-02-24T18:30:26.768Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T18:30:27.206Z password:compare result=true
+2026-02-24T18:31:43.304Z login:start
+2026-02-24T18:31:43.322Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T18:31:45.258Z user:not-found-in-db, checking local json
+2026-02-24T18:31:45.316Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T18:31:45.552Z password:compare result=true
+2026-02-24T18:38:43.853Z login:start
+2026-02-24T18:38:43.894Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T18:38:45.892Z user:not-found-in-db, checking local json
+2026-02-24T18:38:45.962Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T18:38:46.260Z password:compare result=true
+2026-02-24T18:50:33.530Z login:start
+2026-02-24T18:50:33.585Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T18:50:34.874Z user:not-found-in-db, checking local json
+2026-02-24T18:50:35.012Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T18:50:35.232Z password:compare result=true
+2026-02-24T18:56:33.637Z login:start
+2026-02-24T18:56:33.744Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T18:56:33.929Z user:not-found-in-db, checking local json
+2026-02-24T18:56:34.121Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T18:56:34.482Z password:compare result=true
+2026-02-24T19:00:12.684Z login:start
+2026-02-24T19:00:12.846Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:00:15.036Z user:not-found-in-db, checking local json
+2026-02-24T19:00:15.160Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:00:15.591Z password:compare result=true
+2026-02-24T19:01:44.696Z login:start
+2026-02-24T19:01:44.736Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:01:45.361Z user:not-found-in-db, checking local json
+2026-02-24T19:01:45.396Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:01:45.724Z password:compare result=true
+2026-02-24T19:04:06.887Z login:start
+2026-02-24T19:04:07.094Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:04:09.625Z user:not-found-in-db, checking local json
+2026-02-24T19:04:09.678Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:04:10.000Z password:compare result=true
+2026-02-24T19:08:11.248Z login:start
+2026-02-24T19:08:11.296Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:08:13.645Z user:not-found-in-db, checking local json
+2026-02-24T19:08:13.699Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:08:14.055Z password:compare result=true
+2026-02-24T19:37:23.501Z login:start
+2026-02-24T19:37:23.905Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:37:24.200Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:37:24.710Z password:compare result=true
+2026-02-24T19:37:48.964Z login:start
+2026-02-24T19:37:48.978Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:37:49.009Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:37:49.178Z password:compare result=true
+2026-02-24T19:41:53.885Z login:start
+2026-02-24T19:41:54.008Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T19:41:54.142Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T19:41:54.474Z password:compare result=true
+2026-02-24T20:11:42.230Z login:start
+2026-02-24T20:11:42.288Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T20:11:42.943Z user:not-found-in-db, checking local json
+2026-02-24T20:11:42.973Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T20:11:43.308Z password:compare result=true
+2026-02-24T20:13:39.103Z login:start
+2026-02-24T20:13:39.137Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T20:13:40.229Z user:not-found-in-db, checking local json
+2026-02-24T20:13:40.250Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T20:13:40.511Z password:compare result=true
+2026-02-24T20:39:10.361Z login:start
+2026-02-24T20:39:10.405Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T20:39:10.718Z user:not-found-in-db, checking local json
+2026-02-24T20:39:10.763Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T20:39:10.985Z password:compare result=true
+2026-02-24T20:54:55.906Z login:start
+2026-02-24T20:54:55.940Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T20:54:56.583Z user:not-found-in-db, checking local json
+2026-02-24T20:54:56.598Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T20:54:56.980Z password:compare result=true
+2026-02-24T21:13:18.189Z login:start
+2026-02-24T21:13:18.225Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-24T21:13:18.872Z user:not-found-in-db, checking local json
+2026-02-24T21:13:18.891Z user:found id=local-1771935187148 hashedLength=60
+2026-02-24T21:13:19.193Z password:compare result=true
+2026-02-25T01:56:28.144Z login:start
+2026-02-25T01:56:28.182Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T01:56:29.884Z user:not-found-in-db, checking local json
+2026-02-25T01:56:29.956Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T01:56:30.240Z password:compare result=true
+2026-02-25T02:29:42.451Z login:start
+2026-02-25T02:29:42.510Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T02:29:43.028Z user:not-found-in-db, checking local json
+2026-02-25T02:29:43.100Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T02:29:43.498Z password:compare result=true
+2026-02-25T02:40:15.698Z login:start
+2026-02-25T02:40:15.747Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T02:40:16.052Z user:not-found-in-db, checking local json
+2026-02-25T02:40:16.098Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T02:40:16.405Z password:compare result=true
+2026-02-25T04:01:52.811Z login:start
+2026-02-25T04:01:52.831Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T04:01:52.899Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T04:01:53.125Z password:compare result=true
+2026-02-25T04:04:10.656Z login:start
+2026-02-25T04:04:10.750Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T04:04:10.903Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T04:04:11.197Z password:compare result=true
+2026-02-25T04:10:04.470Z login:start
+2026-02-25T04:10:04.608Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T04:10:04.825Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T04:10:05.309Z password:compare result=true
+2026-02-25T04:15:18.286Z login:start
+2026-02-25T04:15:18.316Z received body: {"email":"smoke.e2e@example.com"}
+2026-02-25T04:15:18.614Z user:found id=local-1771935187148 hashedLength=60
+2026-02-25T04:15:19.414Z password:compare result=true

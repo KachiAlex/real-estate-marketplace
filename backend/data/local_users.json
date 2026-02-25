@@ -1,0 +1,30 @@
+[
+  {
+    "id": "local-1771935187148",
+    "email": "smoke.e2e@example.com",
+    "password": "$2a$10$s/eSRhuWRRUjIdiVaINVOukeSw/E91I3r.t5s1FHFWff0Yq86OQDm",
+    "firstName": "Local",
+    "lastName": "User",
+    "role": "vendor",
+    "roles": [
+      "user",
+      "vendor"
+    ],
+    "createdAt": "2026-02-24T12:13:07.268Z",
+    "updatedAt": "2026-02-24T12:13:07.268Z",
+    "activeRole": "vendor"
+  },
+  {
+    "id": "local-1771935943389",
+    "email": "smoke.e2e@example.com",
+    "password": "$2a$10$1Otfnc5lgfGHcnAhWNu2weNWqYPsfkCivE4xWSChkX75X49T.2mmW",
+    "firstName": "Local",
+    "lastName": "User",
+    "role": "user",
+    "roles": [
+      "user"
+    ],
+    "createdAt": "2026-02-24T12:25:43.665Z",
+    "updatedAt": "2026-02-24T12:25:43.665Z"
+  }
+]

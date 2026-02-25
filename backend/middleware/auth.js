@@ -95,13 +95,16 @@ exports.protect = async (req, res, next) => {
     try {
       // Verify backend JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('[protect] Backend JWT verified successfully for user:', decoded.id);
+      // Support tokens signed with either { id } or { userId }
+      const tokenUserId = decoded && (decoded.userId || decoded.id || decoded.user || decoded.uid);
+      console.log('[protect] Backend JWT verified, token payload keys:', Object.keys(decoded || {}));
+      console.log('[protect] Backend JWT resolved user id:', tokenUserId);
 
       // Get user from token
-      const user = await userService.findById(decoded.id);
+      const user = await userService.findById(tokenUserId);
 
       if (!user) {
-        console.warn('[protect] User not found for decoded token id:', decoded.id);
+        console.warn('[protect] User not found for decoded token id:', tokenUserId);
         if (attachMockUserFromHeaders(req)) {
           return next();
         }

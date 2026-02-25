@@ -80,7 +80,21 @@ router.post('/:id/roles', protect, async (req, res) => {
       // normalize + ensure 'user' present
       updated = normalizeRoles(updated);
       const newActive = chooseActiveRole(user.activeRole, setActive ? r : null, updated);
-      await user.update({ roles: updated, activeRole: newActive }, { transaction: t });
+      // If adding vendor role, initialize or update vendorData to reflect pending KYC
+      let updates = { roles: updated, activeRole: newActive };
+      if (action === 'add' && r === 'vendor') {
+        try {
+          let vendorData = user.vendorData || {};
+          try { vendorData = typeof vendorData === 'string' ? JSON.parse(vendorData) : vendorData; } catch (e) { vendorData = vendorData || {}; }
+          vendorData.kycStatus = 'pending';
+          vendorData.updatedAt = new Date();
+          updates.vendorData = vendorData;
+        } catch (vdErr) {
+          console.warn('Failed to set vendorData on role add:', vdErr && vdErr.message ? vdErr.message : vdErr);
+        }
+      }
+
+      await user.update(updates, { transaction: t });
       return user;
     });
 
