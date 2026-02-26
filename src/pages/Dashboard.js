@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
   // ...existing code...
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import DashboardSwitch from '../components/DashboardSwitch';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
 import { useMortgage } from '../contexts/MortgageContext';
@@ -631,7 +632,7 @@ const Dashboard = () => {
             </p>
             {/* Switch to Vendor Button */}
             <div className="mb-4">
-              {/* Dashboard switch removed */}
+              <DashboardSwitch />
             </div>
 
         {/* Stats Cards */}

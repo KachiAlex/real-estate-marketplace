@@ -45,18 +45,22 @@ export default function DashboardSwitch() {
     <div className="flex items-center gap-2 bg-white rounded shadow p-2 mb-4">
       <span className="font-semibold text-gray-700">Switch Dashboard:</span>
       <button
-        className={`px-3 py-1 rounded transition-colors font-medium ${isBuyerDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+        className={`px-3 py-1 rounded transition-colors font-medium flex items-center gap-2 ${isBuyerDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
         onClick={() => handleSwitch('buyer')}
-        disabled={isBuyerDashboard}
+        disabled={isBuyerDashboard || loading}
+        aria-busy={loading}
       >
-        Buyer
+        {loading && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>}
+        <span>Buyer</span>
       </button>
       <button
-        className={`px-3 py-1 rounded transition-colors font-medium ${isVendorDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+        className={`px-3 py-1 rounded transition-colors font-medium flex items-center gap-2 ${isVendorDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
         onClick={() => handleSwitch('vendor')}
-        disabled={isVendorDashboard}
+        disabled={isVendorDashboard || loading}
+        aria-busy={loading}
       >
-        Vendor
+        {loading && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>}
+        <span>Vendor</span>
       </button>
     </div>
   );
