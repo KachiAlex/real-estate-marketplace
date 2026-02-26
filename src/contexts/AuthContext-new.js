@@ -187,7 +187,11 @@ export const AuthProvider = ({ children }) => {
       if (!currentUser) throw new Error('Not logged in');
       const resp = await tryFetchAuth('/auth/jwt/update-profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
-      if (!resp || !resp.ok) throw new Error(data.message || 'Update failed');
+      console.log('updateUserProfile response', resp && resp.status, data);
+      if (!resp || !resp.ok) {
+        const serverMsg = data && (data.message || data.error || JSON.stringify(data));
+        throw new Error(serverMsg || 'Update failed');
+      }
       const merged = normalizeUser({ ...currentUser, ...updates });
       localStorage.setItem('currentUser', JSON.stringify(merged)); setCurrentUser(merged);
       toast.success('Profile updated');

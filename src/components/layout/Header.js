@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaHome, FaBars, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext-new';
@@ -8,6 +8,16 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
 
   // Debug auth state
   console.log('Header auth currentUser:', currentUser);
@@ -28,11 +38,11 @@ export default function Header() {
         </nav>
         <div className="hidden lg:flex items-center space-x-4">
           {currentUser ? (
-            <div className="flex items-center space-x-3">
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 text-sm text-gray-700 hover:text-brand-orange"
-                aria-label="Open profile"
+                aria-label="Open profile menu"
               >
                 {currentUser.avatar || currentUser.photoURL ? (
                   <img src={currentUser.avatar || currentUser.photoURL} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
@@ -41,7 +51,15 @@ export default function Header() {
                 )}
                 <span className="hidden sm:inline">{currentUser.firstName || currentUser.displayName || (currentUser.email && currentUser.email.split('@')[0])}</span>
               </button>
-              <button onClick={async () => { await logout(); navigate('/', { replace: true }); }} className="text-sm text-gray-700 hover:text-brand-orange">Logout</button>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50">
+                  <button onClick={() => { setMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Profile</button>
+                  <button onClick={() => { setMenuOpen(false); navigate('/dashboard'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Dashboard</button>
+                  <div className="border-t" />
+                  <button onClick={async () => { setMenuOpen(false); await logout(); navigate('/', { replace: true }); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
+                </div>
+              )}
             </div>
           ) : (
             <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>

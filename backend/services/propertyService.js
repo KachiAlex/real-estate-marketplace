@@ -164,7 +164,8 @@ module.exports = {
   toggleFavorite,
   getPropertyStats,
   getPropertyStatusSummary,
-  listRecentProperties
+  listRecentProperties,
+  ensureSeedProperties: async () => {} // stub for dashboard seed logic
 };
 
 // deletePropertiesByOwner removed — use Sequelize `Property.destroy({ where: { ownerId } })` instead.

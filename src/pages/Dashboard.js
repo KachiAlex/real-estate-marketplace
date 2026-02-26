@@ -33,9 +33,6 @@ const Dashboard = () => {
   const { getUserMortgages, getPaymentSummary, getUserApplications, getApplicationsByStatus } = useMortgage();
   const [favorites, setFavorites] = useState(new Set());
 
-  // Get recent properties (first 3)
-  const recentProperties = properties.slice(0, 3);
-
   // Load favorites from localStorage
   const loadFavorites = useCallback(() => {
     if (user && user.id) {
@@ -46,13 +43,11 @@ const Dashboard = () => {
       setFavorites(new Set(normalizedFavorites));
       return normalizedFavorites.length;
     }
-    return (
-      <div className="container mx-auto py-8">
-        <DashboardSwitch />
-        {/* ...existing code... */}
-      </div>
-    );
-  }, [user, loadFavorites]);
+    return 0;
+  }, [user]);
+
+  // Get recent properties (first 3)
+  const recentProperties = properties.slice(0, 3);
 
   // Initialize dashboard stats state
   const [dashboardStats, setDashboardStats] = useState({

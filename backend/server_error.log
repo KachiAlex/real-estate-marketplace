@@ -1,0 +1,50 @@
+[2026-02-26T09:35:07.255Z] ERROR: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain
+Error: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain
+    at uploadFile (D:\real-estate-marketplace\backend\services\uploadService.js:52:17)
+    at D:\real-estate-marketplace\backend\services\uploadService.js:141:46
+    at Array.map (<anonymous>)
+    at uploadMultipleFiles (D:\real-estate-marketplace\backend\services\uploadService.js:141:34)
+    at D:\real-estate-marketplace\backend\routes\upload.js:88:32
+    at Layer.handle [as handle_request] (D:\real-estate-marketplace\backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\real-estate-marketplace\backend\node_modules\express\lib\router\route.js:149:13)
+    at done (D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:47:7)
+    at indicateDone (D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:51:68)
+    at D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:157:11
+Additional: {"context":"File upload","filename":"2.png"}
+---
+[2026-02-26T09:35:07.264Z] ERROR: Some uploads failed
+Error: Some uploads failed
+    at uploadMultipleFiles (D:\real-estate-marketplace\backend\services\uploadService.js:176:21)
+    at async D:\real-estate-marketplace\backend\routes\upload.js:88:26
+Additional: {"context":"uploadMultipleFiles failures","detailed":[{"message":"Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain","stack":"Error: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain\n    at uploadFile (D:\\real-estate-marketplace\\backend\\services\\uploadService.js:52:17)\n    at D:\\real-estate-marketplace\\backend\\services\\uploadService.js:141:46\n    at Array.map (<anonymous>)\n    at uploadMultipleFiles (D:\\real-estate-marketplace\\backend\\services\\uploadService.js:141:34)\n    at D:\\real-estate-marketplace\\backend\\routes\\upload.js:88:32\n    at Layer.handle [as handle_request] (D:\\real-estate-marketplace\\backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (D:\\real-estate-marketplace\\backend\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at done (D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:47:7)\n    at indicateDone (D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:51:68)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:157:11"}]}
+---
+[2026-02-26T09:35:07.268Z] ERROR: Cloud upload returned no uploaded files
+Error: Cloud upload returned no uploaded files
+    at D:\real-estate-marketplace\backend\routes\upload.js:96:27
+Additional: {"context":"Vendor KYC cloud upload empty result","totalUploaded":0,"totalFailed":1,"failures":["Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain"],"files":[{"originalname":"2.png","mimetype":"image/png","size":98233,"path":"D:\\real-estate-marketplace\\backend\\uploads\\temp\\1772098507172-163785110.png"}]}
+---
+[2026-02-26T09:35:07.312Z] ERROR: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain
+Error: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain
+    at uploadFile (D:\real-estate-marketplace\backend\services\uploadService.js:52:17)
+    at D:\real-estate-marketplace\backend\services\uploadService.js:141:46
+    at Array.map (<anonymous>)
+    at uploadMultipleFiles (D:\real-estate-marketplace\backend\services\uploadService.js:141:34)
+    at D:\real-estate-marketplace\backend\routes\upload.js:88:32
+    at Layer.handle [as handle_request] (D:\real-estate-marketplace\backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\real-estate-marketplace\backend\node_modules\express\lib\router\route.js:149:13)
+    at done (D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:47:7)
+    at indicateDone (D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:51:68)
+    at D:\real-estate-marketplace\backend\node_modules\multer\lib\make-middleware.js:157:11
+Additional: {"context":"File upload","filename":"1.png"}
+---
+[2026-02-26T09:35:07.316Z] ERROR: Some uploads failed
+Error: Some uploads failed
+    at uploadMultipleFiles (D:\real-estate-marketplace\backend\services\uploadService.js:176:21)
+    at async D:\real-estate-marketplace\backend\routes\upload.js:88:26
+Additional: {"context":"uploadMultipleFiles failures","detailed":[{"message":"Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain","stack":"Error: Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain\n    at uploadFile (D:\\real-estate-marketplace\\backend\\services\\uploadService.js:52:17)\n    at D:\\real-estate-marketplace\\backend\\services\\uploadService.js:141:46\n    at Array.map (<anonymous>)\n    at uploadMultipleFiles (D:\\real-estate-marketplace\\backend\\services\\uploadService.js:141:34)\n    at D:\\real-estate-marketplace\\backend\\routes\\upload.js:88:32\n    at Layer.handle [as handle_request] (D:\\real-estate-marketplace\\backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (D:\\real-estate-marketplace\\backend\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at done (D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:47:7)\n    at indicateDone (D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:51:68)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\multer\\lib\\make-middleware.js:157:11"}]}
+---
+[2026-02-26T09:35:07.321Z] ERROR: Cloud upload returned no uploaded files
+Error: Cloud upload returned no uploaded files
+    at D:\real-estate-marketplace\backend\routes\upload.js:96:27
+Additional: {"context":"Vendor KYC cloud upload empty result","totalUploaded":0,"totalFailed":1,"failures":["Invalid file type. Allowed types: pdf, msword, vnd.openxmlformats-officedocument.wordprocessingml.document, plain"],"files":[{"originalname":"1.png","mimetype":"image/png","size":151025,"path":"D:\\real-estate-marketplace\\backend\\uploads\\temp\\1772098507295-863974703.png"}]}
+---

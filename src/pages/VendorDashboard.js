@@ -3,6 +3,7 @@ import VendorOverview from '../components/vendor/VendorOverview';
 import { useAuth } from '../contexts/AuthContext-new';
 import { useVendor } from '../contexts/VendorContext';
 import { useNavigate } from 'react-router-dom';
+import DashboardSwitch from '../components/DashboardSwitch';
 
 export default function VendorDashboard() {
   const [stats, setStats] = useState(null);
