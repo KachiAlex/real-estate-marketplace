@@ -13,13 +13,13 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <SummaryCard label="Active Listings" value={stats?.activeListings} loading={loading} color="blue" />
-        <SummaryCard label="Pending Listings" value={stats?.pendingListings} loading={loading} color="yellow" />
-        <SummaryCard label="Sold Properties" value={stats?.soldProperties} loading={loading} color="green" />
-        <SummaryCard label="Revenue" value={stats?.totalRevenue} loading={loading} color="purple" prefix="₦" />
-        <SummaryCard label="Inquiries" value={stats?.totalInquiries} loading={loading} color="orange" />
-        <SummaryCard label="Conversion Rate" value={stats?.conversionRate?.toFixed(1) + '%'} loading={loading} color="teal" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard label="Active Listings" value={stats?.activeListings} loading={loading} />
+        <SummaryCard label="Pending Listings" value={stats?.pendingListings} loading={loading} />
+        <SummaryCard label="Sold Properties" value={stats?.soldProperties} loading={loading} />
+        <SummaryCard label="Revenue" value={stats?.totalRevenue} loading={loading} prefix="₦" />
+        <SummaryCard label="Inquiries" value={stats?.totalInquiries} loading={loading} />
+        <SummaryCard label="Conversion Rate" value={stats?.conversionRate?.toFixed(1) + '%'} loading={loading} />
       </div>
 
       {/* Trends Section (placeholder) */}
@@ -56,13 +56,15 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
   );
 }
 
-function SummaryCard({ label, value, loading, color, prefix }) {
+function SummaryCard({ label, value, loading, prefix }) {
   return (
-    <div className={`bg-${color}-50 rounded shadow p-4 flex flex-col items-center`}>
-      <div className={`text-2xl font-bold text-${color}-700`}>
-        {loading ? <span className="animate-pulse">...</span> : (prefix || '') + (value ?? 0)}
+    <div className="stats-card cursor-pointer hover:bg-blue-700 transition-colors p-4 rounded shadow flex flex-col justify-between min-h-[100px]">
+      <div className="flex flex-col items-start">
+        <div className="text-2xl font-bold text-white">
+          {loading ? <span className="animate-pulse">...</span> : (prefix || '') + (value ?? 0)}
+        </div>
+        <div className="text-blue-200 text-sm mt-1">{label}</div>
       </div>
-      <div className="text-xs text-gray-500 mt-1">{label}</div>
     </div>
   );
 }

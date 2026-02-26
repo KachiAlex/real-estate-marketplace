@@ -15,14 +15,34 @@ export function PropertyProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Example: fetch properties (replace with real logic as needed)
+
+  // Add property creation logic
+  const createProperty = async (propertyData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Assign a unique id and add to the list
+      const newProperty = {
+        ...propertyData,
+        id: `prop_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      setProperties(prev => [newProperty, ...prev]);
+      setLoading(false);
+      return { success: true, id: newProperty.id };
+    } catch (e) {
+      setError('Failed to create property');
+      setLoading(false);
+      return { success: false };
+    }
+  };
+
   const fetchProperties = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       // Simulate fetch
       setTimeout(() => {
-        setProperties([]);
         setLoading(false);
       }, 500);
     } catch (e) {
@@ -36,6 +56,7 @@ export function PropertyProvider({ children }) {
     loading,
     error,
     fetchProperties,
+    createProperty,
   };
 
   return (
