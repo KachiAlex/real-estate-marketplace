@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function DashboardSwitch() {
   const { user } = useAuth();
@@ -16,12 +17,27 @@ export default function DashboardSwitch() {
   const isVendorDashboard = location.pathname.startsWith('/vendor');
   const isBuyerDashboard = location.pathname.startsWith('/dashboard');
 
-  // Optimized switch handler
-  const handleSwitch = (target) => {
-    if (target === 'vendor') {
-      navigate('/vendor/dashboard');
-    } else {
-      navigate('/dashboard');
+  const { switchRole } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  // Optimized switch handler: change active role then navigate
+  const handleSwitch = async (target) => {
+    const wanted = target === 'vendor' ? 'vendor' : 'user';
+    if (!switchRole) {
+      // fallback to client-side navigation
+      navigate(target === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+      return;
+    }
+    try {
+      setLoading(true);
+      await switchRole(wanted);
+      // route to appropriate dashboard after successful switch
+      navigate(wanted === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+    } catch (e) {
+      console.error('Role switch failed', e);
+      toast.error(e.message || 'Failed to switch dashboard');
+    } finally {
+      setLoading(false);
     }
   };
 
