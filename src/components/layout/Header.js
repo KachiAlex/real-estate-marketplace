@@ -10,7 +10,7 @@ export default function Header() {
   const { currentUser, logout } = useAuth();
 
   // Debug auth state
-  // console.log('Header auth currentUser:', currentUser);
+  console.log('Header auth currentUser:', currentUser);
 
   return (
     <header className="bg-white shadow sticky top-0 z-50">

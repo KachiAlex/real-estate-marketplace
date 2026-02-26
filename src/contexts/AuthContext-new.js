@@ -113,6 +113,11 @@ export const AuthProvider = ({ children }) => {
       const resp = await tryFetchAuth('/auth/jwt/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       console.log('LOGIN RESPONSE', data); // DEBUG LOG
+      try { console.log('localStorage before set:', {
+        accessToken: localStorage.getItem('accessToken'),
+        refreshToken: localStorage.getItem('refreshToken'),
+        currentUser: localStorage.getItem('currentUser')
+      }); } catch (e) { /* ignore */ }
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
       const tokenVal = data.accessToken || data.token || null;
