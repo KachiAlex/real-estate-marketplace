@@ -1,3 +1,61 @@
+// Subscription Model
+const Subscription = (sequelize) => {
+  return sequelize.define('Subscription', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'Users', key: 'id' }
+    },
+    plan: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'trial', 'expired', 'cancelled'),
+      defaultValue: 'trial'
+    },
+    startDate: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    endDate: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    paymentId: {
+      type: DataTypes.UUID,
+      references: { model: 'Payments', key: 'id' }
+    },
+    trialEndsAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    remindersSent: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  }, {
+    timestamps: true,
+    underscored: true,
+    indexes: [
+      { fields: ['userId'] },
+      { fields: ['status'] }
+    ]
+  });
+};
 const { DataTypes } = require('sequelize');
 
 /**
@@ -952,5 +1010,6 @@ module.exports = {
   PropertyInquiry,
   PropertyAlert,
   DisputeResolution,
-  InspectionRequest
+  InspectionRequest,
+  Subscription
 };

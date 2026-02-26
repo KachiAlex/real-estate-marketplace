@@ -5,6 +5,7 @@ const { sanitizeInput, validate } = require('../middleware/validation');
 const { protect, authorize } = require('../middleware/auth');
 const { body, param, query } = require('express-validator');
 const router = require('express').Router();
+const { createSubscription, getUserSubscriptions, updateSubscriptionStatus } = require('../services/paymentService');
 
 // @desc    Get user payments
 // @route   GET /api/payments
@@ -365,6 +366,50 @@ router.post('/webhook/:provider',
         success: false,
         message: error.message || 'Webhook processing failed'
       });
+    }
+  }
+);
+
+// @desc    Create vendor subscription
+// @route   POST /api/subscriptions
+// @access  Private
+router.post('/',
+  protect,
+  sanitizeInput,
+  validate([
+    body('plan').isString().notEmpty().withMessage('Plan is required'),
+    body('paymentId').isString().notEmpty().withMessage('Payment ID is required'),
+    body('trialDays').optional().isInt({ min: 0, max: 30 })
+  ]),
+  async (req, res) => {
+    try {
+      const { plan, paymentId, trialDays } = req.body;
+      const subscription = await createSubscription({
+        userId: req.user.id,
+        plan,
+        paymentId,
+        trialDays: trialDays || 7
+      });
+      res.json({ success: true, data: subscription });
+    } catch (error) {
+      console.error('Create subscription error:', error);
+      res.status(500).json({ success: false, message: 'Failed to create subscription' });
+    }
+  }
+);
+
+// @desc    Get user subscriptions
+// @route   GET /api/subscriptions
+// @access  Private
+router.get('/',
+  protect,
+  async (req, res) => {
+    try {
+      const subscriptions = await getUserSubscriptions(req.user.id);
+      res.json({ success: true, data: subscriptions });
+    } catch (error) {
+      console.error('Get subscriptions error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch subscriptions' });
     }
   }
 );

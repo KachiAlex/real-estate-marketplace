@@ -1,6 +1,7 @@
 // Sequelize-only paymentService (clean, single source)
 const db = require('../config/sequelizeDb');
 const { Payment } = db;
+const { Subscription } = db;
 
 async function listUserPayments({ userId, status, paymentType, page = 1, limit = 20 }) {
   const where = { userId };
@@ -62,6 +63,27 @@ async function processWebhook({ provider, headers, payload }) {
   return { provider, received: true };
 }
 
+async function createSubscription({ userId, plan, paymentId, trialDays = 7 }) {
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+  return Subscription.create({
+    userId,
+    plan,
+    status: 'trial',
+    startDate: now,
+    trialEndsAt,
+    paymentId
+  });
+}
+
+async function getUserSubscriptions(userId) {
+  return Subscription.findAll({ where: { userId }, order: [['createdAt', 'DESC']] });
+}
+
+async function updateSubscriptionStatus(id, status) {
+  return Subscription.update({ status }, { where: { id } });
+}
+
 module.exports = {
   listUserPayments,
   getPaymentById,
@@ -70,6 +92,9 @@ module.exports = {
   cancelPayment,
   processRefund,
   getPaymentStats,
-  processWebhook
+  processWebhook,
+  createSubscription,
+  getUserSubscriptions,
+  updateSubscriptionStatus
 };
 
