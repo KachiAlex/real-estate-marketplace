@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-// ...existing code...
+  // ...existing code...
+  // Render dashboard switch for eligible users
+  // ...existing code...
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
@@ -44,11 +46,12 @@ const Dashboard = () => {
       setFavorites(new Set(normalizedFavorites));
       return normalizedFavorites.length;
     }
-    return 0;
-  }, [user]);
-
-  useEffect(() => {
-    loadFavorites();
+    return (
+      <div className="container mx-auto py-8">
+        <DashboardSwitch />
+        {/* ...existing code... */}
+      </div>
+    );
   }, [user, loadFavorites]);
 
   // Initialize dashboard stats state

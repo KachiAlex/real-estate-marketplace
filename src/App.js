@@ -72,6 +72,7 @@ const VendorProfile = lazy(() => retryImport(() => import('./pages/VendorProfile
 const VendorNotifications = lazy(() => retryImport(() => import('./pages/VendorNotifications')));
 const VendorHelp = lazy(() => retryImport(() => import('./pages/VendorHelp')));
 const PaymentCallback = lazy(() => retryImport(() => import('./pages/PaymentCallback')));
+const VendorSubscription = lazy(() => retryImport(() => import('./pages/VendorSubscription')));
 // VendorOnboardingDashboard removed
 const VendorRenewSubscription = lazy(() => retryImport(() => import('./pages/VendorRenewSubscription')));
 
@@ -336,6 +337,7 @@ const MainRoutes = () => (
     <Route path="/vendor/notifications" element={<VendorRoute><VendorNotifications /></VendorRoute>} />
     <Route path="/vendor/help" element={<VendorRoute><VendorHelp /></VendorRoute>} />
     <Route path="/vendor/inspection-requests" element={<VendorRoute><VendorInspectionRequests /></VendorRoute>} />
+    <Route path="/vendor/subscription" element={<VendorRoute><VendorSubscription /></VendorRoute>} />
     {/* VendorOnboardingDashboard route removed */}
     <Route path="/vendor/renew-subscription" element={<VendorRoute><VendorRenewSubscription /></VendorRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />

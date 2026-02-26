@@ -37,6 +37,7 @@ export default function VendorDashboard() {
 
   return (
     <div className="container mx-auto py-8">
+      <DashboardSwitch />
       <h2 className="text-2xl font-bold text-brand-blue mb-4">Vendor Dashboard</h2>
       <div className="bg-white rounded shadow p-6">
         {error && <div className="text-red-600 mb-4">{error}</div>}

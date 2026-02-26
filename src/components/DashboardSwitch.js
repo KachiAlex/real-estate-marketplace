@@ -7,14 +7,17 @@ export default function DashboardSwitch() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  if (!user || !user.roles || !Array.isArray(user.roles)) return null;
-  const isVendor = user.roles.includes('vendor');
-  const isUser = user.roles.includes('user') || user.roles.includes('buyer');
+  // Only show for users with 'user' or 'vendor' roles
+  if (!user || !Array.isArray(user.roles) || (!user.roles.includes('user') && !user.roles.includes('vendor'))) {
+    return null;
+  }
 
-  // Only show if user has both roles
-  if (!(isVendor && isUser)) return null;
+  // Determine current dashboard
+  const isVendorDashboard = location.pathname.startsWith('/vendor');
+  const isBuyerDashboard = location.pathname.startsWith('/dashboard');
 
-  const onSwitch = (target) => {
+  // Optimized switch handler
+  const handleSwitch = (target) => {
     if (target === 'vendor') {
       navigate('/vendor/dashboard');
     } else {
@@ -22,23 +25,22 @@ export default function DashboardSwitch() {
     }
   };
 
-  const onVendor = location.pathname.startsWith('/vendor/');
-
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex items-center gap-2 bg-white rounded shadow p-2 mb-4">
+      <span className="font-semibold text-gray-700">Switch Dashboard:</span>
       <button
-        className={`px-3 py-1 rounded ${!onVendor ? 'bg-brand-blue text-white' : 'bg-gray-200 text-gray-700'}`}
-        onClick={() => onSwitch('user')}
-        disabled={!onVendor}
+        className={`px-3 py-1 rounded transition-colors font-medium ${isBuyerDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+        onClick={() => handleSwitch('buyer')}
+        disabled={isBuyerDashboard}
       >
-        User Dashboard
+        Buyer
       </button>
       <button
-        className={`px-3 py-1 rounded ${onVendor ? 'bg-brand-blue text-white' : 'bg-gray-200 text-gray-700'}`}
-        onClick={() => onSwitch('vendor')}
-        disabled={onVendor}
+        className={`px-3 py-1 rounded transition-colors font-medium ${isVendorDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+        onClick={() => handleSwitch('vendor')}
+        disabled={isVendorDashboard}
       >
-        Vendor Dashboard
+        Vendor
       </button>
     </div>
   );
