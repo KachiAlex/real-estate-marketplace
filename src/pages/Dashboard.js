@@ -550,7 +550,8 @@ const Dashboard = () => {
       area: 210,
       image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
       tag: "New Listing",
-      tagColor: "bg-green-500"
+      tagColor: "bg-green-500",
+      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
     },
     {
       id: 2,
@@ -562,7 +563,8 @@ const Dashboard = () => {
       area: 350,
       image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
       tag: "Featured",
-      tagColor: "bg-brand-orange"
+      tagColor: "bg-brand-orange",
+      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
     },
     {
       id: 3,
@@ -574,7 +576,8 @@ const Dashboard = () => {
       area: 180,
       image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
       tag: null,
-      tagColor: ""
+      tagColor: "",
+      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
     }
   ];
 

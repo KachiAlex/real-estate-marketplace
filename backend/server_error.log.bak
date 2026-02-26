@@ -405,3 +405,91 @@ Error: EBADF: bad file descriptor, write
     at Server.emit (node:events:536:35)
 Additional: {"context":"Uncaught Exception"}
 ---
+[2026-02-25T13:13:51.295Z] propertyService.listProperties error:
+{
+  "message": "",
+  "name": "SequelizeConnectionRefusedError",
+  "stack": "SequelizeConnectionRefusedError\n    at Client._connectionCallback (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\connection-manager.js:133:24)\n    at Client._handleErrorWhileConnecting (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:376:19)\n    at Client._handleErrorEvent (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:386:19)\n    at Connection.emit (node:events:524:28)\n    at Socket.reportStreamError (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\connection.js:56:12)\n    at Socket.emit (node:events:524:28)\n    at emitErrorNT (node:internal/streams/destroy:169:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)",
+  "sql": null,
+  "parent": null,
+  "original": null
+}
+---
+[2026-02-25T13:13:51.465Z] GET /api/properties error:
+SequelizeConnectionRefusedError
+    at Client._connectionCallback (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\connection-manager.js:133:24)
+    at Client._handleErrorWhileConnecting (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:376:19)
+    at Client._handleErrorEvent (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:386:19)
+    at Connection.emit (node:events:524:28)
+    at Socket.reportStreamError (D:\real-estate-marketplace\backend\node_modules\pg\lib\connection.js:56:12)
+    at Socket.emit (node:events:524:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+---
+[2026-02-25T13:14:02.025Z] propertyService.listProperties error:
+{
+  "message": "",
+  "name": "SequelizeConnectionRefusedError",
+  "stack": "SequelizeConnectionRefusedError\n    at Client._connectionCallback (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\connection-manager.js:133:24)\n    at Client._handleErrorWhileConnecting (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:376:19)\n    at Client._handleErrorEvent (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:386:19)\n    at Connection.emit (node:events:524:28)\n    at Socket.reportStreamError (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\connection.js:56:12)\n    at Socket.emit (node:events:524:28)\n    at emitErrorNT (node:internal/streams/destroy:169:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)",
+  "sql": null,
+  "parent": null,
+  "original": null
+}
+---
+[2026-02-25T13:14:02.028Z] GET /api/properties error:
+SequelizeConnectionRefusedError
+    at Client._connectionCallback (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\connection-manager.js:133:24)
+    at Client._handleErrorWhileConnecting (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:376:19)
+    at Client._handleErrorEvent (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:386:19)
+    at Connection.emit (node:events:524:28)
+    at Socket.reportStreamError (D:\real-estate-marketplace\backend\node_modules\pg\lib\connection.js:56:12)
+    at Socket.emit (node:events:524:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+---
+[2026-02-25T13:14:25.017Z] propertyService.listProperties error:
+{
+  "message": "",
+  "name": "SequelizeConnectionRefusedError",
+  "stack": "SequelizeConnectionRefusedError\n    at Client._connectionCallback (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\connection-manager.js:133:24)\n    at Client._handleErrorWhileConnecting (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:376:19)\n    at Client._handleErrorEvent (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:386:19)\n    at Connection.emit (node:events:524:28)\n    at Socket.reportStreamError (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\connection.js:56:12)\n    at Socket.emit (node:events:524:28)\n    at emitErrorNT (node:internal/streams/destroy:169:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)",
+  "sql": null,
+  "parent": null,
+  "original": null
+}
+---
+[2026-02-25T13:14:25.030Z] GET /api/properties error:
+SequelizeConnectionRefusedError
+    at Client._connectionCallback (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\connection-manager.js:133:24)
+    at Client._handleErrorWhileConnecting (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:376:19)
+    at Client._handleErrorEvent (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:386:19)
+    at Connection.emit (node:events:524:28)
+    at Socket.reportStreamError (D:\real-estate-marketplace\backend\node_modules\pg\lib\connection.js:56:12)
+    at Socket.emit (node:events:524:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+---
+[2026-02-25T15:26:53.597Z] propertyService.listProperties error:
+{
+  "message": "",
+  "name": "SequelizeConnectionRefusedError",
+  "stack": "SequelizeConnectionRefusedError\n    at Client._connectionCallback (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\connection-manager.js:133:24)\n    at Client._handleErrorWhileConnecting (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:376:19)\n    at Client._handleErrorEvent (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\client.js:386:19)\n    at Connection.emit (node:events:524:28)\n    at Socket.reportStreamError (D:\\real-estate-marketplace\\backend\\node_modules\\pg\\lib\\connection.js:56:12)\n    at Socket.emit (node:events:524:28)\n    at emitErrorNT (node:internal/streams/destroy:169:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)",
+  "sql": null,
+  "parent": null,
+  "original": null
+}
+---
+[2026-02-25T15:26:53.613Z] GET /api/properties error:
+SequelizeConnectionRefusedError
+    at Client._connectionCallback (D:\real-estate-marketplace\backend\node_modules\sequelize\lib\dialects\postgres\connection-manager.js:133:24)
+    at Client._handleErrorWhileConnecting (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:376:19)
+    at Client._handleErrorEvent (D:\real-estate-marketplace\backend\node_modules\pg\lib\client.js:386:19)
+    at Connection.emit (node:events:524:28)
+    at Socket.reportStreamError (D:\real-estate-marketplace\backend\node_modules\pg\lib\connection.js:56:12)
+    at Socket.emit (node:events:524:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+---

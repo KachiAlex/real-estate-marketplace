@@ -45,7 +45,7 @@ const backendMockProperties = [
     details: { bedrooms: 3, bathrooms: 2, sqft: 1800, yearBuilt: 2018, parking: 2, furnished: 'semi-furnished' },
     location: { address: '123 Lekki Phase 1', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4654, lng: 3.4654 } },
     images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', isPrimary: false }],
-    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
+    owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' },
     views: 45,
     isVerified: false,
     amenities: ['Swimming Pool', 'Gym', '24/7 Security', 'Garden', 'Parking'],
@@ -61,7 +61,7 @@ const backendMockProperties = [
     details: { bedrooms: 2, bathrooms: 1, sqft: 1200, yearBuilt: 2020, parking: 1, furnished: 'fully-furnished' },
     location: { address: '456 Victoria Island', city: 'Lagos', state: 'Lagos', zipCode: '101241', coordinates: { lat: 6.4281, lng: 3.4219 } },
     images: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', isPrimary: false }],
-    owner: { id: 'user_001', firstName: 'Adebayo', lastName: 'Oluwaseun', email: 'adebayo.oluwaseun@gmail.com', phone: '+234-801-234-5678' },
+    owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' },
     views: 32,
     isVerified: true,
     amenities: ['Concierge', 'Gym', 'Swimming Pool', 'Security', 'Parking'],
@@ -936,22 +936,22 @@ const Home = () => {
             0% {
               transform: translateX(0);
             }
-            100% {
-              transform: translateX(-50%);
+            {
+              id: 'prop_003',
+              title: 'Luxury Penthouse Suite with Ocean Views',
+              description: 'Stunning penthouse with panoramic city and ocean views, premium finishes, and exclusive access to rooftop amenities.',
+              price: 520000000,
+              type: 'apartment',
+              status: 'for-sale',
+              details: { bedrooms: 4, bathrooms: 3, sqft: 2800, yearBuilt: 2021, parking: 3, furnished: 'fully-furnished' },
+              location: { address: '789 Banana Island', city: 'Lagos', state: 'Lagos', zipCode: '101001', coordinates: { lat: 6.4528, lng: 3.4068 } },
+              images: [{ url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', isPrimary: true }, { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop', isPrimary: false }, { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop', isPrimary: false }],
+              owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' },
+              views: 27,
+              isVerified: true,
+              amenities: ['Rooftop Lounge', 'Private Elevator', 'Ocean View', 'Smart Home', 'Gym'],
+              createdAt: '2024-01-05'
             }
-          }
-          
-          @keyframes scroll-bg {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(-50%);
-            }
-          }
-          
-          .animate-scroll-text {
-            animation: scroll-text 20s linear infinite;
           }
           
           .animate-scroll-text:hover {

@@ -315,8 +315,8 @@ exports.adminValidation = {
 
   verifyProperty: [
     body('verificationStatus')
-      .isIn(['verified', 'rejected'])
-      .withMessage('Verification status must be verified or rejected'),
+      .isIn(['approved', 'rejected'])
+      .withMessage('Verification status must be approved or rejected'),
     
     body('verificationNotes')
       .optional()

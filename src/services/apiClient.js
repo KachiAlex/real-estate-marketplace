@@ -20,6 +20,20 @@ client.interceptors.request.use((config) => {
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
+    // If using a frontend mock token, also attach the mock user email header so backend can resolve mock user
+    try {
+      if (typeof token === 'string' && token.startsWith('mock-')) {
+        const rawUser = localStorage.getItem('currentUser');
+        if (rawUser) {
+          const parsed = JSON.parse(rawUser);
+          if (parsed && parsed.email) {
+            config.headers['x-mock-user-email'] = parsed.email;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore JSON parse errors
+    }
   }
   return config;
 });

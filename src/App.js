@@ -1,3 +1,4 @@
+import VendorPropertiesContainer from './components/vendor/VendorPropertiesContainer';
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
@@ -122,8 +123,11 @@ const MainRoutes = () => (
     } />
 
     {/* Short redirects for legacy vendor routes expected by E2E tests */}
-    <Route path="/vendor/properties" element={<Navigate to="/vendor/dashboard/properties" replace />} />
-    <Route path="/vendor/earnings" element={<Navigate to="/vendor/dashboard/earnings" replace />} />
+      {/* Short redirects / legacy vendor routes expected by E2E tests */}
+      {/* Ensure /vendor/properties resolves to the vendor properties page (legacy links point here). */}
+      <Route path="/vendor/properties" element={<VendorRoute><VendorPropertiesContainer /></VendorRoute>} />
+    {/* Ensure legacy /vendor/earnings loads the VendorEarnings page directly */}
+    <Route path="/vendor/earnings" element={<VendorRoute><VendorEarnings /></VendorRoute>} />
     <Route path="/vendor/register" element={
       <React.Suspense fallback={<div className="flex items-center justify-center w-full h-screen"><LoadingSpinner size="lg" /></div>}>
         <OnboardVendor />

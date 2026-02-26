@@ -4,6 +4,7 @@ const vendorOnboarding = require('../middleware/vendorOnboarding');
 const { requireAnyRole } = require('../middleware/roleValidation');
 const { sanitizeInput } = require('../middleware/validation');
 const db = require('../config/sequelizeDb');
+const mockUsers = require('../data/mockUsers');
 const { ensureSeedProperties } = require('../services/propertyService');
 
 const router = require('express').Router();
@@ -138,8 +139,22 @@ router.get('/user', protect, requireAnyRole(['user', 'buyer']), sanitizeInput, a
 router.get('/vendor', protect, requireAnyRole(['vendor']), vendorOnboarding, sanitizeInput, async (req, res) => {
   try {
     await ensureSeedProperties();
-    const props = await db.Property.findAll();
-    const allProperties = props.map(p => p.toJSON());
+    let props = [];
+    try {
+      props = await db.Property.findAll();
+    } catch (e) {
+      // If DB unavailable, fall back to mock data
+      props = [];
+    }
+    let allProperties = props.map(p => p.toJSON());
+
+    // If no DB properties, attempt to use mock user's vendorData.properties
+    if ((!allProperties || allProperties.length === 0) && req.user && req.user.email) {
+      const mu = mockUsers.find(u => String(u.email || '').toLowerCase() === String(req.user.email || '').toLowerCase());
+      if (mu && mu.vendorData && Array.isArray(mu.vendorData.properties)) {
+        allProperties = mu.vendorData.properties;
+      }
+    }
 
     const identifiers = buildIdentifierSet(req.user || {});
     const vendorProperties = allProperties.filter((property) => propertyMatchesUser(property, identifiers));

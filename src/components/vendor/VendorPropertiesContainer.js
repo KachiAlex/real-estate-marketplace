@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import VendorProperties from './VendorProperties';
+import { useAuth } from '../../contexts/AuthContext-new';
 // import PropertyModal from './PropertyModal'; // For add/edit (optional)
 
 // Replace with your actual API call logic
-async function fetchVendorProperties({ page, search, filter }) {
+async function fetchVendorProperties({ page, search, filter, ownerId }) {
   // GET /api/properties?page=1&search=...&status=...&ownerId=...
   const params = new URLSearchParams();
   if (page) params.append('page', page);
@@ -24,8 +25,9 @@ export default function VendorPropertiesContainer() {
   const [filter, setFilter] = useState('');
   // const [modalOpen, setModalOpen] = useState(false);
   // const [editingProperty, setEditingProperty] = useState(null);
-  // TODO: Replace with actual vendor ID from auth/user context
-  const vendorId = window?.currentUser?.id || 'VENDOR_ID_PLACEHOLDER';
+  const { currentUser } = useAuth();
+  // Use authenticated user's id as vendor id when available
+  const vendorId = currentUser?.id || null;
 
   const loadProperties = useCallback(async () => {
     setLoading(true);

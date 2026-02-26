@@ -478,7 +478,7 @@ const MortgageBank = (sequelize) => {
     contactPerson: DataTypes.STRING,
     registrationNumber: DataTypes.STRING,
     verificationStatus: {
-      type: DataTypes.ENUM('pending', 'verified', 'rejected'),
+      type: DataTypes.ENUM('pending', 'approved', 'rejected'),
       defaultValue: 'pending'
     },
     isActive: {
