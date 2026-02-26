@@ -1,11 +1,16 @@
 ﻿import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaHome, FaBars, FaTimes } from 'react-icons/fa';
+import { useAuth } from '../../contexts/AuthContext-new';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+
+  // Debug auth state
+  // console.log('Header auth currentUser:', currentUser);
 
   return (
     <header className="bg-white shadow sticky top-0 z-50">
@@ -22,7 +27,25 @@ export default function Header() {
           <Link to="/services" className="px-3 py-2 text-sm font-medium text-brand-blue hover:text-brand-orange">Professional Services</Link>
         </nav>
         <div className="hidden lg:flex items-center space-x-4">
-          <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+          {currentUser ? (
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/profile')}
+                className="flex items-center gap-2 text-sm text-gray-700 hover:text-brand-orange"
+                aria-label="Open profile"
+              >
+                {currentUser.avatar || currentUser.photoURL ? (
+                  <img src={currentUser.avatar || currentUser.photoURL} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-brand-blue text-white flex items-center justify-center font-medium">{(currentUser.firstName || currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}</div>
+                )}
+                <span className="hidden sm:inline">{currentUser.firstName || currentUser.displayName || (currentUser.email && currentUser.email.split('@')[0])}</span>
+              </button>
+              <button onClick={async () => { await logout(); navigate('/', { replace: true }); }} className="text-sm text-gray-700 hover:text-brand-orange">Logout</button>
+            </div>
+          ) : (
+            <Link to="/auth/login" className="text-sm text-gray-700 hover:text-brand-orange">Sign in</Link>
+          )}
         </div>
         {/* Mobile menu button */}
         <button
