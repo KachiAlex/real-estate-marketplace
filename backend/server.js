@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http');
 const subscriptionScheduler = require('./services/subscriptionScheduler');
 const socketIo = require('socket.io');
 // Load environment variables from the project root, not backend directory.
@@ -414,6 +415,12 @@ try {
   app.use('/api/dashboard', require('./routes/dashboard'));
 } catch (error) {
   console.error('Failed to load dashboard routes:', error.message);
+}
+
+try {
+  app.use('/api/buyer', require('./routes/buyer'));
+} catch (error) {
+  console.error('Failed to load buyer routes:', error.message);
 }
 
 // Chat routes removed - chat functionality disabled

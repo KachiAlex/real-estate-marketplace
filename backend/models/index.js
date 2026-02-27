@@ -175,6 +175,8 @@ const User = (sequelize) => {
     // Vendor specific
     vendorCategory: DataTypes.STRING, // 'agent', 'property_owner'
     vendorData: DataTypes.JSON,
+    // Buyer specific
+    buyerData: DataTypes.JSON,
     // Timestamps
     lastLogin: DataTypes.DATE,
     lastSeen: DataTypes.DATE,

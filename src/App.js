@@ -111,8 +111,9 @@ const MainRoutes = () => (
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
-    <Route path="/auth/login" element={<></>} />
+    <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
+    <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/blog" element={<Navigate to="/properties" replace />} />
     <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
@@ -352,6 +353,7 @@ function App() {
   const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
   const isSignInModalRoute = location.pathname === '/auth/login';
   const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute;
+  const shouldHideHeader = isAuthRoute;
 
   return (
     <TourProvider>
@@ -363,7 +365,7 @@ function App() {
                 <EscrowProvider>
                   <MortgageProvider>
                     <SidebarProvider>
-                      {isAuthRoute ? (
+                      {shouldHideHeader ? (
                         <div className="flex min-h-screen w-full justify-center">
                           <Suspense fallback={
                             <div className="flex items-center justify-center w-full h-screen">
@@ -375,7 +377,7 @@ function App() {
                         </div>
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-                          <Header />
+                          {!location.pathname.startsWith('/admin') && <Header />}
                           <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
                             <ErrorBoundary>
                               <Suspense fallback={

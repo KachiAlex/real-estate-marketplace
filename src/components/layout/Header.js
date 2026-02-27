@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext-new';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -27,7 +28,19 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex justify-between items-center h-16 py-2">
         <div className="flex items-center space-x-4">
           <Link to="/" className="flex items-center">
-            <img src={'/logo.png?v=4.0'} alt="PropertyArk Logo" className="h-16 w-auto" style={{ backgroundColor: 'transparent', border: 'none' }} />
+            {!logoError ? (
+              <img 
+                src="/logo.png" 
+                alt="PropertyArk Logo" 
+                className="h-16 w-auto"
+                style={{ backgroundColor: 'transparent', border: 'none' }}
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="h-16 w-auto flex items-center justify-center text-brand-blue font-bold text-xl">
+                PropertyArk
+              </div>
+            )}
           </Link>
         </div>
         <nav className="hidden lg:flex items-center space-x-4">

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BecomeVendorModal from '../components/BecomeVendorModal.js';
+import BecomeBuyerModal from '../components/BecomeBuyerModal.js';
 import VendorStatusCard from '../components/VendorStatusCard';
+import BuyerStatusCard from '../components/BuyerStatusCard';
 
 import { getApiUrl } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
@@ -9,6 +11,7 @@ import toast from 'react-hot-toast';
 const Profile = () => {
   const { currentUser } = useAuth();
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
   const { accessToken, updateUserProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(currentUser?.firstName || '');
@@ -55,9 +58,20 @@ const Profile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
             {currentUser && Array.isArray(currentUser.roles) && currentUser.roles.includes('vendor') ? (
-              <VendorStatusCard onOpenKyc={() => setIsVendorModalOpen(true)} />
+              <>
+                <VendorStatusCard onOpenKyc={() => setIsVendorModalOpen(true)} />
+                {currentUser.roles.includes('buyer') ? (
+                  <div className="bg-white rounded-lg shadow p-4">
+                    <div className="text-sm font-medium text-gray-700">Buyer status</div>
+                    <div className="mt-2 text-xs text-green-600 font-medium">✓ Active Buyer</div>
+                    <div className="mt-2 text-xs text-gray-500">You can save properties and make inquiries</div>
+                  </div>
+                ) : (
+                  <BuyerStatusCard onBecomeBuyer={() => setIsBuyerModalOpen(true)} />
+                )}
+              </>
             ) : (
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="text-sm font-medium text-gray-700">Vendor status</div>
@@ -138,6 +152,9 @@ const Profile = () => {
 
         {isVendorModalOpen && (
           <BecomeVendorModal isOpen={isVendorModalOpen} onClose={() => setIsVendorModalOpen(false)} />
+        )}
+        {isBuyerModalOpen && (
+          <BecomeBuyerModal isOpen={isBuyerModalOpen} onClose={() => setIsBuyerModalOpen(false)} />
         )}
       </div>
     </div>
