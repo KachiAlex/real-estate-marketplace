@@ -93,7 +93,8 @@ const VendorRoute = ({ children }) => (
 
 const AuthRoutes = () => (
   <Routes>
-    <Route path="/auth/login" element={<LoginPage />} />
+    {/* Render nothing behind the sign-in modal so the full login page background isn't visible */}
+    <Route path="/auth/login" element={<></>} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
