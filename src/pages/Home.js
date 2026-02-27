@@ -1948,7 +1948,6 @@ const Home = () => {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li><Link to="/properties" className="text-gray-400 hover:text-white transition-colors">Browse Properties</Link></li>
-                <li><Link to="/mortgages" className="text-gray-400 hover:text-white transition-colors">Mortgage Dashboard</Link></li>
                 <li><Link to="/investment" className="text-gray-400 hover:text-white transition-colors">Investment Opportunities</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
               </ul>

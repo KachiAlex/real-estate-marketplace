@@ -22,6 +22,9 @@ module.exports = {
   PropertyAlert: require('./PropertyAlert'),
   DisputeResolution: require('./DisputeResolution'),
   InspectionRequest: require('./InspectionRequest'),
-  AdminSettings: require('./AdminSettings')
-  ,Payment: require('./Payment')
+  AdminSettings: require('./AdminSettings'),
+  Payment: require('./Payment'),
+  Subscription: require('./Subscription'),
+  SubscriptionPlan: require('./SubscriptionPlan'),
+  SubscriptionPayment: require('./SubscriptionPayment')
 };

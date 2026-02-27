@@ -204,3 +204,7 @@
 2026-02-26T20:51:27.499Z received body: {"email":"mock.vendor@example.com"}
 2026-02-26T20:51:28.328Z user:found id=eb7915b7-96b0-429f-9169-49fa128d6873 hashedLength=60
 2026-02-26T20:51:28.781Z password:compare result=true
+2026-02-27T04:59:28.020Z login:start
+2026-02-27T04:59:28.048Z received body: {"email":"admin@propertyark.com"}
+2026-02-27T04:59:28.053Z user:found id=1276b47d-e1a1-43af-ad32-b78bb1a3c38f hashedLength=60
+2026-02-27T04:59:28.146Z password:compare result=true

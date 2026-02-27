@@ -27,7 +27,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex justify-between items-center h-16 py-2">
         <div className="flex items-center space-x-4">
           <Link to="/" className="flex items-center">
-            <img src={'/logo.png?v=4.0'} alt="PropertyArk Logo" className="h-12 w-auto" style={{ backgroundColor: 'transparent', border: 'none' }} />
+            <img src={'/logo.png?v=4.0'} alt="PropertyArk Logo" className="h-16 w-auto" style={{ backgroundColor: 'transparent', border: 'none' }} />
           </Link>
         </div>
         <nav className="hidden lg:flex items-center space-x-4">

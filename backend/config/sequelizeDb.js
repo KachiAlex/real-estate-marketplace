@@ -92,7 +92,10 @@ const {
   PropertyAlert,
   DisputeResolution,
   InspectionRequest,
-  AdminSettings
+  AdminSettings,
+  Subscription,
+  SubscriptionPlan,
+  SubscriptionPayment
 } = require('../models/sequelize');
 
 // Initialize all models
@@ -118,7 +121,10 @@ const db = {
   PropertyAlert: PropertyAlert(sequelize),
   DisputeResolution: DisputeResolution(sequelize),
   InspectionRequest: InspectionRequest(sequelize),
-  AdminSettings: AdminSettings(sequelize)
+  AdminSettings: AdminSettings(sequelize),
+  Subscription: Subscription(sequelize),
+  SubscriptionPlan: SubscriptionPlan(sequelize),
+  SubscriptionPayment: SubscriptionPayment(sequelize)
 };
 
 // Define relationships
@@ -221,6 +227,19 @@ db.Mortgage.belongsTo(db.MortgageApplication, { foreignKey: 'applicationId', as:
 // EscrowTransaction relationships
 db.EscrowTransaction.hasOne(db.DisputeResolution, { foreignKey: 'escrowId', as: 'dispute' });
 db.DisputeResolution.belongsTo(db.EscrowTransaction, { foreignKey: 'escrowId', as: 'escrow' });
+
+// Subscription relationships
+db.User.hasMany(db.Subscription, { foreignKey: 'vendorId', as: 'subscriptions' });
+db.Subscription.belongsTo(db.User, { foreignKey: 'vendorId', as: 'vendor' });
+
+db.SubscriptionPlan.hasMany(db.Subscription, { foreignKey: 'planId', as: 'subscriptions' });
+db.Subscription.belongsTo(db.SubscriptionPlan, { foreignKey: 'planId', as: 'planDetails' });
+
+db.Subscription.hasMany(db.SubscriptionPayment, { foreignKey: 'subscriptionId', as: 'payments' });
+db.SubscriptionPayment.belongsTo(db.Subscription, { foreignKey: 'subscriptionId', as: 'subscription' });
+
+db.User.hasMany(db.SubscriptionPayment, { foreignKey: 'vendorId', as: 'subscriptionPayments' });
+db.SubscriptionPayment.belongsTo(db.User, { foreignKey: 'vendorId', as: 'vendor' });
 
 module.exports = db;
 

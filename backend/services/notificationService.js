@@ -342,13 +342,190 @@ class NotificationService {
       priority: 'high',
       channels: {
         email: true,
-        inApp: true,
         sms: isSuspended,
         push: true
       }
     };
-
     return this.createNotification(notificationData);
+  }
+
+  // Subscription notification methods
+  async createTrialStartedNotification(vendorId, trialEndDate) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'trial_started',
+      title: 'Free Trial Started',
+      message: `Your 3-month free trial has started! Trial ends on ${new Date(trialEndDate).toLocaleDateString()}.`,
+      data: {
+        trialEndDate,
+        trialDays: 90
+      },
+      priority: 'medium',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: false,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createTrialExpiringNotification(vendorId, daysRemaining) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'trial_expiring',
+      title: `Trial Expiring in ${daysRemaining} Days`,
+      message: `Your free trial expires in ${daysRemaining} days. Set up your payment method to avoid interruption.`,
+      data: {
+        daysRemaining,
+        urgency: daysRemaining <= 3 ? 'critical' : daysRemaining <= 7 ? 'warning' : 'normal'
+      },
+      priority: daysRemaining <= 3 ? 'high' : 'medium',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: daysRemaining <= 3,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createTrialExpiredNotification(vendorId) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'trial_expired',
+      title: 'Trial Expired - Account Suspended',
+      message: 'Your free trial has expired. Your account is now suspended. Subscribe immediately to reactivate.',
+      data: {
+        accountSuspended: true,
+        actionRequired: 'subscribe'
+      },
+      priority: 'urgent',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: true,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createPaymentSuccessfulNotification(vendorId, amount, nextPaymentDate) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'payment_successful',
+      title: 'Payment Successful',
+      message: `Payment of ₦${amount.toLocaleString()} was successful. Your subscription is now active.`,
+      data: {
+        amount,
+        nextPaymentDate,
+        paymentDate: new Date().toISOString()
+      },
+      priority: 'low',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: false,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createPaymentFailedNotification(vendorId, amount, reason) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'payment_failed',
+      title: 'Payment Failed',
+      message: `Payment of ₦${amount.toLocaleString()} failed. ${reason || 'Please update your payment method.'}`,
+      data: {
+        amount,
+        failureReason: reason,
+        actionRequired: 'update_payment'
+      },
+      priority: 'high',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: true,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createSubscriptionSuspendedNotification(vendorId, reason) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'subscription_suspended',
+      title: 'Subscription Suspended',
+      message: `Your subscription has been suspended. ${reason ? `Reason: ${reason}` : 'Contact support for details.'}`,
+      data: {
+        suspensionReason: reason,
+        accountSuspended: true,
+        actionRequired: 'contact_support'
+      },
+      priority: 'urgent',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: true,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  async createVendorOnboardingNotification(vendorId) {
+    const notificationData = {
+      recipient: vendorId,
+      type: 'vendor_onboarding',
+      title: 'Welcome to Vendor Program',
+      message: 'Welcome! You have a 3-month free trial. After that, N50,000/month applies. Falsified details = suspension.',
+      data: {
+        onboardingStep: 'complete',
+        trialDays: 90,
+        monthlyFee: 50000,
+        warning: 'Falsified details will result in immediate suspension'
+      },
+      priority: 'medium',
+      channels: {
+        email: true,
+        inApp: true,
+        sms: false,
+        push: true
+      }
+    };
+    return this.createNotification(notificationData);
+  }
+
+  getSubscriptionNotificationMessage(type, data = {}) {
+    const messages = {
+      trial_started: `Your 3-month free trial has started! Trial ends on ${data.trialEndDate ? new Date(data.trialEndDate).toLocaleDateString() : '90 days from now'}.`,
+      trial_expiring: `Your free trial expires in ${data.daysRemaining || 'few'} days. Set up your payment method to avoid interruption.`,
+      trial_expired: 'Your free trial has expired. Your account is now suspended. Subscribe immediately to reactivate.',
+      payment_successful: `Payment of ₦${data.amount?.toLocaleString() || '0'} was successful. Your subscription is now active.`,
+      payment_failed: `Payment of ₦${data.amount?.toLocaleString() || '0'} failed. ${data.reason || 'Please update your payment method.'}`,
+      subscription_suspended: `Your subscription has been suspended. ${data.reason || 'Contact support for details.'}`,
+      vendor_onboarding: 'Welcome! You have a 3-month free trial. After that, N50,000/month applies. Falsified details = suspension.'
+    };
+    return messages[type] || 'Subscription notification';
+  }
+
+  getSubscriptionNotificationPriority(type) {
+    const priorities = {
+      trial_started: 'medium',
+      trial_expiring: 'medium',
+      trial_expired: 'urgent',
+      payment_successful: 'low',
+      payment_failed: 'high',
+      subscription_suspended: 'urgent',
+      vendor_onboarding: 'medium'
+    };
+    return priorities[type] || 'medium';
   }
 }
 

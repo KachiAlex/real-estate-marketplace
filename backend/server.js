@@ -1,5 +1,5 @@
 const express = require('express');
-const http = require('http');
+const subscriptionScheduler = require('./services/subscriptionScheduler');
 const socketIo = require('socket.io');
 // Load environment variables from the project root, not backend directory.
 // This ensures the centralized .env (which contains DB credentials, JWT secrets, etc.)
@@ -399,6 +399,18 @@ try {
 }
 
 try {
+  app.use('/api/subscription', require('./routes/subscription'));
+} catch (error) {
+  console.error('Failed to load subscription routes:', error.message);
+}
+
+try {
+  app.use('/api/admin/subscription', require('./routes/adminSubscription'));
+} catch (error) {
+  console.error('Failed to load admin subscription routes:', error.message);
+}
+
+try {
   app.use('/api/dashboard', require('./routes/dashboard'));
 } catch (error) {
   console.error('Failed to load dashboard routes:', error.message);
@@ -740,7 +752,12 @@ try {
       console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
       console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
       console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
+      console.log(`💳 Subscription: http://localhost:${PORT}/api/subscription`);
     }
+
+    // Start subscription scheduler
+    console.log('🔄 Starting subscription scheduler...');
+    subscriptionScheduler.start();
   });
   
   server.on('error', (error) => {

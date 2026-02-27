@@ -1,4 +1,4 @@
-// Subscription Model
+// Enhanced Vendor Subscription Model
 const Subscription = (sequelize) => {
   return sequelize.define('Subscription', {
     id: {
@@ -6,17 +6,23 @@ const Subscription = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    userId: {
+    vendorId: {
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'Users', key: 'id' }
     },
+    planId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'SubscriptionPlans', key: 'id' }
+    },
     plan: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      defaultValue: 'vendor_monthly'
     },
     status: {
-      type: DataTypes.ENUM('active', 'trial', 'expired', 'cancelled'),
+      type: DataTypes.ENUM('trial', 'active', 'expired', 'suspended', 'cancelled'),
       defaultValue: 'trial'
     },
     startDate: {
@@ -27,17 +33,53 @@ const Subscription = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true
     },
-    paymentId: {
-      type: DataTypes.UUID,
-      references: { model: 'Payments', key: 'id' }
+    trialEndDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
     },
-    trialEndsAt: {
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 50000.00
+    },
+    currency: {
+      type: DataTypes.STRING(3),
+      allowNull: false,
+      defaultValue: 'NGN'
+    },
+    paymentMethod: {
+      type: DataTypes.ENUM('paystack', 'bank_transfer', 'manual'),
+      defaultValue: 'paystack'
+    },
+    autoRenew: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
+    lastPaymentDate: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    nextPaymentDate: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    paymentId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'Payments', key: 'id' }
     },
     remindersSent: {
       type: DataTypes.INTEGER,
       defaultValue: 0
+    },
+    suspensionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    metadata: {
+      type: DataTypes.JSON,
+      defaultValue: {}
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -51,8 +93,11 @@ const Subscription = (sequelize) => {
     timestamps: true,
     underscored: true,
     indexes: [
-      { fields: ['userId'] },
-      { fields: ['status'] }
+      { fields: ['vendorId'] },
+      { fields: ['status'] },
+      { fields: ['plan'] },
+      { fields: ['trialEndDate'] },
+      { fields: ['nextPaymentDate'] }
     ]
   });
 };
@@ -944,6 +989,163 @@ const DisputeResolution = (sequelize) => {
   });
 };
 
+// Subscription Plan Model
+const SubscriptionPlan = (sequelize) => {
+  return sequelize.define('SubscriptionPlan', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Vendor Monthly Plan'
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 50000.00
+    },
+    currency: {
+      type: DataTypes.STRING(3),
+      allowNull: false,
+      defaultValue: 'NGN'
+    },
+    billingCycle: {
+      type: DataTypes.ENUM('monthly', 'yearly'),
+      allowNull: false,
+      defaultValue: 'monthly'
+    },
+    trialDays: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 90
+    },
+    features: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        unlimited_listings: true,
+        featured_properties: 10,
+        priority_support: true,
+        verification_badge: true,
+        analytics_dashboard: true
+      }
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
+    sortOrder: {
+      type: DataTypes.INTEGER,
+      defaultValue: 1
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  }, {
+    timestamps: true,
+    underscored: true,
+    indexes: [
+      { fields: ['isActive'] },
+      { fields: ['billingCycle'] }
+    ]
+  });
+};
+
+// Subscription Payment Model
+const SubscriptionPayment = (sequelize) => {
+  return sequelize.define('SubscriptionPayment', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    subscriptionId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'Subscriptions', key: 'id' }
+    },
+    vendorId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'Users', key: 'id' }
+    },
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
+    },
+    currency: {
+      type: DataTypes.STRING(3),
+      allowNull: false,
+      defaultValue: 'NGN'
+    },
+    paymentMethod: {
+      type: DataTypes.ENUM('paystack', 'bank_transfer', 'manual'),
+      allowNull: false
+    },
+    transactionReference: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    paystackReference: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    status: {
+      type: DataTypes.ENUM('pending', 'processing', 'success', 'failed', 'refunded', 'partially_refunded'),
+      defaultValue: 'pending'
+    },
+    paymentDate: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    paidAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    failureReason: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    metadata: {
+      type: DataTypes.JSON,
+      defaultValue: {}
+    },
+    gatewayResponse: {
+      type: DataTypes.JSON,
+      defaultValue: {}
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  }, {
+    timestamps: true,
+    underscored: true,
+    indexes: [
+      { fields: ['subscriptionId'] },
+      { fields: ['vendorId'] },
+      { fields: ['status'] },
+      { fields: ['transactionReference'] },
+      { fields: ['paymentDate'] }
+    ]
+  });
+};
+
 // Inspection Request Model
 const InspectionRequest = (sequelize) => {
   return sequelize.define('InspectionRequest', {
@@ -1011,5 +1213,7 @@ module.exports = {
   PropertyAlert,
   DisputeResolution,
   InspectionRequest,
-  Subscription
+  Subscription,
+  SubscriptionPlan,
+  SubscriptionPayment
 };
