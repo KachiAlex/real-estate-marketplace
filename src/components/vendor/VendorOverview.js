@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, useState, useMemo } from 'react';
 // Placeholder for chart library (e.g., recharts, chart.js)
 // import { LineChart, ... } from 'recharts';
 
@@ -14,12 +14,12 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
     <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard label="Active Listings" value={stats?.activeListings} loading={loading} />
-        <SummaryCard label="Pending Listings" value={stats?.pendingListings} loading={loading} />
-        <SummaryCard label="Sold Properties" value={stats?.soldProperties} loading={loading} />
-        <SummaryCard label="Revenue" value={stats?.totalRevenue} loading={loading} prefix="₦" />
-        <SummaryCard label="Inquiries" value={stats?.totalInquiries} loading={loading} />
-        <SummaryCard label="Conversion Rate" value={stats?.conversionRate?.toFixed(1) + '%'} loading={loading} />
+        <SummaryCard label="Active Listings" value={stats?.activeListings} loading={loading} meta={stats?.totalProperties ? `${stats.totalProperties} total` : ''} />
+        <SummaryCard label="Pending Listings" value={stats?.pendingListings} loading={loading} meta={stats?.pendingListings ? `${stats.pendingListings} awaiting review` : ''} />
+        <SummaryCard label="Sold Properties" value={stats?.soldProperties} loading={loading} meta={stats?.soldProperties ? `${stats.soldProperties} sold` : ''} />
+        <SummaryCard label="Revenue" value={stats?.totalRevenue} loading={loading} prefix="₦" meta={stats?.totalInquiries ? `${stats.totalInquiries} inquiries` : ''} />
+        <SummaryCard label="Inquiries" value={stats?.totalInquiries} loading={loading} meta={stats?.totalInquiries ? `Converted ${Math.round((stats.conversionRate||0))}%` : ''} />
+        <SummaryCard label="Conversion Rate" value={stats?.conversionRate?.toFixed ? stats.conversionRate.toFixed(1) + '%' : (stats?.conversionRate ?? 0) + '%'} loading={loading} meta={stats?.recentActivity?.length ? `${stats.recentActivity.length} recent actions` : ''} />
       </div>
 
       {/* Trends Section (placeholder) */}
@@ -44,9 +44,7 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
           {loading ? (
             <li className="py-2 text-gray-400">Loading...</li>
           ) : stats?.recentActivity?.length ? (
-            stats.recentActivity.map((item, idx) => (
-              <li key={idx} className="py-2 text-sm text-gray-700">{item}</li>
-            ))
+            <RecentActivityList items={stats.recentActivity} />
           ) : (
             <li className="py-2 text-gray-400">No recent activity</li>
           )}
@@ -56,29 +54,53 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
   );
 }
 
-function SummaryCard({ label, value, loading, prefix }) {
+const SummaryCard = React.memo(function SummaryCard({ label, value, loading, prefix, meta }) {
+  const display = loading ? '...' : (prefix || '') + (value ?? 0);
   return (
-    <div className="stats-card cursor-pointer hover:bg-blue-700 transition-colors p-4 rounded shadow flex flex-col justify-between min-h-[100px]">
+    <div className="bg-brand-blue text-white cursor-default hover:bg-blue-700 transition-colors p-4 rounded shadow flex flex-col justify-between min-h-[100px]">
       <div className="flex flex-col items-start">
-        <div className="text-2xl font-bold text-white">
-          {loading ? <span className="animate-pulse">...</span> : (prefix || '') + (value ?? 0)}
+        <div className="text-2xl font-bold">
+          {display}
         </div>
-        <div className="text-blue-200 text-sm mt-1">{label}</div>
+        <div className="text-blue-100 text-sm mt-1">{label}</div>
+        {meta ? <div className="text-blue-200 text-xs mt-2">{meta}</div> : null}
       </div>
     </div>
   );
-}
+});
 
-function TrendCard({ title, data, loading }) {
-  // Placeholder for chart
+const VendorChart = React.lazy(() => import('./VendorChart'));
+
+const TrendCard = React.memo(function TrendCard({ title, data, loading }) {
   return (
     <div className="bg-white rounded shadow p-4">
       <div className="font-semibold mb-2">{title} Trend</div>
       {loading ? (
-        <div className="h-16 bg-gray-100 animate-pulse rounded" />
+        <div className="h-36 bg-gray-100 animate-pulse rounded" />
       ) : (
-        <div className="h-16 flex items-center justify-center text-gray-400">[Chart]</div>
+        <div className="h-36">
+          <Suspense fallback={<div className="h-36 bg-gray-50 flex items-center justify-center text-gray-300">Loading chart...</div>}>
+            <VendorChart data={data} title={title} />
+          </Suspense>
+        </div>
       )}
     </div>
+  );
+});
+
+function RecentActivityList({ items }) {
+  const [limit, setLimit] = useState(10);
+  const displayed = useMemo(() => items.slice(0, limit), [items, limit]);
+  return (
+    <>
+      {displayed.map((item, idx) => (
+        <li key={idx} className="py-2 text-sm text-gray-700">{item}</li>
+      ))}
+      {items.length > limit && (
+        <li className="py-2 text-center">
+          <button className="px-3 py-1 bg-gray-100 rounded text-sm" onClick={() => setLimit((l) => l + 10)}>Load more</button>
+        </li>
+      )}
+    </>
   );
 }

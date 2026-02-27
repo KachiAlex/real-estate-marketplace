@@ -37,25 +37,27 @@ async function seed() {
     } else {
       properties = [
         {
-          title: 'Mock Property One',
-          description: 'A lovely mock property for testing.',
-          price: 120000,
-          status: 'for-sale',
-          verificationStatus: 'verified',
-          ownerId: user.id,
-          vendorCode: user.vendorCode || null,
-          views: 10
-        },
-        {
-          title: 'Mock Property Two',
-          description: 'Second mock listing.',
-          price: 95000,
-          status: 'for-sale',
-          verificationStatus: 'verified',
-          ownerId: user.id,
-          vendorCode: user.vendorCode || null,
-          views: 5
-        }
+            title: 'Mock Property One',
+            description: 'A lovely mock property for testing.',
+            price: 120000,
+            status: 'active',
+            approvalStatus: 'pending',
+            verificationStatus: 'verified',
+            ownerId: user.id,
+            vendorCode: user.vendorCode || null,
+            views: 10
+          },
+          {
+            title: 'Mock Property Two',
+            description: 'Second mock listing.',
+            price: 95000,
+            status: 'active',
+            approvalStatus: 'pending',
+            verificationStatus: 'verified',
+            ownerId: user.id,
+            vendorCode: user.vendorCode || null,
+            views: 5
+          }
       ];
     }
 

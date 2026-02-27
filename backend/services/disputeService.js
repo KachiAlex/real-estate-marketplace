@@ -360,18 +360,47 @@ class DisputeService {
 
 const disputeService = new DisputeService();
 
-// Admin helpers (not implemented for Sequelize yet)
+const db = require('../config/sequelizeDb');
+const EscrowService = require('./escrowService.clean');
+
 async function getAllDisputes() {
-  // Return empty array until PostgreSQL-backed implementation exists
-  return [];
+  const rows = await db.DisputeResolution.findAll({ order: [['createdAt', 'DESC']] });
+  return rows.map(r => r.toJSON());
 }
 
 disputeService.getAllDisputes = getAllDisputes;
 
 async function updateDisputeStatus(disputeId, status, resolutionNotes, adminId) {
-  const error = new Error('updateDisputeStatus not implemented for PostgreSQL');
-  error.statusCode = 501;
-  throw error;
+  const dispute = await db.DisputeResolution.findByPk(disputeId);
+  if (!dispute) {
+    const err = new Error('Dispute not found');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const updates = { status };
+  if (resolutionNotes) updates.resolution = resolutionNotes;
+
+  await dispute.update(updates);
+
+  // Notify participants (buyer and seller) if escrow exists
+  try {
+    const escrow = await db.EscrowTransaction.findByPk(dispute.escrowId);
+    if (escrow) {
+      const participants = [escrow.buyerId, escrow.sellerId].filter(Boolean);
+      await Promise.all(participants.map(pid => notificationService.createNotification({
+        recipient: pid,
+        type: 'dispute_updated',
+        title: 'Dispute Status Updated',
+        message: `Dispute ${dispute.id} status changed to ${status}`,
+        data: { disputeId: dispute.id, status }
+      })));
+    }
+  } catch (e) {
+    console.warn('Failed to notify participants after dispute status update', e.message || e);
+  }
+
+  return dispute.toJSON();
 }
 
 disputeService.updateDisputeStatus = updateDisputeStatus;

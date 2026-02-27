@@ -142,173 +142,94 @@ class NotificationService {
         throw new Error('Valid userId is required');
       }
 
-      const db = requireDb();
-      let query = db.collection(COLLECTION).where('recipient', '==', recipient);
-
-      if (options.status) {
-        query = query.where('status', '==', options.status);
-      }
-      if (options.type) {
-        query = query.where('type', '==', options.type);
-      }
-      if (options.priority) {
-        query = query.where('priority', '==', options.priority);
-      }
-
       const limit = Number(options.limit) || 20;
       const page = Number(options.page) || 1;
-      const skip = (page - 1) * limit;
+      const offset = (page - 1) * limit;
 
-      const snapshot = await query.orderBy('createdAt', 'desc').offset(skip).limit(limit).get();
-      const notifications = snapshot.docs.map(convertNotificationDoc);
+      const where = { userId: recipient };
+      if (options.status === 'unread') where.isRead = false;
+      if (options.status === 'read' || options.status === 'archived') where.isRead = true;
+      if (options.type) where.type = options.type;
 
-      const totalSnap = await query.count().get();
-      const unreadSnap = await db.collection(COLLECTION)
-        .where('recipient', '==', recipient)
-        .where('status', '==', 'unread')
-        .count()
-        .get();
+      const { rows, count } = await NotificationModel.findAndCountAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        offset,
+        limit
+      });
+
+      const unreadCount = await NotificationModel.count({ where: { userId: recipient, isRead: false } });
 
       return {
         success: true,
         data: {
-          notifications,
-          unreadCount: unreadSnap.data().count,
+          notifications: rows.map(toJSON),
+          unreadCount,
           pagination: {
             page,
             limit,
-            total: totalSnap.data().count
+            total: count
           }
         }
       };
     } catch (error) {
       console.error('Failed to get user notifications:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
   async markAsRead(notificationId, userId) {
     try {
-      const db = requireDb();
-      const docRef = db.collection(COLLECTION).doc(notificationId);
-      const snap = await docRef.get();
-
-      if (!snap.exists || snap.data().recipient !== normalizeId(userId)) {
-        return {
-          success: false,
-          message: 'Notification not found'
-        };
+      const n = await NotificationModel.findByPk(notificationId);
+      if (!n || n.userId !== normalizeId(userId)) {
+        return { success: false, message: 'Notification not found' };
       }
 
-      await docRef.update({
-        status: 'read',
-        readAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      const updated = await docRef.get();
-      return { success: true, data: convertNotificationDoc(updated) };
+      await n.update({ isRead: true, readAt: new Date() });
+      return { success: true, data: toJSON(n) };
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
   async markAllAsRead(userId) {
     try {
       const recipient = normalizeId(userId);
-      if (!recipient) {
-        throw new Error('Valid userId is required');
-      }
+      if (!recipient) throw new Error('Valid userId is required');
 
-      const db = requireDb();
-      const query = await db.collection(COLLECTION)
-        .where('recipient', '==', recipient)
-        .where('status', '==', 'unread')
-        .limit(500)
-        .get();
-
-      if (query.empty) {
-        return { success: true };
-      }
-
-      const batch = db.batch();
-      query.docs.forEach((doc) => {
-        batch.update(doc.ref, {
-          status: 'read',
-          readAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      });
-
-      await batch.commit();
+      await NotificationModel.update({ isRead: true, readAt: new Date() }, { where: { userId: recipient, isRead: false } });
       return { success: true };
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
   async archiveNotification(notificationId, userId) {
     try {
-      const db = requireDb();
-      const docRef = db.collection(COLLECTION).doc(notificationId);
-      const snap = await docRef.get();
+      // Archive maps to marking as read in current schema
+      const n = await NotificationModel.findByPk(notificationId);
+      if (!n || n.userId !== normalizeId(userId)) return { success: false, message: 'Notification not found' };
 
-      if (!snap.exists || snap.data().recipient !== normalizeId(userId)) {
-        return {
-          success: false,
-          message: 'Notification not found'
-        };
-      }
-
-      await docRef.update({
-        status: 'archived',
-        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      const updated = await docRef.get();
-      return { success: true, data: convertNotificationDoc(updated) };
+      await n.update({ isRead: true, readAt: new Date() });
+      return { success: true, data: toJSON(n) };
     } catch (error) {
       console.error('Failed to archive notification:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
   async deleteNotification(notificationId, userId) {
     try {
-      const db = requireDb();
-      const docRef = db.collection(COLLECTION).doc(notificationId);
-      const snap = await docRef.get();
+      const n = await NotificationModel.findByPk(notificationId);
+      if (!n || n.userId !== normalizeId(userId)) return { success: false, message: 'Notification not found' };
 
-      if (!snap.exists || snap.data().recipient !== normalizeId(userId)) {
-        return {
-          success: false,
-          message: 'Notification not found'
-        };
-      }
-
-      await docRef.delete();
+      await NotificationModel.destroy({ where: { id: notificationId } });
       return { success: true };
     } catch (error) {
       console.error('Failed to delete notification:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 

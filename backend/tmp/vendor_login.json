@@ -1,0 +1,19 @@
+﻿{
+    "success":  true,
+    "message":  "Login successful",
+    "accessToken":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYjc5MTViNy05NmIwLTQyOWYtOTE2OS00OWZhMTI4ZDY4NzMiLCJpYXQiOjE3NzIxMzcxMzgsImV4cCI6MTc3NDcyOTEzOH0.580gd6b4EolcsBByr3XNeLvN32ajAAfFhiq4B42Y_y4",
+    "refreshToken":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYjc5MTViNy05NmIwLTQyOWYtOTE2OS00OWZhMTI4ZDY4NzMiLCJpYXQiOjE3NzIxMzcxMzgsImV4cCI6MTc3OTkxMzEzOH0.rQ8CeWtCItSlxP08tu4pjo4i1IXFIyvbCQ2prgBWp2o",
+    "user":  {
+                 "id":  "eb7915b7-96b0-429f-9169-49fa128d6873",
+                 "email":  "mock.vendor@example.com",
+                 "firstName":  "Mock",
+                 "lastName":  "Vendor",
+                 "phone":  null,
+                 "role":  "vendor",
+                 "roles":  [
+                               "vendor"
+                           ],
+                 "avatar":  null,
+                 "isVerified":  true
+             }
+}
