@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext-new';
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -30,11 +31,15 @@ export default function Header() {
           <Link to="/" className="flex items-center">
             {!logoError ? (
               <img 
-                src="/logo.png" 
+                src="/logo.png?v=5.0" 
                 alt="PropertyArk Logo" 
                 className="h-16 w-auto"
                 style={{ backgroundColor: 'transparent', border: 'none' }}
-                onError={() => setLogoError(true)}
+                onLoad={() => setLogoLoaded(true)}
+                onError={(e) => {
+                  console.error('Logo failed to load:', e);
+                  setLogoError(true);
+                }}
               />
             ) : (
               <div className="h-16 w-auto flex items-center justify-center text-brand-blue font-bold text-xl">

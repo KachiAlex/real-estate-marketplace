@@ -93,8 +93,7 @@ const VendorRoute = ({ children }) => (
 
 const AuthRoutes = () => (
   <Routes>
-    {/* Render nothing behind the sign-in modal so the full login page background isn't visible */}
-    <Route path="/auth/login" element={<></>} />
+    <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
@@ -349,12 +348,13 @@ const MainRoutes = () => (
 function App() {
   const location = useLocation();
   // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
-  // hide header for full-page auth routes (register, forgot password, callback).
+  // hide header for full-page auth routes (register, forgot password, callback) and admin routes.
   // Explicitly treat `/auth/login` as a modal route to avoid router fallback redirects.
   const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const isSignInModalRoute = location.pathname === '/auth/login';
   const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute;
-  const shouldHideHeader = isAuthRoute;
+  const shouldHideHeader = isAuthRoute || isAdminRoute;
 
   return (
     <TourProvider>
@@ -378,7 +378,7 @@ function App() {
                         </div>
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-                          {!location.pathname.startsWith('/admin') && <Header />}
+                          <Header />
                           <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
                             <ErrorBoundary>
                               <Suspense fallback={

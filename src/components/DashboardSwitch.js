@@ -2,37 +2,55 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { FaStore, FaShoppingCart, FaExchangeAlt, FaCog, FaChartLine, FaBuilding } from 'react-icons/fa';
+import { 
+  getPrimaryRole, 
+  getDashboardPath, 
+  canSwitchToRole, 
+  getAvailableDashboards, 
+  getRoleDisplayName,
+  getRoleTheme 
+} from '../utils/roleManager';
 
 export default function DashboardSwitch() {
-  const { user } = useAuth();
+  const { user, switchRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Only show for users with 'user' or 'vendor' roles
-  if (!user || !Array.isArray(user.roles) || (!user.roles.includes('user') && !user.roles.includes('vendor'))) {
+  // Only show for users with multiple roles
+  if (!user || !Array.isArray(user.roles) || user.roles.length <= 1) {
     return null;
   }
 
-  // Determine current dashboard
-  const isVendorDashboard = location.pathname.startsWith('/vendor');
-  const isBuyerDashboard = location.pathname.startsWith('/dashboard');
-
-  const { switchRole } = useAuth();
+  // Get primary role and available dashboards
+  const primaryRole = getPrimaryRole(user);
+  const availableDashboards = getAvailableDashboards(user);
+  const currentPath = location.pathname;
+  
   const [loading, setLoading] = useState(false);
 
-  // Optimized switch handler: change active role then navigate
-  const handleSwitch = async (target) => {
-    const wanted = target === 'vendor' ? 'vendor' : 'user';
+  // Enhanced switch handler: change active role then navigate
+  const handleSwitch = async (targetRole) => {
     if (!switchRole) {
       // fallback to client-side navigation
-      navigate(target === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+      navigate(getDashboardPath(targetRole));
       return;
     }
+
     try {
       setLoading(true);
-      await switchRole(wanted);
-      // route to appropriate dashboard after successful switch
-      navigate(wanted === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+      
+      // Switch the active role
+      await switchRole(targetRole);
+      
+      // Navigate to appropriate dashboard after successful switch
+      const targetPath = getDashboardPath(targetRole);
+      navigate(targetPath);
+      
+      // Show success message
+      const roleDisplayName = getRoleDisplayName(targetRole);
+      toast.success(`Switched to ${roleDisplayName} Dashboard`);
+      
     } catch (e) {
       console.error('Role switch failed', e);
       toast.error(e.message || 'Failed to switch dashboard');
@@ -41,27 +59,80 @@ export default function DashboardSwitch() {
     }
   };
 
+  // Get icon for dashboard
+  const getIcon = (iconName) => {
+    const icons = {
+      'store': FaStore,
+      'shopping-cart': FaShoppingCart,
+      'cog': FaCog,
+      'chart-line': FaChartLine,
+      'bank': FaBuilding
+    };
+    return icons[iconName] || FaShoppingCart;
+  };
+
   return (
-    <div className="flex items-center gap-2 bg-white rounded shadow p-2 mb-4">
-      <span className="font-semibold text-gray-700">Switch Dashboard:</span>
-      <button
-        className={`px-3 py-1 rounded transition-colors font-medium flex items-center gap-2 ${isBuyerDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
-        onClick={() => handleSwitch('buyer')}
-        disabled={isBuyerDashboard || loading}
-        aria-busy={loading}
-      >
-        {loading && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>}
-        <span>Buyer</span>
-      </button>
-      <button
-        className={`px-3 py-1 rounded transition-colors font-medium flex items-center gap-2 ${isVendorDashboard ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-700'}`}
-        onClick={() => handleSwitch('vendor')}
-        disabled={isVendorDashboard || loading}
-        aria-busy={loading}
-      >
-        {loading && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>}
-        <span>Vendor</span>
-      </button>
+    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <FaExchangeAlt className="text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-800">Switch Dashboard</h3>
+        </div>
+        <div className="text-sm text-gray-500">
+          Active: <span className="font-medium text-gray-700 capitalize">{getRoleDisplayName(primaryRole)}</span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {availableDashboards.map((dashboard) => {
+          const isActive = currentPath === dashboard.path;
+          const theme = getRoleTheme(dashboard.role);
+          const Icon = getIcon(dashboard.icon);
+          
+          return (
+            <button
+              key={dashboard.role}
+              onClick={() => handleSwitch(dashboard.role)}
+              disabled={isActive || loading}
+              className={`relative overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                isActive 
+                  ? `${theme.border} ${theme.bg}` 
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <div className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-full ${
+                    isActive ? `${theme.button} text-white` : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    <Icon className="text-lg" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-semibold text-gray-800">{dashboard.name}</h4>
+                    <p className="text-xs text-gray-600">{dashboard.description}</p>
+                  </div>
+                </div>
+                {isActive && (
+                  <div className="absolute top-2 right-2">
+                    <span className={`${theme.button} text-white text-xs px-2 py-1 rounded-full`}>
+                      Active
+                    </span>
+                  </div>
+                )}
+                {loading && !isActive && (
+                  <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
+                    <div className={`animate-spin rounded-full h-6 w-6 border-b-2 ${theme.primary === 'green' ? 'border-green-500' : theme.primary === 'blue' ? 'border-blue-500' : theme.primary === 'red' ? 'border-red-500' : theme.primary === 'purple' ? 'border-purple-500' : theme.primary === 'indigo' ? 'border-indigo-500' : 'border-gray-500'}`}></div>
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      
+      <div className="mt-4 text-xs text-gray-500 text-center">
+        Switch between your different dashboard views
+      </div>
     </div>
   );
 }
