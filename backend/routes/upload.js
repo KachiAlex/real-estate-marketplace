@@ -10,6 +10,7 @@ const { requireAnyRole, checkOwnership } = require('../middleware/roleValidation
 const { sanitizeInput, validate } = require('../middleware/validation');
 const { body, param } = require('express-validator');
 const {
+  uploadFile,
   uploadPropertyImages,
   uploadPropertyVideos,
   uploadPropertyDocuments,
@@ -190,6 +191,57 @@ router.post(
   }
 );
 
+// General upload endpoint used by storageService.uploadFile
+router.post(
+  '/',
+  protect,
+  generalUpload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file provided' });
+      }
+
+      const metadata = parseMetadata(req.body.metadata);
+      const uploadType = req.body.uploadType || metadata.uploadType || 'generic';
+      const category = resolveUploadCategory(uploadType, req.file);
+      const options = buildUploadOptions(metadata, req.user);
+
+      const result = await uploadFile(req.file, category, options);
+
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      errorLogger(error, req, { context: 'General upload' });
+      return res.status(500).json({ success: false, message: error.message || 'Failed to upload file' });
+    }
+  }
+);
+
+// General multiple upload endpoint used by storageService.uploadMultipleFiles
+router.post(
+  '/multiple',
+  protect,
+  generalUpload.array('files', 20),
+  async (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: false, message: 'No files provided' });
+      }
+
+      const metadata = parseMetadata(req.body.metadata);
+      const uploadType = req.body.uploadType || metadata.uploadType || 'generic_multiple';
+      const category = resolveUploadCategory(uploadType, req.files[0]);
+      const options = buildUploadOptions(metadata, req.user);
+
+      const result = await uploadMultipleFiles(req.files, category, options);
+      return res.json(result);
+    } catch (error) {
+      errorLogger(error, req, { context: 'General multiple upload' });
+      return res.status(500).json({ success: false, message: error.message || 'Failed to upload files' });
+    }
+  }
+);
+
 // Provide Cloudinary signed upload params for direct client uploads
 router.get('/vendor/kyc/signed', async (req, res) => {
   try {
@@ -244,6 +296,42 @@ const avatarUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 });
+
+const generalUpload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB default; specific limits enforced downstream
+});
+
+const parseMetadata = (raw) => {
+  if (!raw) return {};
+  try {
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch (error) {
+    return {};
+  }
+};
+
+const resolveUploadCategory = (uploadType = '', file = {}) => {
+  const type = (uploadType || '').toLowerCase();
+  if (type.includes('video')) return 'videos';
+  if (type.includes('document') || type.includes('mortgage')) return 'documents';
+  if (type.includes('avatar')) return 'avatars';
+  if (type.includes('image') || type.includes('property')) return 'images';
+  if (file.mimetype?.startsWith('video/')) return 'videos';
+  if (file.mimetype?.startsWith('image/')) return 'images';
+  return 'documents';
+};
+
+const buildUploadOptions = (metadata = {}, user) => {
+  const folder = metadata.path || metadata.basePath || metadata.folder;
+  if (folder) {
+    return { folder };
+  }
+  if (user?.id) {
+    return { folder: `users/${user.id}/uploads` };
+  }
+  return {};
+};
 
 // Check if Cloudinary is configured middleware
 function checkCloudinaryConfig(req, res, next) {
