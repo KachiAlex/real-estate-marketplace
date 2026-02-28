@@ -2,17 +2,39 @@ const { Subscription, SubscriptionPlan, SubscriptionPayment, User } = require('.
 const notificationService = require('./notificationService');
 
 class SubscriptionService {
+  static async ensureDefaultPlan() {
+    let plan = await SubscriptionPlan.findOne({
+      where: { isActive: true },
+      order: [['sortOrder', 'ASC'], ['amount', 'ASC']]
+    });
+
+    if (plan) return plan;
+
+    plan = await SubscriptionPlan.create({
+      name: 'Vendor Monthly Plan',
+      description: 'Default vendor subscription plan',
+      amount: 50000.00,
+      currency: 'NGN',
+      billingCycle: 'monthly',
+      trialDays: 90,
+      isActive: true,
+      features: {
+        unlimited_listings: true,
+        featured_properties: 10,
+        priority_support: true,
+        verification_badge: true,
+        analytics_dashboard: true
+      }
+    });
+
+    return plan;
+  }
+
   // Create trial subscription for new vendor
   static async createTrialSubscription(vendorId) {
     try {
       // Get default vendor plan
-      const plan = await SubscriptionPlan.findOne({
-        where: { isActive: true, billingCycle: 'monthly' }
-      });
-
-      if (!plan) {
-        throw new Error('No active subscription plan found');
-      }
+      const plan = await this.ensureDefaultPlan();
 
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 90); // 90 days trial
@@ -158,9 +180,12 @@ class SubscriptionService {
   // Initialize payment for subscription
   static async initializePayment(vendorId, planId, paymentMethod = 'paystack') {
     try {
-      const plan = await SubscriptionPlan.findByPk(planId);
+      let plan = null;
+      if (planId) {
+        plan = await SubscriptionPlan.findByPk(planId);
+      }
       if (!plan || !plan.isActive) {
-        throw new Error('Invalid subscription plan');
+        plan = await this.ensureDefaultPlan();
       }
 
       let subscription = await this.getVendorSubscription(vendorId);
