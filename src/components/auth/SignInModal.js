@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import toast from 'react-hot-toast';
+import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const SignInModal = ({ onClose }) => {
   const { login, loading, signInWithGooglePopup } = useAuth();
@@ -23,14 +24,14 @@ const SignInModal = ({ onClose }) => {
     }
     try {
       setError('');
-      await login(email.trim(), password);
+      const loggedInUser = await login(email.trim(), password);
       toast.success('Welcome back!');
       const redirect = sessionStorage.getItem('authRedirect');
       if (redirect) {
         sessionStorage.removeItem('authRedirect');
         navigate(redirect, { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate(getPostLoginRoute(loggedInUser), { replace: true });
       }
       if (onClose) onClose();
     } catch (submitError) {
@@ -92,13 +93,13 @@ const SignInModal = ({ onClose }) => {
               type="button"
               onClick={async () => {
                 try {
-                  await signInWithGooglePopup();
+                  const loggedInUser = await signInWithGooglePopup();
                   const redirect = sessionStorage.getItem('authRedirect');
                   if (redirect) {
                     sessionStorage.removeItem('authRedirect');
                     navigate(redirect, { replace: true });
                   } else {
-                    navigate('/dashboard', { replace: true });
+                    navigate(getPostLoginRoute(loggedInUser), { replace: true });
                   }
                   if (onClose) onClose();
                 } catch (e) {}
