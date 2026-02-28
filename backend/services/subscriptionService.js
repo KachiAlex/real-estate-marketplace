@@ -2,15 +2,9 @@ const { Subscription, SubscriptionPlan, SubscriptionPayment, User } = require('.
 const notificationService = require('./notificationService');
 
 class SubscriptionService {
-  static async ensureDefaultPlan() {
-    let plan = await SubscriptionPlan.findOne({
-      where: { isActive: true },
-      order: [['sortOrder', 'ASC'], ['amount', 'ASC']]
-    });
-
-    if (plan) return plan;
-
-    plan = await SubscriptionPlan.create({
+  static buildDefaultPlan() {
+    return {
+      id: 'vendor-default-plan',
       name: 'Vendor Monthly Plan',
       description: 'Default vendor subscription plan',
       amount: 50000.00,
@@ -25,9 +19,24 @@ class SubscriptionService {
         verification_badge: true,
         analytics_dashboard: true
       }
-    });
+    };
+  }
 
-    return plan;
+  static async ensureDefaultPlan() {
+    try {
+      let plan = await SubscriptionPlan.findOne({
+        where: { isActive: true },
+        order: [['sortOrder', 'ASC'], ['amount', 'ASC']]
+      });
+
+      if (plan) return plan;
+
+      plan = await SubscriptionPlan.create(this.buildDefaultPlan());
+      return plan;
+    } catch (error) {
+      console.error('ensureDefaultPlan error:', error.message || error);
+      return this.buildDefaultPlan();
+    }
   }
 
   // Create trial subscription for new vendor

@@ -24,8 +24,18 @@ module.exports = (sequelize) => {
       },
     },
     status: {
-      type: DataTypes.ENUM('active', 'inactive', 'cancelled', 'expired'),
-      defaultValue: 'active',
+      type: DataTypes.ENUM(
+        'trial',
+        'pending',
+        'active',
+        'pending_payment',
+        'payment_failed',
+        'expired',
+        'cancelled',
+        'suspended',
+        'inactive'
+      ),
+      defaultValue: 'trial',
     },
     startDate: {
       type: DataTypes.DATE,
