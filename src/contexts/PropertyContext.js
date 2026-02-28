@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import frontendMockProperties from '../data/mockProperties';
 
 export const PropertyContext = createContext();
 
@@ -11,7 +12,9 @@ export const useProperty = () => {
 };
 
 export function PropertyProvider({ children }) {
-  const [properties, setProperties] = useState([]);
+  const [properties, setProperties] = useState(() => (
+    Array.isArray(frontendMockProperties) ? frontendMockProperties : []
+  ));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 

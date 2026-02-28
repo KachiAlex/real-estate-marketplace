@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
+import frontendMockProperties from '../data/mockProperties';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ const PropertyDetail = () => {
   const { properties, loading, error, toggleFavorite } = useProperty();
   const { user, setAuthRedirect } = useAuth();
   const [property, setProperty] = useState(null);
+
   const [activeImage, setActiveImage] = useState(0);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState('');
@@ -22,9 +24,28 @@ const PropertyDetail = () => {
   const [preferredTime, setPreferredTime] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const mergedProperties = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(frontendMockProperties)) {
+      frontendMockProperties.forEach((prop) => {
+        if (prop && (prop.id || prop.propertyId)) {
+          map.set(prop.id || prop.propertyId, prop);
+        }
+      });
+    }
+    if (Array.isArray(properties)) {
+      properties.forEach((prop) => {
+        if (prop && (prop.id || prop.propertyId)) {
+          map.set(prop.id || prop.propertyId, prop);
+        }
+      });
+    }
+    return Array.from(map.values());
+  }, [mergedProperties, properties]);
+
   useEffect(() => {
-    if (properties && id) {
-      const foundProperty = properties.find(p => 
+    if (mergedProperties && id) {
+      const foundProperty = mergedProperties.find(p => 
         p.id === id || 
         p.propertyId === id || 
         p.numericId === parseInt(id) ||
@@ -52,7 +73,7 @@ const PropertyDetail = () => {
         setActiveImage(0);
       }
     }
-  }, [properties, id]);
+  }, [mergedProperties, id]);
 
   // Check if property is favorited
   useEffect(() => {

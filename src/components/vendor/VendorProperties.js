@@ -197,17 +197,3 @@ export default function VendorProperties({
     </div>
   );
 }
-
-function StatusBadge({ status }) {
-  const color =
-    status === 'active' ? 'green' :
-    status === 'pending' ? 'yellow' :
-    status === 'sold' ? 'gray' :
-    status === 'draft' ? 'blue' : 'gray';
-  const label = status?.charAt(0).toUpperCase() + status?.slice(1);
-  return (
-    <span className={`inline-block px-2 py-1 rounded text-xs bg-${color}-100 text-${color}-800 font-semibold`}>
-      {label || 'Unknown'}
-    </span>
-  );
-}

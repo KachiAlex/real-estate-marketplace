@@ -30,9 +30,9 @@ export default function Header() {
           <Link to="/" className="flex items-center">
             {!logoError ? (
               <img 
-                src={`${process.env.PUBLIC_URL || ''}/logo.png`} 
+                src={`${process.env.PUBLIC_URL || ''}/logo.png?v=4.0`} 
                 alt="PropertyArk Logo" 
-                className="h-16 w-auto"
+                className="w-auto h-14 sm:h-16 md:h-20"
                 style={{ backgroundColor: 'transparent', border: 'none' }}
                 onError={(e) => {
                   console.error('Logo failed to load:', e);
@@ -40,7 +40,7 @@ export default function Header() {
                 }}
               />
             ) : (
-              <div className="h-16 w-auto flex items-center justify-center text-brand-blue font-bold text-xl">
+              <div className="w-auto h-14 sm:h-16 md:h-20 flex items-center justify-center text-brand-blue font-bold text-xl">
                 PropertyArk
               </div>
             )}
