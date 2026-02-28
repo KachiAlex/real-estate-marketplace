@@ -1,8 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import CreateTicketModal from '../CreateTicketModal';
-import * as authToken from '../../../utils/authToken';
+import apiClient from '../../../services/apiClient';
 import { AuthProvider } from '../../../contexts/AuthContext-new';
+
+jest.mock('../../../services/apiClient', () => ({
+  post: jest.fn(),
+}));
+
+jest.mock('../../../contexts/AuthContext', () => ({
+  useAuth: () => ({ currentUser: { id: 'user-1', email: 'a@b.com' } })
+}));
 
 // Mock toast so we can assert calls if needed
 jest.mock('react-hot-toast', () => ({
@@ -23,16 +32,17 @@ describe('CreateTicketModal', () => {
   });
 
   it('submits ticket and calls onSuccess/onClose on success', async () => {
-    const fakeResp = new Response(JSON.stringify({ message: 'ok' }), { status: 201 });
-    const fetchSpy = jest.spyOn(authToken, 'authenticatedFetch').mockResolvedValue(fakeResp);
+    const postSpy = jest.spyOn(apiClient, 'post').mockResolvedValue({ data: { success: true, message: 'ok' } });
 
     const onClose = jest.fn();
     const onSuccess = jest.fn();
 
     render(
-      <AuthProvider>
-        <CreateTicketModal onClose={onClose} onSuccess={onSuccess} />
-      </AuthProvider>
+      <MemoryRouter>
+        <AuthProvider>
+          <CreateTicketModal onClose={onClose} onSuccess={onSuccess} />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
     // Fill form
@@ -42,11 +52,9 @@ describe('CreateTicketModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Submit Ticket/i }));
 
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    await waitFor(() => expect(postSpy).toHaveBeenCalled());
 
-    // Assert the authenticatedFetch was called with the support endpoint
-    const calledUrl = fetchSpy.mock.calls[0][0];
-    expect(calledUrl).toMatch(/\/support\/inquiry$/);
+    expect(postSpy).toHaveBeenCalledWith('/support/inquiry', expect.objectContaining({ subject: 'Help' }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(onClose).toHaveBeenCalled();
@@ -54,15 +62,17 @@ describe('CreateTicketModal', () => {
 
   it('shows validation error when required fields missing', async () => {
     render(
-      <AuthProvider>
-        <CreateTicketModal onClose={() => {}} onSuccess={() => {}} />
-      </AuthProvider>
+      <MemoryRouter>
+        <AuthProvider>
+          <CreateTicketModal onClose={() => {}} onSuccess={() => {}} />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Submit Ticket/i }));
 
-    // authenticatedFetch should not be called
-    const fetchSpy = jest.spyOn(authToken, 'authenticatedFetch');
-    expect(fetchSpy).not.toHaveBeenCalled();
+    // apiClient.post should not be called
+    const postSpy = jest.spyOn(apiClient, 'post');
+    expect(postSpy).not.toHaveBeenCalled();
   });
 });

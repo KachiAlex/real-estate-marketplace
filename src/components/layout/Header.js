@@ -72,6 +72,9 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50">
                   <button onClick={() => { setMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Profile</button>
                   <button onClick={() => { setMenuOpen(false); navigate('/dashboard'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Dashboard</button>
+                  {(currentUser?.role === 'admin' || currentUser?.roles?.includes('admin')) && (
+                    <button onClick={() => { setMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Admin Panel</button>
+                  )}
                   <div className="border-t" />
                   <button onClick={async () => { setMenuOpen(false); await logout(); navigate('/', { replace: true }); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
                 </div>

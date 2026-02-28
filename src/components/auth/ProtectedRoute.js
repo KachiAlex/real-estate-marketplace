@@ -24,11 +24,19 @@ const ProtectedRoute = ({ children }) => {
 
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isBuyerRoute = location.pathname.startsWith('/buyer') || location.pathname.startsWith('/my-') || location.pathname.includes('inspection');
+  const isVendorRoute = location.pathname.startsWith('/vendor');
 
-  // CRITICAL: Block non-admin users from accessing /admin routes
+  // Block non-admin users from admin pages
   if (isAdminRoute && !isAdmin) {
     console.warn('Access denied: Non-admin user attempted to access admin route:', location.pathname, 'User role:', user?.role);
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Block admin users from buyer/vendor areas
+  if (isAdmin && (isBuyerRoute || isVendorRoute)) {
+    console.warn('Admin user blocked from buyer/vendor route:', location.pathname);
+    return <Navigate to="/admin" replace />;
   }
 
   return children;
