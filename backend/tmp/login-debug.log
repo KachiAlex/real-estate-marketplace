@@ -208,3 +208,21 @@
 2026-02-27T04:59:28.048Z received body: {"email":"admin@propertyark.com"}
 2026-02-27T04:59:28.053Z user:found id=1276b47d-e1a1-43af-ad32-b78bb1a3c38f hashedLength=60
 2026-02-27T04:59:28.146Z password:compare result=true
+2026-02-27T08:00:05.217Z login:start
+2026-02-27T08:00:05.404Z received body: {"email":"admin@propertyark.com"}
+2026-02-27T08:00:05.558Z user:not-found-in-db, checking local json
+2026-02-27T08:00:05.561Z user:still-not-found -> returning 401
+2026-02-27T08:00:06.760Z login:start
+2026-02-27T08:00:06.761Z received body: {"email":"vendor@propertyark.com"}
+2026-02-27T08:00:06.782Z user:not-found-in-db, checking local json
+2026-02-27T08:00:06.783Z user:still-not-found -> returning 401
+2026-02-27T08:10:04.079Z login:start
+2026-02-27T08:10:04.153Z received body: {"email":"admin@propertyark.com"}
+2026-02-27T08:10:04.193Z user:not-found-in-db, checking local json
+2026-02-27T08:10:04.196Z user:still-not-found -> returning 401
+2026-02-27T08:10:04.281Z login:start
+2026-02-27T08:10:04.282Z received body: {"email":"admin@example.com"}
+2026-02-27T08:10:04.305Z user:not-found-in-db, checking local json
+2026-02-27T08:10:04.306Z user:still-not-found -> returning 401
+2026-02-27T08:10:04.329Z login:start
+2026-02-27T08:10:04.330Z validation:failed [{"type":"field","value":"admin","msg":"Invalid value","path":"email","location":"body"}]

@@ -1,5 +1,5 @@
 import VendorPropertiesContainer from './components/vendor/VendorPropertiesContainer';
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
 import { PropertyProvider } from './contexts/PropertyContext';
@@ -101,8 +101,8 @@ const AuthRoutes = () => (
   </Routes>
 );
 
-const MainRoutes = () => (
-  <Routes>
+const MainRoutes = ({ locationOverride }) => (
+  <Routes location={locationOverride}>
     {/* Redirect old auth paths to new auth routes */}
     <Route path="/login" element={<Navigate to="/auth/login" replace />} />
     <Route path="/register" element={<Navigate to="/auth/register" replace />} />
@@ -345,17 +345,41 @@ const MainRoutes = () => (
   </Routes>
 );
 
+const DEFAULT_BACKGROUND_LOCATION = {
+  pathname: '/',
+  search: '',
+  hash: '',
+  state: null,
+  key: 'default'
+};
+
+const cloneLocation = (loc = DEFAULT_BACKGROUND_LOCATION) => ({
+  pathname: loc.pathname,
+  search: loc.search,
+  hash: loc.hash,
+  state: loc.state,
+  key: loc.key || `bg-${Date.now()}`
+});
+
 function App() {
   const location = useLocation();
-  // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
-  // Hide header for full-page auth routes (register, forgot password, callback) and admin routes.
-  // Explicitly treat `/auth/login` as a modal route to avoid router fallback redirects.
   const hideHeaderPaths = ['/auth/register', '/auth/forgot-password', '/auth/google-popup-callback'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isSignInModalRoute = location.pathname === '/auth/login';
   const isRegisterModalRoute = location.pathname === '/auth/register';
   const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute && !isRegisterModalRoute;
   const shouldHideHeader = isAuthRoute || isAdminRoute;
+  const previousLocationRef = useRef(
+    isSignInModalRoute || hideHeaderPaths.includes(location.pathname)
+      ? cloneLocation(DEFAULT_BACKGROUND_LOCATION)
+      : cloneLocation(location)
+  );
+  useEffect(() => {
+    const isBackgroundEligible = !isSignInModalRoute && !hideHeaderPaths.includes(location.pathname);
+    if (isBackgroundEligible) {
+      previousLocationRef.current = cloneLocation(location);
+    }
+  }, [isSignInModalRoute, location]);
 
   return (
     <TourProvider>
@@ -380,14 +404,14 @@ function App() {
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
                           <Header />
-                          <div className="flex flex-grow w-full max-w-full overflow-x-hidden pt-16">
+                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${isSignInModalRoute ? '' : 'pt-16'}`}>
                             <ErrorBoundary>
                               <Suspense fallback={
                                 <div className="flex items-center justify-center w-full h-screen">
                                   <LoadingSpinner size="lg" />
                                 </div>
                               }>
-                                <MainRoutes />
+                                <MainRoutes locationOverride={isSignInModalRoute ? (previousLocationRef.current || DEFAULT_BACKGROUND_LOCATION) : location} />
                               </Suspense>
                             </ErrorBoundary>
                           </div>

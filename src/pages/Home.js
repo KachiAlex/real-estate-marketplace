@@ -1069,7 +1069,7 @@ const Home = () => {
         
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="w-full lg:w-80 bg-gray-800 text-white rounded-lg p-6 h-fit">
+          <div className="w-full lg:w-80 bg-gray-800 text-white rounded-lg p-6 h-fit lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold">Property Filters</h3>
               <button 

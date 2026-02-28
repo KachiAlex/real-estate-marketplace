@@ -22,6 +22,44 @@ const defaultContextValue = {
 
 const AuthContext = createContext(defaultContextValue);
 
+const storage = {
+  get: (key) => {
+    try {
+      return window?.localStorage?.getItem(key);
+    } catch (err) {
+      try {
+        return window?.sessionStorage?.getItem(key);
+      } catch (err2) {
+        console.warn('Storage get failed for key', key, err2);
+        return null;
+      }
+    }
+  },
+  set: (key, value) => {
+    try {
+      window?.localStorage?.setItem(key, value);
+    } catch (err) {
+      try {
+        window?.sessionStorage?.setItem(key, value);
+      } catch (err2) {
+        console.warn('Storage set failed for key', key, err2);
+      }
+    }
+  },
+  remove: (key) => {
+    try {
+      window?.localStorage?.removeItem(key);
+    } catch (err) {
+      // ignore
+    }
+    try {
+      window?.sessionStorage?.removeItem(key);
+    } catch (err2) {
+      // ignore
+    }
+  }
+};
+
 const normalizeUser = (u) => {
   if (!u) return u;
   const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
@@ -56,9 +94,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const a = localStorage.getItem('accessToken');
-      const r = localStorage.getItem('refreshToken');
-      const u = localStorage.getItem('currentUser');
+      const a = storage.get('accessToken');
+      const r = storage.get('refreshToken');
+      const u = storage.get('currentUser');
       if (a && r && u) {
         setAccessToken(a);
         setRefreshToken(r);
@@ -66,7 +104,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (e) {
       console.error('Auth init error', e);
-      localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('currentUser');
+      storage.remove('accessToken'); storage.remove('refreshToken'); storage.remove('currentUser');
     } finally { setLoading(false); }
   }, []);
 
@@ -99,9 +137,9 @@ export const AuthProvider = ({ children }) => {
       if (!resp || !resp.ok) throw new Error(data.message || 'Registration failed');
       const u = normalizeUser(data.user);
       const tokenVal = data.accessToken || data.token || null;
-      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
-      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
-      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
+      if (tokenVal) { storage.set('accessToken', tokenVal); setAccessToken(tokenVal); } else { storage.remove('accessToken'); setAccessToken(null); }
+      if (data.refreshToken) { storage.set('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { storage.remove('refreshToken'); setRefreshToken(null); }
+      if (u) { storage.set('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { storage.remove('currentUser'); setCurrentUser(null); }
       toast.success('Registration successful');
       return u;
     } catch (e) { toast.error(e.message || 'Registration failed'); throw e; } finally { setLoading(false); }
@@ -113,17 +151,17 @@ export const AuthProvider = ({ children }) => {
       const resp = await tryFetchAuth('/auth/jwt/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       console.log('LOGIN RESPONSE', data); // DEBUG LOG
-      try { console.log('localStorage before set:', {
-        accessToken: localStorage.getItem('accessToken'),
-        refreshToken: localStorage.getItem('refreshToken'),
-        currentUser: localStorage.getItem('currentUser')
+      try { console.log('storage before set:', {
+        accessToken: storage.get('accessToken'),
+        refreshToken: storage.get('refreshToken'),
+        currentUser: storage.get('currentUser')
       }); } catch (e) { /* ignore */ }
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
       const tokenVal = data.accessToken || data.token || null;
-      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
-      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
-      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
+      if (tokenVal) { storage.set('accessToken', tokenVal); setAccessToken(tokenVal); } else { storage.remove('accessToken'); setAccessToken(null); }
+      if (data.refreshToken) { storage.set('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { storage.remove('refreshToken'); setRefreshToken(null); }
+      if (u) { storage.set('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { storage.remove('currentUser'); setCurrentUser(null); }
       toast.success('Login successful');
       return u;
     } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }

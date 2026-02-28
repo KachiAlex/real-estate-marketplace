@@ -3,7 +3,8 @@
  * Verifies connectivity to the Render PostgreSQL database
  */
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const { Sequelize } = require('sequelize');
 
 let DATABASE_URL;
