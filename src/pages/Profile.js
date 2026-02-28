@@ -12,6 +12,7 @@ const Profile = () => {
   const { currentUser } = useAuth();
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
+  const [buyerModalMode, setBuyerModalMode] = useState('create');
   const { accessToken, updateUserProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(currentUser?.firstName || '');
@@ -47,6 +48,17 @@ const Profile = () => {
     }
   };
 
+  const roles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
+  const isVendor = roles.includes('vendor');
+  const isBuyer = roles.includes('buyer');
+  const buyerPreferences = currentUser?.buyerData?.preferences || {};
+  const buyerSince = currentUser?.buyerData?.buyerSince;
+
+  const openBuyerModal = (mode = 'create') => {
+    setBuyerModalMode(mode);
+    setIsBuyerModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,19 +71,8 @@ const Profile = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
-            {currentUser && Array.isArray(currentUser.roles) && currentUser.roles.includes('vendor') ? (
-              <>
-                <VendorStatusCard onOpenKyc={() => setIsVendorModalOpen(true)} />
-                {currentUser.roles.includes('buyer') ? (
-                  <div className="bg-white rounded-lg shadow p-4">
-                    <div className="text-sm font-medium text-gray-700">Buyer status</div>
-                    <div className="mt-2 text-xs text-green-600 font-medium">✓ Active Buyer</div>
-                    <div className="mt-2 text-xs text-gray-500">You can save properties and make inquiries</div>
-                  </div>
-                ) : (
-                  <BuyerStatusCard onBecomeBuyer={() => setIsBuyerModalOpen(true)} />
-                )}
-              </>
+            {isVendor ? (
+              <VendorStatusCard onOpenKyc={() => setIsVendorModalOpen(true)} />
             ) : (
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="text-sm font-medium text-gray-700">Vendor status</div>
@@ -86,6 +87,14 @@ const Profile = () => {
                 </div>
               </div>
             )}
+
+            <BuyerStatusCard
+              isBuyer={isBuyer}
+              preferences={buyerPreferences}
+              buyerSince={buyerSince}
+              onBecomeBuyer={() => openBuyerModal('create')}
+              onManagePreferences={isBuyer ? () => openBuyerModal('edit') : undefined}
+            />
           </div>
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">

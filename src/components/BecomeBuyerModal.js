@@ -1,19 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../contexts/AuthContext-new';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
-const BecomeBuyerModal = ({ isOpen, onClose }) => {
-  const { addRole, currentUser, accessToken } = useAuth();
+const defaultPreferences = {
+  propertyTypes: [],
+  budgetRange: '',
+  locations: [],
+  investmentInterest: false,
+  notifications: true
+};
+
+const BecomeBuyerModal = ({
+  isOpen,
+  onClose,
+  mode = 'create',
+  initialPreferences = {},
+  buyerSince
+}) => {
+  const { addRole, currentUser, accessToken, setUserLocally } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [preferences, setPreferences] = useState({
-    propertyTypes: [],
-    budgetRange: '',
-    locations: [],
-    investmentInterest: false,
-    notifications: true
-  });
+  const [preferences, setPreferences] = useState({ ...defaultPreferences, ...initialPreferences });
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setPreferences({ ...defaultPreferences, ...initialPreferences });
+      setErrors({});
+    }
+  }, [isOpen, initialPreferences]);
+
+  const isBuyer = useMemo(
+    () => Array.isArray(currentUser?.roles) && currentUser.roles.includes('buyer'),
+    [currentUser?.roles]
+  );
+  const isEditing = mode === 'edit' || isBuyer;
 
   const propertyTypes = [
     'Apartment', 'House', 'Land', 'Commercial', 'Office Space', 'Shortlet'
@@ -26,6 +48,18 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
   const locations = [
     'Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Enugu'
   ];
+
+  const validatePreferences = () => {
+    const nextErrors = {};
+    if (!preferences.propertyTypes.length) {
+      nextErrors.propertyTypes = 'Select at least one property type';
+    }
+    if (!preferences.locations.length) {
+      nextErrors.locations = 'Choose at least one preferred location';
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handlePropertyTypeChange = (type) => {
     setPreferences(prev => ({
@@ -47,41 +81,62 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (!validatePreferences()) return;
     setLoading(true);
-    
-    try {
-      // 1) Add buyer role to the user
-      await addRole('buyer', false);
-      
-      // 2) Save buyer preferences
-      const buyerProfile = {
-        userId: currentUser.id,
-        preferences: {
-          propertyTypes: preferences.propertyTypes,
-          budgetRange: preferences.budgetRange,
-          locations: preferences.locations,
-          investmentInterest: preferences.investmentInterest,
-          notifications: preferences.notifications
-        },
-        buyerSince: new Date().toISOString(),
-        source: 'vendor_to_buyer_conversion'
-      };
 
-      const response = await fetch(getApiUrl('/buyer/profile'), {
-        method: 'POST',
+    try {
+      if (!isBuyer) {
+        await addRole('buyer', false);
+      }
+
+      const endpoint = isBuyer ? '/buyer/preferences' : '/buyer/profile';
+      const method = isBuyer ? 'PUT' : 'POST';
+      const payload = isBuyer
+        ? { preferences }
+        : {
+            userId: currentUser.id,
+            preferences,
+            buyerSince: buyerSince || new Date().toISOString(),
+            source: 'profile_settings_modal'
+          };
+
+      const response = await fetch(getApiUrl(endpoint), {
+        method,
         headers: {
           'Content-Type': 'application/json',
           ...(accessToken && { Authorization: `Bearer ${accessToken}` })
         },
-        body: JSON.stringify(buyerProfile)
+        body: JSON.stringify(payload)
       });
 
+      const json = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to save buyer profile');
+        throw new Error(json.message || 'Failed to save buyer profile');
       }
 
-      toast.success('Congratulations! You are now a buyer. Start exploring properties!');
+      const updatedBuyerData = json?.data?.buyerData || {
+        ...(currentUser?.buyerData || {}),
+        preferences,
+        buyerSince: buyerSince || currentUser?.buyerData?.buyerSince || new Date().toISOString(),
+        source: currentUser?.buyerData?.source || 'profile_settings_modal',
+        updatedAt: new Date().toISOString()
+      };
+
+      if (setUserLocally) {
+        setUserLocally({
+          ...currentUser,
+          roles: Array.from(new Set([...(currentUser?.roles || []), 'buyer'])),
+          buyerData: updatedBuyerData
+        });
+      }
+
+      const summary = `${preferences.propertyTypes.length} type(s), ${preferences.locations.length} location(s)`;
+      toast.success(
+        isBuyer
+          ? `Buyer preferences updated (${summary})`
+          : `Welcome aboard! Buyer profile created (${summary})`
+      );
+
       if (onClose) onClose();
     } catch (err) {
       console.error('BecomeBuyer submit error', err);
@@ -92,18 +147,28 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Become a Buyer">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isBuyer ? 'Update buyer preferences' : 'Become a Buyer'}
+    >
       <form onSubmit={submit} className="space-y-6">
-        <div className="text-sm text-gray-600">
-          <p>As a buyer, you'll be able to:</p>
-          <ul className="mt-2 list-disc list-inside space-y-1">
-            <li>Save properties to your wishlist</li>
-            <li>Make property inquiries</li>
-            <li>Track your favorite listings</li>
-            <li>Get personalized recommendations</li>
-            <li>Participate in property investments</li>
-          </ul>
-        </div>
+        {isBuyer ? (
+          <div className="text-sm text-gray-600">
+            <p>Fine-tune your preferences to improve recommendations and alerts.</p>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600">
+            <p>As a buyer, you'll be able to:</p>
+            <ul className="mt-2 list-disc list-inside space-y-1">
+              <li>Save properties to your wishlist</li>
+              <li>Make property inquiries</li>
+              <li>Track your favorite listings</li>
+              <li>Get personalized recommendations</li>
+              <li>Participate in property investments</li>
+            </ul>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -122,6 +187,9 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
               </label>
             ))}
           </div>
+          {errors.propertyTypes && (
+            <p className="text-xs text-red-500 mt-1">{errors.propertyTypes}</p>
+          )}
         </div>
 
         <div>
@@ -157,6 +225,9 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
               </label>
             ))}
           </div>
+          {errors.locations && (
+            <p className="text-xs text-red-500 mt-1">{errors.locations}</p>
+          )}
         </div>
 
         <div>
@@ -189,7 +260,7 @@ const BecomeBuyerModal = ({ isOpen, onClose }) => {
             disabled={loading}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50"
           >
-            {loading ? 'Processing...' : 'Become a Buyer'}
+            {loading ? 'Processing...' : isBuyer ? 'Save preferences' : 'Become a Buyer'}
           </button>
           <button
             type="button"
