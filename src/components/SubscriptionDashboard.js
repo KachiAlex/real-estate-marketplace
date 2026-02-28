@@ -177,6 +177,19 @@ const SubscriptionDashboard = () => {
     });
   };
 
+  const defaultPlan = useMemo(() => ({
+    id: 'vendor-default-plan',
+    name: 'Vendor Subscription',
+    amount: subscription?.amount || subscriptionStatus?.suggestedAmount || 50000,
+    billingCycle: subscription?.billingCycle || subscription?.interval || 'monthly',
+    features: {
+      property_listings: true,
+      escrow_support: true,
+      analytics: true,
+      premium_support: false
+    }
+  }), [subscription, subscriptionStatus]);
+
   const handlePayment = (plan) => {
     setSelectedPlan(plan);
     setShowPaymentModal(true);
@@ -185,15 +198,7 @@ const SubscriptionDashboard = () => {
   const resolveDefaultPlan = () => {
     if (plans && plans.length > 0) return plans[0];
     if (currentPlanDetails) return currentPlanDetails;
-    if (subscription) {
-      return {
-        id: subscription.planId || subscription.id || 'vendor-default-plan',
-        name: subscription.plan || 'Vendor Subscription',
-        amount: subscription.amount || 50000,
-        billingCycle: subscription.billingCycle || subscription.interval || 'monthly'
-      };
-    }
-    return null;
+    return defaultPlan;
   };
 
   const handleRenewCurrentPlan = () => {
@@ -385,7 +390,7 @@ const SubscriptionDashboard = () => {
       )}
 
       {/* Available Plans */}
-      {plans.length > 0 && (
+      {plans.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Plans</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -422,6 +427,40 @@ const SubscriptionDashboard = () => {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Default Plan</h3>
+              <p className="text-sm text-gray-500">Admin has not configured custom plans yet. The default vendor plan is available below.</p>
+            </div>
+            <span className="text-sm font-medium text-gray-600">₦{defaultPlan.amount?.toLocaleString()} / month</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold text-gray-800 mb-1">What's included</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Property listings</li>
+                <li>Escrow & support</li>
+                <li>Basic analytics</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold text-gray-800 mb-1">Billing</p>
+              <p>₦{defaultPlan.amount?.toLocaleString()} every {defaultPlan.billingCycle}</p>
+              <p className="text-xs text-gray-500 mt-1">Price can be updated by admin anytime.</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-3 justify-between">
+              <p className="font-semibold text-gray-800">Ready to activate?</p>
+              <button
+                onClick={() => handlePayment(defaultPlan)}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Subscribe Now
+              </button>
+            </div>
           </div>
         </div>
       )}

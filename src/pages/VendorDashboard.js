@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import VendorOverview from '../components/vendor/VendorOverview';
+import SubscriptionDashboard from '../components/SubscriptionDashboard';
 import { useAuth } from '../contexts/AuthContext-new';
 import { useVendor } from '../contexts/VendorContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardSwitch from '../components/DashboardSwitch';
 
 const TREND_LABELS = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'];
@@ -25,6 +26,35 @@ export default function VendorDashboard() {
   const { accessToken } = useAuth();
   const { vendorProfile, loading: vendorLoading } = useVendor();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+    if (!tabParam && activeTab !== 'overview') {
+      setActiveTab('overview');
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams);
+    if (tab === 'overview') {
+      params.delete('tab');
+    } else {
+      params.set('tab', tab);
+    }
+    setSearchParams(params);
+  };
+
+  const vendorTabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'subscription', label: 'Subscription' }
+  ];
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -77,15 +107,41 @@ export default function VendorDashboard() {
     <div className="container mx-auto py-8">
       <DashboardSwitch />
       <h2 className="text-2xl font-bold text-brand-blue mb-4">Vendor Dashboard</h2>
-      <div className="bg-white rounded shadow p-6">
-        {error && <div className="text-red-600 mb-4">{error}</div>}
-        {/* Use backend stats when available; otherwise fall back to seeded vendorProfile for local/dev */}
-        <VendorOverview
-          stats={displayStats}
-          loading={loading || vendorLoading}
-          onAddProperty={handleAddProperty}
-        />
+      <div className="bg-white rounded shadow p-6 mb-6">
+        <div className="flex flex-wrap gap-3">
+          {vendorTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-brand-blue text-white border-brand-blue'
+                  : 'text-gray-600 border-gray-200 hover:border-brand-blue hover:text-brand-blue'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {activeTab === 'overview' && (
+        <div className="bg-white rounded shadow p-6">
+          {error && <div className="text-red-600 mb-4">{error}</div>}
+          {/* Use backend stats when available; otherwise fall back to seeded vendorProfile for local/dev */}
+          <VendorOverview
+            stats={displayStats}
+            loading={loading || vendorLoading}
+            onAddProperty={handleAddProperty}
+          />
+        </div>
+      )}
+
+      {activeTab === 'subscription' && (
+        <div className="bg-white rounded shadow p-6">
+          <SubscriptionDashboard />
+        </div>
+      )}
     </div>
   );
 }
