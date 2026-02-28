@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import PropertyPurchaseButton from '../PropertyPurchaseButton';
+import { PropertyProvider } from '../../contexts/PropertyContext';
 
 // Mock AuthContext to simulate a signed-in user
 jest.mock('../../contexts/AuthContext', () => ({
@@ -29,7 +30,9 @@ describe('PropertyPurchaseButton', () => {
 
     render(
       <BrowserRouter>
-        <PropertyPurchaseButton property={property} />
+        <PropertyProvider>
+          <PropertyPurchaseButton property={property} />
+        </PropertyProvider>
       </BrowserRouter>
     );
 
