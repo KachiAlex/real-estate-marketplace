@@ -1,25 +1,87 @@
 import React from 'react';
 
-export default function VendorProperties({ properties, loading, onAdd, onEdit, onDelete, onView, onBulkAction, onSearch, onFilter, page, pageCount, onPageChange }) {
-  // Example properties prop: [{ id, title, status, price, views, inquiries, lastUpdated, thumbnailUrl }]
+const STATUS_COLORS = {
+  active: 'bg-green-100 text-green-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  sold: 'bg-purple-100 text-purple-800',
+  draft: 'bg-gray-100 text-gray-600'
+};
+
+const StatusBadge = ({ status }) => {
+  if (!status) {
+    return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">Unknown</span>;
+  }
+  const normalized = status.toLowerCase();
+  const style = STATUS_COLORS[normalized] || 'bg-blue-100 text-blue-800';
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${style}`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+
+const STAT_CARDS = [
+  { key: 'total', label: 'Total Listings' },
+  { key: 'active', label: 'Active' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'sold', label: 'Sold' },
+  { key: 'draft', label: 'Drafts' },
+  { key: 'avgViews', label: 'Avg. Views' },
+  { key: 'avgInquiries', label: 'Avg. Inquiries' }
+];
+
+export default function VendorProperties({
+  properties,
+  loading,
+  onAdd,
+  onEdit,
+  onDelete,
+  onView,
+  onSearch,
+  onFilter,
+  page,
+  pageCount,
+  onPageChange,
+  stats,
+  searchValue,
+  filterValue
+}) {
   return (
     <div className="space-y-6">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        {STAT_CARDS.map(card => (
+          <div key={card.key} className="bg-white border border-gray-200 rounded-lg p-3 text-center shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-400">{card.label}</p>
+            <p className="text-lg font-semibold text-gray-900">{stats?.[card.key] ?? 0}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Top Bar: Add, Search, Filter */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-        <button
-          className="bg-brand-blue text-white px-4 py-2 rounded hover:bg-blue-700"
-          onClick={onAdd}
-        >
-          + Add Property
-        </button>
-        <div className="flex gap-2 flex-1 md:justify-end">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+          <button
+            className="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={onAdd}
+          >
+            + Add Property
+          </button>
+          <p className="text-gray-500 text-sm hidden md:block">Create or import a new listing</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <input
             type="text"
+            value={searchValue}
             placeholder="Search properties..."
-            className="border rounded px-3 py-2 text-sm"
+            className="border rounded-lg px-3 py-2 text-sm w-full md:w-56 focus:ring-2 focus:ring-brand-blue focus:border-transparent"
             onChange={e => onSearch?.(e.target.value)}
           />
-          <select className="border rounded px-2 py-2 text-sm" onChange={e => onFilter?.(e.target.value)}>
+          <select
+            className="border rounded-lg px-2 py-2 text-sm w-full md:w-40 focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+            onChange={e => onFilter?.(e.target.value)}
+            value={filterValue}
+          >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="pending">Pending</option>
@@ -30,12 +92,12 @@ export default function VendorProperties({ properties, loading, onAdd, onEdit, o
       </div>
 
       {/* Table/Grid of Properties */}
-      <div className="overflow-x-auto bg-white rounded shadow">
+      <div className="hidden lg:block overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="p-3 text-left">Title</th>
-              <th className="p-3 text-left">Status</th>
+            <tr className="bg-gray-50 text-left text-gray-500 text-xs uppercase tracking-wider">
+              <th className="p-3">Title</th>
+              <th className="p-3">Status</th>
               <th className="p-3 text-right">Price</th>
               <th className="p-3 text-center">Views</th>
               <th className="p-3 text-center">Inquiries</th>
@@ -49,8 +111,8 @@ export default function VendorProperties({ properties, loading, onAdd, onEdit, o
             ) : properties?.length ? (
               properties.map((prop) => (
                 <tr key={prop.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 flex items-center gap-2">
-                    {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-10 h-10 rounded object-cover" />}
+                  <td className="p-3 flex items-center gap-3">
+                    {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-12 h-12 rounded object-cover" />}
                     <span className="font-medium text-brand-blue cursor-pointer" onClick={() => onView?.(prop)}>{prop.title}</span>
                   </td>
                   <td className="p-3">
@@ -60,9 +122,9 @@ export default function VendorProperties({ properties, loading, onAdd, onEdit, o
                   <td className="p-3 text-center">{prop.views ?? 0}</td>
                   <td className="p-3 text-center">{prop.inquiries ?? 0}</td>
                   <td className="p-3 text-center">{prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '-'}</td>
-                  <td className="p-3 text-center">
-                    <button className="text-blue-600 hover:underline mr-2" onClick={() => onEdit?.(prop)}>Edit</button>
-                    <button className="text-gray-600 hover:underline mr-2" onClick={() => onView?.(prop)}>View</button>
+                  <td className="p-3 text-center space-x-3">
+                    <button className="text-blue-600 hover:underline" onClick={() => onEdit?.(prop)}>Edit</button>
+                    <button className="text-gray-600 hover:underline" onClick={() => onView?.(prop)}>View</button>
                     <button className="text-red-600 hover:underline" onClick={() => onDelete?.(prop)}>Delete</button>
                   </td>
                 </tr>
@@ -72,6 +134,50 @@ export default function VendorProperties({ properties, loading, onAdd, onEdit, o
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile list */}
+      <div className="lg:hidden space-y-3">
+        {loading ? (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center text-gray-400">Loading...</div>
+        ) : properties?.length ? (
+          properties.map((prop) => (
+            <div key={prop.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-16 h-16 rounded object-cover" />}
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{prop.title}</p>
+                  <StatusBadge status={prop.status} />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase">Price</p>
+                  <p className="font-medium text-gray-900">₦{prop.price?.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-xs uppercase">Last Updated</p>
+                  <p>{prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-xs uppercase">Views</p>
+                  <p>{prop.views ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-xs uppercase">Inquiries</p>
+                  <p>{prop.inquiries ?? 0}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end gap-3 text-sm">
+                <button className="text-blue-600" onClick={() => onEdit?.(prop)}>Edit</button>
+                <button className="text-gray-600" onClick={() => onView?.(prop)}>View</button>
+                <button className="text-red-600" onClick={() => onDelete?.(prop)}>Delete</button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center text-gray-400">No properties found</div>
+        )}
       </div>
 
       {/* Pagination */}

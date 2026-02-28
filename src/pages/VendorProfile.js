@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import storageService from '../services/storageService';
-import BuyerStatusCard from '../components/BuyerStatusCard';
 import BecomeBuyerModal from '../components/BecomeBuyerModal';
 
 const VendorProfile = () => {
@@ -444,6 +443,33 @@ const VendorProfile = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
+            {/* Buyer Status */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Buyer Program</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Access curated investment opportunities and buyer tools from your vendor hub.
+              </p>
+              <button
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md font-medium transition-colors"
+                onClick={() => {
+                  setBuyerModalMode('create');
+                  setIsBuyerModalOpen(true);
+                }}
+              >
+                {isBuyer ? 'Manage Buyer Profile' : 'Become a Buyer'}
+              </button>
+              {isBuyer && (
+                <button
+                  className="w-full mt-3 border border-orange-200 text-orange-600 py-2 rounded-md text-sm"
+                  onClick={() => {
+                    setBuyerModalMode('edit');
+                    setIsBuyerModalOpen(true);
+                  }}
+                >
+                  Update Preferences
+                </button>
+              )}
+            </div>
             {/* Account Info */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>

@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BecomeVendorModal from '../components/BecomeVendorModal.js';
-import BecomeBuyerModal from '../components/BecomeBuyerModal.js';
 import VendorStatusCard from '../components/VendorStatusCard';
-import BuyerStatusCard from '../components/BuyerStatusCard';
 
 import { getApiUrl } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
@@ -11,8 +9,6 @@ import toast from 'react-hot-toast';
 const Profile = () => {
   const { currentUser } = useAuth();
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
-  const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
-  const [buyerModalMode, setBuyerModalMode] = useState('create');
   const { accessToken, updateUserProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(currentUser?.firstName || '');
@@ -74,10 +70,6 @@ const Profile = () => {
   const buyerPreferences = currentUser?.buyerData?.preferences || {};
   const buyerSince = currentUser?.buyerData?.buyerSince;
 
-  const openBuyerModal = (mode = 'create') => {
-    setBuyerModalMode(mode);
-    setIsBuyerModalOpen(true);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -108,13 +100,12 @@ const Profile = () => {
               </div>
             )}
 
-            <BuyerStatusCard
-              isBuyer={isBuyer}
-              preferences={buyerPreferences}
-              buyerSince={buyerSince}
-              onBecomeBuyer={() => openBuyerModal('create')}
-              onManagePreferences={isBuyer ? () => openBuyerModal('edit') : undefined}
-            />
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm font-medium text-gray-700">Buyer status</div>
+              <div className="mt-2 text-xs text-gray-500">
+                {isBuyer ? 'Buyer features managed via vendor profile' : 'Switch to vendor dashboard to become a buyer'}
+              </div>
+            </div>
           </div>
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
@@ -181,9 +172,6 @@ const Profile = () => {
 
         {isVendorModalOpen && (
           <BecomeVendorModal isOpen={isVendorModalOpen} onClose={() => setIsVendorModalOpen(false)} />
-        )}
-        {isBuyerModalOpen && (
-          <BecomeBuyerModal isOpen={isBuyerModalOpen} onClose={() => setIsBuyerModalOpen(false)} />
         )}
       </div>
     </div>
