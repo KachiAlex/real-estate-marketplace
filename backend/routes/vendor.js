@@ -3,6 +3,7 @@ const { protect } = require('../middleware/auth');
 const { body } = require('express-validator');
 const db = require('../config/sequelizeDb');
 const { cloudinary, isConfigured } = require('../config/cloudinary');
+const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
 const router = express.Router();
 
 // PUT /api/vendor/profile - Update or create vendor profile
@@ -28,11 +29,14 @@ router.put('/profile', protect, [
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     // Preserve any existing roles (so a buyer can also become a vendor)
-    let existingRoles = user.roles;
-    try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
-    existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
+    let existingRoles = normalizeRoles(user.roles || user.role || []);
+    if (!existingRoles.includes('vendor')) {
+      existingRoles = normalizeRoles([...existingRoles, 'vendor']);
+    }
 
-    await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+    const activeRole = chooseActiveRole(user.activeRole, 'vendor', existingRoles);
+
+    await user.update({ role: activeRole || 'vendor', roles: existingRoles, activeRole: activeRole || 'vendor', vendorData });
     res.json({ success: true, vendor: vendorData });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
