@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaCreditCard, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaClock, FaShieldAlt, FaStar, FaChartLine, FaUsers, FaHome } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,10 +15,78 @@ const SubscriptionDashboard = () => {
   const [error, setError] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
     fetchSubscriptionData();
   }, []);
+
+  const countdownTarget = useMemo(() => {
+    if (!subscriptionStatus && !subscription) return null;
+
+    const labelFor = (type) => {
+      if (type === 'trial') return 'Trial ends in';
+      return 'Next billing in';
+    };
+
+    if (subscription?.trialEndDate && subscriptionStatus?.status === 'trial') {
+      return {
+        label: labelFor('trial'),
+        date: new Date(subscription.trialEndDate)
+      };
+    }
+
+    const nextDateString = subscription?.nextPaymentDate || subscriptionStatus?.nextPaymentDate;
+    if (nextDateString) {
+      return {
+        label: labelFor('billing'),
+        date: new Date(nextDateString)
+      };
+    }
+
+    return null;
+  }, [subscriptionStatus, subscription]);
+
+  useEffect(() => {
+    if (!countdownTarget?.date) {
+      setCountdown(null);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const diff = countdownTarget.date.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setCountdown({ label: countdownTarget.label, expired: true, display: 'Due now' });
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      const pad = (value) => String(value).padStart(2, '0');
+      const display = `${days}d ${pad(hours)}h:${pad(minutes)}m:${pad(seconds)}s`;
+
+      setCountdown({
+        label: countdownTarget.label,
+        display,
+        nextDate: countdownTarget.date
+      });
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(timer);
+  }, [countdownTarget]);
+
+  const currentPlanDetails = useMemo(() => {
+    if (!plans?.length || !subscription) return null;
+    return plans.find((plan) => plan.id === subscription.planId || plan.name === subscription.plan) || null;
+  }, [plans, subscription]);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -111,6 +179,18 @@ const SubscriptionDashboard = () => {
 
   const handlePayment = (plan) => {
     setSelectedPlan(plan);
+    setShowPaymentModal(true);
+  };
+
+  const handleRenewCurrentPlan = () => {
+    if (currentPlanDetails) {
+      handlePayment(currentPlanDetails);
+      return;
+    }
+    if (plans.length > 0) {
+      handlePayment(plans[0]);
+      return;
+    }
     setShowPaymentModal(true);
   };
 
@@ -239,6 +319,35 @@ const SubscriptionDashboard = () => {
                 Cancel Subscription
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Countdown / Renewal Card */}
+      {countdown && (
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-blue-100">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">{countdown.label}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{countdown.display}</p>
+              {countdown.nextDate && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Next cycle date: <span className="font-medium">{formatDate(countdown.nextDate)}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col items-start md:items-end gap-2">
+              <p className="text-sm text-gray-600">
+                Keep your listings live by renewing before the timer hits zero.
+              </p>
+              <button
+                onClick={handleRenewCurrentPlan}
+                className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FaCreditCard className="mr-2" />
+                {subscriptionStatus?.status === 'trial' ? 'Activate plan' : 'Renew subscription'}
+              </button>
+            </div>
           </div>
         </div>
       )}
