@@ -22,10 +22,13 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/auth/login" replace />;
   }
 
+  const path = location.pathname.toLowerCase();
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const isBuyerRoute = location.pathname.startsWith('/buyer') || location.pathname.startsWith('/my-') || location.pathname.includes('inspection');
-  const isVendorRoute = location.pathname.startsWith('/vendor');
+  const isAdminRoute = path === '/admin' || path.startsWith('/admin/');
+  const buyerPrefixes = ['/buyer', '/my-inquiries', '/my-inspections', '/my-properties'];
+  const buyerIncludes = ['inspection', 'alerts', 'saved-properties'];
+  const isBuyerRoute = buyerPrefixes.some((prefix) => path.startsWith(prefix)) || buyerIncludes.some((segment) => path.includes(segment));
+  const isVendorRoute = path.startsWith('/vendor');
 
   // Block non-admin users from admin pages
   if (isAdminRoute && !isAdmin) {
