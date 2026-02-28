@@ -1,6 +1,45 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import frontendMockProperties from '../data/mockProperties';
 import { getApiUrl } from '../utils/apiConfig';
+import { useAuth } from './AuthContext';
+import apiClient from '../services/apiClient';
+
+const buildMetadataSnapshot = (property, propertyId) => {
+  const base = property || {};
+  const primaryImage = Array.isArray(base.images) && base.images.length > 0
+    ? (typeof base.images[0] === 'string' ? base.images[0] : base.images[0]?.url)
+    : base.image;
+
+  return {
+    id: base.id || base.propertyId || propertyId,
+    title: base.title || 'Property',
+    description: base.description || '',
+    location: base.location || base.address || {
+      city: base.city,
+      state: base.state,
+      address: base.address
+    },
+    city: base.city,
+    state: base.state,
+    price: base.price || 0,
+    bedrooms: base.bedrooms || base.details?.bedrooms || 0,
+    bathrooms: base.bathrooms || base.details?.bathrooms || 0,
+    area: base.area || base.details?.sqft || base.sqft || 0,
+    images: base.images || (primaryImage ? [primaryImage] : []),
+    image: primaryImage,
+    status: base.status,
+    type: base.type,
+    agent: base.agent || base.owner || {
+      name: base.vendorName,
+      phone: base.vendorPhone,
+      email: base.vendorEmail
+    },
+    vendorName: base.vendorName,
+    vendorEmail: base.vendorEmail,
+    vendorPhone: base.vendorPhone,
+    dateAdded: base.createdAt || base.dateAdded || new Date().toISOString()
+  };
+};
 
 export const PropertyContext = createContext();
 
@@ -13,6 +52,7 @@ export const useProperty = () => {
 };
 
 export function PropertyProvider({ children }) {
+  const { currentUser } = useAuth();
   const [properties, setProperties] = useState(() => (
     Array.isArray(frontendMockProperties) ? frontendMockProperties : []
   ));
@@ -120,6 +160,80 @@ export function PropertyProvider({ children }) {
     }
   }, [findLocalProperty, matchPropertyId]);
 
+  const toggleFavorite = useCallback(async (propertyId, propertyData = null) => {
+    if (!currentUser || !currentUser.id) {
+      return { success: false, requiresAuth: true };
+    }
+
+    const propertyIdStr = String(propertyId || '').trim();
+    if (!propertyIdStr) {
+      return { success: false, error: 'Invalid property id' };
+    }
+
+    const favoritesKey = `favorites_${currentUser.id}`;
+    const metadataKey = `favorites_metadata_${currentUser.id}`;
+
+    let favoritesSet = new Set();
+    try {
+      const stored = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
+      favoritesSet = new Set((stored || []).map((id) => String(id)));
+    } catch (err) {
+      console.warn('PropertyContext: failed to parse favorites from localStorage', err);
+    }
+
+    const wasFavorite = favoritesSet.has(propertyIdStr);
+    if (wasFavorite) {
+      favoritesSet.delete(propertyIdStr);
+    } else {
+      favoritesSet.add(propertyIdStr);
+    }
+
+    try {
+      localStorage.setItem(favoritesKey, JSON.stringify(Array.from(favoritesSet)));
+    } catch (err) {
+      console.warn('PropertyContext: failed to persist favorites', err);
+    }
+
+    try {
+      const metadata = JSON.parse(localStorage.getItem(metadataKey) || '{}') || {};
+      if (!wasFavorite) {
+        const sourceProperty = propertyData || findLocalProperty(propertyIdStr) || { id: propertyIdStr };
+        metadata[propertyIdStr] = buildMetadataSnapshot(sourceProperty, propertyIdStr);
+      } else {
+        delete metadata[propertyIdStr];
+      }
+      localStorage.setItem(metadataKey, JSON.stringify(metadata));
+    } catch (err) {
+      console.warn('PropertyContext: failed to persist favorites metadata', err);
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+        detail: { propertyId: propertyIdStr, favorited: !wasFavorite }
+      }));
+    } catch (err) {
+      console.debug('PropertyContext: favoritesUpdated event failed', err);
+    }
+
+    let apiError = null;
+    try {
+      const response = await apiClient.post(`/properties/${propertyIdStr}/favorite`);
+      if (!response?.data?.success) {
+        apiError = response?.data?.message || 'Favorite toggle failed on server';
+      }
+    } catch (err) {
+      console.warn('PropertyContext: toggleFavorite API failed', err?.response?.data || err.message || err);
+      apiError = err?.response?.data?.message || err.message;
+    }
+
+    return {
+      success: true,
+      favorited: !wasFavorite,
+      fallback: Boolean(apiError),
+      error: apiError || null
+    };
+  }, [currentUser, findLocalProperty]);
+
   const value = {
     properties,
     loading,
@@ -128,6 +242,7 @@ export function PropertyProvider({ children }) {
     createProperty,
     fetchProperty,
     getPropertyById: findLocalProperty,
+    toggleFavorite,
   };
 
   return (

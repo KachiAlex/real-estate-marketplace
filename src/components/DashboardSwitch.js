@@ -18,14 +18,14 @@ export default function DashboardSwitch() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Only show for users with multiple roles
-  if (!user || !Array.isArray(user.roles) || user.roles.length <= 1) {
-    return null;
-  }
-
   // Get primary role and available dashboards
   const primaryRole = getPrimaryRole(user);
   const availableDashboards = getAvailableDashboards(user);
+
+  if (!availableDashboards || availableDashboards.length <= 1) {
+    return null;
+  }
+
   const currentPath = location.pathname;
   const [loadingRole, setLoadingRole] = useState(null);
 

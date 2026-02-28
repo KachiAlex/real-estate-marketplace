@@ -182,16 +182,36 @@ const SubscriptionDashboard = () => {
     setShowPaymentModal(true);
   };
 
+  const resolveDefaultPlan = () => {
+    if (plans && plans.length > 0) return plans[0];
+    if (currentPlanDetails) return currentPlanDetails;
+    if (subscription) {
+      return {
+        id: subscription.planId || subscription.id || 'vendor-default-plan',
+        name: subscription.plan || 'Vendor Subscription',
+        amount: subscription.amount || 50000,
+        billingCycle: subscription.billingCycle || subscription.interval || 'monthly'
+      };
+    }
+    return null;
+  };
+
   const handleRenewCurrentPlan = () => {
-    if (currentPlanDetails) {
-      handlePayment(currentPlanDetails);
+    const planToUse = currentPlanDetails || resolveDefaultPlan();
+    if (!planToUse) {
+      setError('No subscription plan available yet. Please contact support.');
       return;
     }
-    if (plans.length > 0) {
-      handlePayment(plans[0]);
+    handlePayment(planToUse);
+  };
+
+  const handleSubscribeNow = () => {
+    const planToUse = resolveDefaultPlan();
+    if (!planToUse) {
+      setError('No subscription plan available yet. Please contact support.');
       return;
     }
-    setShowPaymentModal(true);
+    handlePayment(planToUse);
   };
 
   const handlePaymentSuccess = (paymentData) => {
@@ -235,8 +255,20 @@ const SubscriptionDashboard = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Subscription Management</h2>
-        <p className="text-gray-600">Manage your vendor subscription and billing</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Subscription Management</h2>
+            <p className="text-gray-600">Manage your vendor subscription and billing</p>
+          </div>
+          <button
+            onClick={handleSubscribeNow}
+            disabled={loading}
+            className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-white transition-colors ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+          >
+            <FaCreditCard className="mr-2" />
+            Subscribe Now
+          </button>
+        </div>
       </div>
 
       {error && (
