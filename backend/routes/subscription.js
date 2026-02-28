@@ -120,7 +120,15 @@ router.get('/payments', protect, requireVendor, async (req, res) => {
 router.post('/pay', [
   protect,
   requireVendor,
-  body('planId').isUUID().withMessage('Valid plan ID required'),
+  body('planId')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (!value) return true;
+      if (value === 'vendor-default-plan') return true;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(value)) return true;
+      throw new Error('Valid plan ID required');
+    }),
   body('paymentMethod').isIn(['paystack']).withMessage('Paystack payment required')
 ], async (req, res) => {
   try {
