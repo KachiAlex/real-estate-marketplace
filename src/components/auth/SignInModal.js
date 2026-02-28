@@ -10,9 +10,9 @@ const SignInModal = ({ onClose }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const navigateAndClose = (path) => {
+  const navigateAndClose = (path, shouldClose = true) => {
     navigate(path);
-    if (onClose) onClose();
+    if (shouldClose && onClose) onClose();
   };
 
   const handleSubmit = async (event) => {
@@ -112,14 +112,14 @@ const SignInModal = ({ onClose }) => {
           <div className="flex items-center justify-between text-sm text-slate-300">
             <button
               type="button"
-              onClick={() => navigateAndClose('/auth/forgot-password')}
+              onClick={() => navigateAndClose('/auth/forgot-password', false)}
               className="text-amber-300"
             >
               Forgot password?
             </button>
             <button
               type="button"
-              onClick={() => navigateAndClose('/auth/register')}
+              onClick={() => navigateAndClose('/auth/register', false)}
               className="text-slate-100"
             >
               Create account
