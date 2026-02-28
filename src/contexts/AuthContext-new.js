@@ -205,9 +205,35 @@ export const AuthProvider = ({ children }) => {
         const updated = normalizeUser({ ...currentUser, role: newRole, roles: Array.from(new Set([...(currentUser.roles || []), newRole])), activeRole: newRole });
         localStorage.setItem('currentUser', JSON.stringify(updated)); setCurrentUser(updated); return updated;
       }
-      const resp = await tryFetchAuth('/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
-      const data = resp ? await resp.json().catch(() => ({})) : {};
-      if (!resp || !resp.ok) throw new Error(data.message || 'Role switch failed');
+      let resp = await tryFetchAuth('/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
+      let data = resp ? await resp.json().catch(() => ({})) : {};
+
+      if (!resp || resp.status === 404) {
+        const fallbackResp = await fetch(getApiUrl(`/users/${currentUser.id}/roles`), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ action: 'add', role: newRole, setActive: true })
+        }).catch(() => null);
+
+        const fallbackData = fallbackResp ? await fallbackResp.json().catch(() => ({})) : {};
+        if (!fallbackResp || !fallbackResp.ok) {
+          throw new Error(fallbackData.message || 'Role switch failed');
+        }
+
+        const fallbackUser = fallbackData.user || fallbackData;
+        const normalized = normalizeUser(fallbackUser || { ...currentUser, role: newRole });
+        normalized.roles = Array.isArray(normalized.roles) ? Array.from(new Set(normalized.roles)) : [newRole];
+        if (!normalized.activeRole) normalized.activeRole = newRole;
+        localStorage.setItem('currentUser', JSON.stringify(normalized));
+        setCurrentUser(normalized);
+        toast.success('Role switched');
+        return normalized;
+      }
+
+      if (!resp.ok) throw new Error(data.message || 'Role switch failed');
       let serverUser = data.user || null;
       if (!serverUser) {
         try { const me = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } }); if (me && me.ok) { const md = await me.json().catch(() => ({})); serverUser = md.user || md; } } catch (e) {}
