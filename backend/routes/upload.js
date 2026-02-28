@@ -191,6 +191,49 @@ router.post(
   }
 );
 
+const imageUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'])
+});
+
+const videoUpload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  fileFilter: fileFilter(['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'])
+});
+
+const documentUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+});
+
+const mortgageDocumentUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png'
+  ])
+});
+
+const avatarUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+});
+
+const generalUpload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB default; specific limits enforced downstream
+});
+
 // General upload endpoint used by storageService.uploadFile
 router.post(
   '/',
@@ -241,49 +284,6 @@ router.post(
     }
   }
 );
-
-const imageUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'])
-});
-
-const videoUpload = multer({
-  storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
-  fileFilter: fileFilter(['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'])
-});
-
-const documentUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: fileFilter(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
-});
-
-const mortgageDocumentUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: fileFilter([
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
-    'image/jpeg',
-    'image/jpg',
-    'image/png'
-  ])
-});
-
-const avatarUpload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: fileFilter(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
-});
-
-const generalUpload = multer({
-  storage,
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB default; specific limits enforced downstream
-});
 
 // Provide Cloudinary signed upload params for direct client uploads
 router.get('/vendor/kyc/signed', async (req, res) => {
