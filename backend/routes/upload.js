@@ -242,23 +242,6 @@ router.post(
   }
 );
 
-// Provide Cloudinary signed upload params for direct client uploads
-router.get('/vendor/kyc/signed', async (req, res) => {
-  try {
-    const { cloudinary } = require('../config/cloudinary');
-    const { isConfigured } = require('../services/uploadService');
-    if (!isConfigured()) {
-      return res.status(503).json({ success: false, message: 'Upload service not configured' });
-    }
-    const timestamp = Math.floor(Date.now() / 1000);
-    // For signature we sign only timestamp for simple direct uploads; adjust params as needed
-    const signature = cloudinary.utils.api_sign_request({ timestamp }, process.env.CLOUDINARY_API_SECRET);
-    res.json({ success: true, data: { api_key: process.env.CLOUDINARY_API_KEY, cloud_name: process.env.CLOUDINARY_CLOUD_NAME, timestamp, signature } });
-  } catch (e) {
-    console.error('Signed upload error:', e);
-    res.status(500).json({ success: false, message: 'Failed to create signed upload' });
-  }
-});
 const imageUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
@@ -300,6 +283,24 @@ const avatarUpload = multer({
 const generalUpload = multer({
   storage,
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB default; specific limits enforced downstream
+});
+
+// Provide Cloudinary signed upload params for direct client uploads
+router.get('/vendor/kyc/signed', async (req, res) => {
+  try {
+    const { cloudinary } = require('../config/cloudinary');
+    const { isConfigured } = require('../services/uploadService');
+    if (!isConfigured()) {
+      return res.status(503).json({ success: false, message: 'Upload service not configured' });
+    }
+    const timestamp = Math.floor(Date.now() / 1000);
+    // For signature we sign only timestamp for simple direct uploads; adjust params as needed
+    const signature = cloudinary.utils.api_sign_request({ timestamp }, process.env.CLOUDINARY_API_SECRET);
+    res.json({ success: true, data: { api_key: process.env.CLOUDINARY_API_KEY, cloud_name: process.env.CLOUDINARY_CLOUD_NAME, timestamp, signature } });
+  } catch (e) {
+    console.error('Signed upload error:', e);
+    res.status(500).json({ success: false, message: 'Failed to create signed upload' });
+  }
 });
 
 const parseMetadata = (raw) => {
