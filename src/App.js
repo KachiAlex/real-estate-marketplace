@@ -367,7 +367,8 @@ function App() {
   const hideHeaderPaths = ['/auth/register', '/auth/forgot-password', '/auth/google-popup-callback'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isSignInModalRoute = location.pathname === '/auth/login';
-  const shouldHideHeader = (hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute) || isAdminRoute;
+  const isAuthRoute = hideHeaderPaths.includes(location.pathname);
+  const shouldHideHeader = isAdminRoute;
   const previousLocationRef = useRef(
     isSignInModalRoute || hideHeaderPaths.includes(location.pathname)
       ? cloneLocation(DEFAULT_BACKGROUND_LOCATION)
@@ -399,7 +400,7 @@ function App() {
                 <EscrowProvider>
                   <MortgageProvider>
                     <SidebarProvider>
-                      {shouldHideHeader ? (
+                      {isAuthRoute && !isSignInModalRoute ? (
                         <div className="flex min-h-screen w-full justify-center">
                           <Suspense fallback={
                             <div className="flex items-center justify-center w-full h-screen">
@@ -411,8 +412,8 @@ function App() {
                         </div>
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-                          <Header />
-                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${isSignInModalRoute ? '' : 'pt-16'}`}>
+                          {!shouldHideHeader && <Header />}
+                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${!shouldHideHeader && !isSignInModalRoute ? 'pt-16' : ''}`}>
                             <ErrorBoundary>
                               <Suspense fallback={
                                 <div className="flex items-center justify-center w-full h-screen">
@@ -427,8 +428,12 @@ function App() {
                           {isSignInModalRoute && (
                             <SignInModal onClose={handleSignInModalClose} />
                           )}
-                          <PropertyArkAssistant />
-                          <AITourGuide />
+                          {!shouldHideHeader && (
+                            <>
+                              <PropertyArkAssistant />
+                              <AITourGuide />
+                            </>
+                          )}
                         </div>
                       )}
                     </SidebarProvider>
