@@ -142,9 +142,16 @@ router.post('/pay', [
 
     const { planId, paymentMethod } = req.body;
 
-    // Get subscription plan
-    const plan = await SubscriptionPlan.findByPk(planId);
-    if (!plan || !plan.isActive) {
+    // Resolve plan: use provided ID, or fall back to default plan
+    let plan = null;
+    if (planId && planId !== 'vendor-default-plan') {
+      plan = await SubscriptionPlan.findByPk(planId);
+    }
+    if (!plan) {
+      plan = await SubscriptionService.ensureDefaultPlan();
+    }
+
+    if (!plan || (plan.isActive !== undefined && !plan.isActive)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid subscription plan'
