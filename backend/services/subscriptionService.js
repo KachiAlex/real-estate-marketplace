@@ -4,7 +4,6 @@ const notificationService = require('./notificationService');
 class SubscriptionService {
   static buildDefaultPlan() {
     return {
-      id: 'vendor-default-plan',
       name: 'Vendor Monthly Plan',
       description: 'Default vendor subscription plan',
       amount: 50000.00,
@@ -44,17 +43,19 @@ class SubscriptionService {
     try {
       // Get default vendor plan
       const plan = await this.ensureDefaultPlan();
+      const planAmount = Number(plan?.amount || 50000);
+      const planCurrency = plan?.currency || 'NGN';
 
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 90); // 90 days trial
 
       const subscription = await Subscription.create({
         vendorId,
-        planId: plan.id,
-        plan: plan.name,
+        planId: plan?.id || null,
+        plan: plan?.name || 'Vendor Monthly Plan',
         status: 'trial',
-        amount: plan.amount,
-        currency: plan.currency,
+        amount: planAmount,
+        currency: planCurrency,
         trialEndDate,
         nextPaymentDate: trialEndDate,
         paymentMethod: 'paystack',
@@ -193,7 +194,7 @@ class SubscriptionService {
       if (planId) {
         plan = await SubscriptionPlan.findByPk(planId);
       }
-      if (!plan || !plan.isActive) {
+      if (!plan || plan.isActive === false) {
         plan = await this.ensureDefaultPlan();
       }
 
@@ -202,11 +203,19 @@ class SubscriptionService {
       if (!subscription) {
         subscription = await Subscription.create({
           vendorId,
-          planId: plan.id,
-          plan: plan.name,
+          planId: plan?.id || null,
+          plan: plan?.name || 'Vendor Monthly Plan',
           status: 'pending',
-          amount: plan.amount,
-          currency: plan.currency,
+          amount: Number(plan?.amount || 50000),
+          currency: plan?.currency || 'NGN',
+          paymentMethod
+        });
+      } else {
+        await subscription.update({
+          planId: plan?.id || subscription.planId || null,
+          plan: plan?.name || subscription.plan,
+          amount: Number(plan?.amount || subscription.amount || 50000),
+          currency: plan?.currency || subscription.currency || 'NGN',
           paymentMethod
         });
       }
@@ -262,7 +271,8 @@ class SubscriptionService {
         status: 'active',
         lastPaymentDate: now,
         nextPaymentDate,
-        endDate: nextPaymentDate
+        endDate: nextPaymentDate,
+        lastPaymentAttempt: null
       });
 
       // Send payment successful notification
@@ -295,7 +305,7 @@ class SubscriptionService {
       });
 
       for (const subscription of expiredTrials) {
-        await subscription.update({ status: 'expired' });
+        await subscription.update({ status: 'expired', lastPaymentAttempt: null });
         
         // Send trial expired notification
         await notificationService.createTrialExpiredNotification(subscription.vendorId);
