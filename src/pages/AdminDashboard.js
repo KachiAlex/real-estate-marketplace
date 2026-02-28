@@ -7,6 +7,7 @@ import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSideba
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
+import AdminSupportTickets from './AdminSupportTickets';
 // Mortgage flow temporarily disabled
 // import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
 import TableSkeleton from '../components/TableSkeleton';
@@ -196,6 +197,29 @@ const AdminDashboard = () => {
   const [hasAdminToken, setHasAdminToken] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const usersLoadedRef = useRef(false);
+  const [blogPosts, setBlogPosts] = useState([
+    {
+      id: 'blog-1',
+      title: 'January Market Update',
+      category: 'Market Trends',
+      status: 'published',
+      author: 'Admin Team',
+      publishedAt: '2024-01-28T09:15:00Z',
+      excerpt: 'Rental demand across Lekki and Ikoyi jumped 18% MoM. Here is how it impacts investors...'
+    },
+    {
+      id: 'blog-2',
+      title: 'Mortgage Playbook 2024',
+      category: 'Mortgage',
+      status: 'draft',
+      author: 'Mortgage Desk',
+      publishedAt: '2024-02-14T12:00:00Z',
+      excerpt: 'Everything our buyers should know about the revamped PropertyArk mortgage partners.'
+    }
+  ]);
+  const [blogFilter, setBlogFilter] = useState('all');
+  const [blogSearch, setBlogSearch] = useState('');
+  const [draftPost, setDraftPost] = useState({ title: '', category: '', status: 'draft', content: '' });
 
   // Early return for non-admin users
   if (!user || user.role !== 'admin') {
@@ -547,7 +571,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t && ['properties','verification','escrow','disputes','users'].includes(t)) {
+    const allowedTabs = ['properties','verification','escrow','disputes','users','blog','support'];
+    if (t && allowedTabs.includes(t)) {
       setActiveTab(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -576,6 +601,46 @@ const AdminDashboard = () => {
       loadUsersFromApi({ role: roleParam });
     }
   }, [activeTab, userRoleFilter, user?.role, loadUsersFromApi]);
+
+  const filteredBlogPosts = useMemo(() => {
+    return blogPosts.filter((post) => {
+      const matchesFilter = blogFilter === 'all' || post.status === blogFilter;
+      const matchesSearch = !blogSearch || post.title.toLowerCase().includes(blogSearch.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [blogPosts, blogFilter, blogSearch]);
+
+  const handleCreateBlogPost = () => {
+    if (!draftPost.title || !draftPost.category || !draftPost.content) {
+      toast.error('Please provide title, category and content.');
+      return;
+    }
+    const newPost = {
+      id: `blog-${Date.now()}`,
+      title: draftPost.title,
+      category: draftPost.category,
+      status: draftPost.status || 'draft',
+      author: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Admin Team',
+      publishedAt: new Date().toISOString(),
+      excerpt: draftPost.content.slice(0, 140)
+    };
+    setBlogPosts((prev) => [newPost, ...prev]);
+    setDraftPost({ title: '', category: '', status: 'draft', content: '' });
+    toast.success('Blog draft saved locally');
+  };
+
+  const handleBlogStatusToggle = (id) => {
+    setBlogPosts((prev) => prev.map((post) => {
+      if (post.id !== id) return post;
+      const nextStatus = post.status === 'published' ? 'draft' : 'published';
+      return { ...post, status: nextStatus, publishedAt: new Date().toISOString() };
+    }));
+  };
+
+  const handleDeleteBlogPost = (id) => {
+    if (!window.confirm('Remove this blog post?')) return;
+    setBlogPosts((prev) => prev.filter((post) => post.id !== id));
+  };
 
   // Load other admin data
   useEffect(() => {
@@ -1012,6 +1077,8 @@ const AdminDashboard = () => {
               {activeTab === 'escrow' && 'Escrow transaction monitoring'}
               {activeTab === 'disputes' && 'Dispute resolution management'}
               {activeTab === 'users' && 'User account management'}
+              {activeTab === 'blog' && 'Blog content planning and publishing'}
+              {activeTab === 'support' && 'Support inquiries from buyers and vendors'}
               {/* Blog content management removed */}
             </p>
           </div>

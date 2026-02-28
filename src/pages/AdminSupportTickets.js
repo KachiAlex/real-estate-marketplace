@@ -3,6 +3,7 @@ import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
 import toast from 'react-hot-toast';
 import { FaCheck, FaTimes, FaSyncAlt } from 'react-icons/fa';
+import apiClient from '../services/apiClient';
 
 const AdminSupportTickets = () => {
   const [tickets, setTickets] = useState([]);

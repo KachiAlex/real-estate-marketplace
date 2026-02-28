@@ -8,7 +8,8 @@ import {
   FaBlog,
   FaCheckCircle,
   FaUniversity,
-  FaComments
+  FaComments,
+  FaInbox
 } from 'react-icons/fa';
 
 export const ADMIN_MENU_ITEMS = [
@@ -49,10 +50,10 @@ export const ADMIN_MENU_ITEMS = [
       description: 'Manage blog posts and content'
     },
     { 
-      id: 'chat-support', 
-      label: 'Chat Support', 
-      icon: FaComments,
-      description: 'Handle buyer and vendor chat requests'
+      id: 'support', 
+      label: 'Support', 
+      icon: FaInbox,
+      description: 'Review and respond to support applications'
     },
     // { 
     //   id: 'mortgage-banks', 
