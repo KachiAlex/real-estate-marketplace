@@ -42,14 +42,24 @@ const Profile = () => {
       if (avatarFile) {
         const fd = new FormData();
         fd.append('avatar', avatarFile);
-        const resp = await fetch(getApiUrl('/upload/avatar'), { method: 'POST', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, body: fd });
+        const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+        const resp = await fetch(getApiUrl('/upload/avatar'), {
+          method: 'POST',
+          headers,
+          body: fd
+        });
         const j = await resp.json().catch(() => ({}));
         if (!resp || !resp.ok) throw new Error(j.message || 'Avatar upload failed');
-        // uploaded URL typically in j.data.uploaded or j.data.secure_url depending on upload service
-        avatarUrl = (j.data && (j.data.secure_url || (j.data.uploaded && j.data.uploaded[0] && j.data.uploaded[0].url))) || j.data || avatarUrl;
+
+        const responseData = j?.data || {};
+        avatarUrl = responseData.secure_url
+          || responseData.url
+          || responseData?.uploaded?.[0]?.secure_url
+          || responseData?.uploaded?.[0]?.url
+          || avatarUrl;
       }
 
-      const cacheSafeAvatar = avatarUrl ? bustCache(avatarUrl) : null;
+      const cacheSafeAvatar = avatarUrl && typeof avatarUrl === 'string' ? bustCache(avatarUrl) : null;
 
       // Use context helper to update profile so local state syncs
       await updateUserProfile({ firstName, lastName, avatar: cacheSafeAvatar });

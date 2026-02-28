@@ -5,7 +5,12 @@ import EscrowPaymentFlow from '../EscrowPaymentFlow';
 
 // Mock contexts used inside the component
 jest.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u1', uid: 'u1', email: 'buyer@example.com' }, clearAuthRedirect: jest.fn() })
+  useAuth: () => ({
+    user: { id: 'u1', uid: 'u1', email: 'buyer@example.com' },
+    clearAuthRedirect: jest.fn(),
+    setAuthRedirect: jest.fn(),
+    getAuthRedirect: jest.fn(() => null)
+  })
 }));
 
 jest.mock('../../contexts/EscrowContext', () => ({
@@ -14,7 +19,10 @@ jest.mock('../../contexts/EscrowContext', () => ({
 
 // Mock PropertyContext used inside the component
 jest.mock('../../contexts/PropertyContext', () => ({
-  useProperty: () => ({ fetchProperty: jest.fn(async () => ({ id: 'prop-1' })) })
+  useProperty: () => ({
+    fetchProperty: jest.fn(async () => ({ id: 'prop-1' })),
+    getPropertyById: jest.fn(() => null)
+  })
 }));
 
 // Mock InvestmentContext used inside the component

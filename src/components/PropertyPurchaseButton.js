@@ -24,16 +24,19 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
 
   const handlePurchaseClick = () => {
     const propertyId = property?.id || property?._id || property?.slug || null;
-    const target = propertyId ? `/escrow?propertyId=${encodeURIComponent(propertyId)}` : '/escrow';
+    const target = propertyId
+      ? `/escrow/payment-flow?propertyId=${encodeURIComponent(propertyId)}&type=purchase`
+      : '/escrow/payment-flow?type=purchase';
 
     if (!user) {
+      console.log('PropertyPurchaseButton: no user, redirecting to auth before escrow flow');
       // Remember where to return after sign up/login
       try {
         setAuthRedirect(target);
       } catch (e) {
         // ignore
       }
-      navigate('/auth/register');
+      navigate('/auth/login');
       window.scrollTo(0, 0);
       return;
     }

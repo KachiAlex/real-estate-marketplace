@@ -15,6 +15,8 @@ const defaultContextValue = {
   updateUserProfile: async () => { throw new Error('Auth not initialized'); },
   registerAsVendor: async () => { throw new Error('Auth not initialized'); },
   setAuthRedirect: () => {},
+  getAuthRedirect: () => null,
+  clearAuthRedirect: () => {},
   user: null,
   isBuyer: false,
   isVendor: false
@@ -287,7 +289,18 @@ export const AuthProvider = ({ children }) => {
     } catch (e) { console.warn('setUserLocally failed', e); return null; }
   }, [currentUser]);
 
-  const setAuthRedirect = useCallback((url) => { if (url) sessionStorage.setItem('authRedirect', url); }, []);
+  const setAuthRedirect = useCallback((url) => {
+    if (!url) return;
+    sessionStorage.setItem('authRedirect', url);
+  }, []);
+
+  const getAuthRedirect = useCallback(() => {
+    return sessionStorage.getItem('authRedirect') || null;
+  }, []);
+
+  const clearAuthRedirect = useCallback(() => {
+    sessionStorage.removeItem('authRedirect');
+  }, []);
 
   const registerAsVendor = useCallback(async (vendorInfo) => { try { return await switchRole('vendor'); } catch (e) { throw e; } }, [switchRole]);
 
@@ -340,6 +353,8 @@ export const AuthProvider = ({ children }) => {
     registerAsVendor,
     signInWithGooglePopup,
     setAuthRedirect,
+    getAuthRedirect,
+    clearAuthRedirect,
     user: currentUser,
     isBuyer: currentUser?.role === 'buyer' || currentUser?.userType === 'buyer',
     isVendor: currentUser?.role === 'vendor' || currentUser?.userType === 'vendor'

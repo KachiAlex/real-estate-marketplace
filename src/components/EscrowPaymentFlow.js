@@ -134,10 +134,10 @@ const EscrowPaymentFlow = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, clearAuthRedirect } = useAuth();
-  const { fetchProperty } = useProperty();
+  const { user, clearAuthRedirect, setAuthRedirect, getAuthRedirect } = useAuth();
+  const { fetchProperty, getPropertyById } = useProperty();
   const { createEscrowTransaction } = useEscrow();
-  const { investments, getInvestmentById } = useInvestment();
+  const { getInvestmentById } = useInvestment();
   
   const propertyIdFromParams = searchParams.get('propertyId');
   const investmentIdFromParams = searchParams.get('investmentId');
@@ -222,18 +222,28 @@ const EscrowPaymentFlow = ({
 
       if (!user) {
         const currentUrl = propertyId 
-          ? `/escrow/create?propertyId=${propertyId}&type=${transactionType}`
-          : `/escrow/create?investmentId=${investmentId}&type=${transactionType}`;
-        localStorage.setItem('authRedirectUrl', currentUrl);
+          ? `/escrow/payment-flow?propertyId=${propertyId}&type=${transactionType}`
+          : `/escrow/payment-flow?investmentId=${investmentId}&type=${transactionType}`;
+        setAuthRedirect(currentUrl);
         toast.error('Please login to continue');
-        navigate('/');
+        navigate('/auth/login');
         return;
       }
 
-      clearAuthRedirect();
+      const redirectUrl = getAuthRedirect?.();
+      if (redirectUrl && redirectUrl.includes('/escrow/payment-flow')) {
+        clearAuthRedirect();
+      }
 
       try {
         if (propertyId) {
+          const cached = getPropertyById(propertyId);
+          if (cached) {
+            setProperty(cached);
+            setLoading(false);
+            return;
+          }
+
           const propertyData = await fetchProperty(propertyId);
           if (propertyData) {
             setProperty(propertyData);
@@ -617,7 +627,9 @@ const EscrowPaymentFlow = ({
 
         // If payments route is missing (404) allow a safe dev/local fallback so Paystack can be launched for demos
         const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local'));
-        if (response.status === 404 && isLocalDev) {
+        const allowDevFallback = response.status === 404 && isLocalDev;
+
+        if (allowDevFallback) {
           console.warn('Payments initialize endpoint returned 404 — using client-side fallback for Paystack (dev only)');
           const fakeRef = `LOCALPSK_${Date.now()}`;
           // Emulate the shape of a successful backend initialize response
@@ -638,7 +650,9 @@ const EscrowPaymentFlow = ({
           throw new Error(msg);
         }
 
-        if (!response.ok || !data.success) {
+        const requestSuccessful = response.ok || allowDevFallback;
+
+        if (!requestSuccessful || !data.success) {
           // Try to extract a provider-reported maximum charge or friendly message
           const pd = data.data?.providerData || data.providerData || data.error?.providerData || data.error?.meta || {};
           const rawMsg = data.message || pd?.message || data.error?.message || '';

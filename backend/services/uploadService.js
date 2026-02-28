@@ -2,6 +2,7 @@ const { cloudinary, isConfigured, uploadOptions, getThumbnailUrl } = require('..
 const { isValidFileType, isValidFileSize } = require('../config/security');
 const { infoLogger, errorLogger } = require('../config/logger');
 const fs = require('fs').promises;
+const path = require('path');
 
 /**
  * Upload Service
@@ -17,11 +18,6 @@ const fs = require('fs').promises;
  */
 const uploadFile = async (file, category = 'images', options = {}) => {
   try {
-    // Check if Cloudinary is configured
-    if (!isConfigured()) {
-      throw new Error('Cloudinary is not configured. Please set environment variables.');
-    }
-
     // Normalize category keys to match `securityConfig.allowedFileTypes` and `fileSizeLimits`
     const normalizeCategory = (cat) => {
       const c = String(cat || '').toLowerCase();
@@ -34,21 +30,16 @@ const uploadFile = async (file, category = 'images', options = {}) => {
 
     const securityCategory = normalizeCategory(category);
 
-    // Validate file type
+    // Check file validations regardless of provider
     if (!isValidFileType(file.mimetype, securityCategory)) {
       const allowedList = (require('../config/security').securityConfig.allowedFileTypes[securityCategory] || []);
-      // Log diagnostic info to help debug mismatched mimetypes
       try {
         infoLogger('Rejected file type', { filename: file.originalname, mimetype: file.mimetype, expected: allowedList });
       } catch (e) {}
-      // Fallback: accept by file extension if mimetype is unreliable (some clients/proxies strip mimetype)
       try {
-        const path = require('path');
         const ext = (path.extname(file.originalname) || '').replace('.', '').toLowerCase();
         const allowedExts = allowedList.map(t => t.split('/').pop().toLowerCase());
-        if (ext && allowedExts.includes(ext)) {
-          infoLogger('Accepted file by extension fallback', { filename: file.originalname, ext, allowedExts });
-        } else {
+        if (!ext || !allowedExts.includes(ext)) {
           throw new Error(`Invalid file type. Allowed types: ${allowedList.map(t => t.split('/').pop()).join(', ')}`);
         }
       } catch (e) {
@@ -56,10 +47,40 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       }
     }
 
-    // Validate file size
     if (!isValidFileSize(file.size, securityCategory)) {
       const maxSizeMB = (uploadOptions[category]?.max_file_size || 10485760) / 1048576;
       throw new Error(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
+    }
+
+    // Local fallback when Cloudinary is not configured
+    if (!isConfigured()) {
+      const localRoot = path.join(__dirname, '..', 'uploads', 'local');
+      await fs.mkdir(localRoot, { recursive: true }).catch(() => {});
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname}`;
+      const destPath = path.join(localRoot, filename);
+
+      await fs.copyFile(file.path, destPath);
+      await fs.unlink(file.path).catch(() => {});
+
+      const stats = await fs.stat(destPath);
+      const publicId = filename.replace(/\.[^.]+$/, '');
+      const format = (path.extname(filename) || '').replace('.', '');
+      const resourceType = securityCategory === 'videos' ? 'video' : (securityCategory === 'documents' ? 'raw' : 'image');
+
+      infoLogger('File stored locally (Cloudinary fallback)', { filename, resourceType });
+
+      return {
+        success: true,
+        data: {
+          url: `/uploads/local/${filename}`,
+          publicId,
+          format,
+          size: stats.size,
+          width: null,
+          height: null,
+          resourceType
+        }
+      };
     }
 
     // Prepare upload options and ensure resource_type defaults match category
