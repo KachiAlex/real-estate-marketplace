@@ -218,6 +218,7 @@ const AdminDashboard = () => {
     }
   ]);
   const [blogFilter, setBlogFilter] = useState('all');
+  const [blogCategoryFilter, setBlogCategoryFilter] = useState('all');
   const [blogSearch, setBlogSearch] = useState('');
   const [draftPost, setDraftPost] = useState({ title: '', category: '', status: 'draft', content: '' });
 
@@ -602,13 +603,42 @@ const AdminDashboard = () => {
     }
   }, [activeTab, userRoleFilter, user?.role, loadUsersFromApi]);
 
-  const filteredBlogPosts = useMemo(() => {
-    return blogPosts.filter((post) => {
+  const blogStats = useMemo(() => {
+    const published = blogPosts.filter((post) => post.status === 'published').length;
+    const drafts = blogPosts.filter((post) => post.status !== 'published').length;
+    const scheduled = blogPosts.filter((post) => post.status === 'scheduled').length;
+    return {
+      total: blogPosts.length,
+      published,
+      drafts,
+      scheduled
+    };
+  }, [blogPosts]);
+
+  const blogCategories = useMemo(() => {
+    const set = new Set(blogPosts.map((post) => post.category).filter(Boolean));
+    if (draftPost.category) {
+      set.add(draftPost.category);
+    }
+    return Array.from(set);
+  }, [blogPosts, draftPost.category]);
+
+  const filteredBlogPosts = useMemo(() => (
+    blogPosts.filter((post) => {
       const matchesFilter = blogFilter === 'all' || post.status === blogFilter;
+      const matchesCategory = blogCategoryFilter === 'all' || post.category === blogCategoryFilter;
       const matchesSearch = !blogSearch || post.title.toLowerCase().includes(blogSearch.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [blogPosts, blogFilter, blogSearch]);
+      return matchesFilter && matchesCategory && matchesSearch;
+    })
+  ), [blogPosts, blogFilter, blogCategoryFilter, blogSearch]);
+
+  const handleDraftChange = (field, value) => {
+    setDraftPost((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const resetDraftPost = () => {
+    setDraftPost({ title: '', category: '', status: 'draft', content: '' });
+  };
 
   const handleCreateBlogPost = () => {
     if (!draftPost.title || !draftPost.category || !draftPost.content) {
@@ -625,7 +655,7 @@ const AdminDashboard = () => {
       excerpt: draftPost.content.slice(0, 140)
     };
     setBlogPosts((prev) => [newPost, ...prev]);
-    setDraftPost({ title: '', category: '', status: 'draft', content: '' });
+    resetDraftPost();
     toast.success('Blog draft saved locally');
   };
 
@@ -1256,6 +1286,190 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Blog Tab */}
+        {activeTab === 'blog' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-sm font-medium text-gray-600">Total Posts</p>
+                <p className="mt-2 text-3xl font-semibold text-gray-900">{blogStats.total}</p>
+                <p className="text-xs text-gray-500 mt-1">Across all categories</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-sm font-medium text-gray-600">Published</p>
+                <p className="mt-2 text-3xl font-semibold text-emerald-600">{blogStats.published}</p>
+                <p className="text-xs text-gray-500 mt-1">Live on the blog</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-sm font-medium text-gray-600">Drafts / Scheduled</p>
+                <p className="mt-2 text-3xl font-semibold text-amber-600">{blogStats.drafts + blogStats.scheduled}</p>
+                <p className="text-xs text-gray-500 mt-1">Awaiting review</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="grid gap-4 lg:grid-cols-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                  <input
+                    type="text"
+                    value={blogSearch}
+                    onChange={(e) => setBlogSearch(e.target.value)}
+                    placeholder="Search title or excerpt"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={blogFilter}
+                    onChange={(e) => setBlogFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    <option value="all">All Posts</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Drafts</option>
+                    <option value="scheduled">Scheduled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={blogCategoryFilter}
+                    onChange={(e) => setBlogCategoryFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    <option value="all">All Categories</option>
+                    {blogCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setBlogSearch('');
+                      setBlogFilter('all');
+                      setBlogCategoryFilter('all');
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-4">
+                {filteredBlogPosts.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-gray-500">
+                    No blog posts match the selected filters.
+                  </div>
+                ) : (
+                  filteredBlogPosts.map((post) => (
+                    <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4">
+                      <div className="flex flex-wrap items-center gap-3 justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">{post.category}</p>
+                          <h3 className="text-lg font-semibold text-gray-900">{post.title}</h3>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : post.status === 'scheduled' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{post.excerpt}</p>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                        <span>Author: {post.author}</span>
+                        <span>Updated: {post.publishedAt ? new Date(post.publishedAt).toLocaleString() : '—'}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => handleBlogStatusToggle(post.id)}
+                          className="px-3 py-2 text-sm font-medium rounded-md border border-brand-blue text-brand-blue hover:bg-brand-blue/5"
+                        >
+                          {post.status === 'published' ? 'Move to Draft' : 'Publish'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBlogPost(post.id)}
+                          className="px-3 py-2 text-sm font-medium rounded-md border border-red-500 text-red-600 hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Create Post</h3>
+                  <p className="text-sm text-gray-500 mt-1">Draft a quick update and publish later.</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={draftPost.title}
+                      onChange={(e) => handleDraftChange('title', e.target.value)}
+                      placeholder="Post title"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <input
+                      type="text"
+                      value={draftPost.category}
+                      onChange={(e) => handleDraftChange('category', e.target.value)}
+                      placeholder="e.g. Market Trends"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      value={draftPost.status}
+                      onChange={(e) => handleDraftChange('status', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="scheduled">Scheduled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                    <textarea
+                      rows={5}
+                      value={draftPost.content}
+                      onChange={(e) => handleDraftChange('content', e.target.value)}
+                      placeholder="Share insights, data, or announcements..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleCreateBlogPost}
+                      className="flex-1 px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue/90"
+                    >
+                      Save Draft
+                    </button>
+                    <button
+                      onClick={resetDraftPost}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Property status distribution chart (properties tab only) */}
         {activeTab === 'properties' && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -1867,7 +2081,18 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Blog tab removed */}
+        {/* Support Tab */}
+        {activeTab === 'support' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Support Inbox</h2>
+              <p className="text-sm text-gray-500 mt-1">Review and respond to all inquiries from buyers and vendors.</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <AdminSupportTickets />
+            </div>
+          </div>
+        )}
 
       </main>
 
