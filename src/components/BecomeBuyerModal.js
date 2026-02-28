@@ -79,6 +79,16 @@ const BecomeBuyerModal = ({
     }));
   };
 
+  const buildAuthHeaders = () => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    } else if (currentUser?.email) {
+      headers['X-Mock-User-Email'] = currentUser.email;
+    }
+    return headers;
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!validatePreferences()) return;
@@ -102,10 +112,7 @@ const BecomeBuyerModal = ({
 
       const response = await fetch(getApiUrl(endpoint), {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken && { Authorization: `Bearer ${accessToken}` })
-        },
+        headers: buildAuthHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -123,9 +130,17 @@ const BecomeBuyerModal = ({
       };
 
       if (setUserLocally) {
+        const normalizedRoles = Array.from(new Set([
+          ...(currentUser?.roles || []),
+          'user',
+          'vendor',
+          'buyer'
+        ]));
+
         setUserLocally({
           ...currentUser,
-          roles: Array.from(new Set([...(currentUser?.roles || []), 'buyer'])),
+          roles: normalizedRoles,
+          activeRole: 'buyer',
           buyerData: updatedBuyerData
         });
       }

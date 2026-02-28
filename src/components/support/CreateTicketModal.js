@@ -66,8 +66,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <label htmlFor="ticket-subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
               <input
+                id="ticket-subject"
                 value={form.subject}
                 onChange={(e) => setForm(f => ({ ...f, subject: e.target.value }))}
                 className="w-full px-3 py-2 border rounded"
@@ -75,8 +76,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label htmlFor="ticket-category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
+                id="ticket-category"
                 value={form.category}
                 onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
                 className="w-full px-3 py-2 border rounded"
@@ -95,8 +97,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <label htmlFor="ticket-priority" className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
             <select
+              id="ticket-priority"
               value={form.priority}
               onChange={(e) => setForm(f => ({ ...f, priority: e.target.value }))}
               className="w-full px-3 py-2 border rounded"
@@ -109,8 +112,9 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <label htmlFor="ticket-message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
             <textarea
+              id="ticket-message"
               value={form.message}
               onChange={(e) => setForm(f => ({ ...f, message: e.target.value }))}
               rows={6}

@@ -58,7 +58,7 @@ export default function Header() {
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 text-sm text-gray-700 hover:text-brand-orange"
-                aria-label="Open profile menu"
+                aria-label="User menu"
               >
                 {currentUser.avatar || currentUser.photoURL ? (
                   <img src={currentUser.avatar || currentUser.photoURL} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
