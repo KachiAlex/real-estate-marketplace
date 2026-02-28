@@ -378,9 +378,9 @@ function App() {
                           </Suspense>
                         </div>
                       ) : (
-                        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden pt-16">
+                        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
                           <Header />
-                          <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
+                          <div className="flex flex-grow w-full max-w-full overflow-x-hidden pt-16">
                             <ErrorBoundary>
                               <Suspense fallback={
                                 <div className="flex items-center justify-center w-full h-screen">
