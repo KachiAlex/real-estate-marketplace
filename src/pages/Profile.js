@@ -5,6 +5,7 @@ import VendorStatusCard from '../components/VendorStatusCard';
 
 import { getApiUrl } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
+import storageService from '../services/storageService';
 
 const Profile = () => {
   const { currentUser } = useAuth();
@@ -39,24 +40,12 @@ const Profile = () => {
     setSaving(true);
     try {
       let avatarUrl = currentUser?.avatar || null;
-      if (avatarFile) {
-        const fd = new FormData();
-        fd.append('avatar', avatarFile);
-        const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-        const resp = await fetch(getApiUrl('/upload/avatar'), {
-          method: 'POST',
-          headers,
-          body: fd
-        });
-        const j = await resp.json().catch(() => ({}));
-        if (!resp || !resp.ok) throw new Error(j.message || 'Avatar upload failed');
-
-        const responseData = j?.data || {};
-        avatarUrl = responseData.secure_url
-          || responseData.url
-          || responseData?.uploaded?.[0]?.secure_url
-          || responseData?.uploaded?.[0]?.url
-          || avatarUrl;
+      if (avatarFile && currentUser?.id) {
+        const uploadResult = await storageService.uploadUserAvatar(avatarFile, currentUser.id);
+        if (!uploadResult?.success) {
+          throw new Error(uploadResult?.error || 'Avatar upload failed');
+        }
+        avatarUrl = uploadResult.url || avatarUrl;
       }
 
       const cacheSafeAvatar = avatarUrl && typeof avatarUrl === 'string' ? bustCache(avatarUrl) : null;
