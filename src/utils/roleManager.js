@@ -3,37 +3,59 @@
  * Helper functions for managing user roles and dashboard routing
  */
 
+const ROLE_ALIAS = {
+  buyer: 'buyer',
+  user: 'buyer',
+  vendor: 'vendor',
+  admin: 'admin',
+  investor: 'investor',
+  mortgage_bank: 'mortgage_bank'
+};
+
+const ROLE_SWITCH_VALUE = {
+  buyer: 'user',
+  vendor: 'vendor',
+  admin: 'admin',
+  investor: 'investor',
+  mortgage_bank: 'mortgage_bank'
+};
+
+const normalizeRoleKey = (role) => {
+  if (!role) return null;
+  const normalized = String(role).trim().toLowerCase();
+  return ROLE_ALIAS[normalized] || normalized;
+};
+
+const getCanonicalRoles = (user) => {
+  if (!user) return [];
+  const baseRoles = Array.isArray(user.roles) ? user.roles : [];
+  const extras = [user.role, user.activeRole, user.userType].filter(Boolean);
+  return Array.from(new Set([...baseRoles, ...extras]
+    .map(normalizeRoleKey)
+    .filter(Boolean)));
+};
+
+export const getSwitchRoleValue = (role) => ROLE_SWITCH_VALUE[role] || role;
+
 /**
  * Get the primary role for dashboard routing
  * @param {Object} user - User object
- * @returns {string} - Primary role ('vendor', 'buyer', 'user', 'admin')
+ * @returns {string} - Primary canonical role ('vendor', 'buyer', 'admin', ...)
  */
 export const getPrimaryRole = (user) => {
-  if (!user) return 'user';
-  
-  // Use activeRole if set
-  if (user.activeRole && user.activeRole !== 'user') {
-    return user.activeRole;
+  if (!user) return 'buyer';
+
+  const prioritySources = [user.activeRole, user.role, user.userType];
+  for (const source of prioritySources) {
+    const canonical = normalizeRoleKey(source);
+    if (canonical) return canonical;
   }
-  
-  // Use role if set and not 'user'
-  if (user.role && user.role !== 'user') {
-    return user.role;
-  }
-  
-  // Check roles array for vendor first (highest priority)
-  if (Array.isArray(user.roles) && user.roles.includes('vendor')) {
-    return 'vendor';
-  }
-  
-  // Check for buyer or user role
-  if (Array.isArray(user.roles)) {
-    if (user.roles.includes('buyer')) return 'buyer';
-    if (user.roles.includes('user')) return 'user';
-  }
-  
-  // Fallback to role field
-  return user.role || 'user';
+
+  const roles = getCanonicalRoles(user);
+  if (roles.includes('vendor')) return 'vendor';
+  if (roles.includes('buyer')) return 'buyer';
+
+  return roles[0] || 'buyer';
 };
 
 /**
@@ -42,11 +64,11 @@ export const getPrimaryRole = (user) => {
  * @returns {string} - Dashboard path
  */
 export const getDashboardPath = (role) => {
-  switch (role) {
+  const canonicalRole = normalizeRoleKey(role) || 'buyer';
+  switch (canonicalRole) {
     case 'vendor':
       return '/vendor/dashboard';
     case 'buyer':
-    case 'user':
       return '/dashboard';
     case 'admin':
       return '/admin';
@@ -66,19 +88,10 @@ export const getDashboardPath = (role) => {
  * @returns {boolean} - Whether user can switch to the role
  */
 export const canSwitchToRole = (user, targetRole) => {
-  if (!user || !Array.isArray(user.roles)) return false;
-  
-  // Map role aliases
-  const roleMap = {
-    'buyer': ['user', 'buyer'],
-    'vendor': ['vendor'],
-    'admin': ['admin'],
-    'investor': ['investor'],
-    'mortgage_bank': ['mortgage_bank']
-  };
-  
-  const allowedRoles = roleMap[targetRole] || [targetRole];
-  return user.roles.some(role => allowedRoles.includes(role));
+  const canonical = normalizeRoleKey(targetRole);
+  if (!user || !canonical) return false;
+  const userRoles = getCanonicalRoles(user);
+  return userRoles.includes(canonical);
 };
 
 /**
@@ -87,60 +100,66 @@ export const canSwitchToRole = (user, targetRole) => {
  * @returns {Array} - Array of available dashboard options
  */
 export const getAvailableDashboards = (user) => {
-  if (!user || !Array.isArray(user.roles)) return [];
-  
+  const roles = getCanonicalRoles(user);
+  if (!roles.length) return [];
+
   const dashboards = [];
-  
-  if (user.roles.includes('vendor')) {
-    dashboards.push({
-      role: 'vendor',
-      name: 'Vendor Dashboard',
-      path: '/vendor/dashboard',
-      description: 'Manage your property listings',
-      icon: 'store'
-    });
-  }
-  
-  if (user.roles.includes('buyer') || user.roles.includes('user')) {
+
+  if (roles.includes('buyer')) {
     dashboards.push({
       role: 'buyer',
       name: 'Buyer Dashboard',
       path: '/dashboard',
       description: 'Browse and buy properties',
-      icon: 'shopping-cart'
+      icon: 'shopping-cart',
+      switchValue: getSwitchRoleValue('buyer')
     });
   }
-  
-  if (user.roles.includes('admin')) {
+
+  if (roles.includes('vendor')) {
+    dashboards.push({
+      role: 'vendor',
+      name: 'Vendor Dashboard',
+      path: '/vendor/dashboard',
+      description: 'Manage your property listings',
+      icon: 'store',
+      switchValue: getSwitchRoleValue('vendor')
+    });
+  }
+
+  if (roles.includes('admin')) {
     dashboards.push({
       role: 'admin',
       name: 'Admin Dashboard',
       path: '/admin',
       description: 'System administration',
-      icon: 'cog'
+      icon: 'cog',
+      switchValue: getSwitchRoleValue('admin')
     });
   }
-  
-  if (user.roles.includes('investor')) {
+
+  if (roles.includes('investor')) {
     dashboards.push({
       role: 'investor',
       name: 'Investor Dashboard',
       path: '/investor-dashboard',
       description: 'Investment portfolio',
-      icon: 'chart-line'
+      icon: 'chart-line',
+      switchValue: getSwitchRoleValue('investor')
     });
   }
-  
-  if (user.roles.includes('mortgage_bank')) {
+
+  if (roles.includes('mortgage_bank')) {
     dashboards.push({
       role: 'mortgage_bank',
       name: 'Mortgage Bank Dashboard',
       path: '/mortgage-bank/dashboard',
       description: 'Mortgage services',
-      icon: 'bank'
+      icon: 'bank',
+      switchValue: getSwitchRoleValue('mortgage_bank')
     });
   }
-  
+
   return dashboards;
 };
 
@@ -150,16 +169,15 @@ export const getAvailableDashboards = (user) => {
  * @returns {string} - Display name
  */
 export const getRoleDisplayName = (role) => {
+  const canonical = normalizeRoleKey(role);
   const roleNames = {
-    'vendor': 'Vendor',
-    'buyer': 'Buyer',
-    'user': 'User',
-    'admin': 'Admin',
-    'investor': 'Investor',
-    'mortgage_bank': 'Mortgage Bank'
+    vendor: 'Vendor',
+    buyer: 'Buyer',
+    admin: 'Admin',
+    investor: 'Investor',
+    mortgage_bank: 'Mortgage Bank'
   };
-  
-  return roleNames[role] || role;
+  return roleNames[canonical] || (canonical || role);
 };
 
 /**
@@ -168,6 +186,7 @@ export const getRoleDisplayName = (role) => {
  * @returns {Object} - Color theme object
  */
 export const getRoleTheme = (role) => {
+  const canonical = normalizeRoleKey(role) || 'buyer';
   const themes = {
     vendor: {
       primary: 'green',
@@ -182,13 +201,6 @@ export const getRoleTheme = (role) => {
       border: 'border-blue-500',
       text: 'text-blue-700',
       button: 'bg-blue-500 hover:bg-blue-600'
-    },
-    user: {
-      primary: 'gray',
-      bg: 'bg-gray-50',
-      border: 'border-gray-500',
-      text: 'text-gray-700',
-      button: 'bg-gray-500 hover:bg-gray-600'
     },
     admin: {
       primary: 'red',
@@ -213,5 +225,5 @@ export const getRoleTheme = (role) => {
     }
   };
   
-  return themes[role] || themes.user;
+  return themes[canonical] || themes.buyer;
 };

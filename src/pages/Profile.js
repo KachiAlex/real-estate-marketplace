@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BecomeVendorModal from '../components/BecomeVendorModal.js';
 import BecomeBuyerModal from '../components/BecomeBuyerModal.js';
@@ -19,8 +19,25 @@ const Profile = () => {
   const [lastName, setLastName] = useState(currentUser?.lastName || '');
   const [avatarFile, setAvatarFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || null);
 
-  const onAvatarChange = (e) => setAvatarFile(e.target.files && e.target.files[0] ? e.target.files[0] : null);
+  const bustCache = (url) => {
+    if (!url) return url;
+    const cacheBuster = `cb=${Date.now()}`;
+    return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+  };
+
+  const onAvatarChange = (e) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setAvatarFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const uploadAvatarAndSave = async () => {
     setSaving(true);
@@ -36,8 +53,11 @@ const Profile = () => {
         avatarUrl = (j.data && (j.data.secure_url || (j.data.uploaded && j.data.uploaded[0] && j.data.uploaded[0].url))) || j.data || avatarUrl;
       }
 
+      const cacheSafeAvatar = avatarUrl ? bustCache(avatarUrl) : null;
+
       // Use context helper to update profile so local state syncs
-      await updateUserProfile({ firstName, lastName, avatar: avatarUrl });
+      await updateUserProfile({ firstName, lastName, avatar: cacheSafeAvatar });
+      setAvatarPreview(cacheSafeAvatar);
       toast.success('Profile updated');
       setEditing(false);
     } catch (err) {
@@ -106,8 +126,8 @@ const Profile = () => {
               ) : (
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div className="sm:col-span-2 flex items-center gap-4">
-                    {currentUser.avatar ? (
-                      <img src={currentUser.avatar} alt="avatar" className="h-20 w-20 rounded-full object-cover" />
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="avatar" className="h-20 w-20 rounded-full object-cover" />
                     ) : (
                       <div className="h-20 w-20 rounded-full bg-brand-blue text-white flex items-center justify-center font-medium text-2xl">{(currentUser.firstName || currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}</div>
                     )}

@@ -9,7 +9,8 @@ import {
   canSwitchToRole, 
   getAvailableDashboards, 
   getRoleDisplayName,
-  getRoleTheme 
+  getRoleTheme,
+  getSwitchRoleValue 
 } from '../utils/roleManager';
 
 export default function DashboardSwitch() {
@@ -26,36 +27,28 @@ export default function DashboardSwitch() {
   const primaryRole = getPrimaryRole(user);
   const availableDashboards = getAvailableDashboards(user);
   const currentPath = location.pathname;
-  
-  const [loading, setLoading] = useState(false);
+  const [loadingRole, setLoadingRole] = useState(null);
 
   // Enhanced switch handler: change active role then navigate
-  const handleSwitch = async (targetRole) => {
+  const handleSwitch = async (targetRole, switchValueOverride = null) => {
+    const canonicalSwitchValue = switchValueOverride || getSwitchRoleValue(targetRole);
+
     if (!switchRole) {
-      // fallback to client-side navigation
       navigate(getDashboardPath(targetRole));
       return;
     }
 
     try {
-      setLoading(true);
-      
-      // Switch the active role
-      await switchRole(targetRole);
-      
-      // Navigate to appropriate dashboard after successful switch
+      setLoadingRole(targetRole);
+      await switchRole(canonicalSwitchValue);
       const targetPath = getDashboardPath(targetRole);
       navigate(targetPath);
-      
-      // Show success message
-      const roleDisplayName = getRoleDisplayName(targetRole);
-      toast.success(`Switched to ${roleDisplayName} Dashboard`);
-      
+      toast.success(`Switched to ${getRoleDisplayName(targetRole)} Dashboard`);
     } catch (e) {
       console.error('Role switch failed', e);
       toast.error(e.message || 'Failed to switch dashboard');
     } finally {
-      setLoading(false);
+      setLoadingRole(null);
     }
   };
 
@@ -85,15 +78,17 @@ export default function DashboardSwitch() {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {availableDashboards.map((dashboard) => {
-          const isActive = currentPath === dashboard.path;
+          const switchable = canSwitchToRole(user, dashboard.role);
+          const isActiveByRole = primaryRole === dashboard.role;
+          const isActive = isActiveByRole || currentPath === dashboard.path;
           const theme = getRoleTheme(dashboard.role);
           const Icon = getIcon(dashboard.icon);
           
           return (
             <button
               key={dashboard.role}
-              onClick={() => handleSwitch(dashboard.role)}
-              disabled={isActive || loading}
+              onClick={() => handleSwitch(dashboard.role, dashboard.switchValue)}
+              disabled={isActive || loadingRole === dashboard.role || !switchable}
               className={`relative overflow-hidden rounded-lg border-2 transition-all duration-200 ${
                 isActive 
                   ? `${theme.border} ${theme.bg}` 
@@ -119,9 +114,14 @@ export default function DashboardSwitch() {
                     </span>
                   </div>
                 )}
-                {loading && !isActive && (
+                {loadingRole === dashboard.role && (
                   <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
                     <div className={`animate-spin rounded-full h-6 w-6 border-b-2 ${theme.primary === 'green' ? 'border-green-500' : theme.primary === 'blue' ? 'border-blue-500' : theme.primary === 'red' ? 'border-red-500' : theme.primary === 'purple' ? 'border-purple-500' : theme.primary === 'indigo' ? 'border-indigo-500' : 'border-gray-500'}`}></div>
+                  </div>
+                )}
+                {!switchable && !isActive && (
+                  <div className="absolute inset-x-0 bottom-2 text-center text-xs text-gray-400">
+                    Not available
                   </div>
                 )}
               </div>

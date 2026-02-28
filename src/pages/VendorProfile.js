@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import storageService from '../services/storageService';
+import BuyerStatusCard from '../components/BuyerStatusCard';
+import BecomeBuyerModal from '../components/BecomeBuyerModal';
 
 const VendorProfile = () => {
   const { user, updateUserProfile } = useAuth();
@@ -19,6 +21,8 @@ const VendorProfile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
   const [success, setSuccess] = useState(false);
+  const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
+  const [buyerModalMode, setBuyerModalMode] = useState('create');
   const fileInputRef = useRef(null);
 
   // Sync form data and avatar preview when user changes
@@ -272,6 +276,16 @@ const VendorProfile = () => {
       console.error('Error removing avatar:', error);
       toast.error('Failed to remove profile picture');
     }
+  };
+
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isBuyer = roles.includes('buyer');
+  const buyerPreferences = user?.buyerData?.preferences || {};
+  const buyerSince = user?.buyerData?.buyerSince;
+
+  const openBuyerModal = (mode = 'create') => {
+    setBuyerModalMode(mode);
+    setIsBuyerModalOpen(true);
   };
 
   return (
@@ -624,6 +638,15 @@ const VendorProfile = () => {
             </div>
         </div>
       </div>
+      {isBuyerModalOpen && (
+        <BecomeBuyerModal
+          isOpen={isBuyerModalOpen}
+          onClose={() => setIsBuyerModalOpen(false)}
+          mode={buyerModalMode}
+          initialPreferences={buyerPreferences}
+          buyerSince={buyerSince}
+        />
+      )}
     </div>
   );
 };
