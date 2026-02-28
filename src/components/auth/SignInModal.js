@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
-import RegisterModal from './RegisterModal';
 import toast from 'react-hot-toast';
 
 const SignInModal = ({ onClose }) => {
@@ -9,7 +8,6 @@ const SignInModal = ({ onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [showRegister, setShowRegister] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
@@ -109,14 +107,14 @@ const SignInModal = ({ onClose }) => {
           <div className="flex items-center justify-between text-sm text-slate-300">
             <button
               type="button"
-              onClick={() => { navigate('/auth/forgot-password'); if (onClose) onClose(); }}
+              onClick={() => navigate('/auth/forgot-password')}
               className="text-amber-300"
             >
               Forgot password?
             </button>
             <button
               type="button"
-              onClick={() => setShowRegister(true)}
+              onClick={() => navigate('/auth/register')}
               className="text-slate-100"
             >
               Create account
@@ -124,15 +122,6 @@ const SignInModal = ({ onClose }) => {
           </div>
         </form>
       </div>
-
-      {showRegister && (
-        <RegisterModal
-          onClose={() => {
-            setShowRegister(false);
-            if (onClose) onClose();
-          }}
-        />
-      )}
     </div>
   );
 };

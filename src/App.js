@@ -348,12 +348,13 @@ const MainRoutes = () => (
 function App() {
   const location = useLocation();
   // Show header on most pages. Keep Sign In as a modal so header/menu remains visible.
-  // hide header for full-page auth routes (register, forgot password, callback) and admin routes.
+  // Hide header for full-page auth routes (register, forgot password, callback) and admin routes.
   // Explicitly treat `/auth/login` as a modal route to avoid router fallback redirects.
-  const hideHeaderPaths = ['/auth/forgot-password', '/auth/google-popup-callback'];
+  const hideHeaderPaths = ['/auth/register', '/auth/forgot-password', '/auth/google-popup-callback'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isSignInModalRoute = location.pathname === '/auth/login';
-  const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute;
+  const isRegisterModalRoute = location.pathname === '/auth/register';
+  const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute && !isRegisterModalRoute;
   const shouldHideHeader = isAuthRoute || isAdminRoute;
 
   return (
@@ -377,7 +378,7 @@ function App() {
                           </Suspense>
                         </div>
                       ) : (
-                        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
+                        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden pt-16">
                           <Header />
                           <div className="flex flex-grow w-full max-w-full overflow-x-hidden">
                             <ErrorBoundary>
@@ -391,7 +392,7 @@ function App() {
                             </ErrorBoundary>
                           </div>
                           {/* Show Sign-in as modal when route is /auth/login */}
-                          {isSignInModalRoute && (
+                          {isSignInModalRoute && !isRegisterModalRoute && (
                             <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
                           )}
                           <PropertyArkAssistant />

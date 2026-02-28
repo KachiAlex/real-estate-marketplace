@@ -6,7 +6,6 @@ import { useAuth } from '../../contexts/AuthContext-new';
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -25,17 +24,16 @@ export default function Header() {
   console.log('Header auth currentUser:', currentUser);
 
   return (
-    <header className="bg-white shadow sticky top-0 z-50">
+    <header className="bg-white shadow fixed top-0 inset-x-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex justify-between items-center h-16 py-2">
         <div className="flex items-center space-x-4">
           <Link to="/" className="flex items-center">
             {!logoError ? (
               <img 
-                src="/logo.png?v=5.0" 
+                src={`${process.env.PUBLIC_URL || ''}/logo.png`} 
                 alt="PropertyArk Logo" 
                 className="h-16 w-auto"
                 style={{ backgroundColor: 'transparent', border: 'none' }}
-                onLoad={() => setLogoLoaded(true)}
                 onError={(e) => {
                   console.error('Logo failed to load:', e);
                   setLogoError(true);
