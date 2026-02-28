@@ -1,6 +1,6 @@
 import VendorPropertiesContainer from './components/vendor/VendorPropertiesContainer';
 import React, { Suspense, lazy, useEffect, useRef } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
@@ -363,12 +363,11 @@ const cloneLocation = (loc = DEFAULT_BACKGROUND_LOCATION) => ({
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const hideHeaderPaths = ['/auth/register', '/auth/forgot-password', '/auth/google-popup-callback'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isSignInModalRoute = location.pathname === '/auth/login';
-  const isRegisterModalRoute = location.pathname === '/auth/register';
-  const isAuthRoute = hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute && !isRegisterModalRoute;
-  const shouldHideHeader = isAuthRoute || isAdminRoute;
+  const shouldHideHeader = (hideHeaderPaths.includes(location.pathname) && !isSignInModalRoute) || isAdminRoute;
   const previousLocationRef = useRef(
     isSignInModalRoute || hideHeaderPaths.includes(location.pathname)
       ? cloneLocation(DEFAULT_BACKGROUND_LOCATION)
@@ -380,6 +379,15 @@ function App() {
       previousLocationRef.current = cloneLocation(location);
     }
   }, [isSignInModalRoute, location]);
+
+  const handleSignInModalClose = (options = {}) => {
+    if (options?.type === 'navigate') return;
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
 
   return (
     <TourProvider>
@@ -416,8 +424,8 @@ function App() {
                             </ErrorBoundary>
                           </div>
                           {/* Show Sign-in as modal when route is /auth/login */}
-                          {isSignInModalRoute && !isRegisterModalRoute && (
-                            <SignInModal onClose={() => window.history.length > 1 ? window.history.back() : window.location.replace('/')} />
+                          {isSignInModalRoute && (
+                            <SignInModal onClose={handleSignInModalClose} />
                           )}
                           <PropertyArkAssistant />
                           <AITourGuide />

@@ -14,6 +14,12 @@ import {
   FaClock
 } from 'react-icons/fa';
 
+const formatCurrency = (value = 0) => new Intl.NumberFormat('en-NG', {
+  style: 'currency',
+  currency: 'NGN',
+  minimumFractionDigits: 0
+}).format(Number(value) || 0);
+
 const VendorContracts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -142,7 +148,7 @@ const VendorContracts = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -154,50 +160,50 @@ const VendorContracts = () => {
       </div>
 
       {/* Contract Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-5 sm:p-6 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Contracts</p>
               <p className="text-2xl font-bold text-blue-600">{contracts.length}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <FaFileContract className="text-blue-600 text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-5 sm:p-6 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Contracts</p>
               <p className="text-2xl font-bold text-green-600">{contracts.filter(c => c.status === 'Active').length}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <FaCheck className="text-green-600 text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-5 sm:p-6 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Pending Contracts</p>
               <p className="text-2xl font-bold text-yellow-600">{contracts.filter(c => c.status === 'Pending').length}</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
               <FaClock className="text-yellow-600 text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-5 sm:p-6 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Value</p>
               <p className="text-2xl font-bold text-purple-600">₦{contracts.reduce((sum, c) => sum + c.value, 0).toLocaleString()}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
               <FaUser className="text-purple-600 text-xl" />
             </div>
           </div>
@@ -205,8 +211,8 @@ const VendorContracts = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow-md p-5 sm:p-6 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -236,8 +242,77 @@ const VendorContracts = () => {
         </div>
       </div>
 
+      {/* Mobile Cards */}
+      <div className="bg-white rounded-lg shadow-md lg:hidden mb-6">
+        <div className="divide-y divide-gray-100">
+          {filteredContracts.map((contract) => (
+            <div key={`card-${contract.id}`} className="p-5">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="text-base font-semibold text-gray-900">{contract.property}</p>
+                    <p className="text-sm text-gray-500">{contract.startDate} - {contract.endDate}</p>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(contract.status)}`}>
+                    {getStatusIcon(contract.status)}
+                    <span className="ml-1">{contract.status}</span>
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                  <div>
+                    <p className="font-medium text-gray-900">Client</p>
+                    <p>{contract.client}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Type</p>
+                    <p>{contract.type}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Value</p>
+                    <p>{formatCurrency(contract.value)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Commission</p>
+                    <p className="text-green-600 font-semibold">{formatCurrency(contract.commission)}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-3">
+                  <button
+                    onClick={() => handleViewContract(contract)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-blue-200 text-blue-600 rounded-full"
+                  >
+                    <FaEye /> View
+                  </button>
+                  <button
+                    onClick={() => handleEditContract(contract)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-200 text-gray-700 rounded-full"
+                  >
+                    <FaEdit /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDownloadContract(contract)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-green-200 text-green-600 rounded-full"
+                  >
+                    <FaDownload /> Download
+                  </button>
+                  <button
+                    onClick={() => handleDeleteContract(contract)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-full"
+                  >
+                    <FaTrash /> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!filteredContracts.length && (
+            <div className="p-5 text-center text-gray-500">No contracts match your filters.</div>
+          )}
+        </div>
+      </div>
+
       {/* Contracts Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -271,10 +346,10 @@ const VendorContracts = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">₦{contract.value.toLocaleString()}</div>
+                    <div className="text-sm text-gray-900">{formatCurrency(contract.value)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-green-600">₦{contract.commission.toLocaleString()}</div>
+                    <div className="text-sm font-medium text-green-600">{formatCurrency(contract.commission)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

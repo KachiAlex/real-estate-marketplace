@@ -12,7 +12,7 @@ const SignInModal = ({ onClose }) => {
 
   const navigateAndClose = (path, shouldClose = true) => {
     navigate(path);
-    if (shouldClose && onClose) onClose();
+    if (shouldClose && onClose) onClose({ type: 'navigate' });
   };
 
   const handleSubmit = async (event) => {

@@ -9,6 +9,34 @@ const { ensureSeedProperties } = require('../services/propertyService');
 
 const router = require('express').Router();
 
+const TREND_BUCKETS = 6;
+const TREND_WEIGHTS = [12, 15, 18, 20, 18, 17];
+const TREND_LABEL_PREFIX = 'Week';
+
+const createTrendBuckets = () => Array.from({ length: TREND_BUCKETS }, () => 0);
+
+const distributeToTrend = (target = [], total = 0, offset = 0) => {
+  if (!Array.isArray(target) || !target.length) return;
+  const amount = Number(total) || 0;
+  if (amount <= 0) return;
+
+  const sumWeights = TREND_WEIGHTS.reduce((sum, weight) => sum + weight, 0);
+  TREND_WEIGHTS.forEach((weight, idx) => {
+    const bucketIdx = (idx + offset) % target.length;
+    target[bucketIdx] += Math.round((amount * weight) / sumWeights);
+  });
+};
+
+const finalizeTrend = (values = []) => {
+  if (!Array.isArray(values) || !values.length) return [];
+  const total = values.reduce((sum, val) => sum + val, 0);
+  if (total === 0) return [];
+  return values.map((value, idx) => ({
+    label: `${TREND_LABEL_PREFIX} ${idx + 1}`,
+    value
+  }));
+};
+
 const buildZeroUserSummary = () => ({
   totalProperties: 0,
   savedProperties: 0,
@@ -24,7 +52,24 @@ const buildZeroVendorSummary = () => ({
   totalViews: 0,
   totalInquiries: 0,
   totalRevenue: 0,
-  conversionRate: 0
+  conversionRate: 0,
+  viewsTrend: [],
+  inquiriesTrend: [],
+  revenueTrend: []
+});
+
+const createVendorStatsAccumulator = () => ({
+  totalProperties: 0,
+  activeListings: 0,
+  pendingListings: 0,
+  soldProperties: 0,
+  totalViews: 0,
+  totalInquiries: 0,
+  totalRevenue: 0,
+  conversionRate: 0,
+  viewsTrend: createTrendBuckets(),
+  inquiriesTrend: createTrendBuckets(),
+  revenueTrend: createTrendBuckets()
 });
 
 const normalizeValue = (value) => {
@@ -77,7 +122,7 @@ const aggregateVendorStats = (properties = []) => {
     return buildZeroVendorSummary();
   }
 
-  const stats = properties.reduce((acc, property) => {
+  const stats = properties.reduce((acc, property, idx) => {
     acc.totalProperties += 1;
 
     const verificationStatus = normalizeValue(property.verificationStatus);
@@ -95,25 +140,47 @@ const aggregateVendorStats = (properties = []) => {
       acc.soldProperties += 1;
     }
 
-    acc.totalViews += Number(property.views) || 0;
+    const propertyViews = Number(property.views) || 0;
+    acc.totalViews += propertyViews;
+    distributeToTrend(acc.viewsTrend, propertyViews, idx);
 
+    let propertyInquiries = 0;
     if (Array.isArray(property.inquiries)) {
-      acc.totalInquiries += property.inquiries.length;
+      propertyInquiries = property.inquiries.length;
+    } else if (Number(property.inquiriesCount)) {
+      propertyInquiries = Number(property.inquiriesCount);
     }
+    acc.totalInquiries += propertyInquiries;
+    distributeToTrend(acc.inquiriesTrend, propertyInquiries, idx);
 
+    let propertyRevenue = 0;
     if (Array.isArray(property.escrowTransactions)) {
       property.escrowTransactions.forEach((tx) => {
         if (normalizeValue(tx?.status) === 'completed') {
-          acc.totalRevenue += Number(tx.amount) || 0;
+          const amount = Number(tx.amount) || 0;
+          acc.totalRevenue += amount;
+          propertyRevenue += amount;
         }
       });
+    } else if (Number(property.totalRevenue)) {
+      const amount = Number(property.totalRevenue);
+      acc.totalRevenue += amount;
+      propertyRevenue += amount;
     }
+    distributeToTrend(acc.revenueTrend, propertyRevenue, idx);
 
     return acc;
-  }, buildZeroVendorSummary());
+  }, createVendorStatsAccumulator());
 
-  stats.conversionRate = stats.totalViews > 0 ? (stats.totalInquiries / stats.totalViews) * 100 : 0;
-  return stats;
+  const conversionRate = stats.totalViews > 0 ? (stats.totalInquiries / stats.totalViews) * 100 : 0;
+
+  return {
+    ...stats,
+    conversionRate,
+    viewsTrend: finalizeTrend(stats.viewsTrend),
+    inquiriesTrend: finalizeTrend(stats.inquiriesTrend),
+    revenueTrend: finalizeTrend(stats.revenueTrend)
+  };
 };
 
 // @desc    Get authenticated user's dashboard summary (buyer)
