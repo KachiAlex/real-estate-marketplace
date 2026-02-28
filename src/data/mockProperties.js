@@ -1,4 +1,16 @@
-const backendMockProperties = [
+const MOCK_VENDOR = {
+  id: 'mock-vendor-001',
+  firstName: 'Mock',
+  lastName: 'Vendor',
+  email: 'mock.vendor@example.com',
+  phone: '+234-800-000-0000',
+  vendorCode: 'VND-MOCK01'
+};
+
+// NOTE: Owner information inside the raw objects will be overridden so every
+// property belongs to the single mock vendor defined above. This keeps the
+// dataset realistic while letting us track everything with one account.
+const rawMockProperties = [
   {
     id: 'prop_001',
     title: 'Beautiful Family Home in Lekki Phase 1',
@@ -384,6 +396,14 @@ const backendMockProperties = [
   }
 ];
 
+const backendMockProperties = rawMockProperties.map((property) => ({
+  ...property,
+  owner: { ...MOCK_VENDOR },
+  ownerId: MOCK_VENDOR.id,
+  vendorId: MOCK_VENDOR.id,
+  vendorCode: MOCK_VENDOR.vendorCode
+}));
+
 const statusMap = {
   'for-sale': 'For Sale',
   'for-rent': 'For Rent',
@@ -400,7 +420,7 @@ const typeMap = {
 };
 
 const transformPropertyForFrontend = (prop) => ({
-  id: `mock-${prop.id}`,
+  id: prop.id,
   propertyId: prop.id,
   title: prop.title,
   location: `${prop.location.address}, ${prop.location.city}, ${prop.location.state}`,
@@ -438,8 +458,13 @@ const transformPropertyForFrontend = (prop) => ({
 
 const frontendMockProperties = backendMockProperties.map(transformPropertyForFrontend);
 
-module.exports = {
-  backendMockProperties,
-  frontendMockProperties,
-  transformPropertyForFrontend
-};
+export { backendMockProperties, frontendMockProperties, transformPropertyForFrontend };
+export default frontendMockProperties;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    backendMockProperties,
+    frontendMockProperties,
+    transformPropertyForFrontend
+  };
+}
