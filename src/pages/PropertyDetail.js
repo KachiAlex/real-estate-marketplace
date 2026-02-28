@@ -41,7 +41,7 @@ const PropertyDetail = () => {
       });
     }
     return Array.from(map.values());
-  }, [mergedProperties, properties]);
+  }, [properties]);
 
   useEffect(() => {
     if (mergedProperties && id) {
