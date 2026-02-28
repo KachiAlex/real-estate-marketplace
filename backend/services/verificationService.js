@@ -1,25 +1,11 @@
 // Firestore removed. Use Sequelize/PostgreSQL models instead.
 const adminSettingsService = require('./adminSettingsService');
 const paymentService = require('./paymentService');
+const propertyService = require('./propertyService');
+const notificationService = require('./notificationService');
+const db = require('../config/sequelizeDb');
 
-const COLLECTION = 'verificationApplications';
-
-// requireDb removed. Use Sequelize/PostgreSQL models directly.
-
-// convertTimestamp removed. Use native Date or Sequelize timestamps.
-
-// convertDoc removed. Use Sequelize/PostgreSQL models directly.
-
-const buildApplicantSnapshot = (user = {}) => {
-  if (!user) return null;
-  return {
-    id: user.id || user._id || user.uid || null,
-    name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name || user.companyName || 'Unknown Applicant',
-    email: user.email || 'unknown@example.com',
-    role: user.role || user.activeRole || 'user',
-    phone: user.phone || user.contactPhone || null
-  };
-};
+const { VerificationApplication, User, Property } = db;
 
 const buildError = (message, statusCode = 400) => {
   const error = new Error(message);
@@ -59,89 +45,111 @@ const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmoun
 
 // ensurePaymentNotReused: implement with Sequelize/PostgreSQL
 
-const submitApplication = async (args) => {
-  const db = require('../config/sequelizeDb');
-  const propertyService = require('./propertyService');
-  const notificationService = require('./notificationService');
-
-  const { VerificationApplication, Payment, Property } = db;
-
-  const submitApplication = async (args) => {
-    const {
-      applicant,
-      propertyId,
-      propertyName,
-      propertyUrl,
-      propertyLocation,
-      message,
-      attachments = [],
-      preferredBadgeColor,
-      verificationPaymentId
-    } = args || {};
-
-    if (!applicant || !applicant.id) throw buildError('Applicant information is required', 400);
-
-    // Ensure property exists when propertyId provided
-    let property = null;
-    if (propertyId) {
-      property = await Property.findByPk(propertyId);
-      if (!property) throw buildError('Property not found', 404);
-    }
-
-    // Validate payment if provided
-    let paymentValidated = false;
-    if (verificationPaymentId) {
-      const settings = await adminSettingsService.getSettings();
-      const requiredAmount = settings?.verificationFee || 50000;
-      await ensureVerificationPayment({ paymentId: verificationPaymentId, applicantId: applicant.id, requiredAmount });
-      paymentValidated = true;
-    }
-
-    const created = await VerificationApplication.create({
-      propertyId: propertyId || null,
-      vendorId: applicant.id,
-      badgeType: 'property_verification',
-      paymentStatus: paymentValidated ? 'completed' : 'pending',
-      verificationStatus: 'pending',
-      documents: attachments || [],
-      notes: message || ''
-    });
-
-    // Notify vendor
-    try {
-      await notificationService.createNotification({
-        recipient: applicant.id,
-        type: 'verification_submitted',
-        title: 'Verification Submitted',
-        message: `Your verification request for ${property?.title || propertyName || 'property'} has been received.`,
-        data: { verificationId: created.id }
-      });
-    } catch (e) {
-      console.warn('Failed to send verification submitted notification', e.message || e);
-    }
-
-    return created.toJSON();
+const normalizeApplication = (row) => {
+  if (!row) return null;
+  const json = typeof row.toJSON === 'function' ? row.toJSON() : row;
+  return {
+    id: json.id,
+    status: json.status,
+    applicationType: json.applicationType,
+    propertyId: json.propertyId,
+    propertyName: json.property?.title || json.propertyName,
+    propertyLocation: json.property?.location || json.propertyLocation,
+    propertyUrl: json.propertyUrl,
+    notes: json.notes,
+    documents: json.documents || [],
+    createdAt: json.createdAt,
+    updatedAt: json.updatedAt,
+    applicant: json.vendor ? {
+      id: json.vendor.id,
+      name: [json.vendor.firstName, json.vendor.lastName].filter(Boolean).join(' ') || json.vendor.email,
+      email: json.vendor.email
+    } : null,
+    badgeColor: json.preferredBadgeColor || null,
+    paymentStatus: json.paymentStatus || null,
+    paymentReference: json.paymentReference || null
   };
+};
+
+const submitApplication = async (args = {}) => {
+  const {
+    applicant,
+    propertyId,
+    propertyName,
+    propertyUrl,
+    propertyLocation,
+    message,
+    attachments = [],
+    preferredBadgeColor,
+    verificationPaymentId
+  } = args;
+
+  if (!applicant || !applicant.id) throw buildError('Applicant information is required', 400);
+
+  // Ensure property exists when propertyId provided
+  let property = null;
+  if (propertyId) {
+    property = await Property.findByPk(propertyId);
+    if (!property) throw buildError('Property not found', 404);
+  }
+
+  // Validate payment if provided
+  let paymentValidated = false;
+  if (verificationPaymentId) {
+    const settings = await adminSettingsService.getSettings();
+    const requiredAmount = settings?.verificationFee || 50000;
+    await ensureVerificationPayment({ paymentId: verificationPaymentId, applicantId: applicant.id, requiredAmount });
+    paymentValidated = true;
+  }
+
+  const created = await VerificationApplication.create({
+    propertyId: propertyId || null,
+    vendorId: applicant.id,
+    applicationType: 'property_verification',
+    paymentStatus: paymentValidated ? 'completed' : 'pending',
+    status: 'pending',
+    documents: attachments || [],
+    notes: message || '',
+    propertyName: property?.title || propertyName || null,
+    propertyUrl: property?.url || propertyUrl || null,
+    propertyLocation: property?.location || propertyLocation || null,
+    preferredBadgeColor: preferredBadgeColor || null
+  });
+
+  // Notify vendor
+  try {
+    await notificationService.createNotification({
+      recipient: applicant.id,
+      type: 'verification_submitted',
+      title: 'Verification Submitted',
+      message: `Your verification request for ${property?.title || propertyName || 'property'} has been received.`,
+      data: { verificationId: created.id }
+    });
+  } catch (e) {
+    console.warn('Failed to send verification submitted notification', e.message || e);
+  }
+
+  return normalizeApplication(created);
 };
 
 const listApplications = async ({ status = 'all', applicantId } = {}) => {
   const where = {};
   if (status && status !== 'all') {
     // map frontend statuses to DB values if necessary
-    where.verificationStatus = status;
+    where.status = status;
   }
   if (applicantId) where.vendorId = applicantId;
 
   const rows = await VerificationApplication.findAll({
     where,
     include: [
-      { model: db.User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
-      { model: db.Property, as: 'property', attributes: ['id', 'title', 'location'] }
+      { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
+      { model: Property, as: 'property', attributes: ['id', 'title', 'location'] }
     ],
     order: [['createdAt', 'DESC']]
   });
 
-  return rows.map(r => r.toJSON());
+  return rows.map(normalizeApplication);
 };
 
 const updateApplicationStatus = async ({ id, status, adminNotes = '', badgeColor = null, adminUser } = {}) => {
@@ -149,7 +157,7 @@ const updateApplicationStatus = async ({ id, status, adminNotes = '', badgeColor
   const app = await VerificationApplication.findByPk(id);
   if (!app) throw buildError('Verification application not found', 404);
 
-  await app.update({ verificationStatus: status, notes: adminNotes || app.notes });
+  await app.update({ status, notes: adminNotes || app.notes, preferredBadgeColor: badgeColor || app.preferredBadgeColor || null });
 
   // If approved, update related property verification status
   if (status === 'approved') {
@@ -175,12 +183,12 @@ const updateApplicationStatus = async ({ id, status, adminNotes = '', badgeColor
 
   const updated = await VerificationApplication.findByPk(id, {
     include: [
-      { model: db.User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
-      { model: db.Property, as: 'property', attributes: ['id', 'title', 'location'] }
+      { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
+      { model: Property, as: 'property', attributes: ['id', 'title', 'location'] }
     ]
   });
 
-  return updated ? updated.toJSON() : null;
+  return normalizeApplication(updated);
 };
 
 module.exports = {
