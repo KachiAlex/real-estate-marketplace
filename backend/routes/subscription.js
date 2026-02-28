@@ -60,10 +60,11 @@ router.get('/current', protect, requireVendor, async (req, res) => {
       data: subscription
     });
   } catch (error) {
-    console.error('Get subscription error:', error);
+    console.error('Get subscription error:', error.message, error.stack);
     res.status(500).json({
       success: false,
-      message: 'Server error fetching subscription'
+      message: 'Server error fetching subscription',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
   }
 });
@@ -83,10 +84,11 @@ router.get('/plans', async (req, res) => {
       data: plans
     });
   } catch (error) {
-    console.error('Get plans error:', error);
+    console.error('Get plans error:', error.message, error.stack);
     res.status(500).json({
       success: false,
-      message: 'Server error fetching plans'
+      message: 'Server error fetching plans',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
   }
 });
@@ -151,10 +153,20 @@ router.post('/pay', [
       plan = await SubscriptionService.ensureDefaultPlan();
     }
 
-    if (!plan || (plan.isActive !== undefined && !plan.isActive)) {
+    if (!plan) {
+      console.error('No valid plan found after fallback attempt');
       return res.status(400).json({
         success: false,
-        message: 'Invalid subscription plan'
+        message: 'No subscription plan available'
+      });
+    }
+
+    // Check if plan is active (handle both DB model and plain object)
+    const isActive = plan.isActive !== false;
+    if (!isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subscription plan is not active'
       });
     }
 
