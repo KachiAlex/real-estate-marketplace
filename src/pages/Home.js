@@ -32,57 +32,9 @@ import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
 import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
-import { frontendMockProperties as mockProperties } from '../data/mockProperties';
+import frontendMockProperties from '../data/mockProperties';
 
-// Transform backend format to frontend format
-const transformPropertyForFrontend = (prop) => {
-  // Convert status format
-  const statusMap = {
-    'for-sale': 'For Sale',
-    'for-rent': 'For Rent',
-    'for-lease': 'For Lease'
-  };
-
-  // Convert type format
-  const typeMap = {
-    'house': 'House',
-    'apartment': 'Apartment',
-    'commercial': 'Office',
-    'villa': 'Villa',
-    'penthouse': 'Penthouse',
-    'townhouse': 'Townhouse'
-  };
-
-  return {
-    id: parseInt(prop.id.replace('prop_', '')), // Numeric ID for listing
-    propertyId: prop.id, // Original string ID for detail page lookup
-    title: prop.title,
-    location: `${prop.location.address}, ${prop.location.city}, ${prop.location.state}`,
-    price: prop.price,
-    type: typeMap[prop.type] || prop.type,
-    bedrooms: prop.details.bedrooms,
-    bathrooms: prop.details.bathrooms,
-    area: prop.details.sqft,
-    image: prop.images[0]?.url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
-    description: prop.description,
-    amenities: prop.amenities || [],
-    status: statusMap[prop.status] || prop.status,
-    label: statusMap[prop.status] || prop.status,
-    labelColor: 'bg-green-600',
-    agent: {
-      name: `${prop.owner.firstName} ${prop.owner.lastName}`,
-      phone: prop.owner.phone,
-      email: prop.owner.email
-    },
-    ownerId: prop.owner.id,
-    ownerEmail: prop.owner.email,
-    isVerified: prop.isVerified,
-    views: prop.views
-  };
-};
-
-// Transform all properties
-const transformedMockProperties = mockProperties.map(transformPropertyForFrontend);
+const mockProperties = Array.isArray(frontendMockProperties) ? frontendMockProperties : [];
 
 const Home = () => {
   const { properties = [], fetchProperties, toggleFavorite } = useProperty();
@@ -142,8 +94,8 @@ const Home = () => {
     const allPropertiesMap = new Map();
     
     // First add mock properties
-    if (Array.isArray(mockProperties)) {
-      mockProperties.forEach(prop => {
+    if (Array.isArray(frontendMockProperties)) {
+      frontendMockProperties.forEach(prop => {
         allPropertiesMap.set(prop.id, prop);
       });
     }

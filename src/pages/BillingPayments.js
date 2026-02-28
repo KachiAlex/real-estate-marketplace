@@ -340,52 +340,52 @@ const BillingPayments = () => {
       {/* Billing Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
+          <div className="flex items-start gap-4">
             <div className="p-3 bg-green-100 rounded-lg">
               <FaMoneyBillWave className="text-green-600 text-xl" />
             </div>
-            <div className="ml-4">
+            <div className="flex-1 min-w-0 break-words">
               <p className="text-sm font-medium text-gray-600">Total Spent</p>
-              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.totalSpent.toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.totalSpent.toLocaleString()}</p>
               <p className="text-sm text-green-600">+12.5% this month</p>
             </div>
           </div>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
+          <div className="flex items-start gap-4">
             <div className="p-3 bg-yellow-100 rounded-lg">
               <FaClock className="text-yellow-600 text-xl" />
             </div>
-            <div className="ml-4">
+            <div className="flex-1 min-w-0 break-words">
               <p className="text-sm font-medium text-gray-600">Pending Payments</p>
-              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.pendingPayments.toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.pendingPayments.toLocaleString()}</p>
               <p className="text-sm text-yellow-600">2 transactions</p>
             </div>
           </div>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
+          <div className="flex items-start gap-4">
             <div className="p-3 bg-blue-100 rounded-lg">
               <FaShieldAlt className="text-blue-600 text-xl" />
             </div>
-            <div className="ml-4">
+            <div className="flex-1 min-w-0 break-words">
               <p className="text-sm font-medium text-gray-600">Escrow Balance</p>
-              <p className="text-2xl font-bold text-gray-900">₦{billingSummary.escrowBalance.toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.escrowBalance.toLocaleString()}</p>
               <p className="text-sm text-blue-600">3 active escrows</p>
             </div>
           </div>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
+          <div className="flex items-start gap-4">
             <div className="p-3 bg-purple-100 rounded-lg">
               <FaReceipt className="text-purple-600 text-xl" />
             </div>
-            <div className="ml-4">
+            <div className="flex-1 min-w-0 break-words">
               <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{billingSummary.completedTransactions}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">{billingSummary.completedTransactions}</p>
               <p className="text-sm text-purple-600">transactions</p>
             </div>
           </div>

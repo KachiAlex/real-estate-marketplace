@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   FaQuestionCircle, 
   FaSearch, 
@@ -10,9 +10,14 @@ import {
   FaDownload,
   FaChevronDown,
   FaChevronUp,
-  FaCheckCircle
+  FaCheckCircle,
+  FaTicketAlt
 } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext-new';
+import apiClient from '../services/apiClient';
+import CreateTicketModal from '../components/support/CreateTicketModal';
 
 const topicArticles = {
   'account-setup': {
@@ -285,9 +290,45 @@ const topicArticles = {
 };
 
 const VendorHelp = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [selectedArticleId, setSelectedArticleId] = useState('account-setup');
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const loadTickets = async () => {
+    if (!currentUser || !(currentUser.id || currentUser.uid)) return;
+    setTicketsLoading(true);
+    setTicketsError(null);
+    try {
+      const resp = await apiClient.get('/support/inquiries');
+      const data = resp.data || {};
+      if (!data?.success) throw new Error(data?.message || 'Failed to load tickets');
+      setTickets(data.data || []);
+    } catch (err) {
+      console.error('Vendor support tickets error:', err);
+      setTicketsError(err.message || 'Failed to load tickets');
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+  }, [currentUser]);
+
+  const handleOpenTicketModal = () => {
+    if (!currentUser || !(currentUser.id || currentUser.uid)) {
+      toast.error('Please log in to create a support ticket');
+      navigate('/auth/login');
+      return;
+    }
+    setShowCreateModal(true);
+  };
 
   const faqs = [
     {
@@ -479,6 +520,49 @@ const VendorHelp = () => {
         )}
       </div>
 
+      {/* Support Tickets */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-400">Support</p>
+            <h2 className="text-2xl font-semibold text-gray-900">My Support Tickets</h2>
+            <p className="text-gray-600">Track previous inquiries and raise new requests for the vendor success team.</p>
+          </div>
+          <button onClick={handleOpenTicketModal} className="btn-primary w-full md:w-auto">
+            Create Support Ticket
+          </button>
+        </div>
+
+        <div className="border border-gray-100 rounded-lg p-4">
+          {ticketsLoading ? (
+            <p className="text-gray-500">Loading tickets…</p>
+          ) : ticketsError ? (
+            <p className="text-red-500">{ticketsError}</p>
+          ) : tickets.length === 0 ? (
+            <p className="text-gray-600">You have no support tickets yet. Use the button above to contact support.</p>
+          ) : (
+            <div className="space-y-4">
+              {tickets.map((ticket) => (
+                <div key={ticket.id} className="border border-gray-200 rounded-lg p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{ticket.subject || ticket.category || 'Support Ticket'}</h3>
+                      <p className="text-sm text-gray-500">
+                        {ticket.userEmail || 'Vendor'} • {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ''}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${ticket.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {ticket.status || 'Pending'}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-gray-700 whitespace-pre-wrap">{ticket.message}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* FAQ Section */}
       <div className="bg-white rounded-lg border border-gray-200 mb-8">
         <div className="p-6 border-b border-gray-200">
@@ -535,16 +619,26 @@ const VendorHelp = () => {
 
         <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
           <div className="p-3 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <FaComments className="text-purple-600 h-8 w-8" />
+            <FaTicketAlt className="text-purple-600 h-8 w-8" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
-          <p className="text-gray-600 mb-4">Get instant help via chat</p>
-          <button className="bg-brand-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            Start Chat
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Support Tickets</h3>
+          <p className="text-gray-600 mb-4">Raise a ticket and get email + dashboard updates</p>
+          <button onClick={handleOpenTicketModal} className="bg-brand-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Create Ticket
           </button>
-          <p className="text-sm text-gray-500 mt-2">Available 24/7</p>
+          <p className="text-sm text-gray-500 mt-2">Responses within 24 hours</p>
         </div>
       </div>
+
+      {showCreateModal && (
+        <CreateTicketModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            loadTickets();
+          }}
+        />
+      )}
 
       {/* Resources */}
       <div className="mt-8 bg-gray-50 rounded-lg p-6">
