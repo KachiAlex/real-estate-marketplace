@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-// Firestore removed
 const { authenticateToken } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
 const emailService = require('../services/emailService');
+const db = require('../config/sequelizeDb');
+const { v4: uuidv4 } = require('uuid');
 
 const logger = createLogger('SupportRoutes');
 
@@ -14,7 +15,6 @@ const logger = createLogger('SupportRoutes');
  */
 router.post('/inquiry', authenticateToken, async (req, res) => {
   try {
-    // Log incoming request for quick server-side verification
     logger.info('Incoming support inquiry request', {
       userId: req.user?.id || req.user?.uid || 'unknown',
       userEmail: req.user?.email || 'unknown',
@@ -22,49 +22,39 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       category: req.body?.category || null,
       subjectPreview: req.body?.subject ? String(req.body.subject).slice(0, 120) : null
     });
-    const { message, category } = req.body;
 
-    // Validate required fields
-    if (!message || !category) {
+    const { subject, message, category, priority = 'medium' } = req.body || {};
+
+    if (!subject || !message || !category) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: message and category'
+        error: 'Missing required fields: subject, message and category'
       });
     }
 
-    const inquiryRef = db.collection('supportInquiries').doc();
-    const inquiryId = inquiryRef.id;
-
-    // Get user info
     const userId = req.user.id || req.user.uid || req.user.email;
     const userEmail = req.user.email || 'unknown@example.com';
-    const userName = req.user.firstName && req.user.lastName 
-      ? `${req.user.firstName} ${req.user.lastName}` 
-      : req.user.name || 'Unknown User';
+    const userName = req.user.firstName && req.user.lastName
+      ? `${req.user.firstName} ${req.user.lastName}`
+      : req.user.name || req.user.displayName || 'Unknown User';
 
-    const inquiry = {
-      id: inquiryId,
+    const inquiry = await db.SupportInquiry.create({
+      id: uuidv4(),
       userId,
-      userEmail,
-      userName,
+      subject: subject.trim(),
       message,
       category,
-      status: 'new',
-      isRead: false,
-      // createdAt and updatedAt: use Sequelize timestamps or Date.now()
-    };
-
-    // Save inquiry to PostgreSQL
-    await inquiryRef.set(inquiry);
-
-    logger.info('Support inquiry created', { 
-      inquiryId, 
-      userId, 
-      category,
-      userEmail 
+      priority,
+      status: 'open'
     });
 
-    // Attempt to notify admins via email (if SUPPORT_EMAIL configured)
+    logger.info('Support inquiry created', {
+      inquiryId: inquiry.id,
+      userId,
+      category,
+      userEmail
+    });
+
     try {
       const raw = process.env.SUPPORT_EMAIL || '';
       const emails = raw.split(',').map(e => e.trim()).filter(Boolean);
@@ -75,12 +65,12 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
           userEmail,
           category,
           message,
-          createdAt: new Date().toLocaleString(),
-          inquiryUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/support/${inquiryId}`
+          priority,
+          createdAt: inquiry.createdAt ? inquiry.createdAt.toLocaleString() : new Date().toLocaleString(),
+          inquiryUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/support/${inquiry.id}`
         };
-
         const sendResult = await emailService.sendBulkEmails(recipients, 'support_inquiry', variables);
-        logger.info('Support inquiry notification send result', { inquiryId, sendResult });
+        logger.info('Support inquiry notification send result', { inquiryId: inquiry.id, sendResult });
       } else {
         logger.warn('SUPPORT_EMAIL not set; skipping support inquiry email notification');
       }
@@ -93,7 +83,6 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       data: inquiry,
       message: 'Your inquiry has been submitted successfully. Our support team will respond shortly.'
     });
-
   } catch (error) {
     logger.error('Error creating support inquiry', error);
     return res.status(500).json({
@@ -112,23 +101,16 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.uid || req.user.email;
 
-    const snapshot = await db.collection('supportInquiries')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .get();
-
-    const inquiries = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date()
-    }));
+    const inquiries = await db.SupportInquiry.findAll({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
 
     return res.json({
       success: true,
       data: inquiries
     });
-
   } catch (error) {
     logger.error('Error fetching support inquiries', error);
     return res.status(500).json({
@@ -145,7 +127,6 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
  */
 router.get('/admin/inquiries', authenticateToken, async (req, res) => {
   try {
-    // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -153,22 +134,16 @@ router.get('/admin/inquiries', authenticateToken, async (req, res) => {
       });
     }
 
-    const snapshot = await db.collection('supportInquiries')
-      .orderBy('createdAt', 'desc')
-      .limit(100)
-      .get();
-
-    const inquiries = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date()
-    }));
+    const inquiries = await db.SupportInquiry.findAll({
+      include: [{ model: db.User, as: 'user', attributes: ['id', 'email', 'firstName', 'lastName'] }],
+      order: [['createdAt', 'DESC']],
+      limit: 100
+    });
 
     return res.json({
       success: true,
       data: inquiries
     });
-
   } catch (error) {
     logger.error('Error fetching admin support inquiries', error);
     return res.status(500).json({
@@ -188,7 +163,6 @@ router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { status, isRead } = req.body;
 
-    // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -196,25 +170,25 @@ router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    const updates = {
-      // updatedAt: use Sequelize timestamps or Date.now()
-    };
+    const inquiry = await db.SupportInquiry.findByPk(id);
+    if (!inquiry) {
+      return res.status(404).json({
+        success: false,
+        error: 'Inquiry not found'
+      });
+    }
 
-    if (status) updates.status = status;
-    if (isRead !== undefined) updates.isRead = isRead;
+    if (status) inquiry.status = status;
+    if (typeof isRead === 'boolean') inquiry.isRead = isRead;
+    await inquiry.save();
 
-    await db.collection('supportInquiries').doc(id).update(updates);
-
-    const doc = await db.collection('supportInquiries').doc(id).get();
-
-    logger.info('Support inquiry updated', { inquiryId: id, updates });
+    logger.info('Support inquiry updated', { inquiryId: id, updates: { status, isRead } });
 
     return res.json({
       success: true,
-      data: doc.data(),
+      data: inquiry,
       message: 'Inquiry updated successfully'
     });
-
   } catch (error) {
     logger.error('Error updating support inquiry', error);
     return res.status(500).json({
