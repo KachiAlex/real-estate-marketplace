@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '../../utils/currency';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-800',
@@ -118,7 +119,7 @@ export default function VendorProperties({
                   <td className="p-3">
                     <StatusBadge status={prop.status} />
                   </td>
-                  <td className="p-3 text-right">₦{prop.price?.toLocaleString()}</td>
+                  <td className="p-3 text-right price-inline">{formatCurrency(prop.price || 0)}</td>
                   <td className="p-3 text-center">{prop.views ?? 0}</td>
                   <td className="p-3 text-center">{prop.inquiries ?? 0}</td>
                   <td className="p-3 text-center">{prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '-'}</td>
@@ -153,7 +154,7 @@ export default function VendorProperties({
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
                 <div>
                   <p className="text-gray-400 text-xs uppercase">Price</p>
-                  <p className="font-medium text-gray-900">₦{prop.price?.toLocaleString()}</p>
+                  <p className="font-medium text-gray-900 price-inline">{formatCurrency(prop.price || 0)}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs uppercase">Last Updated</p>

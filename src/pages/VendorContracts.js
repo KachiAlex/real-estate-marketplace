@@ -13,12 +13,7 @@ import {
   FaTimes,
   FaClock
 } from 'react-icons/fa';
-
-const formatCurrency = (value = 0) => new Intl.NumberFormat('en-NG', {
-  style: 'currency',
-  currency: 'NGN',
-  minimumFractionDigits: 0
-}).format(Number(value) || 0);
+import { formatCurrency } from '../utils/currency';
 
 const VendorContracts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -269,11 +264,11 @@ const VendorContracts = () => {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Value</p>
-                    <p>{formatCurrency(contract.value)}</p>
+                    <p className="price-inline">{formatCurrency(contract.value)}</p>
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Commission</p>
-                    <p className="text-green-600 font-semibold">{formatCurrency(contract.commission)}</p>
+                    <p className="text-green-600 font-semibold price-inline">{formatCurrency(contract.commission)}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3 pt-3">
@@ -346,10 +341,10 @@ const VendorContracts = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatCurrency(contract.value)}</div>
+                    <div className="text-sm text-gray-900 price-inline">{formatCurrency(contract.value)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-green-600">{formatCurrency(contract.commission)}</div>
+                    <div className="text-sm font-medium text-green-600 price-inline">{formatCurrency(contract.commission)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -444,11 +439,11 @@ const VendorContracts = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Contract Value</label>
-                  <p className="text-sm text-gray-900">₦{selectedContract.value.toLocaleString()}</p>
+                  <p className="text-sm text-gray-900 price-inline">{formatCurrency(selectedContract.value)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Commission</label>
-                  <p className="text-sm font-medium text-green-600">₦{selectedContract.commission.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-green-600 price-inline">{formatCurrency(selectedContract.commission)}</p>
                 </div>
               </div>
               

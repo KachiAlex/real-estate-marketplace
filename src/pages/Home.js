@@ -33,6 +33,7 @@ import StaticHeroBanner from '../components/StaticHeroBanner';
 import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
 import frontendMockProperties from '../data/mockProperties';
+import { formatCurrency } from '../utils/currency';
 
 const mockProperties = Array.isArray(frontendMockProperties) ? frontendMockProperties : [];
 
@@ -917,11 +918,11 @@ const Home = () => {
                     />
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
-                    <span>₦0</span>
-                    <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded">
-                      ₦{priceRange[0].toLocaleString()} - ₦{priceRange[1].toLocaleString()}
+                    <span className="price-inline">{formatCurrency(0)}</span>
+                    <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded price-inline">
+                      {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
                     </span>
-                    <span>₦{Math.max(priceRange[1], 200000000).toLocaleString()}+</span>
+                    <span className="price-inline">{formatCurrency(Math.max(priceRange[1], 200000000))}+</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
                     Drag the slider handles or type any amount in the input fields above
@@ -1081,8 +1082,8 @@ const Home = () => {
                       </span>
                     </div>
                     <div className="absolute bottom-3 left-3">
-                      <span className="text-2xl font-bold text-white">
-                        ₦{(property.price || 0).toLocaleString()}
+                      <span className="text-2xl font-bold text-white price-inline">
+                        {formatCurrency(property.price || 0)}
                       </span>
                     </div>
                   </Link>

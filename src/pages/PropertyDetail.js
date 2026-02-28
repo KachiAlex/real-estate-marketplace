@@ -8,6 +8,7 @@ import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
 import frontendMockProperties from '../data/mockProperties';
+import { formatCurrency } from '../utils/currency';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -328,7 +329,7 @@ const PropertyDetail = () => {
     
     // Create WhatsApp message
     const propertyTitle = property?.title || 'Property';
-    const propertyPrice = property?.price ? `₦${property.price.toLocaleString()}` : '';
+    const propertyPrice = property?.price ? formatCurrency(property.price) : '';
     const message = encodeURIComponent(
       `Hi, I'm interested in your property: ${propertyTitle}${propertyPrice ? ` (${propertyPrice})` : ''}. Could you please provide more information?`
     );
@@ -518,8 +519,8 @@ const PropertyDetail = () => {
                   key={`main-image-${activeImage}`}
                 />
                 <div className="absolute top-4 right-4 flex gap-2">
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ₦{property.price?.toLocaleString()}
+                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium price-inline">
+                    {formatCurrency(property.price || 0)}
                   </span>
                   <button
                     onClick={handleToggleFavorite}
@@ -766,7 +767,7 @@ const PropertyDetail = () => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Property Value:</span>
-                  <span className="font-semibold">₦{property.price?.toLocaleString()}</span>
+                  <span className="font-semibold price-inline">{formatCurrency(property.price || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Property Type:</span>
@@ -774,11 +775,11 @@ const PropertyDetail = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Escrow Fee (0.5%):</span>
-                  <span className="font-semibold">₦{Math.round((property.price || 0) * 0.005).toLocaleString()}</span>
+                  <span className="font-semibold price-inline">{formatCurrency(Math.round((property.price || 0) * 0.005))}</span>
                 </div>
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-900 font-semibold">Total Amount:</span>
-                  <span className="font-bold text-lg">₦{Math.round((property.price || 0) * 1.005).toLocaleString()}</span>
+                  <span className="font-bold text-lg price-inline">{formatCurrency(Math.round((property.price || 0) * 1.005))}</span>
                 </div>
               </div>
               

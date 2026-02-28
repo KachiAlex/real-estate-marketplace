@@ -6,6 +6,8 @@ import {
   syncLocalInspectionRequests
 } from '../inspectionService';
 
+const STORAGE_KEY = 'inspection:viewingRequests';
+
 describe('inspectionService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -29,7 +31,7 @@ describe('inspectionService', () => {
       expect(result.status).toBe('pending');
       expect(result.createdAt).toBeDefined();
 
-      const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       expect(stored.length).toBe(1);
       expect(stored[0].id).toBe(result.id);
     });
@@ -40,7 +42,7 @@ describe('inspectionService', () => {
         propertyId: 'prop-1',
         status: 'pending'
       }];
-      localStorage.setItem('viewingRequests', JSON.stringify(existing));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 
       const requestData = {
         propertyId: 'prop-2',
@@ -49,7 +51,7 @@ describe('inspectionService', () => {
 
       await createInspectionRequest(requestData);
 
-      const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       expect(stored.length).toBe(2);
     });
   });
@@ -61,7 +63,7 @@ describe('inspectionService', () => {
         { id: '2', vendorId: 'vendor-2', vendorEmail: 'vendor2@test.com', createdAt: '2024-01-02' },
         { id: '3', vendorId: 'vendor-1', vendorEmail: 'vendor1@test.com', createdAt: '2024-01-03' }
       ];
-      localStorage.setItem('viewingRequests', JSON.stringify(requests));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     });
 
     it('should filter requests by vendorId', async () => {
@@ -121,13 +123,13 @@ describe('inspectionService', () => {
         { id: 'req-1', status: 'pending' },
         { id: 'req-2', status: 'pending' }
       ];
-      localStorage.setItem('viewingRequests', JSON.stringify(requests));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     });
 
     it('should update request with provided updates', async () => {
       await updateInspectionRequest('req-1', { status: 'approved' });
       
-      const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const updated = stored.find(r => r.id === 'req-1');
       
       expect(updated.status).toBe('approved');
@@ -137,7 +139,7 @@ describe('inspectionService', () => {
     it('should not update non-existent request', async () => {
       await updateInspectionRequest('non-existent', { status: 'approved' });
       
-      const stored = JSON.parse(localStorage.getItem('viewingRequests') || '[]');
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       expect(stored.length).toBe(2);
       expect(stored.every(r => r.status === 'pending')).toBe(true);
     });

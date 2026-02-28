@@ -6,6 +6,7 @@ import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaBell, FaCalendar } 
 import toast from 'react-hot-toast';
 import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { formatCurrency } from '../utils/currency';
 
 const Properties = () => {
   const navigate = useNavigate();
@@ -868,8 +869,8 @@ const Properties = () => {
                 </span>
               )}
               {(filters.minPrice || filters.maxPrice) && (
-                <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs">
-                  Price: ₦{filters.minPrice || '0'} - ₦{filters.maxPrice || '∞'}
+                <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs price-inline">
+                  Price: {formatCurrency(filters.minPrice || 0)} - {filters.maxPrice ? formatCurrency(filters.maxPrice) : '∞'}
                 </span>
               )}
             </div>
@@ -1084,8 +1085,8 @@ const Properties = () => {
                   onClick={() => handleViewDetails(property.id)}
                   className="p-4 cursor-pointer"
                 >
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    ₦{property.price?.toLocaleString() || '0'}
+                  <div className="text-2xl font-bold text-gray-900 mb-1 price-inline">
+                    {formatCurrency(property.price || 0)}
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
                   <p className="text-gray-600 text-sm mb-3">{property.location}</p>
@@ -1234,8 +1235,8 @@ const Properties = () => {
                 <div className="text-sm text-gray-600 space-y-1">
                   {selectedType && <p>• Type: {selectedType}</p>}
                   {selectedStatus && <p>• Status: {selectedStatus}</p>}
-                  {priceRange.min && <p>• Min Price: ₦{parseInt(priceRange.min).toLocaleString()}</p>}
-                  {priceRange.max && <p>• Max Price: ₦{parseInt(priceRange.max).toLocaleString()}</p>}
+                  {priceRange.min && <p className="price-inline">• Min Price: {formatCurrency(parseInt(priceRange.min, 10))}</p>}
+                  {priceRange.max && <p className="price-inline">• Max Price: {formatCurrency(parseInt(priceRange.max, 10))}</p>}
                   {searchQuery && <p>• Search: "{searchQuery}"</p>}
                   {(!selectedType && !selectedStatus && !priceRange.min && !priceRange.max && !searchQuery) && (
                     <p className="text-gray-500">No specific filters applied</p>

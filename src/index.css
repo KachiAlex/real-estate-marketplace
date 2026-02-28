@@ -257,5 +257,9 @@ code {
     overflow-x: hidden;
     max-width: 100%;
   }
+
+  .price-inline {
+    white-space: nowrap;
+  }
 }
 

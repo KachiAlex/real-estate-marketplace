@@ -98,12 +98,14 @@ const AdminDisputesManagement = ({ disputes }) => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
+    const value = Number.isFinite(Number(amount)) ? Number(amount) : 0;
+    const formatted = new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(value);
+    return formatted.replace(/\s/g, '\u00A0');
   };
 
   const formatDate = (dateString) => {

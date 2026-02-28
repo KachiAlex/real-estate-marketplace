@@ -52,11 +52,6 @@ jest.mock('../../components/TableSkeleton', () => ({
   default: () => null,
 }));
 
-jest.mock('../../components/BlogManagement', () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 jest.mock('../../components/AdminPropertyVerification', () => ({
   __esModule: true,
   default: () => null,

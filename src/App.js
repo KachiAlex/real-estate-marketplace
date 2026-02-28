@@ -330,17 +330,17 @@ const MainRoutes = ({ locationOverride }) => (
         </PageWithSidebar>
       </ProtectedRoute>
     } />
-    <Route path="/vendor/dashboard" element={<VendorRoute><VendorDashboard /></VendorRoute>} />
-    <Route path="/vendor/earnings" element={<VendorRoute><VendorEarnings /></VendorRoute>} />
-    <Route path="/vendor/team" element={<VendorRoute><VendorTeam /></VendorRoute>} />
-    <Route path="/vendor/contracts" element={<VendorRoute><VendorContracts /></VendorRoute>} />
-    <Route path="/vendor/profile" element={<VendorRoute><VendorProfile /></VendorRoute>} />
-    <Route path="/vendor/notifications" element={<VendorRoute><VendorNotifications /></VendorRoute>} />
-    <Route path="/vendor/help" element={<VendorRoute><VendorHelp /></VendorRoute>} />
-    <Route path="/vendor/inspection-requests" element={<VendorRoute><VendorInspectionRequests /></VendorRoute>} />
-    <Route path="/vendor/subscription" element={<VendorRoute><VendorSubscription /></VendorRoute>} />
+    <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorRoute><VendorDashboard /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/earnings" element={<ProtectedRoute><VendorRoute><VendorEarnings /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/team" element={<ProtectedRoute><VendorRoute><VendorTeam /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/contracts" element={<ProtectedRoute><VendorRoute><VendorContracts /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/profile" element={<ProtectedRoute><VendorRoute><VendorProfile /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/notifications" element={<ProtectedRoute><VendorRoute><VendorNotifications /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/help" element={<ProtectedRoute><VendorRoute><VendorHelp /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/inspection-requests" element={<ProtectedRoute><VendorRoute><VendorInspectionRequests /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/subscription" element={<ProtectedRoute><VendorRoute><VendorSubscription /></VendorRoute></ProtectedRoute>} />
     {/* VendorOnboardingDashboard route removed */}
-    <Route path="/vendor/renew-subscription" element={<VendorRoute><VendorRenewSubscription /></VendorRoute>} />
+    <Route path="/vendor/renew-subscription" element={<ProtectedRoute><VendorRoute><VendorRenewSubscription /></VendorRoute></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );

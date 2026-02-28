@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { FaHeart, FaShare, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaTrash, FaEye, FaPhone, FaEnvelope, FaFilter, FaSort, FaShoppingCart, FaCalendar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/currency';
 
 const SavedProperties = () => {
   const { user } = useAuth();
@@ -641,8 +642,8 @@ const SavedProperties = () => {
                 to={`/property/${property.id}`}
                 className="block property-card-content cursor-pointer"
               >
-                <div className="property-price">
-                  ₦{(property.price || 0).toLocaleString()}
+                <div className="property-price price-inline">
+                  {formatCurrency(property.price || 0)}
                   {property.type === 'rent' && <span className="text-sm text-gray-500">/month</span>}
                 </div>
                 <h3 className="property-title">{property.title}</h3>
@@ -691,7 +692,7 @@ const SavedProperties = () => {
                         className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Buy Property - ₦{(property.price || 0).toLocaleString()}
+                        <span className="price-inline">Buy Property - {formatCurrency(property.price || 0)}</span>
                       </button>
                     )}
                     
@@ -704,7 +705,7 @@ const SavedProperties = () => {
                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <FaShoppingCart className="mr-2" />
-                        Rent Property - ₦{(property.price || 0).toLocaleString()}/month
+                        <span className="price-inline">Rent Property - {formatCurrency(property.price || 0)}/month</span>
                       </button>
                     )}
                     

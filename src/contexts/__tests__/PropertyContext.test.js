@@ -2,30 +2,6 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { PropertyProvider, useProperty } from '../PropertyContext';
 
-// Mock Firebase
-jest.mock('../../config/firebase', () => ({
-  db: {},
-  auth: {
-    currentUser: { uid: 'test-user-123' }
-  }
-}));
-
-jest.mock('firebase/firestore', () => ({
-  doc: jest.fn(),
-  setDoc: jest.fn(),
-  deleteDoc: jest.fn(),
-  updateDoc: jest.fn(),
-  collection: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  getDocs: jest.fn(),
-  addDoc: jest.fn(),
-  serverTimestamp: jest.fn(() => new Date()),
-  orderBy: jest.fn(),
-  limit: jest.fn(),
-  startAfter: jest.fn(),
-}));
-
 jest.mock('react-hot-toast', () => {
   const mockToast = {
     success: jest.fn(),

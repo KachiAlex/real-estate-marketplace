@@ -7,6 +7,7 @@ import {
   FaEye,
   FaFilter
 } from 'react-icons/fa';
+import { formatCurrency } from '../utils/currency';
 
 const VendorEarnings = () => {
   // Mock data for earnings
@@ -68,7 +69,7 @@ const VendorEarnings = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-              <p className="text-2xl font-bold text-green-600">₦{earningsData.totalEarnings.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-600 price-inline">{formatCurrency(earningsData.totalEarnings)}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <FaDollarSign className="text-green-600 text-xl" />
@@ -80,7 +81,7 @@ const VendorEarnings = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">This Month</p>
-              <p className="text-2xl font-bold text-blue-600">₦{earningsData.monthlyEarnings.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-blue-600 price-inline">{formatCurrency(earningsData.monthlyEarnings)}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <FaCalendarAlt className="text-blue-600 text-xl" />
@@ -92,7 +93,7 @@ const VendorEarnings = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Pending Payouts</p>
-              <p className="text-2xl font-bold text-orange-600">₦{earningsData.pendingPayouts.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-orange-600 price-inline">{formatCurrency(earningsData.pendingPayouts)}</p>
             </div>
             <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
               <FaChartLine className="text-orange-600 text-xl" />
@@ -137,7 +138,7 @@ const VendorEarnings = () => {
                 style={{ height: `${(stat.earnings / 10000) * 200}px` }}
               ></div>
               <p className="text-sm font-medium text-gray-600">{stat.month}</p>
-              <p className="text-xs text-gray-500">₦{stat.earnings.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 price-inline">{formatCurrency(stat.earnings)}</p>
             </div>
           ))}
         </div>
@@ -170,10 +171,10 @@ const VendorEarnings = () => {
                     <div className="text-sm text-gray-900">{transaction.buyer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">₦{transaction.amount.toLocaleString()}</div>
+                    <div className="text-sm text-gray-900 price-inline">{formatCurrency(transaction.amount)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-green-600">₦{transaction.commission.toLocaleString()}</div>
+                    <div className="text-sm font-medium text-green-600 price-inline">{formatCurrency(transaction.commission)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{transaction.date}</div>
