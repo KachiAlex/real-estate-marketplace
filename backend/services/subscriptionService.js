@@ -1,5 +1,6 @@
 const { Subscription, SubscriptionPlan, SubscriptionPayment, User } = require('../config/sequelizeDb');
 const notificationService = require('./notificationService');
+const { v4: uuidv4 } = require('uuid');
 
 class SubscriptionService {
   static buildDefaultPlan() {
@@ -226,6 +227,7 @@ class SubscriptionService {
         amount: plan.amount,
         currency: plan.currency,
         paymentMethod,
+        transactionId: `SUB-${Date.now()}-${uuidv4().slice(0, 8)}`,
         status: 'pending',
         metadata: {
           planId: plan.id,
@@ -241,11 +243,25 @@ class SubscriptionService {
     }
   }
 
+  // Update payment reference after Paystack initialization
+  static async updatePaymentReference(paymentId, paystackReference) {
+    try {
+      const payment = await SubscriptionPayment.findByPk(paymentId);
+      if (payment) {
+        await payment.update({ transactionId: paystackReference });
+      }
+      return payment;
+    } catch (error) {
+      console.error('Error updating payment reference:', error);
+      throw error;
+    }
+  }
+
   // Process successful payment
   static async processSuccessfulPayment(paymentReference, gatewayResponse) {
     try {
       const payment = await SubscriptionPayment.findOne({
-        where: { transactionReference: paymentReference }
+        where: { transactionId: paymentReference }
       });
 
       if (!payment) {
@@ -254,10 +270,8 @@ class SubscriptionService {
 
       // Update payment status
       await payment.update({
-        status: 'success',
-        paidAt: new Date(),
-        paymentDate: new Date(),
-        gatewayResponse
+        status: 'completed',
+        paymentDate: new Date()
       });
 
       // Update subscription
@@ -285,6 +299,38 @@ class SubscriptionService {
       return { payment, subscription };
     } catch (error) {
       console.error('Error processing successful payment:', error);
+      throw error;
+    }
+  }
+
+  // Process failed payment
+  static async processFailedPayment(paymentReference, gatewayResponse) {
+    try {
+      const payment = await SubscriptionPayment.findOne({
+        where: { transactionId: paymentReference }
+      });
+
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+
+      // Update payment status
+      await payment.update({
+        status: 'failed'
+      });
+
+      // Update subscription
+      const subscription = await Subscription.findByPk(payment.subscriptionId);
+      if (subscription) {
+        await subscription.update({
+          status: 'payment_failed',
+          lastPaymentAttempt: new Date()
+        });
+      }
+
+      return { payment, subscription };
+    } catch (error) {
+      console.error('Error processing failed payment:', error);
       throw error;
     }
   }

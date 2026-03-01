@@ -148,7 +148,7 @@ class PaystackService {
       const payload = {
         amount: plan.amount * 100, // Convert to kobo
         email: vendor.email,
-        reference: payment.transactionReference || `sub_${Date.now()}_${vendor.id.slice(0, 8)}`,
+        reference: payment.transactionId || `sub_${Date.now()}_${vendor.id.slice(0, 8)}`,
         currency: plan.currency || 'NGN',
         metadata: {
           vendorId: vendor.id,

@@ -337,16 +337,6 @@ const SubscriptionDashboard = () => {
 
           {/* Action Buttons */}
           <div className="mt-6 flex space-x-4">
-            {subscriptionStatus.needsPayment && (
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FaCreditCard className="inline mr-2" />
-                Pay Now
-              </button>
-            )}
-            
             {subscription && subscription.status === 'active' && (
               <button
                 onClick={handleCancelSubscription}
@@ -418,13 +408,6 @@ const SubscriptionDashboard = () => {
                     </div>
                   ))}
                 </div>
-
-                <button
-                  onClick={() => handlePayment(plan)}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Select Plan
-                </button>
               </div>
             ))}
           </div>
@@ -452,14 +435,9 @@ const SubscriptionDashboard = () => {
               <p>₦{defaultPlan.amount?.toLocaleString()} every {defaultPlan.billingCycle}</p>
               <p className="text-xs text-gray-500 mt-1">Price can be updated by admin anytime.</p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-3 justify-between">
+            <div className="p-4 bg-gray-50 rounded-lg">
               <p className="font-semibold text-gray-800">Ready to activate?</p>
-              <button
-                onClick={() => handlePayment(defaultPlan)}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Subscribe Now
-              </button>
+              <p className="text-xs text-gray-500 mt-2">Click "Subscribe Now" in the header to get started.</p>
             </div>
           </div>
         </div>
