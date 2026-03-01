@@ -14,7 +14,8 @@ const listProperties = async ({
   limit = 20,
   search,
   sort = 'createdAt',
-  order = 'desc'
+  order = 'desc',
+  ownerId
 } = {}) => {
   const fs = require('fs');
   const path = require('path');
@@ -23,6 +24,7 @@ const listProperties = async ({
   const where = {};
   if (status) where.status = status;
   if (verificationStatus) where.verificationStatus = verificationStatus;
+  if (ownerId) where.ownerId = ownerId;
 
   if (search) {
     const { Op } = require('sequelize');

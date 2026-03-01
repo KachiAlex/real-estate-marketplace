@@ -21,6 +21,34 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const VerificationBadge = ({ verificationStatus, isVerified, onRequestVerification }) => {
+  if (isVerified) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <span>✓</span> Verified
+      </span>
+    );
+  }
+  
+  if (verificationStatus === 'pending') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        <span>⏳</span> Pending Verification
+      </span>
+    );
+  }
+
+  if (verificationStatus === 'rejected') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+        <span>✗</span> Verification Rejected
+      </span>
+    );
+  }
+
+  return null;
+};
+
 const STAT_CARDS = [
   { key: 'total', label: 'Total Listings' },
   { key: 'active', label: 'Active' },
@@ -45,7 +73,8 @@ export default function VendorProperties({
   onPageChange,
   stats,
   searchValue,
-  filterValue
+  filterValue,
+  onRequestVerification
 }) {
   return (
     <div className="space-y-6">
@@ -99,6 +128,7 @@ export default function VendorProperties({
             <tr className="bg-gray-50 text-left text-gray-500 text-xs uppercase tracking-wider">
               <th className="p-3">Title</th>
               <th className="p-3">Status</th>
+              <th className="p-3">Verification</th>
               <th className="p-3 text-right">Price</th>
               <th className="p-3 text-center">Views</th>
               <th className="p-3 text-center">Inquiries</th>
@@ -108,7 +138,7 @@ export default function VendorProperties({
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
             ) : properties?.length ? (
               properties.map((prop) => (
                 <tr key={prop.id} className="border-b hover:bg-gray-50">
@@ -118,6 +148,19 @@ export default function VendorProperties({
                   </td>
                   <td className="p-3">
                     <StatusBadge status={prop.status} />
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <VerificationBadge verificationStatus={prop.verificationStatus} isVerified={prop.isVerified} />
+                      {!prop.isVerified && prop.verificationStatus !== 'pending' && (
+                        <button 
+                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                          onClick={() => onRequestVerification?.(prop)}
+                        >
+                          Request
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3 text-right price-inline">{formatCurrency(prop.price || 0)}</td>
                   <td className="p-3 text-center">{prop.views ?? 0}</td>
@@ -131,7 +174,7 @@ export default function VendorProperties({
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={7} className="text-center py-8 text-gray-400">No properties found</td></tr>
+              <tr><td colSpan={8} className="text-center py-8 text-gray-400">No properties found</td></tr>
             )}
           </tbody>
         </table>
@@ -148,7 +191,10 @@ export default function VendorProperties({
                 {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-16 h-16 rounded object-cover" />}
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">{prop.title}</p>
-                  <StatusBadge status={prop.status} />
+                  <div className="flex items-center gap-2 mt-1">
+                    <StatusBadge status={prop.status} />
+                    <VerificationBadge verificationStatus={prop.verificationStatus} isVerified={prop.isVerified} />
+                  </div>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
@@ -169,10 +215,20 @@ export default function VendorProperties({
                   <p>{prop.inquiries ?? 0}</p>
                 </div>
               </div>
-              <div className="mt-4 flex justify-end gap-3 text-sm">
-                <button className="text-blue-600" onClick={() => onEdit?.(prop)}>Edit</button>
-                <button className="text-gray-600" onClick={() => onView?.(prop)}>View</button>
-                <button className="text-red-600" onClick={() => onDelete?.(prop)}>Delete</button>
+              <div className="mt-4 flex flex-col gap-2">
+                {!prop.isVerified && prop.verificationStatus !== 'pending' && (
+                  <button 
+                    className="w-full text-sm px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                    onClick={() => onRequestVerification?.(prop)}
+                  >
+                    Request Verification
+                  </button>
+                )}
+                <div className="flex justify-end gap-3 text-sm">
+                  <button className="text-blue-600" onClick={() => onEdit?.(prop)}>Edit</button>
+                  <button className="text-gray-600" onClick={() => onView?.(prop)}>View</button>
+                  <button className="text-red-600" onClick={() => onDelete?.(prop)}>Delete</button>
+                </div>
               </div>
             </div>
           ))

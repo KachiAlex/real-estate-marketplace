@@ -53,9 +53,7 @@ export const useProperty = () => {
 
 export function PropertyProvider({ children }) {
   const { currentUser } = useAuth();
-  const [properties, setProperties] = useState(() => (
-    Array.isArray(frontendMockProperties) ? frontendMockProperties : []
-  ));
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -88,22 +86,61 @@ export function PropertyProvider({ children }) {
         documentation: propertyData.documentation || []
       };
 
-      // Call backend API to create property
-      const response = await apiClient.post(getApiUrl('/properties'), backendPayload);
+      // Call backend API to create property (apiClient is axios, returns response.data directly)
+      const response = await apiClient.post('/properties', backendPayload);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.errors?.[0]?.msg || 'Failed to create property');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       const newProperty = data.data || data.property || data;
       
       setProperties(prev => [newProperty, ...prev]);
       setLoading(false);
       return { success: true, id: newProperty.id, ...data };
     } catch (e) {
-      const errorMsg = e.message || 'Failed to create property';
+      const errorMsg = e.response?.data?.message || e.message || 'Failed to create property';
+      setError(errorMsg);
+      setLoading(false);
+      return { success: false, message: errorMsg };
+    }
+  };
+
+  const updateProperty = async (propertyId, propertyData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Transform frontend data to match backend expectations
+      const backendPayload = {
+        title: propertyData.title,
+        description: propertyData.description,
+        price: parseFloat(propertyData.price),
+        type: propertyData.type,
+        status: propertyData.status || 'for-sale',
+        location: {
+          address: propertyData.location?.address || '',
+          city: propertyData.location?.city || '',
+          state: propertyData.location?.state || '',
+          zipCode: propertyData.location?.zipCode || ''
+        },
+        details: {
+          bedrooms: parseInt(propertyData.details?.bedrooms) || 0,
+          bathrooms: parseInt(propertyData.details?.bathrooms) || 0,
+          sqft: parseFloat(propertyData.details?.sqft) || 0
+        },
+        images: propertyData.images || [],
+        videos: propertyData.videos || [],
+        documentation: propertyData.documentation || []
+      };
+
+      // Call backend API to update property
+      const response = await apiClient.put(`/properties/${propertyId}`, backendPayload);
+      
+      const data = response.data;
+      const updatedProperty = data.data || data.property || data;
+      
+      setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p));
+      setLoading(false);
+      return { success: true, id: updatedProperty.id, ...data };
+    } catch (e) {
+      const errorMsg = e.response?.data?.message || e.message || 'Failed to update property';
       setError(errorMsg);
       setLoading(false);
       return { success: false, message: errorMsg };
@@ -169,10 +206,10 @@ export function PropertyProvider({ children }) {
     if (localMatch) return localMatch;
 
     try {
-      const response = await fetch(getApiUrl(`/properties/${propertyId}`));
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data) return null;
-      const propertyData = data.property || data.data || null;
+      const response = await apiClient.get(`/properties/${propertyId}`);
+      const data = response.data;
+      if (!data) return null;
+      const propertyData = data.data || data.property || data;
       if (!propertyData) return null;
 
       setProperties((prev) => {
@@ -184,7 +221,7 @@ export function PropertyProvider({ children }) {
 
       return propertyData;
     } catch (err) {
-      console.warn('PropertyContext: fetchProperty fallback failed', err);
+      console.warn('PropertyContext: fetchProperty failed', err?.response?.data || err.message);
       return null;
     }
   }, [findLocalProperty, matchPropertyId]);
@@ -269,6 +306,7 @@ export function PropertyProvider({ children }) {
     error,
     fetchProperties,
     createProperty,
+    updateProperty,
     fetchProperty,
     getPropertyById: findLocalProperty,
     toggleFavorite,

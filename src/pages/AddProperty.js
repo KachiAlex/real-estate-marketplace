@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useVendor } from '../contexts/VendorContext';
@@ -19,9 +19,11 @@ import toast from 'react-hot-toast';
 const AddProperty = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { createProperty, updateProperty } = useProperty();
+  const { id: propertyId } = useParams();
+  const { createProperty, updateProperty, fetchProperty } = useProperty();
   const { user } = useAuth();
   const { isAgent, isPropertyOwner, checkDocumentStatus, uploadAgentDocument } = useVendor();
+  const [isEditing, setIsEditing] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -91,12 +93,48 @@ const AddProperty = () => {
   const storageKey = `addPropertyForm_${user?.id || 'guest'}`;
   const { clearSavedData } = useAutoSave(storageKey, {}, 2000);
 
+  // Load property data when editing
+  useEffect(() => {
+    const loadPropertyForEditing = async () => {
+      if (propertyId) {
+        setIsEditing(true);
+        try {
+          // Try to get property from location state first
+          const propertyFromState = location.state?.property;
+          if (propertyFromState) {
+            setFormData(prev => ({
+              ...prev,
+              ...propertyFromState,
+              location: propertyFromState.location || prev.location,
+              details: propertyFromState.details || prev.details
+            }));
+            return;
+          }
+          
+          // Otherwise fetch from backend
+          const property = await fetchProperty(propertyId);
+          if (property) {
+            setFormData(prev => ({
+              ...prev,
+              ...property,
+              location: property.location || prev.location,
+              details: property.details || prev.details
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading property for editing:', error);
+          toast.error('Failed to load property');
+        }
+      }
+    };
+
+    loadPropertyForEditing();
+  }, [propertyId, location.state?.property, fetchProperty]);
+
   // Load saved form data on mount (if not editing a property)
   useEffect(() => {
-    const propertyToEdit = location.state?.propertyToEdit;
-    
-    // If editing, don't load saved data
-    if (propertyToEdit) {
+    // Don't load saved data if editing
+    if (isEditing || propertyId) {
       return;
     }
     
@@ -371,7 +409,7 @@ const AddProperty = () => {
 
     setLoading(true);
     setProgressPercent(10);
-    setProgressMessage('Validating and creating property...');
+    setProgressMessage(isEditing ? 'Updating property...' : 'Validating and creating property...');
     try {
       const propertyData = {
         ...formData,
@@ -407,71 +445,12 @@ const AddProperty = () => {
         } : undefined
       };
       
-      const result = await createProperty(propertyData);
+      const result = isEditing ? await updateProperty(propertyId, propertyData) : await createProperty(propertyData);
       if (result.success) {
         const newId = result.id;
         toast.success('Property created successfully!');
-        setProgressPercent(35);
-        setProgressMessage('Finalizing images...');
-
-        // Move temp images to final path if needed
-        let finalImages = [...(formData.images || [])];
-        try {
-          const imagesNeedingMove = finalImages.filter(img => img.path && img.path.includes('/temp'));
-          if (imagesNeedingMove.length > 0) {
-            const moved = await Promise.all(imagesNeedingMove.map(async (img) => {
-              const fileName = img.path.split('/').pop();
-              const newPath = `properties/${newId}/images/${fileName}`;
-              const res = await storageService.moveFile(img.path, newPath);
-              if (res.success) {
-                return { ...img, url: res.url, path: res.path };
-              }
-              return img;
-            }));
-            finalImages = finalImages.map(img => {
-              const updated = moved.find(m => (m.name && m.name === img.name) || (m.path && m.path === img.path));
-              return updated ? updated : img;
-            });
-          }
-        } catch (e) {
-          toast.error('Some images could not be finalized.');
-        }
-
-        // Upload videos/documents to final paths
-        try {
-          setProgressPercent(55);
-          setProgressMessage('Uploading videos and documents...');
-          const [videoUploadResult2, documentUploadResult2] = await Promise.all([
-            false
-              ? storageService.uploadMultipleFiles(
-                  [],
-                  `properties/${newId}/videos`,
-                  { customMetadata: { uploadedBy: user?.id || user?.uid, type: 'property_video', propertyId: newId } }
-                )
-              : Promise.resolve({ success: true, successful: [] }),
-            false
-              ? storageService.uploadMultipleFiles(
-                  [],
-                  `properties/${newId}/documents`,
-                  { customMetadata: { uploadedBy: user?.id || user?.uid, type: 'property_document', propertyId: newId } }
-                )
-              : Promise.resolve({ success: true, successful: [] })
-          ]);
-
-          const uploadedVideos2 = (videoUploadResult2.successful || []).map((r, index) => ({ url: r.url, isPrimary: index === 0, caption: r.name }));
-          const uploadedDocuments2 = (documentUploadResult2.successful || []).map((r, index) => ({ url: r.url, isPrimary: index === 0, caption: r.name }));
-
-          await updateProperty(newId, {
-            images: finalImages,
-            videos: uploadedVideos2,
-            documentation: uploadedDocuments2
-          });
-          toast.success('Media uploaded successfully');
-          setProgressPercent(100);
-          setProgressMessage('Done');
-        } catch (e) {
-          toast.error('Property saved, but media upload failed.');
-        }
+        setProgressPercent(100);
+        setProgressMessage('Done');
 
         // Persist lightweight record for Vendor Dashboard "My Properties" list
         try {

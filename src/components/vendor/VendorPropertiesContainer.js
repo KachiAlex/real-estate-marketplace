@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import VendorProperties from './VendorProperties';
+import VerificationRequestModal from '../VerificationRequestModal';
 import { useAuth } from '../../contexts/AuthContext-new';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../services/apiClient';
 // import PropertyModal from './PropertyModal'; // For add/edit (optional)
 
 // Replace with your actual API call logic
@@ -12,9 +14,8 @@ async function fetchVendorProperties({ page, search, filter, ownerId }) {
   if (search) params.append('search', search);
   if (filter) params.append('status', filter);
   if (ownerId) params.append('ownerId', ownerId);
-  const res = await fetch(`/api/properties?${params.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch properties');
-  return res.json();
+  const response = await apiClient.get(`/properties?${params.toString()}`);
+  return response.data;
 }
 
 export default function VendorPropertiesContainer() {
@@ -24,6 +25,8 @@ export default function VendorPropertiesContainer() {
   const [pageCount, setPageCount] = useState(1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [selectedPropertyForVerification, setSelectedPropertyForVerification] = useState(null);
   // const [modalOpen, setModalOpen] = useState(false);
   // const [editingProperty, setEditingProperty] = useState(null);
   const { currentUser } = useAuth();
@@ -91,23 +94,70 @@ export default function VendorPropertiesContainer() {
     navigate('/add-property');
   };
 
+  const handleEditProperty = (prop) => {
+    navigate(`/edit-property/${prop.id}`, { state: { property: prop } });
+  };
+
+  const handleViewProperty = (prop) => {
+    navigate(`/property/${prop.id}`);
+  };
+
+  const handleDeleteProperty = async (prop) => {
+    if (!window.confirm(`Are you sure you want to delete "${prop.title}"?`)) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await apiClient.delete(`/properties/${prop.id}`);
+      // Reload properties after deletion
+      await loadProperties();
+    } catch (error) {
+      console.error('Failed to delete property:', error);
+      alert('Failed to delete property. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestVerification = (prop) => {
+    setSelectedPropertyForVerification(prop);
+    setVerificationModalOpen(true);
+  };
+
+  const handleVerificationSuccess = () => {
+    // Reload properties to reflect verification status changes
+    loadProperties();
+  };
+
   return (
-    <VendorProperties
-      properties={properties}
-      loading={loading}
-      page={page}
-      pageCount={pageCount}
-      onAdd={handleAddProperty}
-      onEdit={prop => {/* setModalOpen(true); setEditingProperty(prop); */}}
-      onDelete={prop => {/* handle delete logic */}}
-      onView={prop => {/* navigate to detail or open modal */}}
-      onSearch={setSearch}
-      searchValue={search}
-      onFilter={setFilter}
-      filterValue={filter}
-      onPageChange={setPage}
-      stats={derivedStats}
-    />
-    // <PropertyModal open={modalOpen} property={editingProperty} ... />
+    <>
+      <VendorProperties
+        properties={properties}
+        loading={loading}
+        page={page}
+        pageCount={pageCount}
+        onAdd={handleAddProperty}
+        onEdit={handleEditProperty}
+        onDelete={handleDeleteProperty}
+        onView={handleViewProperty}
+        onSearch={setSearch}
+        searchValue={search}
+        onFilter={setFilter}
+        filterValue={filter}
+        onPageChange={setPage}
+        stats={derivedStats}
+        onRequestVerification={handleRequestVerification}
+      />
+      <VerificationRequestModal
+        property={selectedPropertyForVerification}
+        isOpen={verificationModalOpen}
+        onClose={() => {
+          setVerificationModalOpen(false);
+          setSelectedPropertyForVerification(null);
+        }}
+        onSuccess={handleVerificationSuccess}
+      />
+    </>
   );
 }

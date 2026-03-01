@@ -7,6 +7,7 @@ import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSideba
 import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
 import AdminDisputesManagement from '../components/AdminDisputesManagement';
 import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
+import AdminVerificationDashboard from '../components/AdminVerificationDashboard';
 import AdminSupportTickets from './AdminSupportTickets';
 // Mortgage flow temporarily disabled
 // import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
@@ -196,7 +197,9 @@ const AdminDashboard = () => {
   const [loadingVerificationSettings, setLoadingVerificationSettings] = useState(false);
   const [hasAdminToken, setHasAdminToken] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   const usersLoadedRef = useRef(false);
+  const statsRefreshIntervalRef = useRef(null);
   const [blogPosts, setBlogPosts] = useState([
     {
       id: 'blog-1',
@@ -320,27 +323,48 @@ const AdminDashboard = () => {
   }, [disputes]);
 
   const loadAdminData = useCallback(async () => {
-    // Skip API calls in development mode to prevent 401 errors
-    if (window.location.hostname === 'localhost') {
-      console.log('AdminDashboard: Skipping admin data API call in development mode');
-      return;
-    }
-    
+    setStatsLoading(true);
     try {
-      const adminStats = await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-      if (adminStats) {
-        setStats(adminStats);
-      }
+      // Fetch all properties from the backend
+      const response = await apiClient.get('/properties?limit=1000');
+      const allProperties = response.data?.data || [];
+      
+      // Calculate accurate stats from real data
+      const calculatedStats = {
+        total: allProperties.length,
+        pending: allProperties.filter(p => {
+          const status = (p.approvalStatus || p.verificationStatus || 'pending').toLowerCase();
+          return status === 'pending';
+        }).length,
+        approved: allProperties.filter(p => {
+          const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
+          return status === 'approved';
+        }).length,
+        rejected: allProperties.filter(p => {
+          const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
+          return status === 'rejected';
+        }).length
+      };
+      
+      setStats(calculatedStats);
       setAuthWarning('');
     } catch (err) {
-      if (err?.code === 'AUTH_REQUIRED') {
-        setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@propertyark.com / admin123) so localStorage.token is populated before reopening the dashboard.');
+      console.error('AdminDashboard: Failed to load admin data', err);
+      // Set default stats on error
+      setStats({
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0
+      });
+      if (err?.response?.status === 401) {
+        setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@propertyark.com / admin123).');
         toast.error('Admin authentication required. Please log in again.');
-      } else {
-        toast.error(err?.message || 'Failed to load admin data');
       }
+    } finally {
+      setStatsLoading(false);
     }
-  }, [fetchAdminProperties, selectedStatus, selectedVerificationStatus]);
+  }, []);
 
   const loadVerificationConfig = useCallback(async () => {
     if (loadingVerificationSettings) return;
@@ -545,7 +569,9 @@ const AdminDashboard = () => {
     console.log('AdminDashboard: Is admin?', user?.role === 'admin');
     
     // Load admin data for admin users
-    loadAdminData();
+    if (user?.role === 'admin') {
+      loadAdminData();
+    }
   }, [user, navigate, loadAdminData]);
 
   useEffect(() => {
@@ -586,6 +612,25 @@ const AdminDashboard = () => {
       }
     }
   }, [activeTab, user, adminSettings, loadingVerificationSettings, loadVerificationConfig]);
+
+  // Auto-refresh stats when properties tab is active
+  useEffect(() => {
+    if (activeTab === 'properties' && user?.role === 'admin') {
+      // Load stats immediately
+      loadAdminData();
+
+      // Set up auto-refresh every 30 seconds
+      statsRefreshIntervalRef.current = setInterval(() => {
+        loadAdminData();
+      }, 30000);
+
+      return () => {
+        if (statsRefreshIntervalRef.current) {
+          clearInterval(statsRefreshIntervalRef.current);
+        }
+      };
+    }
+  }, [activeTab, user, loadAdminData]);
 
   const handleSwitchTab = (tabId) => {
     setActiveTab(tabId);
@@ -1119,7 +1164,33 @@ const AdminDashboard = () => {
 
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Property Statistics</h2>
+              <button
+                onClick={loadAdminData}
+                disabled={statsLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium"
+              >
+                {statsLoading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -1196,6 +1267,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+            </div>
           </div>
         )}
 
@@ -1242,23 +1314,30 @@ const AdminDashboard = () => {
         {/* Verification Tab */}
         {activeTab === 'verification' && (
           <div className="space-y-6">
-            {loadingVerificationSettings && !adminSettings ? (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-gray-500">
-                Loading verification settings...
-              </div>
-            ) : (
-              <AdminVerificationCenter
-                config={adminSettings}
-                isAuthenticated={true} // Always true for admin users
-                onRequireAdminAuth={() => {
-                  setAuthWarning('Admin authentication required. Please log in again to manage verification settings.');
-                }}
-                onConfigChange={(updated) => setAdminSettings((prev) => ({
-                  ...(prev || {}),
-                  ...updated
-                }))}
-              />
-            )}
+            {/* Property Verification Applications */}
+            <AdminVerificationDashboard />
+
+            {/* Verification Settings */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Verification Settings</h3>
+              {loadingVerificationSettings && !adminSettings ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-gray-500">
+                  Loading verification settings...
+                </div>
+              ) : (
+                <AdminVerificationCenter
+                  config={adminSettings}
+                  isAuthenticated={true} // Always true for admin users
+                  onRequireAdminAuth={() => {
+                    setAuthWarning('Admin authentication required. Please log in again to manage verification settings.');
+                  }}
+                  onConfigChange={(updated) => setAdminSettings((prev) => ({
+                    ...(prev || {}),
+                    ...updated
+                  }))}
+                />
+              )}
+            </div>
           </div>
         )}
 

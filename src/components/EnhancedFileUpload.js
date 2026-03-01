@@ -187,40 +187,99 @@ const EnhancedFileUpload = ({
           isLocal: false
         };
       } else {
-        // Fallback to local object URL
-        const localUrl = URL.createObjectURL(file);
-        console.warn(`Falling back to local ${type} storage for:`, file.name);
-        
-        return {
-          success: true,
-          url: localUrl,
-          path: `local-files/${fileId}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          isLocal: true
-        };
+        // Fallback: Store file in localStorage as base64 for persistence
+        try {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64Data = e.target.result;
+            const storageKey = `file_${fileId}`;
+            localStorage.setItem(storageKey, JSON.stringify({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              data: base64Data
+            }));
+          };
+          reader.readAsDataURL(file);
+          
+          // Return data URL immediately for display
+          const dataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+          
+          console.warn(`Storing ${type} in localStorage for:`, file.name);
+          
+          return {
+            success: true,
+            url: dataUrl,
+            path: `local-storage/${fileId}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            isLocal: true
+          };
+        } catch (storageError) {
+          console.error('Failed to store in localStorage, using blob URL:', storageError);
+          // Final fallback to blob URL
+          const localUrl = URL.createObjectURL(file);
+          return {
+            success: true,
+            url: localUrl,
+            path: `local-files/${fileId}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            isLocal: true
+          };
+        }
       }
     } catch (error) {
       console.error('Error uploading file:', error);
 
-      // Fallback for images, documents, and videos: use a local object URL so the flow still works in demo mode
+      // Fallback: Store in localStorage as base64
       if (type === 'image' || type === 'document' || type === 'video') {
-        const localUrl = URL.createObjectURL(file);
-        console.warn(`Falling back to local ${type} storage for:`, file.name);
-        let folder = 'local-files';
-        if (type === 'document') folder = 'local-documents';
-        if (type === 'video') folder = 'local-videos';
-        if (type === 'image') folder = 'local-images';
-        return {
-          success: true,
-          url: localUrl,
-          path: `${folder}/${fileId}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          isLocal: true
-        };
+        try {
+          const dataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+          
+          const storageKey = `file_${fileId}`;
+          localStorage.setItem(storageKey, JSON.stringify({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: dataUrl
+          }));
+          
+          console.warn(`Storing ${type} in localStorage for:`, file.name);
+          
+          return {
+            success: true,
+            url: dataUrl,
+            path: `local-storage/${fileId}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            isLocal: true
+          };
+        } catch (storageError) {
+          console.error('Failed to store in localStorage:', storageError);
+          // Final fallback to blob URL
+          const localUrl = URL.createObjectURL(file);
+          return {
+            success: true,
+            url: localUrl,
+            path: `local-files/${fileId}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            isLocal: true
+          };
+        }
       }
 
       return {

@@ -45,7 +45,8 @@ router.get('/', optionalAuth, [
       verificationStatus,
       search,
       sort = 'createdAt',
-      order = 'desc'
+      order = 'desc',
+      ownerId
     } = req.query;
 
     let properties = [];
@@ -60,7 +61,8 @@ router.get('/', optionalAuth, [
         verificationStatus,
         search,
         sort,
-        order
+        order,
+        ownerId
       });
       if (result && Array.isArray(result.properties)) {
         properties = result.properties;
