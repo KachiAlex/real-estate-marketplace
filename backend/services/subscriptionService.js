@@ -208,7 +208,8 @@ class SubscriptionService {
       // Ensure plan has required fields
       const planAmount = Number(plan?.amount || 50000);
       const planCurrency = plan?.currency || 'NGN';
-      const planId_safe = plan?.id || 'vendor-default-plan';
+      // Only set planId if it's a valid UUID (from database), otherwise NULL
+      const planId_safe = (plan?.id && typeof plan.id === 'string' && plan.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) ? plan.id : null;
       const planName = plan?.name || 'Vendor Monthly Plan';
 
       let subscription = await this.getVendorSubscription(vendorId);
