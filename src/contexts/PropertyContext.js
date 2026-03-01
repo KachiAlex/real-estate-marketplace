@@ -65,19 +65,48 @@ export function PropertyProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Assign a unique id and add to the list
-      const newProperty = {
-        ...propertyData,
-        id: `prop_${Date.now()}`,
-        createdAt: new Date().toISOString(),
+      // Transform frontend data to match backend expectations
+      const backendPayload = {
+        title: propertyData.title,
+        description: propertyData.description,
+        price: parseFloat(propertyData.price),
+        type: propertyData.type, // backend will map this (house, apartment, etc.)
+        status: propertyData.status || 'for-sale', // backend will map this
+        location: {
+          address: propertyData.location?.address || '',
+          city: propertyData.location?.city || '',
+          state: propertyData.location?.state || '',
+          zipCode: propertyData.location?.zipCode || ''
+        },
+        details: {
+          bedrooms: parseInt(propertyData.details?.bedrooms) || 0,
+          bathrooms: parseInt(propertyData.details?.bathrooms) || 0,
+          sqft: parseFloat(propertyData.details?.sqft) || 0
+        },
+        images: propertyData.images || [],
+        videos: propertyData.videos || [],
+        documentation: propertyData.documentation || []
       };
+
+      // Call backend API to create property
+      const response = await apiClient.post(getApiUrl('/properties'), backendPayload);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.errors?.[0]?.msg || 'Failed to create property');
+      }
+
+      const data = await response.json();
+      const newProperty = data.data || data.property || data;
+      
       setProperties(prev => [newProperty, ...prev]);
       setLoading(false);
-      return { success: true, id: newProperty.id };
+      return { success: true, id: newProperty.id, ...data };
     } catch (e) {
-      setError('Failed to create property');
+      const errorMsg = e.message || 'Failed to create property';
+      setError(errorMsg);
       setLoading(false);
-      return { success: false };
+      return { success: false, message: errorMsg };
     }
   };
 

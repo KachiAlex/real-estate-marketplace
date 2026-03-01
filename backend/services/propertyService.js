@@ -80,16 +80,71 @@ const getPropertyById = async (propertyId) => {
   return p ? p.toJSON() : null;
 };
 
-const createProperty = async (propertyData) => {
-  const payload = {
-    ...propertyData,
-    ownerId: propertyData.ownerId,
-    images: propertyData.images || [],
-    verificationStatus: propertyData.verificationStatus || 'pending',
-    status: propertyData.status || 'for-sale'
+const mapPropertyType = (frontendType) => {
+  const typeMap = {
+    'house': 'residential',
+    'apartment': 'residential',
+    'condo': 'residential',
+    'townhouse': 'residential',
+    'land': 'residential',
+    'commercial': 'commercial',
+    'agricultural': 'agricultural',
+    'mixed-use': 'mixed-use'
   };
-  const created = await PropertyModel.create(payload);
-  return created.toJSON();
+  return typeMap[frontendType] || 'residential';
+};
+
+const mapPropertyStatus = (frontendStatus) => {
+  const statusMap = {
+    'for-sale': 'active',
+    'for-rent': 'active',
+    'for-lease': 'active',
+    'for-mortgage': 'active',
+    'for-investment': 'active',
+    'sold': 'sold',
+    'rented': 'inactive',
+    'active': 'active',
+    'inactive': 'inactive',
+    'pending': 'pending'
+  };
+  return statusMap[frontendStatus] || 'active';
+};
+
+const createProperty = async (propertyData) => {
+  try {
+    const payload = {
+      title: propertyData.title,
+      description: propertyData.description,
+      price: parseFloat(propertyData.price),
+      type: mapPropertyType(propertyData.type),
+      status: mapPropertyStatus(propertyData.status),
+      ownerId: propertyData.owner?.id || propertyData.ownerId,
+      ownerEmail: propertyData.owner?.email || propertyData.ownerEmail,
+      // Flatten location object into individual fields
+      location: propertyData.location?.address || propertyData.location?.googleMapsUrl || '',
+      address: propertyData.location?.address || '',
+      city: propertyData.location?.city || '',
+      state: propertyData.location?.state || '',
+      // Details
+      bedrooms: parseInt(propertyData.details?.bedrooms) || null,
+      bathrooms: parseInt(propertyData.details?.bathrooms) || null,
+      area: parseFloat(propertyData.details?.sqft) || null,
+      // Media
+      images: JSON.stringify(propertyData.images || []),
+      videos: JSON.stringify(propertyData.videos || []),
+      documents: JSON.stringify(propertyData.documentation || []),
+      // Status fields
+      verificationStatus: propertyData.verificationStatus || 'pending',
+      approvalStatus: propertyData.approvalStatus || 'pending',
+      category: propertyData.category || propertyData.type
+    };
+    
+    const created = await PropertyModel.create(payload);
+    return created.toJSON();
+  } catch (error) {
+    console.error('Error in createProperty:', error);
+    throw error;
+  }
 };
 
 const updateProperty = async (propertyId, updates) => {
