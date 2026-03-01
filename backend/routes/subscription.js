@@ -207,9 +207,11 @@ router.post('/pay', [
     }
 
     // Initialize payment using subscription service
+    // Only pass planId if it's a valid UUID (from database), otherwise pass null
+    const isValidUUID = plan.id && typeof plan.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(plan.id);
     const { payment, subscription } = await SubscriptionService.initializePayment(
       req.user.id,
-      plan.id,
+      isValidUUID ? plan.id : null,
       paymentMethod
     );
 
