@@ -193,46 +193,60 @@ class SubscriptionService {
     try {
       let plan = null;
       if (planId && planId !== 'vendor-default-plan') {
-        plan = await SubscriptionPlan.findByPk(planId);
+        try {
+          plan = await SubscriptionPlan.findByPk(planId);
+        } catch (dbError) {
+          console.warn('Failed to fetch plan from DB:', dbError.message);
+        }
       }
-      if (!plan || plan.isActive === false) {
-        plan = await this.ensureDefaultPlan();
+      
+      // Use default plan if not found or inactive
+      if (!plan || (plan && plan.isActive === false)) {
+        plan = this.buildDefaultPlan();
       }
+
+      // Ensure plan has required fields
+      const planAmount = Number(plan?.amount || 50000);
+      const planCurrency = plan?.currency || 'NGN';
+      const planId_safe = plan?.id || 'vendor-default-plan';
+      const planName = plan?.name || 'Vendor Monthly Plan';
 
       let subscription = await this.getVendorSubscription(vendorId);
 
       if (!subscription) {
         subscription = await Subscription.create({
           vendorId,
-          planId: plan?.id || null,
-          plan: plan?.name || 'Vendor Monthly Plan',
+          planId: planId_safe,
+          plan: planName,
           status: 'pending',
-          amount: Number(plan?.amount || 50000),
-          currency: plan?.currency || 'NGN',
+          amount: planAmount,
+          currency: planCurrency,
           paymentMethod
         });
       } else {
         await subscription.update({
-          planId: plan?.id || subscription.planId || null,
-          plan: plan?.name || subscription.plan,
-          amount: Number(plan?.amount || subscription.amount || 50000),
-          currency: plan?.currency || subscription.currency || 'NGN',
+          planId: planId_safe,
+          plan: planName,
+          amount: planAmount,
+          currency: planCurrency,
           paymentMethod
         });
       }
 
+      // Create payment with safe values
+      const transactionId = `SUB-${Date.now()}-${uuidv4().slice(0, 8)}`;
       const payment = await SubscriptionPayment.create({
         subscriptionId: subscription.id,
         vendorId,
-        amount: plan.amount,
-        currency: plan.currency,
+        amount: planAmount,
+        currency: planCurrency,
         paymentMethod,
-        transactionId: `SUB-${Date.now()}-${uuidv4().slice(0, 8)}`,
+        transactionId,
         status: 'pending',
         metadata: {
-          planId: plan.id,
-          planName: plan.name,
-          billingCycle: plan.billingCycle
+          planId: planId_safe,
+          planName: planName,
+          billingCycle: plan?.billingCycle || 'monthly'
         }
       });
 
