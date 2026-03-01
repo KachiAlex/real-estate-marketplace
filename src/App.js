@@ -127,9 +127,7 @@ const MainRoutes = ({ locationOverride }) => (
     {/* Short redirects for legacy vendor routes expected by E2E tests */}
       {/* Short redirects / legacy vendor routes expected by E2E tests */}
       {/* Ensure /vendor/properties resolves to the vendor properties page (legacy links point here). */}
-      <Route path="/vendor/properties" element={<VendorRoute><VendorPropertiesContainer /></VendorRoute>} />
-    {/* Ensure legacy /vendor/earnings loads the VendorEarnings page directly */}
-    <Route path="/vendor/earnings" element={<VendorRoute><VendorEarnings /></VendorRoute>} />
+      <Route path="/vendor/properties" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorPropertiesContainer /></VendorRoute></ProtectedRoute>} />
     <Route path="/vendor/register" element={
       <React.Suspense fallback={<div className="flex items-center justify-center w-full h-screen"><LoadingSpinner size="lg" /></div>}>
         <OnboardVendor />
@@ -137,7 +135,7 @@ const MainRoutes = ({ locationOverride }) => (
     } />
     <Route path="/mortgage-bank/register" element={<MortgageBankRegister />} />
     <Route path="/mortgage-bank/dashboard" element={
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles="mortgage_bank">
         <PageWithSidebar>
           <MortgageBankDashboard />
         </PageWithSidebar>
@@ -251,19 +249,26 @@ const MainRoutes = ({ locationOverride }) => (
       </ProtectedRoute>
     } />
     <Route path="/add-property" element={
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles="vendor">
+        <PageWithSidebar>
+          <AddProperty />
+        </PageWithSidebar>
+      </ProtectedRoute>
+    } />
+    <Route path="/edit-property/:id" element={
+      <ProtectedRoute requiredRoles="vendor">
         <PageWithSidebar>
           <AddProperty />
         </PageWithSidebar>
       </ProtectedRoute>
     } />
     <Route path="/admin" element={
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles="admin">
         <AdminDashboard />
       </ProtectedRoute>
     } />
     <Route path="/admin/vendors/kyc" element={
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles="admin">
         <AdminKycReview />
       </ProtectedRoute>
     } />
@@ -330,15 +335,15 @@ const MainRoutes = ({ locationOverride }) => (
         </PageWithSidebar>
       </ProtectedRoute>
     } />
-    <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorRoute><VendorDashboard /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/earnings" element={<ProtectedRoute><VendorRoute><VendorEarnings /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/team" element={<ProtectedRoute><VendorRoute><VendorTeam /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/contracts" element={<ProtectedRoute><VendorRoute><VendorContracts /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/profile" element={<ProtectedRoute><VendorRoute><VendorProfile /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/notifications" element={<ProtectedRoute><VendorRoute><VendorNotifications /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/help" element={<ProtectedRoute><VendorRoute><VendorHelp /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/inspection-requests" element={<ProtectedRoute><VendorRoute><VendorInspectionRequests /></VendorRoute></ProtectedRoute>} />
-    <Route path="/vendor/subscription" element={<ProtectedRoute><VendorRoute><VendorSubscription /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/dashboard" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorDashboard /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/earnings" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorEarnings /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/team" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorTeam /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/contracts" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorContracts /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/profile" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorProfile /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/notifications" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorNotifications /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/help" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorHelp /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/inspection-requests" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorInspectionRequests /></VendorRoute></ProtectedRoute>} />
+    <Route path="/vendor/subscription" element={<ProtectedRoute requiredRoles="vendor"><VendorRoute><VendorSubscription /></VendorRoute></ProtectedRoute>} />
     {/* VendorOnboardingDashboard route removed */}
     <Route path="/vendor/renew-subscription" element={<ProtectedRoute><VendorRoute><VendorRenewSubscription /></VendorRoute></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />
