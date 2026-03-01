@@ -17,6 +17,7 @@ export default function DashboardSwitch() {
   const { user, switchRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [loadingRole, setLoadingRole] = useState(null);
 
   // Get primary role and available dashboards
   const primaryRole = getPrimaryRole(user);
@@ -27,7 +28,6 @@ export default function DashboardSwitch() {
   }
 
   const currentPath = location.pathname;
-  const [loadingRole, setLoadingRole] = useState(null);
 
   // Enhanced switch handler: change active role then navigate
   const handleSwitch = async (targetRole, switchValueOverride = null) => {

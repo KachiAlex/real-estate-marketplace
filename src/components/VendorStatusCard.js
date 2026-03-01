@@ -45,7 +45,7 @@ const VendorStatusCard = ({ onOpenKyc }) => {
       alert('Unable to determine document id');
       return;
     }
-    if (!confirm('Delete this document?')) return;
+    if (!window.confirm('Delete this document?')) return;
     try {
       setRemoving(publicId);
       const url = getApiUrl(`/upload/delete-multiple`);
