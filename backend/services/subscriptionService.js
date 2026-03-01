@@ -191,7 +191,7 @@ class SubscriptionService {
   static async initializePayment(vendorId, planId, paymentMethod = 'paystack') {
     try {
       let plan = null;
-      if (planId) {
+      if (planId && planId !== 'vendor-default-plan') {
         plan = await SubscriptionPlan.findByPk(planId);
       }
       if (!plan || plan.isActive === false) {
