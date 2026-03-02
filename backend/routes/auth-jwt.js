@@ -521,6 +521,7 @@ router.post('/login', [
         phone: user.phone,
         role: user.role,
         roles: user.roles,
+        activeRole: user.activeRole || user.role,
         avatar: user.avatar,
         isVerified: user.isVerified
       }
