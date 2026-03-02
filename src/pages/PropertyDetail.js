@@ -46,13 +46,22 @@ const PropertyDetail = () => {
 
   useEffect(() => {
     if (mergedProperties && id) {
-      const foundProperty = mergedProperties.find(p => 
-        p.id === id || 
-        p.propertyId === id || 
-        p.numericId === parseInt(id) ||
-        p.id === `prop_${id}` ||
-        p.id?.toString() === id?.toString()
-      );
+      console.log('PropertyDetail: Looking for property with id:', id);
+      console.log('PropertyDetail: Available properties:', mergedProperties.map(p => ({ id: p.id, propertyId: p.propertyId })));
+      
+      const foundProperty = mergedProperties.find(p => {
+        // Normalize IDs for comparison
+        const propId = String(p.id || '').toLowerCase();
+        const propPropertyId = String(p.propertyId || '').toLowerCase();
+        const searchId = String(id || '').toLowerCase();
+        
+        return propId === searchId || 
+               propPropertyId === searchId || 
+               propId === `prop_${searchId}` ||
+               propPropertyId === `prop_${searchId}`;
+      });
+      
+      console.log('PropertyDetail: Found property:', foundProperty?.id);
       
       if (foundProperty) {
         // Ensure location data is properly set
@@ -72,6 +81,8 @@ const PropertyDetail = () => {
         setProperty(foundProperty);
         // Reset activeImage when property changes
         setActiveImage(0);
+      } else {
+        console.warn('PropertyDetail: Property not found for id:', id);
       }
     }
   }, [mergedProperties, id]);
