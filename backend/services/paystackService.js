@@ -9,15 +9,27 @@ class PaystackService {
 
   async initializePayment(paymentData) {
     try {
+      console.log('🔥 PaystackService: initializePayment called');
+      console.log('🔥 PaystackService: Secret key present:', !!this.secretKey);
+      console.log('🔥 PaystackService: Payment data:', {
+        amount: paymentData.amount,
+        email: paymentData.email,
+        reference: paymentData.reference,
+        currency: paymentData.currency
+      });
+
       const payload = {
         amount: paymentData.amount,
         email: paymentData.email,
         reference: paymentData.reference,
-        currency: paymentData.currency,
+        currency: paymentData.currency || 'NGN',
         metadata: paymentData.metadata,
         callback_url: `${process.env.CLIENT_URL}/payment/callback`,
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
       };
+
+      console.log('🔥 PaystackService: Payload:', payload);
+      console.log('🔥 PaystackService: Making request to:', `${this.baseURL}/transaction/initialize`);
 
       const response = await axios.post(`${this.baseURL}/transaction/initialize`, payload, {
         headers: {
@@ -26,8 +38,11 @@ class PaystackService {
         }
       });
 
+      console.log('🔥 PaystackService: Response status:', response.status);
+      console.log('🔥 PaystackService: Response data:', response.data);
+
       if (response.data.status) {
-        return {
+        const result = {
           success: true,
           data: {
             authorizationUrl: response.data.data.authorization_url,
@@ -35,17 +50,25 @@ class PaystackService {
             reference: response.data.data.reference
           }
         };
+        console.log('🔥 PaystackService: Returning success result:', result);
+        return result;
       } else {
+        console.warn('🔥 PaystackService: Response status is false:', response.data);
         return {
           success: false,
           message: response.data.message || 'Failed to initialize payment'
         };
       }
     } catch (error) {
-      console.error('Paystack payment initialization error:', error.response?.data || error.message);
+      console.error('❌ PaystackService: payment initialization error');
+      console.error('❌ PaystackService: Error message:', error.message);
+      console.error('❌ PaystackService: Error response data:', error.response?.data);
+      console.error('❌ PaystackService: Error response status:', error.response?.status);
+      console.error('❌ PaystackService: Full error:', error);
+      
       return {
         success: false,
-        message: error.response?.data?.message || 'Payment initialization failed'
+        message: error.response?.data?.message || error.message || 'Payment initialization failed'
       };
     }
   }

@@ -183,10 +183,19 @@ router.post('/initialize',
           currency
         });
 
+        console.log('Payments route: Payment service result:', result);
+        console.log('Payments route: Provider data:', result.providerData);
+
+        // Ensure providerData is included in response
+        const paymentRecord = result.payment ? (result.payment.toJSON ? result.payment.toJSON() : result.payment) : result;
+        
         res.json({
           success: true,
           message: 'Payment initialized successfully',
-          data: result
+          data: {
+            ...paymentRecord,
+            providerData: result.providerData || {}
+          }
         });
       } catch (error) {
         console.error('Initialize payment error:', error);
