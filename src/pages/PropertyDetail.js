@@ -13,7 +13,7 @@ import { formatCurrency } from '../utils/currency';
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { properties, loading, error, toggleFavorite } = useProperty();
+  const { properties, loading, error, toggleFavorite, fetchProperties } = useProperty();
   const { user, setAuthRedirect } = useAuth();
   const [property, setProperty] = useState(null);
 
@@ -24,6 +24,14 @@ const PropertyDetail = () => {
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // Fetch properties on mount if not already loaded
+  useEffect(() => {
+    if (!properties || properties.length === 0) {
+      console.log('PropertyDetail: Properties not loaded, fetching...');
+      fetchProperties();
+    }
+  }, []);
 
   const mergedProperties = useMemo(() => {
     const map = new Map();
