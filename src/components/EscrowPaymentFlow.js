@@ -717,6 +717,54 @@ const EscrowPaymentFlow = ({
             console.log('🔥 EscrowPaymentFlow: Launching Paystack with reference:', paystackRef);
             console.log('🔥 EscrowPaymentFlow: Using client-side SDK (fallback mode):', isClientSideFallback);
 
+            // Create a verification function that will be called after payment
+            const verifyPaymentAfterSuccess = async (paystackReference) => {
+              console.log('🔥 EscrowPaymentFlow: Verifying payment with reference:', paystackReference);
+              try {
+                const headers = await buildAuthHeaders(user);
+                if (!headers) {
+                  toast.error('Please login again to verify payment.');
+                  setPaymentStatus('failed');
+                  return;
+                }
+
+                const verifyResp = await fetch(getApiUrl(`/payments/${entryToSave.paymentId}/verify`), {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify({ 
+                    providerReference: paystackReference, 
+                    txRef: paystackReference, 
+                    status: 'completed' 
+                  })
+                });
+                const verifyData = await verifyResp.json();
+
+                console.log('🔥 EscrowPaymentFlow: Verify response:', verifyData);
+
+                if (verifyResp.ok && verifyData.success) {
+                  setPaymentStatus('completed');
+                  markEscrowTransactionFunded(escrowId, paystackReference, 'paystack');
+                  removeEscrowPaymentEntry(entryToSave.paymentId);
+                  setPendingPayment(null);
+                  setCheckoutUrl('');
+                  toast.success('Payment verified! Funds are now held securely in escrow.');
+                } else {
+                  setPaymentStatus('failed');
+                  setPaymentError(verifyData.message || 'Payment verification failed');
+                  toast.error(verifyData.message || 'Payment verification failed');
+                }
+              } catch (err) {
+                console.error('🔥 EscrowPaymentFlow: Verification error', err);
+                setPaymentStatus('failed');
+                setPaymentError(err.message || 'Unable to verify payment');
+                toast.error(err.message || 'Unable to verify payment');
+              }
+            };
+
+            // Store the verification function globally so Paystack callback can access it
+            window.verifyPaystackPayment = verifyPaymentAfterSuccess;
+            window.paystackPaymentRef = paystackRef;
+
             initializePaystackPayment({
               email: userEmail,
               amount: itemPriceValue,
@@ -724,41 +772,11 @@ const EscrowPaymentFlow = ({
               metadata: { escrowId, propertyId: property?.id || null, investmentId: investment?.id || null },
               publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
               onSuccess: async (response) => {
-                // verify with backend using the payment record id created earlier
-                try {
-                  const headers = await buildAuthHeaders(user);
-                  if (!headers) {
-                    toast.error('Please login again to verify payment.');
-                    return;
-                  }
-
-                  const verifyResp = await fetch(getApiUrl(`/payments/${entryToSave.paymentId}/verify`), {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({ providerReference: response.reference || paystackRef, txRef: response.reference || paystackRef, status: 'completed' })
-                  });
-                  const verifyData = await verifyResp.json();
-
-                  if (verifyResp.ok && verifyData.success) {
-                    setPaymentStatus('completed');
-                    markEscrowTransactionFunded(escrowId, response.reference || paystackRef, 'paystack');
-                    removeEscrowPaymentEntry(entryToSave.paymentId);
-                    setPendingPayment(null);
-                    setCheckoutUrl('');
-                    toast.success('Payment verified! Funds are now held securely in escrow.');
-                  } else {
-                    setPaymentStatus('failed');
-                    setPaymentError(verifyData.message || 'Payment verification failed');
-                    toast.error(verifyData.message || 'Payment verification failed');
-                  }
-                } catch (err) {
-                  console.error('Paystack onSuccess verification error', err);
-                  setPaymentStatus('failed');
-                  setPaymentError(err.message || 'Unable to verify payment');
-                  toast.error(err.message || 'Unable to verify payment');
-                }
+                console.log('🔥 EscrowPaymentFlow: Paystack onSuccess called with response:', response);
+                await verifyPaymentAfterSuccess(response.reference || paystackRef);
               },
               onClose: () => {
+                console.log('🔥 EscrowPaymentFlow: Paystack modal closed');
                 toast('Paystack window closed. Complete the payment to proceed.');
               }
             });

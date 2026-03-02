@@ -53,7 +53,13 @@ const loadPaystackScript = () => {
 
 export const initializePaystackPayment = async ({ email, amount, reference, metadata, onSuccess, onClose, publicKey }) => {
   try {
+    console.log('🔥 PaystackService: initializePaystackPayment called');
+    console.log('🔥 PaystackService: Email:', email);
+    console.log('🔥 PaystackService: Amount:', amount);
+    console.log('🔥 PaystackService: Reference:', reference);
+    
     await loadPaystackScript();
+    console.log('🔥 PaystackService: Paystack SDK loaded');
   } catch (error) {
     console.error('[Paystack] Unable to load SDK', error);
     alert(error.message || 'Unable to load Paystack at the moment. Please try again.');
@@ -62,23 +68,40 @@ export const initializePaystackPayment = async ({ email, amount, reference, meta
 
   const keyToUse = publicKey || process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
   if (!keyToUse) {
+    console.error('[Paystack] Public key not configured');
     alert('Paystack public key not configured (set REACT_APP_PAYSTACK_PUBLIC_KEY).');
     return;
   }
 
   if (!window.PaystackPop) {
+    console.error('[Paystack] PaystackPop not available');
     alert('Paystack SDK not available. Please refresh and try again.');
     return;
   }
 
+  console.log('🔥 PaystackService: Setting up Paystack handler');
+  
   const handler = window.PaystackPop.setup({
     key: keyToUse,
     email,
     amount: Number(amount || 0) * 100, // Paystack expects amount in kobo
     ref: reference,
     metadata,
-    callback: onSuccess,
-    onClose
+    onClose: () => {
+      console.log('🔥 PaystackService: Modal closed by user');
+      if (onClose) {
+        onClose();
+      }
+    }
   });
+  
+  console.log('🔥 PaystackService: Opening Paystack modal');
   handler.openIframe();
+  
+  // Paystack will call the callback URL on success, but we also need to handle it client-side
+  // Store the onSuccess callback for when Paystack redirects back
+  if (onSuccess && typeof onSuccess === 'function') {
+    window.paystackOnSuccess = onSuccess;
+    console.log('🔥 PaystackService: Stored onSuccess callback');
+  }
 };
