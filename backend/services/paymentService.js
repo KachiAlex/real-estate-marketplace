@@ -2,6 +2,8 @@
 const db = require('../config/sequelizeDb');
 const { Payment } = db;
 const { Subscription } = db;
+const paystackService = require('./paystackService');
+const flutterwaveService = require('./flutterwaveService');
 
 async function listUserPayments({ userId, status, paymentType, page = 1, limit = 20 }) {
   const where = { userId };
@@ -19,7 +21,69 @@ async function getPaymentById(id) {
 async function initializePayment({ user, amount, paymentMethod, paymentType, relatedEntity, description, currency = 'NGN' }) {
   const reference = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
   const payment = await Payment.create({ userId: user.id, amount, currency, paymentType, provider: paymentMethod, reference, status: 'pending', metadata: { relatedEntity, description } });
-  return payment;
+  
+  // Initialize with payment provider to get authorization URL
+  let providerData = {};
+  
+  try {
+    if (paymentMethod === 'paystack') {
+      const paystackPayload = {
+        email: user.email,
+        amount: Math.round(amount * 100), // Paystack expects amount in kobo
+        reference,
+        metadata: {
+          userId: user.id,
+          paymentId: payment.id,
+          relatedEntity,
+          description
+        }
+      };
+      
+      const paystackResult = await paystackService.initializePayment(paystackPayload);
+      if (paystackResult && paystackResult.data) {
+        providerData = {
+          txRef: reference,
+          authorizationUrl: paystackResult.data.authorization_url,
+          accessCode: paystackResult.data.access_code
+        };
+      }
+    } else if (paymentMethod === 'flutterwave') {
+      const flutterwavePayload = {
+        tx_ref: reference,
+        amount,
+        currency,
+        customer: {
+          email: user.email,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim()
+        },
+        customizations: {
+          title: description,
+          description
+        },
+        meta: {
+          userId: user.id,
+          paymentId: payment.id,
+          relatedEntity
+        }
+      };
+      
+      const flutterwaveResult = await flutterwaveService.initializePayment(flutterwavePayload);
+      if (flutterwaveResult && flutterwaveResult.data) {
+        providerData = {
+          txRef: reference,
+          link: flutterwaveResult.data.link
+        };
+      }
+    }
+  } catch (providerError) {
+    console.warn('Provider initialization error:', providerError.message);
+    // Continue without provider data - frontend can handle fallback
+  }
+  
+  return {
+    payment,
+    providerData
+  };
 }
 
 async function verifyPayment({ paymentId, userId, providerReference }) {
