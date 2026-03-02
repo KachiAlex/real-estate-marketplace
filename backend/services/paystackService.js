@@ -5,6 +5,14 @@ class PaystackService {
     this.baseURL = 'https://api.paystack.co';
     this.publicKey = process.env.PAYSTACK_PUBLIC_KEY;
     this.secretKey = process.env.PAYSTACK_SECRET_KEY;
+    
+    console.log('🔥 PaystackService: Constructor called');
+    console.log('🔥 PaystackService: Secret key loaded:', !!this.secretKey);
+    console.log('🔥 PaystackService: Public key loaded:', !!this.publicKey);
+    
+    if (!this.secretKey) {
+      console.error('❌ CRITICAL: PAYSTACK_SECRET_KEY is not set in environment variables');
+    }
   }
 
   async initializePayment(paymentData) {
