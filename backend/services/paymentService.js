@@ -49,9 +49,17 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
           authorizationUrl: paystackResult.data.authorizationUrl,
           accessCode: paystackResult.data.accessCode
         };
-        console.log('PaymentService: Provider data set:', providerData);
+        console.log('PaymentService: Provider data set from Paystack API:', providerData);
       } else {
-        console.warn('PaymentService: Paystack initialization failed or returned no data:', paystackResult);
+        console.warn('PaymentService: Paystack backend initialization failed, using client-side fallback:', paystackResult);
+        // Fallback: Return a marker that tells frontend to use client-side Paystack SDK
+        // The frontend will use initializePaystackPayment with the reference
+        providerData = {
+          txRef: reference,
+          authorizationUrl: `paystack-client-side:${reference}`, // Special marker for client-side handling
+          isClientSideFallback: true
+        };
+        console.log('PaymentService: Using client-side fallback for Paystack');
       }
     } else if (paymentMethod === 'flutterwave') {
       const flutterwavePayload = {

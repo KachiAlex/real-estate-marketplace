@@ -680,6 +680,12 @@ const EscrowPaymentFlow = ({
         const paymentRecord = data.data?.payment || data.data;
         const authorizationUrl = providerData.authorizationUrl || providerData.link;
         const providerReference = providerData.txRef || providerData.tx_ref || paymentRecord?.reference;
+        const isClientSideFallback = providerData.isClientSideFallback || (authorizationUrl && authorizationUrl.startsWith('paystack-client-side:'));
+
+        console.log('🔥 EscrowPaymentFlow: Payment initialized');
+        console.log('🔥 EscrowPaymentFlow: Provider data:', providerData);
+        console.log('🔥 EscrowPaymentFlow: Authorization URL:', authorizationUrl);
+        console.log('🔥 EscrowPaymentFlow: Is client-side fallback:', isClientSideFallback);
 
         const entryToSave = {
           escrowId,
@@ -707,6 +713,9 @@ const EscrowPaymentFlow = ({
             const userEmail = user?.email || user?.username || '';
             // Use reference returned by backend (ensures server-side record exists)
             const paystackRef = providerReference || paymentRecord?.reference || `PSK_${Date.now()}`;
+
+            console.log('🔥 EscrowPaymentFlow: Launching Paystack with reference:', paystackRef);
+            console.log('🔥 EscrowPaymentFlow: Using client-side SDK (fallback mode):', isClientSideFallback);
 
             initializePaystackPayment({
               email: userEmail,
