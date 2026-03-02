@@ -12,6 +12,12 @@ const MyInquiries = () => {
   const [filterBy, setFilterBy] = useState('all');
   const [sortBy, setSortBy] = useState('date');
 
+  // Log component mount
+  useEffect(() => {
+    console.log('🔥 MyInquiries component MOUNTED');
+    return () => console.log('🔥 MyInquiries component UNMOUNTED');
+  }, []);
+
   const handlePurchaseProperty = (property) => {
     if (!user) {
       toast.error('Please login to purchase properties');

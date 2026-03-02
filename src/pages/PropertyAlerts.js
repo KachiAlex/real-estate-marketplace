@@ -13,6 +13,12 @@ const PropertyAlerts = () => {
   const [editingAlert, setEditingAlert] = useState(null);
   const [filterBy, setFilterBy] = useState('all');
 
+  // Log component mount
+  useEffect(() => {
+    console.log('🔥 PropertyAlerts component MOUNTED');
+    return () => console.log('🔥 PropertyAlerts component UNMOUNTED');
+  }, []);
+
   // Form state for creating/editing alerts
   const [formData, setFormData] = useState({
     name: '',

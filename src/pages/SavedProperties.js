@@ -15,6 +15,12 @@ const SavedProperties = () => {
   const [sortBy, setSortBy] = useState('dateAdded');
   const [filterBy, setFilterBy] = useState('all');
 
+  // Log component mount
+  useEffect(() => {
+    console.log('🔥 SavedProperties component MOUNTED');
+    return () => console.log('🔥 SavedProperties component UNMOUNTED');
+  }, []);
+
   // Load saved properties from localStorage and match with actual property data
   const loadSavedProperties = useCallback(() => {
     if (!user || !user.id) {
