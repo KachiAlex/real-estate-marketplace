@@ -1011,12 +1011,12 @@ const EscrowPaymentFlow = ({
                 {isInitializingPayment ? (
                   <>
                     <FaCreditCard className="animate-spin" />
-                    <span>Initializing Paystack...</span>
+                    <span>Initializing Payment...</span>
                   </>
                 ) : (
                   <>
                     <FaCreditCard />
-                    <span>Launch Paystack Checkout</span>
+                    <span>Pay with Paystack</span>
                   </>
                 )}
               </button>
@@ -1030,7 +1030,7 @@ const EscrowPaymentFlow = ({
                 onClick={handleOpenCheckout}
                 className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold"
               >
-                Open Checkout Window
+                Pay with Paystack
               </button>
             )}
 
