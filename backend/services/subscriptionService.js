@@ -208,9 +208,14 @@ class SubscriptionService {
       // Ensure plan has required fields
       const planAmount = Number(plan?.amount || 50000);
       const planCurrency = plan?.currency || 'NGN';
-      // Only set planId if it's a valid UUID (from database), otherwise NULL
-      const planId_safe = (plan?.id && typeof plan.id === 'string' && plan.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) ? plan.id : null;
       const planName = plan?.name || 'Vendor Monthly Plan';
+      
+      // CRITICAL: Only set planId if it's a valid UUID from database
+      // Never set string values like 'vendor-default-plan' - always use NULL
+      const isValidDatabasePlan = plan?.id && 
+        typeof plan.id === 'string' && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(plan.id);
+      const planId_safe = isValidDatabasePlan ? plan.id : null;
 
       let subscription = await this.getVendorSubscription(vendorId);
 
@@ -225,13 +230,21 @@ class SubscriptionService {
           paymentMethod
         });
       } else {
-        await subscription.update({
-          planId: planId_safe,
+        // Only update fields that are safe to update
+        // Never update planId to a non-UUID value
+        const updateData = {
           plan: planName,
           amount: planAmount,
           currency: planCurrency,
           paymentMethod
-        });
+        };
+        
+        // Only update planId if we have a valid database plan
+        if (isValidDatabasePlan) {
+          updateData.planId = planId_safe;
+        }
+        
+        await subscription.update(updateData);
       }
 
       // Create payment with safe values
