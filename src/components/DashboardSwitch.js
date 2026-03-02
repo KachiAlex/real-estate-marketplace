@@ -81,8 +81,7 @@ export default function DashboardSwitch() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {availableDashboards.map((dashboard) => {
           const switchable = canSwitchToRole(user, dashboard.role);
-          const isActiveByRole = primaryRole === dashboard.role;
-          const isActive = isActiveByRole || currentPath === dashboard.path;
+          const isActive = primaryRole === dashboard.role;
           const theme = getRoleTheme(dashboard.role);
           const Icon = getIcon(dashboard.icon);
           
