@@ -151,11 +151,41 @@ export function PropertyProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Simulate fetch
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
+      // Load mock properties first
+      if (Array.isArray(frontendMockProperties) && frontendMockProperties.length > 0) {
+        setProperties(frontendMockProperties);
+      }
+      
+      // Try to fetch from backend API
+      try {
+        const response = await apiClient.get('/properties');
+        const data = response.data;
+        const apiProperties = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        
+        if (apiProperties.length > 0) {
+          // Merge API properties with mock properties (API takes precedence)
+          const merged = new Map();
+          
+          // Add mock properties first
+          frontendMockProperties.forEach(prop => {
+            merged.set(prop.id || prop.propertyId, prop);
+          });
+          
+          // Override with API properties
+          apiProperties.forEach(prop => {
+            merged.set(prop.id || prop.propertyId, prop);
+          });
+          
+          setProperties(Array.from(merged.values()));
+        }
+      } catch (apiError) {
+        console.warn('PropertyContext: API fetch failed, using mock properties only:', apiError?.message);
+        // Keep mock properties if API fails
+      }
+      
+      setLoading(false);
     } catch (e) {
+      console.error('PropertyContext: fetchProperties error:', e);
       setError('Failed to fetch properties');
       setLoading(false);
     }

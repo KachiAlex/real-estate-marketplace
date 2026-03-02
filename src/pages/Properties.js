@@ -366,7 +366,7 @@ const Properties = () => {
 
   useEffect(() => {
     // Fetch all properties (Firestore + localStorage + mock) on mount
-    fetchProperties({}).catch(err => {
+    fetchProperties().catch(err => {
       console.warn('Error fetching properties on mount:', err);
     });
   }, [fetchProperties]);
@@ -522,7 +522,7 @@ const Properties = () => {
         search: searchQuery
       };
       setFilters(next);
-      await fetchProperties(next, 1);
+      await fetchProperties();
       setCurrentPage(1);
       toast.success('Filters applied successfully!');
     } catch (error) {
@@ -547,7 +547,7 @@ const Properties = () => {
     setAppliedSearchQuery('');
     setAppliedVendor('');
     setFilters({});
-    fetchProperties({}, 1);
+    fetchProperties();
     setCurrentPage(1);
   };
 
