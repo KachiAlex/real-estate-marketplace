@@ -5,6 +5,7 @@ import { useProperty } from '../contexts/PropertyContext';
 import { FaHeart, FaShare, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaTrash, FaEye, FaPhone, FaEnvelope, FaFilter, FaSort, FaShoppingCart, FaCalendar } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../utils/currency';
+import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
 
 const SavedProperties = () => {
   const { user } = useAuth();
@@ -236,28 +237,6 @@ const SavedProperties = () => {
     }
   };
 
-  const handleBuyProperty = (property) => {
-    console.log('🔥 SavedProperties: handleBuyProperty called with property:', property);
-    
-    if (!user) {
-      console.warn('🔥 SavedProperties: No user logged in');
-      toast.error('Please register to purchase properties');
-      return;
-    }
-    
-    if (property.status === 'sold') {
-      console.warn('🔥 SavedProperties: Property already sold');
-      toast.error('This property has already been sold');
-      return;
-    }
-    
-    // Navigate to escrow process for purchase
-    const escrowUrl = `/escrow/create?propertyId=${property.id}&type=purchase`;
-    console.log('🔥 SavedProperties: Navigating to:', escrowUrl);
-    console.log('🔥 SavedProperties: Property ID:', property.id, 'Type:', typeof property.id);
-    
-    navigate(escrowUrl);
-  };
 
   const handleScheduleViewing = (property) => {
     if (!user || !user.id || !user.firstName || !user.lastName || !user.email) {
@@ -691,24 +670,19 @@ const SavedProperties = () => {
                       showBuyButton: property.type === 'sale' && property.status === 'available'
                     })}
                     {property.type === 'sale' && property.status === 'available' && (
-                      <button 
-                        onClick={(e) => {
-                          console.log('🔥 SavedProperties: Buy button clicked!', { property });
-                          e.stopPropagation();
-                          handleBuyProperty(property);
-                        }}
-                        className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                      >
-                        <FaShoppingCart className="mr-2" />
-                        <span className="price-inline">Buy Property - {formatCurrency(property.price || 0)}</span>
-                      </button>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <PropertyPurchaseButton 
+                          property={property}
+                          className="bg-green-600 hover:bg-green-700"
+                        />
+                      </div>
                     )}
                     
                     {property.type === 'rent' && property.status === 'available' && (
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleBuyProperty(property);
+                          navigate(`/property/${property.id}`);
                         }}
                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
