@@ -39,13 +39,19 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
         }
       };
       
+      console.log('PaymentService: Initializing Paystack payment with payload:', paystackPayload);
       const paystackResult = await paystackService.initializePayment(paystackPayload);
-      if (paystackResult && paystackResult.data) {
+      console.log('PaymentService: Paystack result:', paystackResult);
+      
+      if (paystackResult && paystackResult.success && paystackResult.data) {
         providerData = {
-          txRef: reference,
-          authorizationUrl: paystackResult.data.authorization_url,
-          accessCode: paystackResult.data.access_code
+          txRef: paystackResult.data.reference || reference,
+          authorizationUrl: paystackResult.data.authorizationUrl,
+          accessCode: paystackResult.data.accessCode
         };
+        console.log('PaymentService: Provider data set:', providerData);
+      } else {
+        console.warn('PaymentService: Paystack initialization failed or returned no data:', paystackResult);
       }
     } else if (paymentMethod === 'flutterwave') {
       const flutterwavePayload = {
@@ -76,7 +82,8 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
       }
     }
   } catch (providerError) {
-    console.warn('Provider initialization error:', providerError.message);
+    console.error('PaymentService: Provider initialization error:', providerError.message);
+    console.error('PaymentService: Provider error details:', providerError);
     // Continue without provider data - frontend can handle fallback
   }
   
