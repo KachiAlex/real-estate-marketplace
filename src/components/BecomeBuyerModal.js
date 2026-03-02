@@ -95,10 +95,6 @@ const BecomeBuyerModal = ({
     setLoading(true);
 
     try {
-      if (!isBuyer) {
-        await addRole('buyer', false);
-      }
-
       const endpoint = isBuyer ? '/buyer/preferences' : '/buyer/profile';
       const method = isBuyer ? 'PUT' : 'POST';
       const payload = isBuyer
@@ -122,40 +118,37 @@ const BecomeBuyerModal = ({
         throw new Error(json.message || 'Failed to save buyer profile');
       }
 
-      const effectiveData = allowFallback ? {
-        data: {
-          buyerData: {
-            ...(currentUser?.buyerData || {}),
-            preferences,
-            buyerSince: buyerSince || new Date().toISOString(),
-            source: 'profile_settings_modal',
-            updatedAt: new Date().toISOString()
-          }
-        }
-      } : json;
-
-      const updatedBuyerData = effectiveData?.data?.buyerData || {
-        ...(currentUser?.buyerData || {}),
-        preferences,
-        buyerSince: buyerSince || currentUser?.buyerData?.buyerSince || new Date().toISOString(),
-        source: currentUser?.buyerData?.source || 'profile_settings_modal',
-        updatedAt: new Date().toISOString()
-      };
+      // Use backend response data if available, otherwise construct fallback
+      const responseData = json?.data || {};
+      const updatedUser = responseData.id ? responseData : null;
 
       if (setUserLocally) {
-        const normalizedRoles = Array.from(new Set([
-          ...(currentUser?.roles || []),
-          'user',
-          'vendor',
-          'buyer'
-        ]));
+        if (updatedUser) {
+          // Use complete user object from backend
+          setUserLocally(updatedUser);
+        } else {
+          // Fallback: construct user object locally
+          const normalizedRoles = Array.from(new Set([
+            ...(currentUser?.roles || []),
+            'user',
+            'buyer'
+          ]));
 
-        setUserLocally({
-          ...currentUser,
-          roles: normalizedRoles,
-          activeRole: 'buyer',
-          buyerData: updatedBuyerData
-        });
+          const updatedBuyerData = {
+            ...(currentUser?.buyerData || {}),
+            preferences,
+            buyerSince: buyerSince || currentUser?.buyerData?.buyerSince || new Date().toISOString(),
+            source: currentUser?.buyerData?.source || 'profile_settings_modal',
+            updatedAt: new Date().toISOString()
+          };
+
+          setUserLocally({
+            ...currentUser,
+            roles: normalizedRoles,
+            activeRole: 'buyer',
+            buyerData: updatedBuyerData
+          });
+        }
       }
 
       const summary = `${preferences.propertyTypes.length} type(s), ${preferences.locations.length} location(s)`;

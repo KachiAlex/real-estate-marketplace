@@ -36,16 +36,18 @@ router.post('/profile', authenticateToken, [
     }
 
     // Update user with buyer role if not already present
-    const currentRoles = Array.isArray(user.roles) ? user.roles : [];
-    if (!currentRoles.includes('buyer')) {
-      await user.update({
-        roles: [...currentRoles, 'buyer'],
-        updatedAt: new Date()
-      });
+    const currentRoles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [];
+    let updatedRoles = currentRoles;
+    if (!updatedRoles.includes('buyer')) {
+      updatedRoles = [...updatedRoles, 'buyer'];
     }
+    // Ensure 'user' role is present
+    if (!updatedRoles.includes('user')) {
+      updatedRoles = [...updatedRoles, 'user'];
+    }
+    updatedRoles = Array.from(new Set(updatedRoles));
 
-    // Store buyer profile data (you might want to create a separate BuyerProfile model)
-    // For now, we'll store it in the user's vendorData or create a new field
+    // Store buyer profile data
     const buyerData = {
       preferences,
       buyerSince: buyerSince || new Date().toISOString(),
@@ -53,8 +55,10 @@ router.post('/profile', authenticateToken, [
       updatedAt: new Date()
     };
 
-    // Update user with buyer data
+    // Update user with buyer data and roles in one transaction
     await user.update({
+      roles: updatedRoles,
+      activeRole: 'buyer',
       buyerData: {
         ...(user.buyerData || {}),
         ...buyerData
@@ -62,13 +66,20 @@ router.post('/profile', authenticateToken, [
       updatedAt: new Date()
     });
 
+    // Reload user to get fresh data
+    const updatedUser = await User.findByPk(userId);
+
     res.json({
       success: true,
       message: 'Buyer profile created successfully',
-      data: {
-        userId: user.id,
-        roles: user.roles,
-        buyerData: user.buyerData
+      data: updatedUser.toJSON ? updatedUser.toJSON() : {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        roles: updatedUser.roles,
+        activeRole: updatedUser.activeRole,
+        buyerData: updatedUser.buyerData
       }
     });
 
