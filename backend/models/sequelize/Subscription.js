@@ -22,6 +22,19 @@ module.exports = (sequelize) => {
         model: 'subscription_plans',
         key: 'id',
       },
+      validate: {
+        isValidUUIDOrNull(value) {
+          // Allow null values
+          if (value === null || value === undefined) {
+            return;
+          }
+          // Only allow valid UUID format
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(value)) {
+            throw new Error(`planId must be a valid UUID or null, received: ${value}`);
+          }
+        }
+      }
     },
     plan: {
       type: DataTypes.STRING,
