@@ -66,15 +66,18 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
       console.warn('Access denied: Non-vendor user attempted vendor route:', path, 'Roles:', userRoles);
       return <Navigate to="/dashboard" replace />;
     }
+    console.log('🔥 ProtectedRoute: Allowing vendor route access to:', path);
     return children;
   }
 
   // Buyer route access control
   if (isBuyerRoute) {
+    console.log('🔥 ProtectedRoute: Buyer route check', { path, isBuyer, isAdmin, userRoles });
     if (!isBuyer && !isAdmin) {
       console.warn('Access denied: User without buyer role attempted buyer route:', path, 'Roles:', userRoles);
       return <Navigate to="/dashboard" replace />;
     }
+    console.log('🔥 ProtectedRoute: Allowing buyer route access to:', path);
     return children;
   }
 
