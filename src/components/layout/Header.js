@@ -78,7 +78,7 @@ export default function Header() {
                   <button
                     key={service.service}
                     onClick={() => {
-                      navigate(`/services?service=${encodeURIComponent(service.service)}`);
+                      navigate(`/professional-services/enquiry?service=${encodeURIComponent(service.service)}`);
                       setServicesDropdownOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-brand-blue transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0 border-gray-100"
@@ -157,7 +157,7 @@ export default function Header() {
                     <button
                       key={service.service}
                       onClick={() => {
-                        navigate(`/services?service=${encodeURIComponent(service.service)}`);
+                        navigate(`/professional-services/enquiry?service=${encodeURIComponent(service.service)}`);
                         setServicesDropdownOpen(false);
                         setIsMobileMenuOpen(false);
                       }}
