@@ -46,7 +46,7 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
   const isBuyer = userRoles.includes('buyer') || userRoles.length === 0;
 
   const isAdminRoute = path === '/admin' || path.startsWith('/admin/');
-  const buyerPrefixes = ['/buyer', '/my-inquiries', '/my-inspections', '/my-properties', '/saved-properties', '/property-alerts'];
+  const buyerPrefixes = ['/buyer', '/my-inquiries', '/my-inspections', '/my-properties', '/saved-properties', '/alerts'];
   const buyerIncludes = ['inspection', 'alerts', 'saved-properties', 'escrow'];
   const isBuyerRoute = buyerPrefixes.some((prefix) => path.startsWith(prefix)) || buyerIncludes.some((segment) => path.includes(segment));
   const isVendorRoute = path.startsWith('/vendor') || path.startsWith('/add-property');
