@@ -68,18 +68,16 @@ const normalizeUser = (u) => {
   // Ensure roles is an array of lowercased, trimmed values
   const normRoles = Array.isArray(roles) ? roles.map(r => String(r).trim().toLowerCase()) : [];
 
-  // Default active role logic:
-  // - If an explicit activeRole is provided, respect it.
-  // - If the user has both 'user' and 'vendor' roles and no explicit activeRole, default to 'user'.
-  // - Otherwise prefer explicit `role` or `userType`, then fall back to first role.
-  let activeRole = u.activeRole || null;
+  // CRITICAL: Respect explicitly saved activeRole - never override it
+  // Only use default logic if activeRole was never set
+  let activeRole = u.activeRole ? String(u.activeRole).trim().toLowerCase() : null;
+  
   if (!activeRole) {
-    if (normRoles.includes('user') && normRoles.includes('vendor')) {
-      activeRole = 'user';
-    } else if (u.role) {
-      activeRole = u.role;
+    // Only apply defaults if no activeRole was explicitly saved
+    if (u.role) {
+      activeRole = String(u.role).trim().toLowerCase();
     } else if (u.userType) {
-      activeRole = u.userType;
+      activeRole = String(u.userType).trim().toLowerCase();
     } else {
       activeRole = normRoles[0] || undefined;
     }

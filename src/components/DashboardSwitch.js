@@ -40,8 +40,10 @@ export default function DashboardSwitch() {
 
     try {
       setLoadingRole(targetRole);
+      console.log('🔄 DashboardSwitch: Switching to role:', targetRole, 'with value:', canonicalSwitchValue);
       await switchRole(canonicalSwitchValue);
       const targetPath = getDashboardPath(targetRole);
+      console.log('🔄 DashboardSwitch: Switch successful, navigating to:', targetPath);
       navigate(targetPath);
       toast.success(`Switched to ${getRoleDisplayName(targetRole)} Dashboard`);
     } catch (e) {
@@ -88,12 +90,14 @@ export default function DashboardSwitch() {
             <button
               key={dashboard.role}
               onClick={() => handleSwitch(dashboard.role, dashboard.switchValue)}
-              disabled={isActive || loadingRole === dashboard.role || !switchable}
-              className={`relative overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+              disabled={isActive || loadingRole === dashboard.role}
+              className={`relative overflow-hidden rounded-lg border-2 transition-all duration-200 cursor-pointer ${
                 isActive 
-                  ? `${theme.border} ${theme.bg}` 
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  ? `${theme.border} ${theme.bg} shadow-md` 
+                  : !switchable
+                  ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-60'
+                  : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm hover:bg-gray-50 active:scale-95'
+              } ${loadingRole === dashboard.role ? 'opacity-75' : ''}`}
             >
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-2">
