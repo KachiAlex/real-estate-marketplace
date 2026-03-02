@@ -44,6 +44,8 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
   const isAdmin = userRoles.includes('admin');
   const isVendor = userRoles.includes('vendor');
   const isBuyer = userRoles.includes('buyer') || userRoles.length === 0;
+  
+  console.log('🔥 ProtectedRoute: Role detection', { path, userRoles, isAdmin, isVendor, isBuyer, userRole: user.role });
 
   const isAdminRoute = path === '/admin' || path.startsWith('/admin/');
   const buyerPrefixes = ['/buyer', '/my-inquiries', '/my-inspections', '/my-properties', '/saved-properties', '/alerts'];
