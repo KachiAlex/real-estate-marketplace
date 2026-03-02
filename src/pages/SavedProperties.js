@@ -140,12 +140,20 @@ const SavedProperties = () => {
     }
   }, [user, properties]);
 
-  // Fetch properties if not already loaded
+  // Fetch properties on mount and when user changes
   useEffect(() => {
     if (user && fetchProperties) {
-      // Always fetch properties to ensure we have the latest data
+      console.log('SavedProperties: Fetching properties on mount...');
+      fetchProperties();
+    }
+  }, [user]);
+
+  // Load saved properties if not already loaded
+  useEffect(() => {
+    if (user && fetchProperties) {
+      // Ensure properties are loaded
       if (properties.length === 0 && !propertiesLoading) {
-        console.log('SavedProperties: Fetching properties...');
+        console.log('SavedProperties: Properties not loaded, fetching...');
         fetchProperties();
       }
     }
