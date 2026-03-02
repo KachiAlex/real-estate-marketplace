@@ -130,7 +130,7 @@ const Sidebar = () => {
   }
 
             const menuItems = [
-              { path: '/dashboard', label: 'Dashboard', icon: FaHome },
+              { path: '/dashboard', label: 'Overview', icon: FaHome },
               { path: '/properties', label: 'Properties', icon: FaBuilding },
               { path: '/investment', label: 'Investment', icon: FaChartLine },
            { path: '/mortgage', label: 'Mortgage', icon: FaFileContract },
