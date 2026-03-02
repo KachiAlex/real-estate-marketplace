@@ -43,7 +43,8 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
   const userRoles = Array.isArray(user.roles) ? user.roles : (user.role ? [user.role] : []);
   const isAdmin = userRoles.includes('admin');
   const isVendor = userRoles.includes('vendor');
-  const isBuyer = userRoles.includes('buyer') || userRoles.length === 0;
+  // A user is a buyer if they have 'buyer' or 'user' role, or if they have no roles (default to buyer)
+  const isBuyer = userRoles.includes('buyer') || userRoles.includes('user') || userRoles.length === 0;
   
   console.log('🔥 ProtectedRoute: Role detection', { path, userRoles, isAdmin, isVendor, isBuyer, userRole: user.role });
 
