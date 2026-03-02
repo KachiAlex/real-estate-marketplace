@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch, hasAuthToken } from '../utils/authToken';
+import apiClient from '../services/apiClient';
 
 const MOCK_USERS = [
   {

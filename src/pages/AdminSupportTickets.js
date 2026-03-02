@@ -15,7 +15,7 @@ const AdminSupportTickets = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await apiClient.get('/admin/support/inquiries');
+      const resp = await apiClient.get('/support/admin/inquiries');
       const data = resp.data || {};
       if (!data?.success) throw new Error(data?.message || 'Failed to load tickets');
       setTickets(data.data || []);
@@ -34,7 +34,7 @@ const AdminSupportTickets = () => {
   const updateTicket = async (id, updates) => {
     setUpdating(true);
     try {
-      const resp = await apiClient.put(`/admin/support/inquiries/${id}`, updates);
+      const resp = await apiClient.put(`/support/admin/inquiries/${id}`, updates);
       const data = resp.data || {};
       if (!data?.success) throw new Error(data?.message || 'Update failed');
       toast.success(data.message || 'Ticket updated');
