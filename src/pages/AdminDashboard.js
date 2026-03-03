@@ -258,17 +258,20 @@ const AdminDashboard = () => {
 
   const normalizedSearch = userSearch.trim().toLowerCase();
   const propertyAnalytics = useMemo(() => {
-    const fallbackTotals = {
-      total: properties.length,
-      pending: properties.filter((p) => (p.approvalStatus || p.verificationStatus || 'pending') === 'pending').length,
-      approved: properties.filter((p) => (p.approvalStatus || p.verificationStatus) === 'approved').length,
-      rejected: properties.filter((p) => (p.approvalStatus || p.verificationStatus) === 'rejected').length
-    };
-
-    const total = stats.total || fallbackTotals.total || 0;
-    const pending = stats.pending ?? fallbackTotals.pending;
-    const approved = stats.approved ?? fallbackTotals.approved;
-    const rejected = stats.rejected ?? fallbackTotals.rejected;
+    // Always calculate from the actual properties array to ensure accuracy
+    const total = properties.length;
+    const pending = properties.filter((p) => {
+      const status = (p.approvalStatus || p.verificationStatus || 'pending').toLowerCase();
+      return status === 'pending';
+    }).length;
+    const approved = properties.filter((p) => {
+      const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
+      return status === 'approved';
+    }).length;
+    const rejected = properties.filter((p) => {
+      const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
+      return status === 'rejected';
+    }).length;
     const reviewed = approved + rejected;
 
     const approvalRate = total ? Math.round((approved / total) * 100) : 0;
@@ -286,7 +289,7 @@ const AdminDashboard = () => {
       reviewCompletion,
       pendingRate
     };
-  }, [stats.total, stats.pending, stats.approved, stats.rejected, properties]);
+  }, [properties]);
   const filteredUsers = useMemo(() => (
     users.filter((u) => {
       const matchesSearch = !normalizedSearch ||
@@ -1166,31 +1169,7 @@ const AdminDashboard = () => {
         {/* Stats Cards (properties tab only) */}
         {activeTab === 'properties' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Property Statistics</h2>
-              <button
-                onClick={loadAdminData}
-                disabled={statsLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium"
-              >
-                {statsLoading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Refreshing...
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh
-                  </>
-                )}
-              </button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Property Statistics</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <div className="flex items-center">
@@ -1201,7 +1180,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Properties</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.total}</p>
                 </div>
               </div>
             </div>
@@ -1236,7 +1215,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.pending || 0}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.pending}</p>
                 </div>
               </div>
             </div>
@@ -1250,7 +1229,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.approved || 0}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.approved}</p>
                 </div>
               </div>
             </div>
@@ -1264,7 +1243,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Rejected</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.rejected || 0}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.rejected}</p>
                 </div>
               </div>
             </div>
@@ -1305,8 +1284,8 @@ const AdminDashboard = () => {
                 <span className="text-xs text-gray-500">{propertyAnalytics.pending} listings awaiting review</span>
               </div>
               <div className="mt-4 text-xs text-gray-500 space-y-1">
-                <p>Approved today: {stats.approved || 0}</p>
-                <p>Rejected today: {stats.rejected || 0}</p>
+                <p>Approved: {propertyAnalytics.approved}</p>
+                <p>Rejected: {propertyAnalytics.rejected}</p>
               </div>
             </div>
           </div>
@@ -1555,10 +1534,10 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Listings by Approval Status</h2>
             <AdminListingsStatusChart
-              total={stats.total}
-              pending={stats.pending}
-              approved={stats.approved}
-              rejected={stats.rejected}
+              total={propertyAnalytics.total}
+              pending={propertyAnalytics.pending}
+              approved={propertyAnalytics.approved}
+              rejected={propertyAnalytics.rejected}
             />
           </div>
         )}
