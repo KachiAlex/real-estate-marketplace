@@ -27,6 +27,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import SignInModal from './components/auth/SignInModal';
 import RegisterModal from './components/auth/RegisterModal';
+import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
 import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports (wrapped with retryImport to mitigate transient chunk load failures)
@@ -371,8 +372,8 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   // Auth modal routes that should overlay the current page with header visible
-  const authModalRoutes = ['/auth/login', '/auth/register'];
-  const authLayoutPaths = ['/auth/forgot-password'];
+  const authModalRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password'];
+  const authLayoutPaths = [];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAuthModalRoute = authModalRoutes.includes(location.pathname);
   const isAuthRoute = authLayoutPaths.includes(location.pathname);
@@ -440,6 +441,10 @@ function App() {
                           {/* Show Register modal when route is /auth/register */}
                           {location.pathname === '/auth/register' && (
                             <RegisterModal onClose={handleAuthModalClose} />
+                          )}
+                          {/* Show Forgot Password modal when route is /auth/forgot-password */}
+                          {location.pathname === '/auth/forgot-password' && (
+                            <ForgotPasswordModal onClose={handleAuthModalClose} />
                           )}
                           {!shouldHideHeader && (
                             <>

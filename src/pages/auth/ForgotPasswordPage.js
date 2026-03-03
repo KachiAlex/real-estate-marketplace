@@ -4,7 +4,7 @@ import AuthLayout from '../../components/layout/AuthLayout';
 import { getApiUrl } from '../../utils/apiConfig';
 import toast from 'react-hot-toast';
 
-const ForgotPasswordPage = () => {
+const ForgotPasswordPage = ({ isModal = false, onClose }) => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
@@ -45,6 +45,8 @@ const ForgotPasswordPage = () => {
     <AuthLayout
       title="Reset access"
       description="Let us send you a fresh link so you can jump back into PropertyArk without missing a beat."
+      isModal={isModal}
+      onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
