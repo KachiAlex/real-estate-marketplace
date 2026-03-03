@@ -326,49 +326,6 @@ const AdminDashboard = () => {
     return stats;
   }, [disputes]);
 
-  const loadAdminData = useCallback(async () => {
-    setStatsLoading(true);
-    try {
-      // Fetch all properties from the backend
-      const response = await apiClient.get('/properties?limit=1000');
-      const allProperties = response.data?.data || [];
-      
-      // Calculate accurate stats from real data
-      const calculatedStats = {
-        total: allProperties.length,
-        pending: allProperties.filter(p => {
-          const status = (p.approvalStatus || p.verificationStatus || 'pending').toLowerCase();
-          return status === 'pending';
-        }).length,
-        approved: allProperties.filter(p => {
-          const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
-          return status === 'approved';
-        }).length,
-        rejected: allProperties.filter(p => {
-          const status = (p.approvalStatus || p.verificationStatus || '').toLowerCase();
-          return status === 'rejected';
-        }).length
-      };
-      
-      setStats(calculatedStats);
-      setAuthWarning('');
-    } catch (err) {
-      console.error('AdminDashboard: Failed to load admin data', err);
-      // Set default stats on error
-      setStats({
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0
-      });
-      if (err?.response?.status === 401) {
-        setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@propertyark.com / admin123).');
-        toast.error('Admin authentication required. Please log in again.');
-      }
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
 
   const loadVerificationConfig = useCallback(async () => {
     if (loadingVerificationSettings) return;
@@ -617,24 +574,6 @@ const AdminDashboard = () => {
     }
   }, [activeTab, user, adminSettings, loadingVerificationSettings, loadVerificationConfig]);
 
-  // Auto-refresh stats when properties tab is active
-  useEffect(() => {
-    if (activeTab === 'properties' && user?.role === 'admin') {
-      // Load stats immediately
-      loadAdminData();
-
-      // Set up auto-refresh every 30 seconds
-      statsRefreshIntervalRef.current = setInterval(() => {
-        loadAdminData();
-      }, 30000);
-
-      return () => {
-        if (statsRefreshIntervalRef.current) {
-          clearInterval(statsRefreshIntervalRef.current);
-        }
-      };
-    }
-  }, [activeTab, user, loadAdminData]);
 
   const handleSwitchTab = (tabId) => {
     setActiveTab(tabId);
