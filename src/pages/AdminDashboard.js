@@ -635,6 +635,7 @@ const AdminDashboard = () => {
       status: draftPost.status || 'draft',
       author: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Admin Team',
       publishedAt: new Date().toISOString(),
+      content: draftPost.content,
       excerpt: draftPost.content.slice(0, 140)
     };
     setBlogPosts((prev) => [newPost, ...prev]);
@@ -654,6 +655,13 @@ const AdminDashboard = () => {
     if (!window.confirm('Remove this blog post?')) return;
     setBlogPosts((prev) => prev.filter((post) => post.id !== id));
   };
+
+  // Sync blog posts to localStorage for home page display
+  useEffect(() => {
+    if (blogPosts.length > 0) {
+      localStorage.setItem('blogPosts', JSON.stringify(blogPosts));
+    }
+  }, [blogPosts]);
 
   // Load other admin data
   useEffect(() => {

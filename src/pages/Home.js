@@ -32,6 +32,7 @@ import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
 import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
+import BlogCard from '../components/BlogCard';
 import frontendMockProperties from '../data/mockProperties';
 import { formatCurrency } from '../utils/currency';
 
@@ -1522,7 +1523,78 @@ const Home = () => {
       <HomeSections />
 
       {/* Blog Section */}
-      {/* Blog section removed */}
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Latest Insights & News</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Stay informed with expert advice, market trends, and property investment tips from our blog.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {(() => {
+              // Get blog posts from localStorage (synced with admin dashboard)
+              const storedPosts = localStorage.getItem('blogPosts');
+              const blogPosts = storedPosts ? JSON.parse(storedPosts) : [
+                {
+                  id: 'blog-1',
+                  title: 'January Market Update',
+                  category: 'Market Trends',
+                  status: 'published',
+                  publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                  content: 'Rental demand across Lekki and Ikoyi jumped 18% MoM. Property values in prime locations continue to show strong appreciation...',
+                  excerpt: 'Rental demand across Lekki and Ikoyi jumped 18% MoM. Here is how it impacts investors...'
+                },
+                {
+                  id: 'blog-2',
+                  title: 'Smart Investment Strategies for 2024',
+                  category: 'Investment',
+                  status: 'published',
+                  publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+                  content: 'Discover the top property investment strategies that are yielding the best returns in the current market...',
+                  excerpt: 'Learn about the most effective property investment approaches for maximizing returns in today\'s market.'
+                },
+                {
+                  id: 'blog-3',
+                  title: 'Mortgage Playbook 2024',
+                  category: 'Mortgage',
+                  status: 'published',
+                  publishedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+                  content: 'Everything our buyers should know about the revamped PropertyArk mortgage partners and financing options...',
+                  excerpt: 'Everything our buyers should know about the revamped PropertyArk mortgage partners.'
+                }
+              ];
+
+              // Filter only published posts and get the 3 most recent
+              const publishedPosts = blogPosts
+                .filter(post => post.status === 'published')
+                .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+                .slice(0, 3);
+
+              return publishedPosts.length > 0 ? (
+                publishedPosts.map(post => (
+                  <BlogCard key={post.id} post={post} />
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">No blog posts available yet. Check back soon!</p>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link 
+              to="/blog" 
+              className="inline-flex items-center gap-2 px-8 py-3 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl group"
+            >
+              <span>View All Articles</span>
+              <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
