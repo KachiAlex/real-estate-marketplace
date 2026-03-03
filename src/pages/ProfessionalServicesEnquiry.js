@@ -88,8 +88,8 @@ const ProfessionalServicesEnquiry = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 flex items-start justify-center">
-      <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
