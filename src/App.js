@@ -388,9 +388,9 @@ function App() {
     if (isBackgroundEligible) {
       previousLocationRef.current = cloneLocation(location);
     }
-  }, [isSignInModalRoute, location]);
+  }, [isAuthModalRoute, location]);
 
-  const handleSignInModalClose = (options = {}) => {
+  const handleAuthModalClose = (options = {}) => {
     if (options?.type === 'navigate') return;
     if (window.history.length > 1) {
       window.history.back();
@@ -409,7 +409,7 @@ function App() {
                 <EscrowProvider>
                   <MortgageProvider>
                     <SidebarProvider>
-                      {isAuthRoute && !isSignInModalRoute ? (
+                      {isAuthRoute && !isAuthModalRoute ? (
                         <div className="flex min-h-screen w-full justify-center">
                           <Suspense fallback={
                             <div className="flex items-center justify-center w-full h-screen">
@@ -435,11 +435,11 @@ function App() {
                           </div>
                           {/* Show Sign-in modal when route is /auth/login */}
                           {location.pathname === '/auth/login' && (
-                            <SignInModal onClose={handleSignInModalClose} />
+                            <SignInModal onClose={handleAuthModalClose} />
                           )}
                           {/* Show Register modal when route is /auth/register */}
                           {location.pathname === '/auth/register' && (
-                            <RegisterModal onClose={handleSignInModalClose} />
+                            <RegisterModal onClose={handleAuthModalClose} />
                           )}
                           {!shouldHideHeader && (
                             <>
