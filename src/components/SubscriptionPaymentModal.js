@@ -116,21 +116,21 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Complete Subscription Payment</h2>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 pr-4">Complete Subscription Payment</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
           >
             <FaTimes className="text-xl" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -148,22 +148,22 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               </button>
             </div>
           ) : paymentUrl ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Plan Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Plan Summary</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+              <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Plan Summary</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-start">
                     <span className="text-gray-600">Plan:</span>
-                    <span className="font-medium">{plan.name}</span>
+                    <span className="font-medium text-right">{plan.name}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-start">
                     <span className="text-gray-600">Amount:</span>
-                    <span className="font-medium">{formatCurrency(plan.amount)}</span>
+                    <span className="font-medium text-right">{formatCurrency(plan.amount)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-start">
                     <span className="text-gray-600">Billing Cycle:</span>
-                    <span className="font-medium capitalize">{plan.billingCycle}</span>
+                    <span className="font-medium capitalize text-right">{plan.billingCycle}</span>
                   </div>
                 </div>
               </div>
@@ -171,14 +171,14 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               {/* Features */}
               {plan.features && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Features Included</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Features Included</h3>
                   <div className="space-y-2">
                     {Object.entries(plan.features).map(([key, value]) => (
-                      <div key={key} className="flex items-center text-sm">
+                      <div key={key} className="flex items-center text-xs sm:text-sm">
                         {value ? (
-                          <FaCheckCircle className="text-green-500 mr-2" />
+                          <FaCheckCircle className="text-green-500 mr-2 flex-shrink-0" />
                         ) : (
-                          <span className="text-gray-400 mr-2">—</span>
+                          <span className="text-gray-400 mr-2 flex-shrink-0">—</span>
                         )}
                         <span className="text-gray-700 capitalize">
                           {key.replace(/_/g, ' ')}
@@ -190,12 +190,12 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               )}
 
               {/* Payment Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                 <div className="flex items-start">
-                  <FaLock className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
+                  <FaLock className="text-blue-500 mt-1 mr-2 sm:mr-3 flex-shrink-0 text-sm" />
                   <div>
-                    <h4 className="font-semibold text-blue-900 mb-1">Secure Payment</h4>
-                    <p className="text-sm text-blue-800">
+                    <h4 className="font-semibold text-blue-900 mb-1 text-sm">Secure Payment</h4>
+                    <p className="text-xs sm:text-sm text-blue-800">
                       Your payment is processed securely through Paystack. 
                       We never store your card information.
                     </p>
@@ -206,10 +206,10 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               {/* Payment Button */}
               <button
                 onClick={handlePayNow}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
+                className="w-full bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center text-sm sm:text-base"
               >
-                <FaCreditCard className="mr-2" />
-                Pay {formatCurrency(plan.amount)} with Paystack
+                <FaCreditCard className="mr-2 flex-shrink-0" />
+                <span className="truncate">Pay {formatCurrency(plan.amount)} with Paystack</span>
               </button>
 
               <p className="text-xs text-gray-500 text-center">
@@ -224,10 +224,10 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4">
+        <div className="border-t p-3 sm:p-4 flex-shrink-0">
           <div className="flex items-center justify-center text-xs text-gray-500">
-            <FaLock className="mr-1" />
-            Powered by Paystack • Secure payment processing
+            <FaLock className="mr-1 flex-shrink-0" />
+            <span className="text-center">Powered by Paystack • Secure payment processing</span>
           </div>
         </div>
       </div>
