@@ -68,12 +68,26 @@ const normalizeUser = (u) => {
   // Ensure roles is an array of lowercased, trimmed values
   const normRoles = Array.isArray(roles) ? roles.map(r => String(r).trim().toLowerCase()) : [];
 
-  // CRITICAL: Respect explicitly saved activeRole - never override it
-  // Only use default logic if activeRole was never set
+  // CRITICAL: Preserve activeRole from localStorage if backend doesn't return it
   let activeRole = u.activeRole ? String(u.activeRole).trim().toLowerCase() : null;
   
+  // If no activeRole in the incoming data, check localStorage first
   if (!activeRole) {
-    // Only apply defaults if no activeRole was explicitly saved
+    try {
+      const storedUser = storage.get('currentUser');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.activeRole) {
+          activeRole = String(parsed.activeRole).trim().toLowerCase();
+        }
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  
+  // Only apply defaults if no activeRole was found anywhere
+  if (!activeRole) {
     if (u.role) {
       activeRole = String(u.role).trim().toLowerCase();
     } else if (u.userType) {
