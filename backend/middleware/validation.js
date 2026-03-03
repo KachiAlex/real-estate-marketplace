@@ -184,8 +184,8 @@ exports.propertyValidation = {
       .trim()
       .notEmpty()
       .withMessage('Property description is required')
-      .isLength({ min: 10, max: 2000 })
-      .withMessage('Description must be between 10 and 2000 characters'),
+      .isLength({ min: 5, max: 2000 })
+      .withMessage('Description must be between 5 and 2000 characters'),
     
     body('price')
       .isNumeric()
@@ -242,8 +242,8 @@ exports.propertyValidation = {
     body('description')
       .optional()
       .trim()
-      .isLength({ min: 10, max: 2000 })
-      .withMessage('Description must be between 10 and 2000 characters'),
+      .isLength({ min: 5, max: 2000 })
+      .withMessage('Description must be between 5 and 2000 characters'),
     
     body('price')
       .optional()

@@ -358,8 +358,8 @@ const AddProperty = () => {
     if (!formData.title) newErrors.title = 'Title is required';
     if (!formData.description) {
       newErrors.description = 'Description is required';
-    } else if (formData.description.length < 20) {
-      newErrors.description = 'Description must be at least 20 characters';
+    } else if (formData.description.length < 5) {
+      newErrors.description = 'Description must be at least 5 characters';
     } else if (formData.description.length > 2000) {
       newErrors.description = 'Description must not exceed 2000 characters';
     }
@@ -633,7 +633,7 @@ const AddProperty = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Description
                   <span className="ml-2 text-xs font-normal text-gray-500">
-                    ({formData.description.length}/2000 characters, min 20)
+                    ({formData.description.length}/2000 characters)
                   </span>
                 </label>
                 <MemoryInput
@@ -643,14 +643,9 @@ const AddProperty = () => {
                   onChange={(val) => setFormData((p) => ({ ...p, description: val }))}
                   multiline
                   rows={4}
-                  placeholder="Describe your property in detail (minimum 20 characters)..."
+                  placeholder="Describe your property..."
                 />
                 {errors.description && <p className="mt-2 text-sm text-red-600">{errors.description}</p>}
-                {!errors.description && formData.description.length > 0 && formData.description.length < 20 && (
-                  <p className="mt-2 text-sm text-amber-600">
-                    {20 - formData.description.length} more characters needed
-                  </p>
-                )}
               </div>
             </div>
 
