@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, FaBook, FaHeadset, FaTicketAlt, FaChevronDown, FaChevronUp, FaChevronRight, FaMapMarkerAlt, FaWhatsapp, FaTelegram, FaTimes, FaArrowLeft } from 'react-icons/fa';
@@ -12,23 +12,11 @@ const HelpSupport = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const subjectRef = useRef(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [activeResource, setActiveResource] = useState(null); // 'guide', 'docs', 'support'
   const [selectedGuideSection, setSelectedGuideSection] = useState(null);
   const [selectedDocCategory, setSelectedDocCategory] = useState('all');
-  // live chat removed — using support ticket flow instead
-  const [contactForm, setContactForm] = useState({
-    subject: '',
-    category: '',
-    message: '',
-    priority: 'medium'
-  });
-
-  // Chat state (legacy handlers reference these; live chat UI removed)
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
 
   
 
@@ -402,38 +390,6 @@ const HelpSupport = () => {
       q.answer.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
-
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!contactForm.subject || !contactForm.category || !contactForm.message) {
-      toast.error('Please complete subject, category and message');
-      return;
-    }
-
-    try {
-      const payload = {
-        message: `Subject: ${contactForm.subject}\nPriority: ${contactForm.priority}\n\n${contactForm.message}`,
-        category: contactForm.category
-      };
-
-      const resp = await apiClient.post('/support/inquiry', payload);
-
-      if (resp?.data?.success) {
-        toast.success(resp.data?.message || 'Support ticket submitted. We will respond soon.');
-        setContactForm({ subject: '', category: '', message: '', priority: 'medium' });
-        if (typeof loadTickets === 'function') loadTickets();
-      } else if (resp?.status === 401 || resp?.data?.status === 401) {
-        toast.error('Authentication required. Please log in again.');
-      } else {
-        const err = resp?.data || {};
-        toast.error(err.error || 'Failed to submit ticket');
-      }
-    } catch (error) {
-      console.error('Support ticket submit error:', error);
-      toast.error('Failed to submit support ticket. Please try again later.');
-    }
-  };
 
   // Tickets state and loader
   const [tickets, setTickets] = useState([]);
@@ -811,75 +767,6 @@ const HelpSupport = () => {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Contact Form */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
-        <form onSubmit={handleContactSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-              <input
-                type="text"
-                value={contactForm.subject}
-                onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
-                ref={subjectRef}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                placeholder="What can we help you with?"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select
-                value={contactForm.category}
-                onChange={(e) => setContactForm({...contactForm, category: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                required
-              >
-                <option value="">Select a category</option>
-                <option value="general">General Inquiry</option>
-                <option value="technical">Technical Support</option>
-                <option value="billing">Billing & Payments</option>
-                <option value="investment">Investment</option>
-                <option value="mortgage">Mortgage</option>
-                <option value="property">Property Related</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-            <select
-              value={contactForm.priority}
-              onChange={(e) => setContactForm({...contactForm, priority: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-            >
-              <option value="low">Low - General inquiry</option>
-              <option value="medium">Medium - Need assistance</option>
-              <option value="high">High - Urgent issue</option>
-              <option value="critical">Critical - System down</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <textarea
-              value={contactForm.message}
-              onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-              placeholder="Please provide as much detail as possible about your inquiry..."
-              required
-            />
-          </div>
-          
-          <button type="submit" className="btn-primary">
-            Send Message
-          </button>
-        </form>
       </div>
 
       {/* Office Information */}
