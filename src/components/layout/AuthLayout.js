@@ -12,9 +12,10 @@ const AuthLayout = ({
 
   const content = (
     <div className={`min-h-screen bg-slate-950 text-white ${isModal ? 'rounded-3xl border border-white/10 shadow-2xl' : ''}`}>
-      <div className={`relative isolate ${isModal ? 'rounded-3xl overflow-hidden' : 'min-h-screen overflow-hidden'}`}>
+      {/* For full-page auth, allow the page header above and center the card within the remaining viewport */}
+      <div className={`relative isolate ${isModal ? 'rounded-3xl overflow-hidden' : 'min-h-screen overflow-hidden flex items-center justify-center px-4 py-12'}`}>
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#050B1E] to-[#11131F]" aria-hidden="true" />
-        <div className={`relative z-10 flex ${isModal ? 'min-h-full' : 'min-h-screen'} items-center justify-center px-4 py-12`}>
+        <div className={`relative z-10 flex ${isModal ? 'min-h-full items-center justify-center px-4 py-12' : 'w-full justify-center'}`}>
           <div className={`grid w-full ${isModal ? 'max-w-3xl' : 'max-w-6xl'} gap-10 ${isModal ? '' : 'lg:grid-cols-[1.1fr_0.9fr]'}`}>
             <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-2xl">
               <div className="mb-8 space-y-2 text-white">

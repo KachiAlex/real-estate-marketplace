@@ -26,6 +26,7 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import SignInModal from './components/auth/SignInModal';
+import RegisterModal from './components/auth/RegisterModal';
 import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports (wrapped with retryImport to mitigate transient chunk load failures)
@@ -369,18 +370,21 @@ const cloneLocation = (loc = DEFAULT_BACKGROUND_LOCATION) => ({
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const hideHeaderPaths = ['/auth/register', '/auth/forgot-password', '/auth/google-popup-callback'];
+  // Auth modal routes that should overlay the current page with header visible
+  const authModalRoutes = ['/auth/login', '/auth/register'];
+  const authLayoutPaths = ['/auth/forgot-password'];
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isSignInModalRoute = location.pathname === '/auth/login';
-  const isAuthRoute = hideHeaderPaths.includes(location.pathname);
+  const isAuthModalRoute = authModalRoutes.includes(location.pathname);
+  const isAuthRoute = authLayoutPaths.includes(location.pathname);
+  // Only hide header for admin area; keep it for all public/auth pages
   const shouldHideHeader = isAdminRoute;
   const previousLocationRef = useRef(
-    isSignInModalRoute || hideHeaderPaths.includes(location.pathname)
+    isAuthModalRoute || authLayoutPaths.includes(location.pathname)
       ? cloneLocation(DEFAULT_BACKGROUND_LOCATION)
       : cloneLocation(location)
   );
   useEffect(() => {
-    const isBackgroundEligible = !isSignInModalRoute && !hideHeaderPaths.includes(location.pathname);
+    const isBackgroundEligible = !isAuthModalRoute && !authLayoutPaths.includes(location.pathname);
     if (isBackgroundEligible) {
       previousLocationRef.current = cloneLocation(location);
     }
@@ -418,20 +422,24 @@ function App() {
                       ) : (
                         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
                           {!shouldHideHeader && <Header />}
-                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${!shouldHideHeader && !isSignInModalRoute ? 'pt-16' : ''}`}>
+                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${!shouldHideHeader && !isAuthModalRoute ? 'pt-16' : ''}`}>
                             <ErrorBoundary>
                               <Suspense fallback={
                                 <div className="flex items-center justify-center w-full h-screen">
                                   <LoadingSpinner size="lg" />
                                 </div>
                               }>
-                                <MainRoutes locationOverride={isSignInModalRoute ? (previousLocationRef.current || DEFAULT_BACKGROUND_LOCATION) : location} />
+                                <MainRoutes locationOverride={isAuthModalRoute ? (previousLocationRef.current || DEFAULT_BACKGROUND_LOCATION) : location} />
                               </Suspense>
                             </ErrorBoundary>
                           </div>
-                          {/* Show Sign-in as modal when route is /auth/login */}
-                          {isSignInModalRoute && (
+                          {/* Show Sign-in modal when route is /auth/login */}
+                          {location.pathname === '/auth/login' && (
                             <SignInModal onClose={handleSignInModalClose} />
+                          )}
+                          {/* Show Register modal when route is /auth/register */}
+                          {location.pathname === '/auth/register' && (
+                            <RegisterModal onClose={handleSignInModalClose} />
                           )}
                           {!shouldHideHeader && (
                             <>
