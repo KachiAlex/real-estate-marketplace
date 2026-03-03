@@ -1675,12 +1675,19 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {(() => {
+                            // Check for vendorName first (new property structure)
+                            if (property.vendorName) {
+                              return property.vendorName;
+                            }
+                            // Fallback to owner object (legacy structure)
                             if (property.owner && typeof property.owner === 'object') {
                               const firstName = property.owner.firstName || '';
                               const lastName = property.owner.lastName || '';
-                              return `${firstName} ${lastName}`.trim() || 'Unknown Owner';
+                              const fullName = `${firstName} ${lastName}`.trim();
+                              return fullName || property.owner.email || 'Unknown';
                             }
-                            return property.owner || 'Unknown Owner';
+                            // Fallback to owner string or vendorId
+                            return property.owner || property.vendorId || 'Unknown';
                           })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
