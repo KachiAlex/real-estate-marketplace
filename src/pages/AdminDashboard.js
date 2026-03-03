@@ -528,12 +528,7 @@ const AdminDashboard = () => {
     console.log('AdminDashboard: User state:', user);
     console.log('AdminDashboard: User role:', user?.role);
     console.log('AdminDashboard: Is admin?', user?.role === 'admin');
-    
-    // Load admin data for admin users
-    if (user?.role === 'admin') {
-      loadAdminData();
-    }
-  }, [user, navigate, loadAdminData]);
+  }, [user, navigate]);
 
   useEffect(() => {
     let isMounted = true;
@@ -763,10 +758,6 @@ const AdminDashboard = () => {
     if (success) {
       setVerificationNotes('');
       setSelectedProperty(null);
-      // Refresh properties list after a short delay to ensure Firestore update is complete
-      setTimeout(() => {
-        loadAdminData();
-      }, 1000);
     }
   };
 
@@ -800,10 +791,6 @@ const AdminDashboard = () => {
       const success = await verifyProperty(propertyId, 'approved', adminNotes);
       
       if (success) {
-        // Refresh properties list after a short delay to ensure Firestore update is complete
-        setTimeout(() => {
-          loadAdminData();
-        }, 500);
         // Send notification to vendor (simulated)
         await sendNotificationToVendor(propertyId, 'approved', adminNotes);
       } else {
@@ -825,10 +812,6 @@ const AdminDashboard = () => {
       const success = await verifyProperty(propertyId, 'rejected', notes);
       
       if (success) {
-        // Refresh properties list after a short delay to ensure Firestore update is complete
-        setTimeout(() => {
-          loadAdminData();
-        }, 500);
         // Send notification to vendor
         await sendNotificationToVendor(propertyId, 'rejected', rejectionReason);
       } else {
@@ -888,7 +871,6 @@ const AdminDashboard = () => {
       
       if (data.success) {
         toast.success('User suspended successfully');
-        loadAdminData();
       } else {
         toast.error('Failed to suspend user: ' + data.message);
       }
@@ -910,7 +892,6 @@ const AdminDashboard = () => {
       
       if (data.success) {
         toast.success('User activated successfully');
-        loadAdminData();
       } else {
         toast.error('Failed to activate user: ' + data.message);
       }
@@ -932,7 +913,6 @@ const AdminDashboard = () => {
       
       if (data.success) {
         toast.success('User deleted successfully');
-        loadAdminData();
       } else {
         toast.error('Failed to delete user: ' + data.message);
       }
