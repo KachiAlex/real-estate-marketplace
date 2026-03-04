@@ -723,13 +723,13 @@ const VendorProfile = () => {
                   Change Password
                 </button>
                 <button 
-                  onClick={() => navigate('/dashboard?tab=notifications')}
+                  onClick={() => navigate('/vendor/notifications')}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
                 >
                   Notification Settings
                 </button>
                 <button 
-                  onClick={() => navigate('/dashboard?tab=privacy')}
+                  onClick={() => navigate('/vendor/privacy')}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
                 >
                   Privacy Settings

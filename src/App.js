@@ -40,7 +40,8 @@ const AdminKycReview = lazy(() => retryImport(() => import('./pages/admin/KycRev
 const Profile = lazy(() => retryImport(() => import('./pages/Profile')));
 const About = lazy(() => retryImport(() => import('./pages/About')));
 const OnboardVendor = lazy(() => retryImport(() => import('./pages/OnboardVendor')));
-// Blog pages removed — redirecting to properties instead
+const Blog = lazy(() => retryImport(() => import('./pages/Blog')));
+const BlogDetail = lazy(() => retryImport(() => import('./pages/BlogDetail')));
 const ProfessionalServicesEnquiry = lazy(() => retryImport(() => import('./pages/ProfessionalServicesEnquiry')));
 const Escrow = lazy(() => retryImport(() => import('./pages/Escrow')));
 const Investments = lazy(() => retryImport(() => import('./pages/Investments')));
@@ -116,8 +117,8 @@ const MainRoutes = ({ locationOverride }) => (
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-    <Route path="/blog" element={<Navigate to="/properties" replace />} />
-    <Route path="/blog/:slug" element={<Navigate to="/properties" replace />} />
+    <Route path="/blog" element={<Blog />} />
+    <Route path="/blog/:slug" element={<BlogDetail />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />
     {/* Public vendor onboarding route */}
     <Route path="/onboard-vendor" element={

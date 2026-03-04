@@ -30,8 +30,8 @@ const BlogCard = ({ post, onEdit, onDelete, isEditable = false, onClick }) => {
   const handleClick = () => {
     if (onClick) {
       onClick(post);
-    } else if (!isEditable && post?.id) {
-      navigate(`/blog/${post.id}`);
+    } else if (!isEditable && (post?.slug || post?.id)) {
+      navigate(`/blog/${post.slug || post.id}`);
     }
   };
 
