@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FaCheck, FaTimes, FaSyncAlt } from 'react-icons/fa';
+import { FaCheck, FaEnvelope, FaPhone, FaSyncAlt } from 'react-icons/fa';
 import apiClient from '../services/apiClient';
 
 const AdminSupportTickets = () => {
@@ -83,10 +83,12 @@ const AdminSupportTickets = () => {
   const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
 
   // Filter tickets by selected priority and category
-  const filteredTickets = tickets.filter(t =>
-    (selectedPriority === 'all' || t.priority === selectedPriority) &&
-    (selectedCategory === 'all' || t.category === selectedCategory)
-  );
+  const filteredTickets = useMemo(() => (
+    tickets.filter(t =>
+      (selectedPriority === 'all' || t.priority === selectedPriority) &&
+      (selectedCategory === 'all' || t.category === selectedCategory)
+    )
+  ), [tickets, selectedPriority, selectedCategory]);
 
   return (
     <div className="p-6">
@@ -117,38 +119,103 @@ const AdminSupportTickets = () => {
       ) : (
         <div className="space-y-4">
           {filteredTickets.map(ticket => (
-            <div key={ticket.id} className="bg-white p-4 rounded shadow">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold">{ticket.category} — {ticket.status}</h3>
-                  <p className="text-sm text-gray-600">{ticket.userName || ticket.userEmail} • {new Date(ticket.createdAt).toLocaleString()}</p>
-                  <span className={`inline-block mt-1 px-2 py-1 rounded text-xs ${ticket.priority === 'high' ? 'bg-red-200 text-red-800' : ticket.priority === 'critical' ? 'bg-red-600 text-white' : ticket.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'}`}>{ticket.priority ? ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1) : 'Medium'}</span>
+            <div key={ticket.id} className="bg-white p-4 rounded shadow border border-gray-100">
+              <div className="flex flex-wrap justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wider text-gray-400">Ticket</p>
+                  <h3 className="font-semibold text-gray-900">{ticket.subject || `${ticket.category} request`}</h3>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                    <span className="font-medium text-gray-700">{ticket.referenceCode || ticket.id}</span>
+                    <span>•</span>
+                    <span>{new Date(ticket.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ticket.priority === 'critical'
+                      ? 'bg-red-500/10 text-red-600'
+                      : ticket.priority === 'high'
+                        ? 'bg-red-100 text-red-700'
+                        : ticket.priority === 'medium'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-gray-100 text-gray-700'}`}>
+                      {ticket.priority ? ticket.priority.toUpperCase() : 'MEDIUM'}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ticket.status === 'resolved'
+                      ? 'bg-green-100 text-green-700'
+                      : ticket.status === 'pending'
+                        ? 'bg-amber-100 text-amber-700'
+                        : ticket.status === 'closed'
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-blue-100 text-blue-700'}`}>
+                      {ticket.status || 'open'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    disabled={updating}
-                    title={ticket.isRead ? 'Mark unread' : 'Mark read'}
-                    onClick={() => updateTicket(ticket.id, { isRead: !ticket.isRead })}
-                    className={`px-3 py-1 rounded ${ticket.isRead ? 'bg-gray-100' : 'bg-green-100'} text-sm`}
-                  >
-                    {ticket.isRead ? 'Read' : 'New'}
-                  </button>
-                  <select
-                    value={ticket.status || 'new'}
-                    onChange={(e) => updateTicket(ticket.id, { status: e.target.value })}
-                    disabled={updating}
-                    className="border px-2 py-1 rounded"
-                  >
-                    <option value="new">new</option>
-                    <option value="open">open</option>
-                    <option value="pending">pending</option>
-                    <option value="resolved">resolved</option>
-                    <option value="closed">closed</option>
-                  </select>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="text-sm text-gray-600">
+                    <p className="font-semibold text-gray-800">{ticket.userName || 'Unknown user'}</p>
+                    <div className="flex items-center gap-2">
+                      <FaEnvelope className="text-gray-400" />
+                      <a className="text-brand-blue hover:underline" href={`mailto:${ticket.userEmail || ticket.contactEmail}`}>
+                        {ticket.userEmail || ticket.contactEmail || 'No email'}
+                      </a>
+                    </div>
+                    {ticket.contactPhone && (
+                      <div className="flex items-center gap-2">
+                        <FaPhone className="text-gray-400" />
+                        <a className="text-brand-blue hover:underline" href={`tel:${ticket.contactPhone}`}>
+                          {ticket.contactPhone}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-[160px]">
+                    <button
+                      disabled={updating}
+                      onClick={() => updateTicket(ticket.id, {
+                        status: ticket.status === 'resolved' ? 'closed' : 'resolved',
+                        isRead: true,
+                        resolutionNotes: ticket.resolutionNotes || 'Marked resolved from quick action.'
+                      })}
+                      className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${ticket.status === 'resolved'
+                        ? 'bg-green-50 text-green-700 border border-green-200'
+                        : 'bg-green-600 text-white hover:bg-green-700'} disabled:opacity-60`}
+                    >
+                      <FaCheck />
+                      {ticket.status === 'resolved' ? 'Resolved' : 'Mark Resolved'}
+                    </button>
+                    <button
+                      disabled={updating}
+                      onClick={() => updateTicket(ticket.id, { isRead: !ticket.isRead })}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+                    >
+                      {ticket.isRead ? 'Mark Unread' : 'Mark Read'}
+                    </button>
+                    <select
+                      value={ticket.status || 'open'}
+                      onChange={(e) => updateTicket(ticket.id, { status: e.target.value })}
+                      disabled={updating}
+                      className="w-full border border-gray-200 rounded-md text-sm px-2 py-2 text-gray-700"
+                    >
+                      <option value="new">New</option>
+                      <option value="open">Open</option>
+                      <option value="pending">Pending</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <pre className="mt-3 whitespace-pre-wrap text-sm">{ticket.message}</pre>
+              <div className="mt-4 bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                <p className="font-medium text-gray-900 mb-1">Message</p>
+                <p className="whitespace-pre-wrap">{ticket.message}</p>
+                {ticket.resolutionNotes && (
+                  <div className="mt-3 text-xs text-gray-500">
+                    <p className="font-semibold text-gray-700">Resolution Notes</p>
+                    <p>{ticket.resolutionNotes}</p>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

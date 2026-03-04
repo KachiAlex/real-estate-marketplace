@@ -1,7 +1,6 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useProperty } from '../contexts/PropertyContext';
 import { useTour } from '../contexts/TourContext';
 import { 
   FaRobot, 
@@ -25,8 +24,54 @@ import {
   FaGraduationCap
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import PropertyArkAI from '../services/propertyArkAI';
+import { sendAssistantMessage } from '../services/assistantService';
+import useVoiceAssistant from '../hooks/useVoiceAssistant';
 import TourSelector from './TourSelector';
+
+const QUICK_ACTION_PROMPTS = {
+  search_lagos: "I want to search for properties in Lagos",
+  create_alert: "I want to create a property alert",
+  show_luxury: "Show me luxury properties",
+  help_register: "Help me register as a buyer",
+  explain_platform: "How does this platform work?",
+  show_investments: "Show me investment opportunities",
+  help_general: "What can you help with?",
+  start_tour: "Take me on a platform tour",
+  create_property_help: "Help me create a property listing",
+  manage_listings: "How do I manage my property listings?",
+  update_profile: "Help me update my profile",
+  view_analytics: "Show me my performance analytics",
+  pricing_help: "How should I price my property?",
+  photo_tips: "Give me tips for better property photos",
+  advanced_search: "Help me with advanced property search",
+  save_search: "How do I save this search as an alert?",
+  similar_properties: "Show me similar properties",
+  contact_agent: "How do I contact the property agent?",
+  schedule_viewing: "Help me schedule a property viewing",
+  property_valuation: "Can you help me get a property valuation?",
+  investment_calc: "Help me with investment calculations",
+  market_analysis: "Show me market analysis and trends",
+  create_portfolio: "Help me create an investment portfolio",
+  investment_alerts: "Set up investment alerts",
+  risk_assessment: "Help me assess investment risks",
+  investment_strategies: "What are good investment strategies?",
+  search_blog: "Help me search blog articles",
+  subscribe_blog: "How do I subscribe to blog updates?",
+  latest_news: "Show me the latest property news",
+  share_article: "How do I share this article?",
+  market_insights: "Give me market insights",
+  investment_tips: "Share property investment tips",
+  check_alerts: "Show me my property alerts",
+  saved_properties: "Show me my saved properties",
+  recent_searches: "Show me my recent searches",
+  account_settings: "Help me with account settings",
+  recommendations: "Give me personalized recommendations",
+  search_properties: "Help me find properties",
+  browse_properties: "Help me browse properties",
+  help_started: "Help me get started on this platform"
+};
+
+const MAX_MESSAGES = 30;
 
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,34 +87,29 @@ const AIAssistant = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const recognitionRef = useRef(null);
-  const speakingRef = useRef(false);
   const [summary, setSummary] = useState(''); // rolling conversation summary for capacity
   const [showSuggestions, setShowSuggestions] = useState(true);
   const messagesEndRef = useRef(null);
+  const voiceTranscriptHandlerRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { properties, searchProperties } = useProperty();
   const { startTour, availableTours, isTourCompleted } = useTour();
+  const {
+    speakText,
+    isSpeaking,
+    toggleListening,
+    isListening,
+    voiceEnabled,
+    setVoiceEnabled,
+    cancelSpeech
+  } = useVoiceAssistant({
+    onTranscript: (transcript) => voiceTranscriptHandlerRef.current?.(transcript)
+  });
+  const messagesRef = useRef(messages);
 
-  // Safe wrapper for AI service in case the import isn't a callable instance
-  const safeGenerate = (prompt) => {
-    try {
-      if (PropertyArkAI && typeof PropertyArkAI.generateResponse === 'function') {
-        return PropertyArkAI.generateResponse(prompt);
-      }
-      if (PropertyArkAI && typeof PropertyArkAI === 'function') {
-        // in case service was exported as a function
-        return PropertyArkAI(prompt);
-      }
-    } catch (err) {
-      console.error('AI generate error:', err);
-    }
-    return { response: "Sorry, the AI assistant is currently unavailable.", action: null, entities: {} };
-  };
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const getQuickSuggestions = () => {
     const currentPath = window.location.pathname;

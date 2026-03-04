@@ -1,12 +1,42 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
 const emailService = require('../services/emailService');
 const db = require('../config/sequelizeDb');
 const { v4: uuidv4 } = require('uuid');
 
 const logger = createLogger('SupportRoutes');
+
+const buildInquiryResponse = (inquiryInstance) => {
+  if (!inquiryInstance) return null;
+  const inquiry = inquiryInstance.toJSON ? inquiryInstance.toJSON() : inquiryInstance;
+  return {
+    id: inquiry.id,
+    referenceCode: inquiry.referenceCode,
+    subject: inquiry.subject,
+    message: inquiry.message,
+    category: inquiry.category,
+    status: inquiry.status,
+    priority: inquiry.priority,
+    isRead: inquiry.isRead,
+    userName: inquiry.userName,
+    userEmail: inquiry.userEmailSnapshot || inquiry.contactEmail,
+    contactEmail: inquiry.contactEmail,
+    contactPhone: inquiry.contactPhone,
+    createdAt: inquiry.createdAt,
+    updatedAt: inquiry.updatedAt,
+    resolvedAt: inquiry.resolvedAt,
+    resolutionNotes: inquiry.resolutionNotes,
+    resolvedByAdminId: inquiry.resolvedByAdminId,
+    user: inquiry.user ? {
+      id: inquiry.user.id,
+      email: inquiry.user.email,
+      firstName: inquiry.user.firstName,
+      lastName: inquiry.user.lastName
+    } : undefined
+  };
+};
 
 /**
  * @route   POST /api/support/inquiry
@@ -23,7 +53,7 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       subjectPreview: req.body?.subject ? String(req.body.subject).slice(0, 120) : null
     });
 
-    const { subject, message, category, priority = 'medium' } = req.body || {};
+    const { subject, message, category, priority = 'medium', contactEmail, contactPhone } = req.body || {};
 
     if (!subject || !message || !category) {
       return res.status(400).json({
@@ -45,7 +75,11 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       message,
       category,
       priority,
-      status: 'open'
+      status: 'open',
+      userName,
+      userEmailSnapshot: userEmail,
+      contactEmail: contactEmail || userEmail,
+      contactPhone: contactPhone || req.user.phone || req.user.phoneNumber || null
     });
 
     logger.info('Support inquiry created', {
@@ -80,7 +114,7 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      data: inquiry,
+      data: buildInquiryResponse(inquiry),
       message: 'Your inquiry has been submitted successfully. Our support team will respond shortly.'
     });
   } catch (error) {
@@ -125,7 +159,7 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
  * @desc    Get all support inquiries (admin only)
  * @access  Private/Admin
  */
-router.get('/admin/inquiries', authenticateToken, async (req, res) => {
+router.get('/admin/inquiries', authenticateToken, requireAdmin, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({
@@ -142,7 +176,7 @@ router.get('/admin/inquiries', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      data: inquiries
+      data: inquiries.map(buildInquiryResponse)
     });
   } catch (error) {
     logger.error('Error fetching admin support inquiries', error);
@@ -158,10 +192,10 @@ router.get('/admin/inquiries', authenticateToken, async (req, res) => {
  * @desc    Update support inquiry status (admin only)
  * @access  Private/Admin
  */
-router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
+router.put('/admin/inquiries/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, isRead } = req.body;
+    const { status, isRead, resolutionNotes } = req.body || {};
 
     if (req.user.role !== 'admin') {
       return res.status(403).json({
@@ -178,15 +212,24 @@ router.put('/admin/inquiries/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    if (status) inquiry.status = status;
+    if (status) {
+      inquiry.status = status;
+      if (status === 'resolved' || status === 'closed') {
+        inquiry.resolvedAt = new Date();
+        inquiry.resolvedByAdminId = req.user.id || req.user.uid;
+      }
+    }
     if (typeof isRead === 'boolean') inquiry.isRead = isRead;
+    if (resolutionNotes !== undefined) {
+      inquiry.resolutionNotes = resolutionNotes;
+    }
     await inquiry.save();
 
     logger.info('Support inquiry updated', { inquiryId: id, updates: { status, isRead } });
 
     return res.json({
       success: true,
-      data: inquiry,
+      data: buildInquiryResponse(inquiry),
       message: 'Inquiry updated successfully'
     });
   } catch (error) {

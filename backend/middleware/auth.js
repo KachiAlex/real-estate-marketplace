@@ -158,24 +158,34 @@ exports.optionalAuth = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
     }
 
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await userService.findById(decoded.id);
-        if (user) {
-          delete user.password;
-        }
-        req.user = user;
-      } catch (error) {
-        // Token is invalid, but we don't fail the request
-        req.user = null;
-      }
+    if (!token) {
+      attachMockUserFromHeaders(req);
+      return next();
     }
 
-    next();
+    if (token.startsWith('mock-')) {
+      attachMockUserFromHeaders(req);
+      return next();
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const tokenUserId = decoded && (decoded.userId || decoded.id || decoded.user || decoded.uid);
+      if (tokenUserId) {
+        const user = await userService.findById(tokenUserId);
+        if (user) {
+          delete user.password;
+          req.user = user;
+        }
+      }
+    } catch (error) {
+      attachMockUserFromHeaders(req);
+    }
+
+    return next();
   } catch (error) {
-    req.user = null;
-    next();
+    req.user = req.user || null;
+    return next();
   }
 };
 

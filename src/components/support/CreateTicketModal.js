@@ -8,7 +8,14 @@ import apiClient from '../../services/apiClient';
 const CreateTicketModal = ({ onClose, onSuccess }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ subject: '', category: '', priority: 'medium', message: '' });
+  const [form, setForm] = useState({
+    subject: '',
+    category: '',
+    priority: 'medium',
+    message: '',
+    contactEmail: currentUser?.email || '',
+    contactPhone: currentUser?.phone || currentUser?.phoneNumber || ''
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -30,14 +37,24 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         subject: form.subject,
         message: form.message,
         category: form.category,
-        priority: form.priority
+        priority: form.priority,
+        contactEmail: form.contactEmail?.trim() || undefined,
+        contactPhone: form.contactPhone?.trim() || undefined,
+        userId: currentUser.id
       };
 
       const resp = await apiClient.post('/support/inquiry', payload);
 
       if (resp?.data?.success) {
         toast.success(resp.data?.message || 'Support ticket submitted. We will respond by email.');
-        setForm({ subject: '', category: '', priority: 'medium', message: '' });
+        setForm({
+          subject: '',
+          category: '',
+          priority: 'medium',
+          message: '',
+          contactEmail: currentUser?.email || '',
+          contactPhone: currentUser?.phone || currentUser?.phoneNumber || ''
+        });
         if (onSuccess) onSuccess();
         if (onClose) onClose();
       } else if (resp?.status === 401 || resp?.data?.status === 401) {
@@ -109,6 +126,32 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
               <option value="high">High</option>
               <option value="critical">Critical</option>
             </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="ticket-email" className="block text-sm font-medium text-gray-700 mb-1">Reply-to Email</label>
+              <input
+                id="ticket-email"
+                type="email"
+                value={form.contactEmail}
+                onChange={(e) => setForm(f => ({ ...f, contactEmail: e.target.value }))}
+                className="w-full px-3 py-2 border rounded"
+                placeholder="you@example.com"
+              />
+              <p className="mt-1 text-xs text-gray-500">We'll reach you at this address.</p>
+            </div>
+            <div>
+              <label htmlFor="ticket-phone" className="block text-sm font-medium text-gray-700 mb-1">Phone (optional)</label>
+              <input
+                id="ticket-phone"
+                type="tel"
+                value={form.contactPhone}
+                onChange={(e) => setForm(f => ({ ...f, contactPhone: e.target.value }))}
+                className="w-full px-3 py-2 border rounded"
+                placeholder="+234 812 000 0000"
+              />
+            </div>
           </div>
 
           <div>

@@ -369,6 +369,12 @@ try {
   console.error('Failed to load admin routes:', error.message);
 }
 
+try {
+  app.use('/api/assistant', require('./routes/assistant'));
+} catch (error) {
+  console.error('Failed to load assistant routes:', error.message);
+}
+
 // try {
 //   app.use('/api/mortgage-banks', require('./routes/mortgageBanks'));
 // } catch (error) {
