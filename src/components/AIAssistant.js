@@ -95,9 +95,9 @@ const AIAssistant = () => {
   const { user } = useAuth();
   const { startTour, availableTours, isTourCompleted } = useTour();
   const {
-    speakText,
+    speakText: assistantSpeak,
     isSpeaking,
-    toggleListening,
+    toggleListening: assistantToggleListening,
     isListening,
     voiceEnabled,
     setVoiceEnabled,
@@ -207,7 +207,7 @@ const AIAssistant = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const speakText = (text) => {
+  const speakResponse = (text) => {
     try {
       if (!voiceEnabled) return;
       
@@ -578,7 +578,9 @@ const AIAssistant = () => {
       if (aiResponse.action) {
         setTimeout(() => {
           if (aiResponse.action.type === 'navigate') {
-            const params = new URLSearchParams();
+            const params = new URLSearchParams({
+              // Add default parameters here
+            });
             if (aiResponse.action.params) {
               Object.entries(aiResponse.action.params).forEach(([key, value]) => {
                 if (value) {
@@ -649,7 +651,7 @@ const AIAssistant = () => {
     return rec;
   };
 
-  const toggleListening = () => {
+  const handleToggleListening = () => {
     const rec = initRecognition();
     if (!rec) {
       toast.error('Voice input not supported in this browser');
@@ -873,7 +875,7 @@ const AIAssistant = () => {
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={toggleListening}
+                      onClick={handleToggleListening}
                       className={`transition-colors ${isListening ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
                       title={isListening ? 'Stop listening' : 'Start voice input'}
                     >
