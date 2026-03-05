@@ -9,7 +9,8 @@ import {
   FaCheckCircle,
   FaUniversity,
   FaComments,
-  FaInbox
+  FaInbox,
+  FaSignOutAlt
 } from 'react-icons/fa';
 
 export const ADMIN_MENU_ITEMS = [
@@ -63,7 +64,7 @@ export const ADMIN_MENU_ITEMS = [
     // }
   ];
 
-const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0, urgent: 0 } }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0, urgent: 0 }, onLogout }) => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -123,7 +124,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0
 
       {/* Admin Info */}
       <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="text-center">
+        <div className="text-center mb-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">
             System Status
           </p>
@@ -132,6 +133,13 @@ const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0
             <span className="text-xs text-gray-600">Online</span>
           </div>
         </div>
+        <button
+          onClick={onLogout}
+          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+        >
+          <FaSignOutAlt />
+          Logout
+        </button>
       </div>
     </div>
   );

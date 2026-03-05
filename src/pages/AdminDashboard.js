@@ -152,7 +152,7 @@ const MOCK_DISPUTES = [
 ];
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { 
     properties, 
     loading, 
@@ -982,7 +982,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleAdminLogout} />
         <div className="flex-1 ml-64 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -996,7 +996,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row overflow-x-hidden">
       {/* Desktop Sidebar */}
-      <AdminSidebar activeTab={activeTab} setActiveTab={handleSwitchTab} />
+      <AdminSidebar activeTab={activeTab} setActiveTab={handleSwitchTab} onLogout={handleAdminLogout} />
 
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (

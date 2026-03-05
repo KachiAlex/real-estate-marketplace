@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaShieldAlt, FaMoneyBillWave, FaCreditCard } from 'react-icons/fa';
+import { FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { authenticatedFetch, getAuthToken } from '../utils/authToken';

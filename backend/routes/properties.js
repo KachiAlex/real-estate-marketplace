@@ -148,7 +148,7 @@ router.post('/', protect, [
   body('description').trim().isLength({ min: 5, max: 2000 }).withMessage('Description must be between 5 and 2000 characters'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('type').isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial']).withMessage('Invalid property type'),
-  body('status').optional().isIn(['for-sale', 'for-rent', 'sold', 'rented']).withMessage('Invalid status'),
+  body('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending']).withMessage('Invalid status'),
   body('location.address').trim().notEmpty().withMessage('Address is required'),
   body('location.city').trim().notEmpty().withMessage('City is required'),
   body('location.state').trim().notEmpty().withMessage('State is required'),
@@ -201,8 +201,9 @@ router.put('/:id', protect, [
   body('description').optional().trim().isLength({ min: 5, max: 2000 }).withMessage('Description must be between 5 and 2000 characters'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('type').optional().isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial']).withMessage('Invalid property type'),
-  body('status').optional().isIn(['for-sale', 'for-rent', 'sold', 'rented']).withMessage('Invalid status')
+  body('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending']).withMessage('Invalid status')
 ], async (req, res) => {
+
   try {
     // Check for validation errors
     const errors = validationResult(req);

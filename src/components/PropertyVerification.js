@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaCheckCircle, FaSpinner, FaExclamationTriangle, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
-import SimplePaymentModal from './SimplePaymentModal';
 import { getAuthToken } from '../utils/authToken';
 
 const sanitizePropertyUrl = (rawValue) => {
@@ -41,29 +40,10 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   });
   const [verificationPaymentId, setVerificationPaymentId] = useState('');
   const [pendingPayment, setPendingPayment] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
   const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
-  const [paymentComplete, setPaymentComplete] = useState(false);
   const [resumePaymentEntry, setResumePaymentEntry] = useState(null);
-
-  // Handle payment success message from mock payment page
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data.type === 'PAYMENT_SUCCESS') {
-        console.log('PropertyVerification: Payment successful', event.data);
-        // Close the checkout modal
-        setShowCheckoutModal(false);
-        // Verify the payment
-        if (pendingPayment) {
-          handleVerifyPayment();
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [pendingPayment]);
 
   const CALLBACK_STORAGE_KEY = 'propertyVerificationPayments';
 
@@ -72,7 +52,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   const [isPaymentInitializing, setIsPaymentInitializing] = useState(false);
   const [providerLimit, setProviderLimit] = useState(null);
 
-  const readStoredPayments = () => {
+  const readStoredPayments = useCallback(() => {
     if (typeof window === 'undefined') return [];
     try {
       const raw = localStorage.getItem(CALLBACK_STORAGE_KEY);
@@ -81,38 +61,38 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       console.warn('PropertyVerification: unable to read stored payments', error);
       return [];
     }
-  };
+  }, []);
 
-  const writeStoredPayments = (entries) => {
+  const writeStoredPayments = useCallback((entries) => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(CALLBACK_STORAGE_KEY, JSON.stringify(entries));
     } catch (error) {
       console.warn('PropertyVerification: unable to write stored payments', error);
     }
-  };
+  }, []);
 
-  const updateStoredPayment = (paymentId, updates) => {
+  const updateStoredPayment = useCallback((paymentId, updates) => {
     const entries = readStoredPayments();
     const updatedEntries = entries.map((item) =>
       item.paymentId === paymentId ? { ...item, ...updates } : item
     );
     writeStoredPayments(updatedEntries);
     return updatedEntries.find((item) => item.paymentId === paymentId);
-  };
+  }, [readStoredPayments, writeStoredPayments]);
 
-  const saveInitiatedPayment = (entry) => {
+  const saveInitiatedPayment = useCallback((entry) => {
     const entries = readStoredPayments();
     const filtered = entries.filter((item) => item.paymentId !== entry.paymentId);
     filtered.push(entry);
     writeStoredPayments(filtered);
-  };
+  }, [readStoredPayments, writeStoredPayments]);
 
-  const removeStoredPayment = (paymentId) => {
+  const removeStoredPayment = useCallback((paymentId) => {
     const entries = readStoredPayments();
     const filtered = entries.filter((item) => item.paymentId !== paymentId);
     writeStoredPayments(filtered);
-  };
+  }, [readStoredPayments, writeStoredPayments]);
 
   const verificationFee = useMemo(() => {
     if (config?.verificationFee) {
@@ -203,38 +183,47 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const handlePaymentMessage = (event) => {
-      const { type, payload } = event.data || {};
-      if (type !== 'PROPERTY_VERIFICATION_PAYMENT' || !payload) return;
+    window.addEventListener('message', handlePaymentMessage);
+    return () => window.removeEventListener('message', handlePaymentMessage);
+  }, [handlePaymentMessage]);
 
-      if (payload.status === 'success' && payload.verificationPaymentId && payload.paymentId) {
-        const updatedEntry = updateStoredPayment(payload.paymentId, {
-          verified: true,
-          verificationPaymentId: payload.verificationPaymentId,
-          resumedAt: Date.now()
-        });
-        setPaymentStatus('completed');
-        setVerificationPaymentId(payload.verificationPaymentId);
-        setResumePaymentEntry(updatedEntry || {
+  const handlePaymentMessage = useCallback((event) => {
+    const { type, payload } = event.data || {};
+    if (type !== 'PROPERTY_VERIFICATION_PAYMENT' || !payload) return;
+
+    if (payload.status === 'success' && payload.verificationPaymentId && payload.paymentId) {
+      const updatedEntry = updateStoredPayment(payload.paymentId, {
+        verified: true,
+        verificationPaymentId: payload.verificationPaymentId,
+        resumedAt: Date.now()
+      });
+      setPaymentStatus('completed');
+      setVerificationPaymentId(payload.verificationPaymentId);
+      setResumePaymentEntry(
+        updatedEntry || {
           paymentId: payload.paymentId,
           verificationPaymentId: payload.verificationPaymentId,
           propertyId: property?.id,
           verified: true
-        });
-      } else if (payload.status === 'error') {
-        setPaymentStatus('failed');
-        setPaymentError(payload.message || 'Unable to verify payment. Please try again.');
-        setResumePaymentEntry(null);
-      }
-    };
+        }
+      );
+    } else if (payload.status === 'error') {
+      setPaymentStatus('failed');
+      setPaymentError(payload.message || 'Unable to verify payment. Please try again.');
+      setResumePaymentEntry(null);
+    }
+  }, [property?.id, updateStoredPayment]);
 
-    window.addEventListener('message', handlePaymentMessage);
-    return () => window.removeEventListener('message', handlePaymentMessage);
-  }, [hydratePendingPaymentFromStorage]);
 
-  const buildAuthHeaders = async () => {
-    const token = user?.accessToken || user?.token || await getAuthToken() || (typeof window !== 'undefined' ? (localStorage.getItem('accessToken') || localStorage.getItem('token')) : null);
-    const fallbackEmail = user?.email || (user && (user.username || user.email));
+  const buildAuthHeaders = useCallback(async () => {
+    const token =
+      user?.accessToken ||
+      user?.token ||
+      (await getAuthToken()) ||
+      (typeof window !== 'undefined'
+        ? localStorage.getItem('accessToken') || localStorage.getItem('token')
+        : null);
+    const fallbackEmail = user?.email || user?.username || null;
 
     if (!token && !fallbackEmail) {
       return null;
@@ -251,7 +240,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     }
 
     return headers;
-  };
+  }, [user]);
 
   const handleInitializePayment = async () => {
     console.log('🔥 handleInitializePayment called');
@@ -374,7 +363,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setShowCheckoutModal(true);
   };
 
-  const handleVerifyPayment = async () => {
+  const handleVerifyPayment = useCallback(async () => {
     if (!pendingPayment?.id) {
       setPaymentError('Initialize the payment before attempting verification.');
       return;
@@ -393,7 +382,12 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       const response = await fetch(getApiUrl(`/payments/${pendingPayment.id}/verify`), {
         method: 'POST',
         headers,
-        body: JSON.stringify({ providerReference: pendingPayment.txRef || pendingPayment.metadata?.flutterwave?.txRef || pendingPayment.reference })
+        body: JSON.stringify({
+          providerReference:
+            pendingPayment.txRef ||
+            pendingPayment.metadata?.flutterwave?.txRef ||
+            pendingPayment.reference
+        })
       });
 
       const data = await response.json();
@@ -414,12 +408,14 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
         verificationPaymentId: verifiedPayment.id,
         resumedAt: Date.now()
       });
-      setResumePaymentEntry(updatedEntry || {
-        paymentId: verifiedPayment.id,
-        verificationPaymentId: verifiedPayment.id,
-        propertyId: property?.id,
-        verified: true
-      });
+      setResumePaymentEntry(
+        updatedEntry || {
+          paymentId: verifiedPayment.id,
+          verificationPaymentId: verifiedPayment.id,
+          propertyId: property?.id,
+          verified: true
+        }
+      );
     } catch (err) {
       console.error('PropertyVerification: payment verification error', err);
       setPaymentStatus('failed');
@@ -428,7 +424,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     } finally {
       setIsPaymentVerifying(false);
     }
-  };
+  }, [pendingPayment, buildAuthHeaders, updateStoredPayment, property?.id]);
 
   const hasCompletedPayment = paymentStatus === 'completed' && Boolean(verificationPaymentId);
   const paymentStatusLabel = (() => {
@@ -446,7 +442,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
 
   const handleRequestVerification = async (event) => {
     event?.preventDefault();
-    const storedToken = getStoredToken();
+    const storedToken = await getAuthToken();
     const fallbackEmail = user?.email;
 
     if (!user && !storedToken) {
@@ -469,7 +465,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     setSuccessMessage('');
 
     try {
-      const token = user?.token || storedToken;
+      const token = user?.accessToken || user?.token || storedToken;
       const headers = {
         'Content-Type': 'application/json'
       };

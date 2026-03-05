@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import frontendMockProperties from '../data/mockProperties';
-import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from './AuthContext';
 import apiClient from '../services/apiClient';
 

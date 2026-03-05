@@ -23,7 +23,8 @@
     "test:e2e:headless": "cypress run --headless",
     "test:e2e:local": "set CYPRESS_BASE_URL=http://localhost:3001 && cypress run",
     "test:all": "npm run test:e2e:headless",
-    "test:comprehensive": "npm run test:e2e:headless"
+    "test:comprehensive": "npm run test:e2e:headless",
+    "lint:add-property": "eslint src/pages/AddProperty.js src/contexts/PropertyContext.js --max-warnings=0"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
@@ -97,6 +98,12 @@
   "devDependencies": {
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
+    "eslint": "^8.57.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "ajv": "^8.17.1",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.0",

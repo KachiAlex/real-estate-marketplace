@@ -10,9 +10,8 @@ import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
 import AgentPropertyListing from '../components/AgentPropertyListing';
 import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
 import AddressMemory from '../components/AddressMemory';
-import { FaHome, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
+import { FaHome, FaMapMarkerAlt, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 import MemoryInput from '../components/MemoryInput';
-import storageService from '../services/storageService';
 import { useAutoSave } from '../hooks/useAutoSave';
 import toast from 'react-hot-toast';
 
