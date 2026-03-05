@@ -1,26 +1,40 @@
 import React, { useEffect } from 'react';
 
+const decodeState = (encoded) => {
+  if (!encoded) return null;
+  try {
+    const json = atob(encoded);
+    return JSON.parse(json);
+  } catch (error) {
+    console.warn('GooglePopupCallback: unable to decode state payload', error);
+    return null;
+  }
+};
+
 const GooglePopupCallback = () => {
   useEffect(() => {
-    // Parse id_token from URL fragment (#id_token=...&access_token=...)
     try {
       const hash = window.location.hash || '';
-      const params = new URLSearchParams(hash.replace(/^#/, ''));
-      const idToken = params.get('id_token') || null;
-      const accessToken = params.get('access_token') || null;
+      const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(window.location.search || '');
+      const idToken = hashParams.get('id_token') || searchParams.get('id_token') || null;
+      const accessToken = hashParams.get('access_token') || searchParams.get('access_token') || null;
+      const state = hashParams.get('state') || searchParams.get('state') || null;
+      const decodedState = decodeState(state);
+      const targetOrigin = decodedState?.parentOrigin || window.location.origin;
 
       if (window.opener && (idToken || accessToken)) {
         window.opener.postMessage({
           type: 'google_oauth_result',
           idToken,
-          accessToken
-        }, window.location.origin);
+          accessToken,
+          state
+        }, targetOrigin);
       }
     } catch (e) {
-      // ignore
+      console.warn('GooglePopupCallback: failed to notify opener', e);
     }
 
-    // Close popup shortly after posting message
     setTimeout(() => {
       window.close();
     }, 600);
