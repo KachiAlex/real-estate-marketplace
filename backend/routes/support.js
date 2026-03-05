@@ -133,7 +133,16 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
  */
 router.get('/inquiries', authenticateToken, async (req, res) => {
   try {
+    if (!req.user) {
+      logger.warn('support/inquiries requested without resolved user');
+      return res.json({ success: true, data: [] });
+    }
+
     const userId = req.user.id || req.user.uid || req.user.email;
+    if (!userId) {
+      logger.warn('support/inquiries missing user identifier', { user: req.user });
+      return res.json({ success: true, data: [] });
+    }
 
     const inquiries = await db.SupportInquiry.findAll({
       where: { userId },
