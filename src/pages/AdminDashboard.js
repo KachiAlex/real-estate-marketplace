@@ -226,6 +226,17 @@ const AdminDashboard = () => {
   const [blogSearch, setBlogSearch] = useState('');
   const [draftPost, setDraftPost] = useState({ title: '', category: '', status: 'draft', content: '' });
 
+  const handleAdminLogout = useCallback(async () => {
+    try {
+      await logout();
+      navigate('/auth/login', { replace: true });
+      toast.success('Logged out');
+    } catch (error) {
+      console.error('Admin logout failed', error);
+      toast.error('Logout failed');
+    }
+  }, [logout, navigate]);
+
   // Early return for non-admin users
   if (!user || user.role !== 'admin') {
     console.log('AdminDashboard: Access denied - user:', user, 'role:', user?.role);
