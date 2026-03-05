@@ -26,6 +26,20 @@ const VendorProfile = () => {
   const [buyerModalMode, setBuyerModalMode] = useState('create');
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: true,
+    sms: false,
+    inApp: true,
+    marketing: false
+  });
+  const [privacyPrefs, setPrivacyPrefs] = useState({
+    showPhone: false,
+    showEmail: true,
+    shareAnalytics: false,
+    twoFactor: true
+  });
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const fileInputRef = useRef(null);
 
@@ -723,13 +737,13 @@ const VendorProfile = () => {
                   Change Password
                 </button>
                 <button 
-                  onClick={() => navigate('/vendor/notifications')}
+                  onClick={() => setShowNotificationModal(true)}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
                 >
                   Notification Settings
                 </button>
                 <button 
-                  onClick={() => navigate('/vendor/privacy')}
+                  onClick={() => setShowPrivacyModal(true)}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
                 >
                   Privacy Settings
@@ -753,6 +767,174 @@ const VendorProfile = () => {
           initialPreferences={buyerPreferences}
           buyerSince={buyerSince}
         />
+      )}
+
+      {/* Notification Settings Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Notification Settings</h3>
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Email alerts</p>
+                  <p className="text-sm text-gray-500">Property inquiries, payments, and account notices</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.email}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, email: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">SMS alerts</p>
+                  <p className="text-sm text-gray-500">Time-sensitive updates and reminders</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.sms}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, sms: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">In-app notifications</p>
+                  <p className="text-sm text-gray-500">Badges and alerts inside your dashboard</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.inApp}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, inApp: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Product updates</p>
+                  <p className="text-sm text-gray-500">Tips, new features, and marketing emails</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.marketing}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, marketing: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  toast.success('Notification preferences saved');
+                  setShowNotificationModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Settings Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Privacy Settings</h3>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Show phone number</p>
+                  <p className="text-sm text-gray-500">Display your phone on listings and inquiries</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.showPhone}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, showPhone: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Show email</p>
+                  <p className="text-sm text-gray-500">Allow buyers to reach you via email</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.showEmail}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, showEmail: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Share usage analytics</p>
+                  <p className="text-sm text-gray-500">Help improve the product with anonymized data</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.shareAnalytics}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, shareAnalytics: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Two-factor authentication</p>
+                  <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.twoFactor}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, twoFactor: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  toast.success('Privacy preferences saved');
+                  setShowPrivacyModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Change Password Modal */}
