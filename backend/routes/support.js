@@ -170,7 +170,7 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
  */
 router.get('/admin/inquiries', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Only admins can access this route'
