@@ -100,19 +100,6 @@ const normalizeUser = (u) => {
   return { ...u, roles: normRoles, activeRole };
 };
 
-const generateNonce = () => {
-  try {
-    if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
-      const array = new Uint8Array(16);
-      window.crypto.getRandomValues(array);
-      return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    }
-  } catch (error) {
-    console.warn('Failed to generate cryptographic nonce, falling back', error);
-  }
-  return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 10)}`;
-};
-
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -290,104 +277,6 @@ export const AuthProvider = ({ children }) => {
     } catch (e) { toast.error(e.message || 'Profile update failed'); throw e; }
   }, [accessToken, currentUser]);
 
-  const decodeStatePayload = (encoded) => {
-    if (!encoded) return null;
-    try {
-      const json = atob(encoded);
-      return JSON.parse(json);
-    } catch (error) {
-      console.warn('Failed to decode Google OAuth state payload', error);
-      return null;
-    }
-  };
-
-  const encodeStatePayload = (payload) => {
-    try {
-      return btoa(JSON.stringify(payload));
-    } catch (error) {
-      console.warn('Failed to encode Google OAuth state payload', error);
-      return '';
-    }
-  };
-
-  const signInWithGooglePopup = useCallback(async () => {
-    try {
-      setLoading(true);
-      const cfgResp = await tryFetchAuth('/auth/jwt/google-config');
-      const cfg = cfgResp && cfgResp.ok ? await cfgResp.json().catch(() => ({})) : {};
-      const clientId = cfg.clientId || cfg.client_id || cfg.clientID || null;
-      if (!clientId) throw new Error('Google client ID missing');
-      const configuredRedirect = cfg.redirectUri || cfg.redirect_url || cfg.redirectURL || null;
-      const redirectUri = configuredRedirect || `${window.location.origin}/auth/google-popup-callback`;
-      const nonce = generateNonce();
-      let popupOrigin = null;
-      try {
-        popupOrigin = new URL(redirectUri).origin;
-      } catch (error) {
-        popupOrigin = window.location.origin;
-      }
-      const parentOrigin = window.location.origin;
-      const statePayload = {
-        nonce,
-        parentOrigin,
-        returnTo: window.location.href,
-        ts: Date.now()
-      };
-      const encodedState = encodeStatePayload(statePayload);
-      const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        response_type: 'id_token token',
-        scope: 'openid profile email',
-        prompt: 'select_account',
-        nonce,
-        state: encodedState
-      });
-      const popup = window.open(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, 'google_oauth', 'width=500,height=650');
-      if (!popup) throw new Error('Popup blocked');
-      const allowedOrigins = new Set([parentOrigin]);
-      if (popupOrigin) {
-        allowedOrigins.add(popupOrigin);
-      }
-      const result = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => { window.removeEventListener('message', handler); reject(new Error('Timed out')); }, 2 * 60 * 1000);
-        const handler = (e) => {
-          if (!allowedOrigins.has(e.origin)) return;
-          if (e.data && e.data.type === 'google_oauth_result') {
-            if (e.data.state) {
-              const parsedState = decodeStatePayload(e.data.state);
-              if (parsedState?.nonce && parsedState.nonce !== nonce) {
-                return;
-              }
-              if (parsedState?.parentOrigin && parsedState.parentOrigin !== window.location.origin) {
-                return;
-              }
-            }
-            window.removeEventListener('message', handler);
-            clearTimeout(timer);
-            resolve(e.data);
-          }
-        };
-        window.addEventListener('message', handler);
-      });
-      const idToken = result?.idToken || result?.id_token; if (!idToken) throw new Error('No id token');
-      const resp = await tryFetchAuth('/auth/jwt/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ googleToken: idToken, nonce })
-      });
-      const data = resp ? await resp.json().catch(() => ({})) : {};
-      if (!resp || !resp.ok) throw new Error(data.message || 'Google sign-in failed');
-      const u = normalizeUser(data.user);
-      const tokenVal = data.accessToken || data.token || null;
-      if (tokenVal) { localStorage.setItem('accessToken', tokenVal); setAccessToken(tokenVal); } else { localStorage.removeItem('accessToken'); setAccessToken(null); }
-      if (data.refreshToken) { localStorage.setItem('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { localStorage.removeItem('refreshToken'); setRefreshToken(null); }
-      if (u) { localStorage.setItem('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { localStorage.removeItem('currentUser'); setCurrentUser(null); }
-      toast.success('Signed in with Google');
-      return u;
-    } catch (e) { toast.error(e.message || 'Google sign-in failed'); throw e; } finally { setLoading(false); }
-  }, []);
-
   const loginLocally = useCallback((userObj) => {
     const normalized = normalizeUser(userObj);
     localStorage.setItem('accessToken','mock-access-token');
@@ -470,7 +359,6 @@ export const AuthProvider = ({ children }) => {
     removeRole,
     updateUserProfile,
     registerAsVendor,
-    signInWithGooglePopup,
     setAuthRedirect,
     getAuthRedirect,
     clearAuthRedirect,

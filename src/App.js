@@ -28,7 +28,6 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import SignInModal from './components/auth/SignInModal';
 import RegisterModal from './components/auth/RegisterModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
-import GooglePopupCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports (wrapped with retryImport to mitigate transient chunk load failures)
 const Dashboard = lazy(() => retryImport(() => import('./pages/Dashboard')));
@@ -99,7 +98,6 @@ const AuthRoutes = () => (
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-    <Route path="/auth/google-popup-callback" element={<GooglePopupCallback />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
   </Routes>
 );

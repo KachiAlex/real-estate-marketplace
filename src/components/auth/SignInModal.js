@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const SignInModal = ({ onClose }) => {
-  const { login, loading, signInWithGooglePopup } = useAuth();
+  const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -89,25 +89,6 @@ const SignInModal = ({ onClose }) => {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
 
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const loggedInUser = await signInWithGooglePopup();
-                  const redirect = sessionStorage.getItem('authRedirect');
-                  if (redirect) {
-                    sessionStorage.removeItem('authRedirect');
-                    navigate(redirect, { replace: true });
-                  } else {
-                    navigate(getPostLoginRoute(loggedInUser), { replace: true });
-                  }
-                  if (onClose) onClose();
-                } catch (e) {}
-              }}
-              className="w-full mt-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white"
-            >
-              Sign in with Google
-            </button>
           </div>
 
           <div className="flex items-center justify-between text-sm text-slate-300">

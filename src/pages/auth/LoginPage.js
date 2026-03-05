@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const LoginPage = () => {
-  const { login, loading, signInWithGooglePopup } = useAuth();
+  const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -78,27 +78,6 @@ const LoginPage = () => {
           className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-3 text-center text-base font-semibold text-slate-900 shadow-lg shadow-orange-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              const loggedInUser = await signInWithGooglePopup();
-              const redirect = sessionStorage.getItem('authRedirect');
-              if (redirect) {
-                sessionStorage.removeItem('authRedirect');
-                navigate(redirect, { replace: true });
-              } else {
-                navigate(getPostLoginRoute(loggedInUser), { replace: true });
-              }
-            } catch (e) {
-              // error already handled by context
-            }
-          }}
-          className="w-full mt-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-center text-base font-semibold text-white shadow-sm transition hover:brightness-95"
-        >
-          Sign in with Google
         </button>
 
         <div className="flex flex-wrap items-center justify-between text-sm text-slate-200">
