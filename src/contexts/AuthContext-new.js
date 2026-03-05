@@ -113,7 +113,7 @@ const generateNonce = () => {
   return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 10)}`;
 };
 
-const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState(null);
