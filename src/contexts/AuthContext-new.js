@@ -100,7 +100,20 @@ const normalizeUser = (u) => {
   return { ...u, roles: normRoles, activeRole };
 };
 
-export const AuthProvider = ({ children }) => {
+const generateNonce = () => {
+  try {
+    if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+      const array = new Uint8Array(16);
+      window.crypto.getRandomValues(array);
+      return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (error) {
+    console.warn('Failed to generate cryptographic nonce, falling back', error);
+  }
+  return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 10)}`;
+};
+
+const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState(null);
@@ -285,7 +298,15 @@ export const AuthProvider = ({ children }) => {
       const clientId = cfg.clientId || cfg.client_id || cfg.clientID || null;
       if (!clientId) throw new Error('Google client ID missing');
       const redirectUri = `${window.location.origin}/auth/google-popup-callback`;
-      const params = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'id_token token', scope: 'openid profile email', prompt: 'select_account' });
+      const nonce = generateNonce();
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'id_token token',
+        scope: 'openid profile email',
+        prompt: 'select_account',
+        nonce
+      });
       const popup = window.open(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, 'google_oauth', 'width=500,height=650');
       if (!popup) throw new Error('Popup blocked');
       const result = await new Promise((resolve, reject) => {
@@ -294,7 +315,11 @@ export const AuthProvider = ({ children }) => {
         window.addEventListener('message', handler);
       });
       const idToken = result?.idToken || result?.id_token; if (!idToken) throw new Error('No id token');
-      const resp = await tryFetchAuth('/auth/jwt/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ googleToken: idToken }) });
+      const resp = await tryFetchAuth('/auth/jwt/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ googleToken: idToken, nonce })
+      });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) throw new Error(data.message || 'Google sign-in failed');
       const u = normalizeUser(data.user);
