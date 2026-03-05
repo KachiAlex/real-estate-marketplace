@@ -175,17 +175,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       setPaymentStatus('processing');
       setResumePaymentEntry(null);
     }
-  }, [property?.id]);
-
-  useEffect(() => {
-    hydratePendingPaymentFromStorage();
-  }, [hydratePendingPaymentFromStorage]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    window.addEventListener('message', handlePaymentMessage);
-    return () => window.removeEventListener('message', handlePaymentMessage);
-  }, [handlePaymentMessage]);
+  }, [property?.id, readStoredPayments]);
 
   const handlePaymentMessage = useCallback((event) => {
     const { type, payload } = event.data || {};
@@ -213,6 +203,16 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
       setResumePaymentEntry(null);
     }
   }, [property?.id, updateStoredPayment]);
+
+  useEffect(() => {
+    hydratePendingPaymentFromStorage();
+  }, [hydratePendingPaymentFromStorage]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    window.addEventListener('message', handlePaymentMessage);
+    return () => window.removeEventListener('message', handlePaymentMessage);
+  }, [handlePaymentMessage]);
 
 
   const buildAuthHeaders = useCallback(async () => {

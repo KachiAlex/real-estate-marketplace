@@ -7,7 +7,6 @@ import SimplePaymentModal from './SimplePaymentModal';
 
 const PropertyVerification = ({ property, onClose, onSuccess }) => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -229,6 +228,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   };
 
   const badgePreviewColor = formValues.preferredBadgeColor || '#10B981';
+  const isPaymentFlowActive = showPaymentModal && !paymentComplete;
 
   if (configLoading) {
     return (
@@ -424,13 +424,13 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isPaymentFlowActive || configLoading}
                     className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    {loading ? (
+                    {isPaymentFlowActive ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
-                        Processing...
+                        Opening payment...
                       </>
                     ) : (
                       <>
