@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
+const { OAuth2Client } = require('google-auth-library');
 const { User } = require('../config/sequelizeDb');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
@@ -18,6 +19,46 @@ const appendDebug = (msg) => {
 
 // determine whether SSL was expected (mimics sequelizeDb resolvedRequireSSL)
 const LOCAL_DB_REQUIRE_SSL = (process.env.DB_REQUIRE_SSL === 'true') || process.env.NODE_ENV === 'production';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '989525174178-b3vermtr2nv5gq88umuu1nerfe39190s.apps.googleusercontent.com';
+const googleOAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+
+const deriveNamesFromGooglePayload = (payload = {}) => {
+  let firstName = payload.given_name;
+  let lastName = payload.family_name;
+  if ((!firstName || !lastName) && payload.name) {
+    const parts = String(payload.name).trim().split(/\s+/).filter(Boolean);
+    if (!firstName && parts.length) firstName = parts.shift();
+    if (!lastName && parts.length) lastName = parts.join(' ');
+  }
+  return {
+    firstName: firstName || 'Google',
+    lastName: lastName || 'User'
+  };
+};
+
+const ensureRoleArray = (roles, fallbackRole = 'user') => {
+  if (Array.isArray(roles) && roles.length) {
+    return roles.map(r => String(r).trim().toLowerCase()).filter(Boolean);
+  }
+  if (roles && typeof roles === 'string') {
+    const value = roles.trim().toLowerCase();
+    return value ? [value] : [];
+  }
+  return fallbackRole ? [String(fallbackRole).trim().toLowerCase()] : [];
+};
+
+const buildUserResponse = (user) => ({
+  id: user.id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  phone: user.phone,
+  role: user.role,
+  roles: ensureRoleArray(user.roles, user.role || 'user'),
+  activeRole: user.activeRole || user.role || 'user',
+  avatar: user.avatar,
+  isVerified: user.isVerified
+});
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -387,6 +428,105 @@ router.post('/register', [
       payload.stack = error.stack || null;
     }
     res.status(500).json(payload);
+  }
+});
+
+// @desc    Google OAuth login/signup
+// @route   POST /api/auth/google
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    if (!googleOAuthClient || !GOOGLE_CLIENT_ID) {
+      return res.status(503).json({ success: false, message: 'Google OAuth is not configured on the server' });
+    }
+
+    const { idToken } = req.body || {};
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'Google ID token missing' });
+    }
+
+    let payload;
+    try {
+      const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.error('Google token verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
+      return res.status(401).json({ success: false, message: 'Invalid Google token' });
+    }
+
+    const email = payload && payload.email ? payload.email.toLowerCase() : null;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Google account lacks a verified email' });
+    }
+
+    const { firstName, lastName } = deriveNamesFromGooglePayload(payload);
+    const avatar = payload && payload.picture ? payload.picture : null;
+    const emailVerified = payload && payload.email_verified !== false;
+    const now = new Date();
+
+    let user;
+    try {
+      user = await User.findOne({ where: { email } });
+    } catch (lookupErr) {
+      console.error('Google sign-in lookup failed:', lookupErr);
+      return res.status(500).json({ success: false, message: 'Failed to check user record', error: lookupErr.message });
+    }
+
+    if (!user) {
+      try {
+        user = await User.create({
+          email,
+          firstName,
+          lastName,
+          password: null,
+          role: 'user',
+          roles: ['user'],
+          activeRole: 'user',
+          provider: 'google',
+          avatar,
+          isVerified: emailVerified,
+          isActive: true,
+          lastLogin: now
+        });
+      } catch (createErr) {
+        console.error('Google user creation failed:', createErr);
+        return res.status(500).json({ success: false, message: 'Unable to create account from Google profile', error: createErr.message });
+      }
+    } else {
+      const updates = {};
+      if ((!user.firstName || user.firstName === 'Google') && firstName) updates.firstName = firstName;
+      if ((!user.lastName || user.lastName === 'User') && lastName) updates.lastName = lastName;
+      if (avatar && avatar !== user.avatar) updates.avatar = avatar;
+      if (!user.provider || user.provider === 'email') updates.provider = 'google';
+      if (!Array.isArray(user.roles) || !user.roles.length) updates.roles = ['user'];
+      if (!user.activeRole) updates.activeRole = 'user';
+      if (!user.isVerified && emailVerified) updates.isVerified = true;
+      updates.lastLogin = now;
+      try {
+        await user.update(updates);
+        if (typeof user.reload === 'function') {
+          await user.reload();
+        } else {
+          user = await User.findByPk(user.id) || user;
+        }
+      } catch (updateErr) {
+        console.warn('Google sign-in update failed:', updateErr && updateErr.message ? updateErr.message : updateErr);
+      }
+    }
+
+    const accessToken = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    return res.json({
+      success: true,
+      message: 'Google sign-in successful',
+      accessToken,
+      refreshToken,
+      user: buildUserResponse(user)
+    });
+  } catch (error) {
+    console.error('Google sign-in error:', error);
+    return res.status(500).json({ success: false, message: 'Google sign-in failed', error: error.message });
   }
 });
 
