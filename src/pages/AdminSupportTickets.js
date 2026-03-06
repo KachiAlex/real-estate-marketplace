@@ -72,9 +72,6 @@ const AdminSupportTicketsInner = () => {
     }
   };
 
-  if (loading) return <div className="p-6">Loading tickets...</div>;
-  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
-
   const priorities = Array.from(new Set(tickets.map(t => t.priority || 'medium')));
   const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
 
@@ -85,6 +82,9 @@ const AdminSupportTicketsInner = () => {
       (selectedCategory === 'all' || t.category === selectedCategory)
     );
   }, [tickets, selectedPriority, selectedCategory]);
+
+  if (loading) return <div className="p-6">Loading tickets...</div>;
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
   console.log('[AdminSupportTickets] render end, ticket count:', tickets.length);
   return (
