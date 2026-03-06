@@ -169,17 +169,11 @@ router.get('/inquiries', authenticateToken, async (req, res) => {
  * @access  Private/Admin
  */
 router.get('/admin/inquiries', authenticateToken, requireAdmin, async (req, res) => {
+  console.log('[BACKEND] GET /admin/inquiries entered');
   try {
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Only admins can access this route'
-      });
-    }
-
-    // If the model is not initialized (e.g., DB connection issues), return an empty list to avoid crashing the admin UI
+    // Fail-open: if model missing, return empty list
     if (!db?.SupportInquiry) {
-      logger.error('SupportInquiry model not initialized');
+      console.warn('[BACKEND] SupportInquiry model not initialized');
       return res.json({ success: true, data: [] });
     }
 
@@ -190,27 +184,23 @@ router.get('/admin/inquiries', authenticateToken, requireAdmin, async (req, res)
         order: [['createdAt', 'DESC']],
         limit: 100
       });
+      console.log('[BACKEND] raw SQL result count:', inquiries.length);
     } catch (dbErr) {
-      // If the DB schema is missing expected columns, fail open with an empty list
+      // Schema-mismatch guard
       if (dbErr?.code === '42703' || dbErr?.name === 'SequelizeDatabaseError') {
-        logger.error('SupportInquiry schema mismatch, returning empty list', { error: dbErr?.message });
+        console.error('[BACKEND] schema mismatch, returning empty', dbErr.message);
         return res.json({ success: true, data: [], message: 'Support inquiries unavailable (schema mismatch)' });
       }
       throw dbErr;
     }
 
-    return res.json({
-      success: true,
-      data: inquiries.map(buildInquiryResponse)
-    });
-  } catch (error) {
-    logger.error('Error fetching admin support inquiries', error);
-    // Fail open with empty list to avoid a 500 that breaks the admin dashboard
-    return res.status(200).json({
-      success: true,
-      data: [],
-      message: 'Support inquiries unavailable at the moment'
-    });
+    // Build uniform response shape
+    const out = inquiries.map(buildInquiryResponse);
+    console.log('[BACKEND] response ticket count:', out.length);
+    return res.json({ success: true, data: out });
+  } catch (err) {
+    console.error('[BACKEND] unhandled error', err);
+    return res.status(200).json({ success: true, data: [], message: 'Support inquiries unavailable' });
   }
 });
 

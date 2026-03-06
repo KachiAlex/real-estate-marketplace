@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FaCheck, FaEnvelope, FaPhone, FaSyncAlt } from 'react-icons/fa';
 import apiClient from '../services/apiClient';
+import SupportTicketsErrorBoundary from '../components/SupportTicketsErrorBoundary';
 
-const AdminSupportTickets = () => {
+const AdminSupportTicketsInner = () => {
+  console.log('[AdminSupportTickets] render start');
   const [tickets, setTickets] = useState([]);
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -21,7 +23,6 @@ const AdminSupportTickets = () => {
       setTickets(data.data || []);
     } catch (err) {
       console.error('Admin tickets load error:', err);
-      // Always fall back to mock data so the UI stays usable even if the API fails
       setTickets([
         {
           id: 'ticket-1',
@@ -51,6 +52,7 @@ const AdminSupportTickets = () => {
   };
 
   useEffect(() => {
+    console.log('[AdminSupportTickets] useEffect triggered');
     loadTickets();
   }, []);
 
@@ -73,18 +75,18 @@ const AdminSupportTickets = () => {
   if (loading) return <div className="p-6">Loading tickets...</div>;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
-  // Get unique priorities and categories for filtering
   const priorities = Array.from(new Set(tickets.map(t => t.priority || 'medium')));
   const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
 
-  // Filter tickets by selected priority and category
-  const filteredTickets = useMemo(() => (
-    tickets.filter(t =>
+  const filteredTickets = useMemo(() => {
+    console.log('[AdminSupportTickets] useMemo running');
+    return tickets.filter(t =>
       (selectedPriority === 'all' || t.priority === selectedPriority) &&
       (selectedCategory === 'all' || t.category === selectedCategory)
-    )
-  ), [tickets, selectedPriority, selectedCategory]);
+    );
+  }, [tickets, selectedPriority, selectedCategory]);
 
+  console.log('[AdminSupportTickets] render end, ticket count:', tickets.length);
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -218,5 +220,11 @@ const AdminSupportTickets = () => {
     </div>
   );
 };
+
+const AdminSupportTickets = () => (
+  <SupportTicketsErrorBoundary>
+    <AdminSupportTicketsInner />
+  </SupportTicketsErrorBoundary>
+);
 
 export default AdminSupportTickets;
