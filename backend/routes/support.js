@@ -183,11 +183,21 @@ router.get('/admin/inquiries', authenticateToken, requireAdmin, async (req, res)
       return res.json({ success: true, data: [] });
     }
 
-    const inquiries = await db.SupportInquiry.findAll({
-      include: [{ model: db.User, as: 'user', attributes: ['id', 'email', 'firstName', 'lastName'] }],
-      order: [['createdAt', 'DESC']],
-      limit: 100
-    });
+    let inquiries = [];
+    try {
+      inquiries = await db.SupportInquiry.findAll({
+        include: [{ model: db.User, as: 'user', attributes: ['id', 'email', 'firstName', 'lastName'] }],
+        order: [['createdAt', 'DESC']],
+        limit: 100
+      });
+    } catch (dbErr) {
+      // If the DB schema is missing expected columns, fail open with an empty list
+      if (dbErr?.code === '42703' || dbErr?.name === 'SequelizeDatabaseError') {
+        logger.error('SupportInquiry schema mismatch, returning empty list', { error: dbErr?.message });
+        return res.json({ success: true, data: [], message: 'Support inquiries unavailable (schema mismatch)' });
+      }
+      throw dbErr;
+    }
 
     return res.json({
       success: true,
