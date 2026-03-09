@@ -109,6 +109,7 @@ const defaultContextValue = {
   login: async () => { throw new Error('Auth not initialized'); },
   logout: async () => { throw new Error('Auth not initialized'); },
   refreshAccessToken: async () => { throw new Error('Auth not initialized'); },
+  refreshCurrentUser: async () => { throw new Error('Auth not initialized'); },
   switchRole: async () => { throw new Error('Auth not initialized'); },
   updateUserProfile: async () => { throw new Error('Auth not initialized'); },
   registerAsVendor: async () => { throw new Error('Auth not initialized'); },
@@ -407,7 +408,31 @@ const persistAuthResult = useCallback((data) => {
     } catch (e) { console.error(e); await logout(); return null; }
   }, [refreshToken, logout]);
 
-  const switchRole = useCallback(async (newRole) => {
+  const refreshCurrentUser = useCallback(async () => {
+    if (!accessToken) throw new Error('Not authenticated');
+    try {
+      const resp = await tryFetchAuth('/auth/jwt/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      const data = resp ? await resp.json().catch(() => ({})) : {};
+      if (!resp || !resp.ok) {
+        throw new Error(data.message || 'Failed to refresh user');
+      }
+      const normalized = normalizeUser(data.user || data);
+      storage.set('currentUser', JSON.stringify(normalized));
+      setCurrentUser(normalized);
+      return normalized;
+    } catch (error) {
+      console.error('refreshCurrentUser error', error);
+      throw error;
+    }
+  }, [accessToken]);
+
+  const switchRole = useCallback(async (newRole, options = {}) => {
+    const { silent = false } = options || {};
     try {
       if (!accessToken || !currentUser) throw new Error('User not logged in');
       if (String(accessToken).startsWith('mock')) {
@@ -438,7 +463,7 @@ const persistAuthResult = useCallback((data) => {
         if (!normalized.activeRole) normalized.activeRole = newRole;
         localStorage.setItem('currentUser', JSON.stringify(normalized));
         setCurrentUser(normalized);
-        toast.success('Role switched');
+        if (!silent) toast.success('Role switched');
         return normalized;
       }
 
@@ -452,9 +477,16 @@ const persistAuthResult = useCallback((data) => {
       if (newRole && !updated.roles.includes(newRole)) updated.roles.push(newRole);
       if (!updated.activeRole && newRole) updated.activeRole = newRole;
       localStorage.setItem('currentUser', JSON.stringify(updated)); setCurrentUser(updated);
-      toast.success('Role switched');
+      if (!silent) toast.success('Role switched');
       return updated;
-    } catch (e) { toast.error(e.message || 'Role switch failed'); throw e; }
+    } catch (e) {
+      if (!silent) {
+        toast.error(e.message || 'Role switch failed');
+      } else {
+        console.warn('Silent role switch failed', e && e.message ? e.message : e);
+      }
+      throw e;
+    }
   }, [accessToken, currentUser]);
 
   const updateUserProfile = useCallback(async (updates) => {
@@ -538,6 +570,7 @@ const persistAuthResult = useCallback((data) => {
     setUserLocally,
     logout,
     refreshAccessToken,
+    refreshCurrentUser,
     switchRole,
     addRole,
     removeRole,

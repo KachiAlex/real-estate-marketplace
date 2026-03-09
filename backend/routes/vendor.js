@@ -37,7 +37,16 @@ router.put('/profile', protect, [
     const activeRole = chooseActiveRole(user.activeRole, 'vendor', existingRoles);
 
     await user.update({ role: activeRole || 'vendor', roles: existingRoles, activeRole: activeRole || 'vendor', vendorData });
-    res.json({ success: true, vendor: vendorData });
+
+    const updatedUser = await db.User.findByPk(userId);
+    res.json({
+      success: true,
+      message: 'Vendor profile saved successfully',
+      data: {
+        vendor: vendorData,
+        user: updatedUser?.toJSON ? updatedUser.toJSON() : updatedUser
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -19,7 +19,7 @@ const BecomeBuyerModal = ({
   initialPreferences = {},
   buyerSince
 }) => {
-  const { addRole, currentUser, accessToken, setUserLocally } = useAuth();
+  const { addRole, currentUser, accessToken, setUserLocally, refreshCurrentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState({ ...defaultPreferences, ...initialPreferences });
   const [errors, setErrors] = useState({});
@@ -95,6 +95,13 @@ const BecomeBuyerModal = ({
     setLoading(true);
 
     try {
+      // Ensure buyer role is present even if backend request fails
+      try {
+        await addRole('buyer', false);
+      } catch (roleErr) {
+        console.warn('Failed to ensure buyer role before onboarding', roleErr);
+      }
+
       const endpoint = isBuyer ? '/buyer/preferences' : '/buyer/profile';
       const method = isBuyer ? 'PUT' : 'POST';
       const payload = isBuyer
@@ -118,16 +125,16 @@ const BecomeBuyerModal = ({
         throw new Error(json.message || 'Failed to save buyer profile');
       }
 
+      let synced = false;
       // Use backend response data if available, otherwise construct fallback
       const responseData = json?.data || {};
       const updatedUser = responseData.id ? responseData : null;
 
       if (setUserLocally) {
         if (updatedUser) {
-          // Use complete user object from backend
           setUserLocally(updatedUser);
+          synced = true;
         } else {
-          // Fallback: construct user object locally
           const normalizedRoles = Array.from(new Set([
             ...(currentUser?.roles || []),
             'user',
@@ -148,6 +155,16 @@ const BecomeBuyerModal = ({
             activeRole: 'buyer',
             buyerData: updatedBuyerData
           });
+          synced = true;
+        }
+      }
+
+      if (!synced && refreshCurrentUser) {
+        try {
+          await refreshCurrentUser();
+          synced = true;
+        } catch (syncErr) {
+          console.warn('Unable to refresh user after buyer onboarding', syncErr);
         }
       }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -10,7 +10,8 @@ import {
   getAvailableDashboards, 
   getRoleDisplayName,
   getRoleTheme,
-  getSwitchRoleValue 
+  getSwitchRoleValue,
+  getRoutePreferredRole 
 } from '../utils/roleManager';
 
 export default function DashboardSwitch() {
@@ -18,6 +19,7 @@ export default function DashboardSwitch() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingRole, setLoadingRole] = useState(null);
+  const lastAutoSyncRef = useRef(null);
 
   // Get primary role and available dashboards
   const primaryRole = getPrimaryRole(user);
@@ -28,6 +30,39 @@ export default function DashboardSwitch() {
   }
 
   const currentPath = location.pathname;
+
+  useEffect(() => {
+    if (!user || !switchRole) return;
+    const preferredRole = getRoutePreferredRole(currentPath);
+    if (!preferredRole) return;
+    const normalizedActive = user?.activeRole ? String(user.activeRole).toLowerCase() : null;
+    if (normalizedActive === preferredRole) {
+      lastAutoSyncRef.current = null;
+      return;
+    }
+    if (!canSwitchToRole(user, preferredRole)) return;
+    const syncKey = `${preferredRole}:${currentPath}`;
+    if (lastAutoSyncRef.current === syncKey) return;
+
+    let cancelled = false;
+    const syncRole = async () => {
+      try {
+        lastAutoSyncRef.current = syncKey;
+        await switchRole(preferredRole, { silent: true });
+        if (cancelled) {
+          lastAutoSyncRef.current = null;
+        }
+      } catch (err) {
+        console.warn('DashboardSwitch auto-sync failed', err?.message || err);
+        lastAutoSyncRef.current = null;
+      }
+    };
+
+    syncRole();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPath, user, switchRole]);
 
   // Enhanced switch handler: change active role then navigate
   const handleSwitch = async (targetRole, switchValueOverride = null) => {
@@ -81,7 +116,9 @@ export default function DashboardSwitch() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {availableDashboards.map((dashboard) => {
           const switchable = canSwitchToRole(user, dashboard.role);
-          const isActive = primaryRole === dashboard.role;
+          const isRoleActive = primaryRole === dashboard.role;
+          const isOnDashboardPath = currentPath.startsWith(dashboard.path);
+          const isActive = isRoleActive && isOnDashboardPath;
           const theme = getRoleTheme(dashboard.role);
           const Icon = getIcon(dashboard.icon);
           
@@ -89,7 +126,7 @@ export default function DashboardSwitch() {
             <button
               key={dashboard.role}
               onClick={() => handleSwitch(dashboard.role, dashboard.switchValue)}
-              disabled={isActive || loadingRole === dashboard.role}
+              disabled={isActive || loadingRole === dashboard.role || !switchable}
               className={`relative overflow-hidden rounded-lg border-2 transition-all duration-200 cursor-pointer ${
                 isActive 
                   ? `${theme.border} ${theme.bg} shadow-md` 

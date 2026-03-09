@@ -227,3 +227,20 @@ export const getRoleTheme = (role) => {
   
   return themes[canonical] || themes.buyer;
 };
+
+export const getRoutePreferredRole = (pathname = '') => {
+  if (!pathname) return null;
+  const path = String(pathname).toLowerCase();
+
+  if (path.startsWith('/vendor')) return 'vendor';
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/investor')) return 'investor';
+  if (path.startsWith('/mortgage-bank')) return 'mortgage_bank';
+
+  const buyerPaths = ['/dashboard', '/saved-properties', '/my-inquiries', '/alerts', '/my-inspections'];
+  if (buyerPaths.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return 'buyer';
+  }
+
+  return null;
+};

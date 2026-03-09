@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
 const BecomeVendorModal = ({ isOpen, onClose }) => {
-  const { addRole, currentUser, accessToken } = useAuth();
+  const { addRole, currentUser, accessToken, setUserLocally, refreshCurrentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState(currentUser?.vendorData?.businessName || '');
   const [isRegistered, setIsRegistered] = useState(false);
@@ -61,6 +61,7 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
         kycDocs: uploaded.map(u => ({ publicId: u.publicId || u.public_id || u.public_id || u.name || u.url, url: u.url || u.secure_url || u.url, docType: u.docType }))
       };
 
+      let synced = false;
       try {
         const pResp = await fetch(getApiUrl('/vendor/profile'), {
           method: 'PUT',
@@ -69,9 +70,38 @@ const BecomeVendorModal = ({ isOpen, onClose }) => {
         });
         const pj = await pResp.json().catch(() => ({}));
         if (!pResp || !pResp.ok) throw new Error(pj.message || 'Failed to save vendor profile');
+
+        const serverUser = pj?.data?.user;
+        if (serverUser && setUserLocally) {
+          setUserLocally(serverUser);
+          synced = true;
+        }
       } catch (err) {
         // non-fatal; we already uploaded files and added role
         console.warn('Failed to persist vendor profile:', err && err.message ? err.message : err);
+      }
+
+      if (!synced && refreshCurrentUser) {
+        try {
+          await refreshCurrentUser();
+          synced = true;
+        } catch (syncErr) {
+          console.warn('Unable to refresh user after vendor onboarding', syncErr);
+        }
+      }
+
+      if (!synced && setUserLocally) {
+        const normalizedRoles = Array.from(new Set([...(currentUser?.roles || []), 'vendor']));
+        setUserLocally({
+          ...currentUser,
+          roles: normalizedRoles,
+          activeRole: currentUser?.activeRole || 'vendor',
+          vendorData: {
+            ...(currentUser?.vendorData || {}),
+            ...body,
+            kycStatus: body.kycDocs?.length ? 'pending' : 'submitted'
+          }
+        });
       }
 
       toast.success('Vendor onboarding submitted — KYC pending');
