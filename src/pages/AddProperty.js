@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,41 +24,80 @@ const AddProperty = () => {
   const { isAgent, isPropertyOwner, checkDocumentStatus, uploadAgentDocument } = useVendor();
   const [isEditing, setIsEditing] = useState(false);
   
+  const getDefaultLocation = () => ({
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    coordinates: {
+      latitude: '',
+      longitude: ''
+    },
+    nearestBusStop: {
+      name: '',
+      distance: '',
+      coordinates: {
+        latitude: '',
+        longitude: ''
+      }
+    },
+    googleMapsUrl: ''
+  });
+
+  const getDefaultDetails = () => ({
+    bedrooms: '',
+    bathrooms: '',
+    sqft: '',
+    yearBuilt: '',
+    lotSize: '',
+    parking: '',
+    heating: '',
+    cooling: ''
+  });
+
+  const normalizeLocation = (location = {}) => {
+    const coords = location.coordinates || {};
+    const nearest = location.nearestBusStop || {};
+    return {
+      address: location.address || '',
+      city: location.city || '',
+      state: location.state || '',
+      zipCode: location.zipCode || '',
+      coordinates: {
+        latitude: coords.latitude ?? location.latitude ?? '',
+        longitude: coords.longitude ?? location.longitude ?? ''
+      },
+      nearestBusStop: {
+        name: nearest.name || '',
+        distance: nearest.distance || '',
+        coordinates: {
+          latitude: nearest.coordinates?.latitude ?? '',
+          longitude: nearest.coordinates?.longitude ?? ''
+        }
+      },
+      googleMapsUrl: location.googleMapsUrl || ''
+    };
+  };
+
+  const normalizeDetails = (details = {}) => ({
+    bedrooms: details.bedrooms ?? '',
+    bathrooms: details.bathrooms ?? '',
+    sqft: details.sqft ?? details.squareFeet ?? '',
+    yearBuilt: details.yearBuilt ?? '',
+    lotSize: details.lotSize ?? '',
+    parking: details.parking ?? '',
+    heating: details.heating ?? '',
+    cooling: details.cooling ?? ''
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
     type: '',
     status: '', // for-sale, for-rent, for-lease
-    location: {
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      coordinates: {
-        latitude: '',
-        longitude: ''
-      },
-      nearestBusStop: {
-        name: '',
-        distance: '',
-        coordinates: {
-          latitude: '',
-          longitude: ''
-        }
-      },
-      googleMapsUrl: ''
-    },
-    details: {
-      bedrooms: '',
-      bathrooms: '',
-      sqft: '',
-      yearBuilt: '',
-      lotSize: '',
-      parking: '',
-      heating: '',
-      cooling: ''
-    },
+    location: getDefaultLocation(),
+    details: getDefaultDetails(),
     amenities: [],
     images: [],
     videos: [],
@@ -104,8 +143,8 @@ const AddProperty = () => {
             setFormData(prev => ({
               ...prev,
               ...propertyFromState,
-              location: propertyFromState.location || prev.location,
-              details: propertyFromState.details || prev.details
+              location: normalizeLocation(propertyFromState.location),
+              details: normalizeDetails(propertyFromState.details)
             }));
             return;
           }
@@ -116,8 +155,8 @@ const AddProperty = () => {
             setFormData(prev => ({
               ...prev,
               ...property,
-              location: property.location || prev.location,
-              details: property.details || prev.details
+              location: normalizeLocation(property.location),
+              details: normalizeDetails(property.details)
             }));
           }
         } catch (error) {
