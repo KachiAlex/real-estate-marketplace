@@ -96,8 +96,11 @@ export default function VendorDashboard() {
     setCandidatesLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append('ownerId', currentUser.id);
       params.append('perPage', '100');
+      if (currentUser.id) {
+        params.append('vendorId', currentUser.id);
+        params.append('ownerId', currentUser.id);
+      }
       const response = await apiClient.get(`/properties?${params.toString()}`);
       const data = response.data?.data || [];
       const unverified = data.filter((prop) => !prop.isVerified && prop.verificationStatus !== 'pending');

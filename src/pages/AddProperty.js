@@ -14,6 +14,7 @@ import { FaHome, FaMapMarkerAlt, FaRulerCombined, FaDollarSign, FaBuilding, FaPl
 import MemoryInput from '../components/MemoryInput';
 import { useAutoSave } from '../hooks/useAutoSave';
 import toast from 'react-hot-toast';
+import VerificationRequestModal from '../components/VerificationRequestModal';
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -122,6 +123,20 @@ const AddProperty = () => {
     interestRate: '',
     monthlyIncomeRequirement: ''
   });
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+
+  const verificationProperty = useMemo(() => {
+    if (!isEditing || !propertyId) return null;
+
+    const propertyUrl = typeof window !== 'undefined' ? `${window.location.origin}/property/${propertyId}` : '';
+
+    return {
+      id: propertyId,
+      title: formData.title || 'Untitled Property',
+      url: propertyUrl,
+      location: formData.location || {}
+    };
+  }, [isEditing, propertyId, formData.title, formData.location]);
 
   const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'];
   const propertyStatuses = ['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment'];
@@ -247,6 +262,20 @@ const AddProperty = () => {
       console.error('Error uploading attestation letter:', error);
       return { success: false, error: error.message };
     }
+  };
+
+  const handleOpenVerificationModal = () => {
+    if (!propertyId) {
+      toast.error('Please save this property before requesting verification.');
+      return;
+    }
+
+    setVerificationModalOpen(true);
+  };
+
+  const handleVerificationSuccess = () => {
+    toast.success('Verification request submitted.');
+    setVerificationModalOpen(false);
   };
 
   const handleChange = (e) => {
@@ -553,6 +582,19 @@ const AddProperty = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Add New Property</h1>
           <p className="text-xl text-gray-600">List your property with comprehensive details</p>
         </div>
+
+        {isEditing && (
+          <div className="flex justify-end mb-6">
+            <button
+              type="button"
+              onClick={handleOpenVerificationModal}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors"
+            >
+              <FaCheck className="text-sm" />
+              Apply for Verification
+            </button>
+          </div>
+        )}
 
         {/* Form Container */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
@@ -1272,6 +1314,15 @@ const AddProperty = () => {
           isOpen={showInvestmentModal}
           onClose={() => { setShowInvestmentModal(false); setInvestmentPayload(null); }}
           onSubmit={(payload) => { setInvestmentPayload(payload); setShowInvestmentModal(false); setTimeout(() => { const fakeEvent = { preventDefault: () => {} }; handleSubmit(fakeEvent); }, 0); }}
+        />
+      )}
+
+      {verificationProperty && (
+        <VerificationRequestModal
+          property={verificationProperty}
+          isOpen={verificationModalOpen}
+          onClose={() => setVerificationModalOpen(false)}
+          onSuccess={handleVerificationSuccess}
         />
       )}
     </div>

@@ -8,6 +8,21 @@ const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-600'
 };
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560185008-5d865753c2d0?auto=format&fit=crop&w=800&q=80';
+
+const getPropertyImage = (property = {}) => {
+  if (property.thumbnailUrl) return property.thumbnailUrl;
+  if (property.coverImage) return property.coverImage;
+  if (property.image) return property.image;
+
+  const firstImage = property.images?.[0] || property.gallery?.[0];
+  if (typeof firstImage === 'string') return firstImage;
+  if (firstImage?.url) return firstImage.url;
+  if (firstImage?.src) return firstImage.src;
+
+  return FALLBACK_IMAGE;
+};
+
 const StatusBadge = ({ status }) => {
   if (!status) {
     return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">Unknown</span>;
@@ -121,125 +136,138 @@ export default function VendorProperties({
         </div>
       </div>
 
-      {/* Table/Grid of Properties */}
-      <div className="hidden lg:block overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 text-left text-gray-500 text-xs uppercase tracking-wider">
-              <th className="p-3">Title</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Verification</th>
-              <th className="p-3 text-right">Price</th>
-              <th className="p-3 text-center">Views</th>
-              <th className="p-3 text-center">Inquiries</th>
-              <th className="p-3 text-center">Last Updated</th>
-              <th className="p-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
-            ) : properties?.length ? (
-              properties.map((prop) => (
-                <tr key={prop.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 flex items-center gap-3">
-                    {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-12 h-12 rounded object-cover" />}
-                    <span className="font-medium text-brand-blue cursor-pointer" onClick={() => onView?.(prop)}>{prop.title}</span>
-                  </td>
-                  <td className="p-3">
-                    <StatusBadge status={prop.status} />
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
+      {/* Card Grid */}
+      <div className="min-h-[200px]">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="animate-pulse bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="h-48 bg-gray-200" />
+                <div className="p-5 space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-4 bg-gray-100 rounded w-1/2" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-3 bg-gray-100 rounded" />
+                    <div className="h-3 bg-gray-100 rounded" />
+                  </div>
+                  <div className="h-10 bg-gray-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : properties?.length ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {properties.map((prop) => {
+              const imageUrl = getPropertyImage(prop);
+              const locationLabel =
+                prop.location?.address ||
+                prop.location?.city ||
+                prop.city ||
+                prop.state ||
+                'Location not specified';
+              const lastUpdatedLabel = prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '—';
+
+              return (
+                <div key={prop.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+                  <div className="relative">
+                    <img
+                      src={imageUrl}
+                      alt={prop.title}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        if (e.target.dataset.fallback === 'true') return;
+                        e.target.dataset.fallback = 'true';
+                        e.target.src = FALLBACK_IMAGE;
+                      }}
+                    />
+                    <div className="absolute top-4 left-4">
+                      <StatusBadge status={prop.status} />
+                    </div>
+                    <div className="absolute top-4 right-4">
                       <VerificationBadge verificationStatus={prop.verificationStatus} isVerified={prop.isVerified} />
+                    </div>
+                  </div>
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <button className="text-left" onClick={() => onView?.(prop)}>
+                          <h3 className="text-lg font-semibold text-gray-900 hover:text-brand-blue transition-colors">
+                            {prop.title}
+                          </h3>
+                        </button>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{locationLabel}</p>
+                      </div>
+                      <p className="text-base font-semibold text-gray-900 price-inline whitespace-nowrap">
+                        {formatCurrency(prop.price || 0)}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs uppercase text-gray-400">Views</p>
+                        <p className="font-semibold text-gray-900">{prop.views ?? 0}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs uppercase text-gray-400">Inquiries</p>
+                        <p className="font-semibold text-gray-900">{prop.inquiries ?? 0}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs uppercase text-gray-400">Updated</p>
+                        <p className="font-semibold text-gray-900">{lastUpdatedLabel}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-2">
                       {!prop.isVerified && prop.verificationStatus !== 'pending' && (
-                        <button 
-                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                        <button
+                          className="w-full text-sm px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           onClick={() => onRequestVerification?.(prop)}
                         >
-                          Request
+                          Request Verification
                         </button>
                       )}
+                      <div className="flex flex-wrap justify-end gap-2 text-sm mt-auto">
+                        <button
+                          className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          onClick={() => onEdit?.(prop)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          onClick={() => onView?.(prop)}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                          onClick={() => onDelete?.(prop)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </td>
-                  <td className="p-3 text-right price-inline">{formatCurrency(prop.price || 0)}</td>
-                  <td className="p-3 text-center">{prop.views ?? 0}</td>
-                  <td className="p-3 text-center">{prop.inquiries ?? 0}</td>
-                  <td className="p-3 text-center">{prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '-'}</td>
-                  <td className="p-3 text-center space-x-3">
-                    <button className="text-blue-600 hover:underline" onClick={() => onEdit?.(prop)}>Edit</button>
-                    <button className="text-gray-600 hover:underline" onClick={() => onView?.(prop)}>View</button>
-                    <button className="text-red-600 hover:underline" onClick={() => onDelete?.(prop)}>Delete</button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr><td colSpan={8} className="text-center py-8 text-gray-400">No properties found</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile list */}
-      <div className="lg:hidden space-y-3">
-        {loading ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center text-gray-400">Loading...</div>
-        ) : properties?.length ? (
-          properties.map((prop) => (
-            <div key={prop.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                {prop.thumbnailUrl && <img src={prop.thumbnailUrl} alt="thumb" className="w-16 h-16 rounded object-cover" />}
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{prop.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge status={prop.status} />
-                    <VerificationBadge verificationStatus={prop.verificationStatus} isVerified={prop.isVerified} />
                   </div>
                 </div>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
-                <div>
-                  <p className="text-gray-400 text-xs uppercase">Price</p>
-                  <p className="font-medium text-gray-900 price-inline">{formatCurrency(prop.price || 0)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase">Last Updated</p>
-                  <p>{prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase">Views</p>
-                  <p>{prop.views ?? 0}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase">Inquiries</p>
-                  <p>{prop.inquiries ?? 0}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-col gap-2">
-                {!prop.isVerified && prop.verificationStatus !== 'pending' && (
-                  <button 
-                    className="w-full text-sm px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                    onClick={() => onRequestVerification?.(prop)}
-                  >
-                    Request Verification
-                  </button>
-                )}
-                <div className="flex justify-end gap-3 text-sm">
-                  <button className="text-blue-600" onClick={() => onEdit?.(prop)}>Edit</button>
-                  <button className="text-gray-600" onClick={() => onView?.(prop)}>View</button>
-                  <button className="text-red-600" onClick={() => onDelete?.(prop)}>Delete</button>
-                </div>
-              </div>
-            </div>
-          ))
+              );
+            })}
+          </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center text-gray-400">No properties found</div>
+          <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center">
+            <p className="text-gray-500 mb-4">You haven’t added any properties yet.</p>
+            <button
+              className="inline-flex items-center gap-2 px-5 py-3 bg-brand-blue text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={onAdd}
+            >
+              + Add your first property
+            </button>
+          </div>
         )}
       </div>
 
       {/* Pagination */}
       {pageCount > 1 && (
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end gap-2 mt-2">
           {Array.from({ length: pageCount }, (_, i) => (
             <button
               key={i}

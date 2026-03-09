@@ -1,7 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient';
+
+const PAYSTACK_INLINE_URL = 'https://js.paystack.co/v1/inline.js';
+let paystackLoadingPromise = null;
+
+const ensurePaystackSdk = () => {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Window is not available.'));
+  }
+
+  if (window.PaystackPop) {
+    return Promise.resolve(window.PaystackPop);
+  }
+
+  if (paystackLoadingPromise) {
+    return paystackLoadingPromise;
+  }
+
+  paystackLoadingPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${PAYSTACK_INLINE_URL}"]`);
+    if (existingScript) {
+      existingScript.addEventListener('load', () => {
+        return window.PaystackPop ? resolve(window.PaystackPop) : reject(new Error('Paystack SDK failed to initialise.'));
+      }, { once: true });
+      existingScript.addEventListener('error', () => reject(new Error('Unable to load Paystack SDK.')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = PAYSTACK_INLINE_URL;
+    script.async = true;
+    script.onload = () => {
+      return window.PaystackPop ? resolve(window.PaystackPop) : reject(new Error('Paystack SDK loaded without PaystackPop.'));
+    };
+    script.onerror = () => reject(new Error('Unable to load Paystack SDK.'));
+    document.body.appendChild(script);
+  }).finally(() => {
+    paystackLoadingPromise = null;
+  });
+
+  return paystackLoadingPromise;
+};
 
 const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +52,30 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
   const [badgeColor, setBadgeColor] = useState('#10B981');
   const [paymentId, setPaymentId] = useState(null);
   const [step, setStep] = useState('info'); // 'info' -> 'payment' -> 'confirm'
+
+  const locationDisplay = useMemo(() => {
+    const raw = property?.location;
+    if (!raw) return '';
+    if (typeof raw === 'string') return raw;
+
+    const {
+      address,
+      city,
+      state,
+      country,
+      zipCode,
+      nearestBusStop
+    } = raw;
+
+    const busStopName = typeof nearestBusStop === 'string'
+      ? nearestBusStop
+      : nearestBusStop?.name;
+
+    const segments = [address, city, state, country];
+    if (zipCode) segments.push(zipCode);
+    if (busStopName) segments.push(`Near ${busStopName}`);
+    return segments.filter(Boolean).join(', ');
+  }, [property?.location]);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,15 +95,17 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
   };
 
   const handlePayment = async () => {
-    if (!window.PaystackPop) {
-      toast.error('Payment system not available');
-      return;
-    }
-
     setPaymentLoading(true);
     try {
+      await ensurePaystackSdk();
+
+      const publicKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
+      if (!publicKey) {
+        throw new Error('Paystack key missing. Please configure REACT_APP_PAYSTACK_PUBLIC_KEY.');
+      }
+
       const handler = window.PaystackPop.setup({
-        key: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
+        key: publicKey,
         email: 'verification@propertyark.com',
         amount: verificationFee * 100,
         ref: `VERIFY-${property.id}-${Date.now()}`,
@@ -55,9 +122,9 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
       });
       handler.openIframe();
     } catch (error) {
-      setPaymentLoading(false);
       console.error('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
+      toast.error(error.message || 'Payment failed. Please try again.');
+      setPaymentLoading(false);
     }
   };
 
@@ -73,7 +140,7 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
         propertyId: property.id,
         propertyName: property.title,
         propertyUrl: property.url || '',
-        propertyLocation: property.location?.address || property.location || '',
+        propertyLocation: locationDisplay,
         message: message.trim(),
         preferredBadgeColor: badgeColor,
         verificationPaymentId: paymentId
@@ -117,7 +184,7 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
           <div className="bg-gray-50 rounded-lg p-4">
             <p className="text-sm text-gray-600 mb-1">Property</p>
             <p className="font-semibold text-gray-900">{property?.title}</p>
-            <p className="text-sm text-gray-600 mt-1">{property?.location?.address || property?.location}</p>
+            <p className="text-sm text-gray-600 mt-1">{locationDisplay || 'Location not specified'}</p>
           </div>
 
           {step === 'info' && (

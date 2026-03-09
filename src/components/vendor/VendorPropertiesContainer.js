@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import VendorProperties from './VendorProperties';
 import VerificationRequestModal from '../VerificationRequestModal';
+import VendorPropertyDetailModal from './VendorPropertyDetailModal';
 import { useAuth } from '../../contexts/AuthContext-new';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
@@ -27,12 +28,54 @@ export default function VendorPropertiesContainer() {
   const [filter, setFilter] = useState('');
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [selectedPropertyForVerification, setSelectedPropertyForVerification] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedPropertyDetail, setSelectedPropertyDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   // const [modalOpen, setModalOpen] = useState(false);
   // const [editingProperty, setEditingProperty] = useState(null);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   // Use authenticated user's id as vendor id when available
   const vendorId = currentUser?.id || null;
+
+  const normalizePropertyForModal = useCallback((prop) => {
+    if (!prop) return null;
+
+    let location = prop.location;
+
+    if (typeof location === 'string') {
+      location = { address: location };
+    }
+
+    if (!location && (prop.address || prop.city || prop.state)) {
+      location = {
+        address: prop.address || '',
+        city: prop.city || '',
+        state: prop.state || ''
+      };
+    }
+
+    return {
+      ...prop,
+      location
+    };
+  }, []);
+
+  const fetchPropertyDetail = useCallback(async (propertyId) => {
+    if (!propertyId) return;
+    setDetailLoading(true);
+    try {
+      const response = await apiClient.get(`/properties/${propertyId}`);
+      const data = response.data?.data || response.data?.property || response.data;
+      if (data) {
+        setSelectedPropertyDetail(normalizePropertyForModal(data));
+      }
+    } catch (error) {
+      console.error('Failed to fetch property detail:', error);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [normalizePropertyForModal]);
 
   const loadProperties = useCallback(async () => {
     setLoading(true);
@@ -90,15 +133,35 @@ export default function VendorPropertiesContainer() {
     };
   }, [properties]);
 
+  const handleCloseDetailModal = useCallback(() => {
+    setDetailModalOpen(false);
+    setSelectedPropertyDetail(null);
+    setDetailLoading(false);
+  }, []);
+
   const handleAddProperty = () => {
+    handleCloseDetailModal();
     navigate('/add-property');
   };
 
   const handleEditProperty = (prop) => {
+    if (!prop) return;
+    handleCloseDetailModal();
     navigate(`/edit-property/${prop.id}`, { state: { property: prop } });
   };
 
   const handleViewProperty = (prop) => {
+    if (!prop) return;
+    setDetailModalOpen(true);
+    setSelectedPropertyDetail(normalizePropertyForModal(prop));
+    if (prop.id) {
+      fetchPropertyDetail(prop.id);
+    }
+  };
+
+  const handleViewAsBuyer = (prop) => {
+    if (!prop?.id) return;
+    handleCloseDetailModal();
     navigate(`/property/${prop.id}`);
   };
 
@@ -112,6 +175,9 @@ export default function VendorPropertiesContainer() {
       await apiClient.delete(`/properties/${prop.id}`);
       // Reload properties after deletion
       await loadProperties();
+      if (selectedPropertyDetail?.id === prop.id) {
+        handleCloseDetailModal();
+      }
     } catch (error) {
       console.error('Failed to delete property:', error);
       alert('Failed to delete property. Please try again.');
@@ -121,13 +187,18 @@ export default function VendorPropertiesContainer() {
   };
 
   const handleRequestVerification = (prop) => {
+    if (!prop) return;
     setSelectedPropertyForVerification(prop);
     setVerificationModalOpen(true);
+    handleCloseDetailModal();
   };
 
   const handleVerificationSuccess = () => {
     // Reload properties to reflect verification status changes
     loadProperties();
+    if (selectedPropertyDetail?.id) {
+      fetchPropertyDetail(selectedPropertyDetail.id);
+    }
   };
 
   return (
@@ -157,6 +228,16 @@ export default function VendorPropertiesContainer() {
           setSelectedPropertyForVerification(null);
         }}
         onSuccess={handleVerificationSuccess}
+      />
+      <VendorPropertyDetailModal
+        property={selectedPropertyDetail}
+        isOpen={detailModalOpen}
+        isLoading={detailLoading}
+        onClose={handleCloseDetailModal}
+        onEdit={handleEditProperty}
+        onDelete={handleDeleteProperty}
+        onRequestVerification={handleRequestVerification}
+        onViewAsBuyer={handleViewAsBuyer}
       />
     </>
   );

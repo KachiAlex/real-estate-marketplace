@@ -309,61 +309,74 @@ const persistAuthResult = useCallback((data) => {
     } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }
   }, []);
 
-const signInWithGoogle = useCallback(async () => {
-  if (typeof window === 'undefined') {
-    const error = new Error('Google sign-in is only available in a browser environment.');
-    toast.error(error.message);
-    throw error;
-  }
+  const setAuthRedirect = useCallback((url) => {
+    if (!url) return;
+    sessionStorage.setItem('authRedirect', url);
+  }, []);
 
-  setLoading(true);
-  try {
-    const origin = window.location.origin;
-    const nonce = createNonce();
-    const redirectUri = `${origin}/auth/google/callback`;
-    const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
-    const params = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: redirectUri,
-      response_type: 'token id_token',
-      scope: 'openid email profile',
-      include_granted_scopes: 'true',
-      prompt: 'select_account',
-      state,
-      nonce
-    });
-    const popup = openCenteredPopup(`${GOOGLE_AUTH_URL}?${params.toString()}`);
-    if (!popup) {
-      throw new Error('Pop-up blocked. Please enable pop-ups to continue with Google sign-in.');
+  const getAuthRedirect = useCallback(() => {
+    return sessionStorage.getItem('authRedirect') || null;
+  }, []);
+
+  const clearAuthRedirect = useCallback(() => {
+    sessionStorage.removeItem('authRedirect');
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      const error = new Error('Google sign-in is only available in a browser environment.');
+      toast.error(error.message);
+      throw error;
     }
 
-    const oauthResult = await waitForGoogleResult(state, popup);
-    const idToken = oauthResult?.idToken || oauthResult?.id_token;
-    if (!idToken) {
-      throw new Error('Google did not return a valid ID token.');
-    }
+    setLoading(true);
+    try {
+      const origin = window.location.origin;
+      const nonce = createNonce();
+      const redirectUri = `${origin}/auth/google/callback`;
+      const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
+      const params = new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID,
+        redirect_uri: redirectUri,
+        response_type: 'token id_token',
+        scope: 'openid email profile',
+        include_granted_scopes: 'true',
+        prompt: 'select_account',
+        state,
+        nonce
+      });
+      const popup = openCenteredPopup(`${GOOGLE_AUTH_URL}?${params.toString()}`);
+      if (!popup) {
+        throw new Error('Pop-up blocked. Please enable pop-ups to continue with Google sign-in.');
+      }
 
-    const resp = await tryFetchAuth('/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
-    });
-    const data = resp ? await resp.json().catch(() => ({})) : {};
-    if (!resp || !resp.ok) {
-      throw new Error(data.message || 'Google sign-in failed');
-    }
+      const oauthResult = await waitForGoogleResult(state, popup);
+      const idToken = oauthResult?.idToken || oauthResult?.id_token;
+      if (!idToken) {
+        throw new Error('Google did not return a valid ID token.');
+      }
 
-    const user = persistAuthResult(data);
-    toast.success('Signed in with Google');
-    return user;
-  } catch (error) {
-    console.error('signInWithGoogle error', error);
-    toast.error(error.message || 'Google sign-in failed');
-    throw error;
-  } finally {
-    setLoading(false);
-  }
-}, [getAuthRedirect, persistAuthResult]);
+      const resp = await tryFetchAuth('/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      const data = resp ? await resp.json().catch(() => ({})) : {};
+      if (!resp || !resp.ok) {
+        throw new Error(data.message || 'Google sign-in failed');
+      }
+
+      const user = persistAuthResult(data);
+      toast.success('Signed in with Google');
+      return user;
+    } catch (error) {
+      console.error('signInWithGoogle error', error);
+      toast.error(error.message || 'Google sign-in failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthRedirect, persistAuthResult]);
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -480,19 +493,6 @@ const signInWithGoogle = useCallback(async () => {
       return merged;
     } catch (e) { console.warn('setUserLocally failed', e); return null; }
   }, [currentUser]);
-
-  const setAuthRedirect = useCallback((url) => {
-    if (!url) return;
-    sessionStorage.setItem('authRedirect', url);
-  }, []);
-
-  const getAuthRedirect = useCallback(() => {
-    return sessionStorage.getItem('authRedirect') || null;
-  }, []);
-
-  const clearAuthRedirect = useCallback(() => {
-    sessionStorage.removeItem('authRedirect');
-  }, []);
 
   const registerAsVendor = useCallback(async (vendorInfo) => { try { return await switchRole('vendor'); } catch (e) { throw e; } }, [switchRole]);
 

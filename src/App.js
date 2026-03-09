@@ -252,16 +252,16 @@ const MainRoutes = ({ locationOverride }) => (
     } />
     <Route path="/add-property" element={
       <ProtectedRoute requiredRoles="vendor">
-        <PageWithSidebar>
+        <VendorRoute>
           <AddProperty />
-        </PageWithSidebar>
+        </VendorRoute>
       </ProtectedRoute>
     } />
     <Route path="/edit-property/:id" element={
       <ProtectedRoute requiredRoles="vendor">
-        <PageWithSidebar>
+        <VendorRoute>
           <AddProperty />
-        </PageWithSidebar>
+        </VendorRoute>
       </ProtectedRoute>
     } />
     <Route path="/admin" element={
