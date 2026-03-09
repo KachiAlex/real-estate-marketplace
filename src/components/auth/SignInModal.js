@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
+import GoogleAuthButton from './GoogleAuthButton';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const SignInModal = ({ onClose }) => {
-  const { login, loading } = useAuth();
+  const { login, loading, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -37,9 +38,28 @@ const SignInModal = ({ onClose }) => {
     } catch (submitError) {
       setError(submitError.message || 'Unexpected error while logging in.');
     }
-  };
 
-  return (
+};
+
+const handleGoogleSignIn = async () => {
+  try {
+    setError('');
+    const user = await signInWithGoogle();
+    const redirect = sessionStorage.getItem('authRedirect');
+    if (redirect) {
+      sessionStorage.removeItem('authRedirect');
+      navigate(redirect, { replace: true });
+    } else {
+      navigate(getPostLoginRoute(user), { replace: true });
+    }
+    if (onClose) onClose();
+  } catch (googleError) {
+    setError(googleError.message || 'Unable to sign in with Google right now.');
+  }
+};
+
+return (
+
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={() => { if (onClose) onClose(); }} />
       <div className="relative w-full max-w-md rounded-2xl bg-white/5 border border-white/10 p-6 shadow-2xl backdrop-blur-lg">
@@ -80,8 +100,9 @@ const SignInModal = ({ onClose }) => {
             />
           </div>
 
-          <div className="flex flex-col">
-            <button
+
+<div className="flex flex-col">
+  <button
               type="submit"
               disabled={loading}
               className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-black font-semibold shadow-md disabled:opacity-70"
@@ -89,9 +110,18 @@ const SignInModal = ({ onClose }) => {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
 
-          </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-300">
+</div>
+
+<div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+  <span className="h-px flex-1 bg-white/10" />
+  <span>or</span>
+  <span className="h-px flex-1 bg-white/10" />
+</div>
+
+<GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
+
+<div className="flex items-center justify-between text-sm text-slate-300">
             <button
               type="button"
               onClick={() => navigateAndClose('/auth/forgot-password', false)}

@@ -1,7 +1,105 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
+const DEFAULT_GOOGLE_CLIENT_ID = '989525174178-b3vermtr2nv5gq88umuu1nerfe39190s.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_POPUP_TIMEOUT = 70000; // 70 seconds
+
+const encodeStatePayload = (payload = {}) => {
+  try {
+    const json = JSON.stringify(payload);
+    if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+      return window.btoa(json);
+    }
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(json, 'utf-8').toString('base64');
+    }
+    return json;
+  } catch (error) {
+    console.warn('encodeStatePayload: failed to encode payload', error);
+    return '';
+  }
+};
+
+const createNonce = () => {
+  try {
+    if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+};
+
+const openCenteredPopup = (url, target = 'google_oauth_popup') => {
+  if (typeof window === 'undefined') return null;
+  const width = 480;
+  const height = 640;
+  const dualScreenLeft = window.screenLeft ?? window.screenX ?? 0;
+  const dualScreenTop = window.screenTop ?? window.screenY ?? 0;
+  const windowWidth = window.outerWidth ?? window.innerWidth ?? 0;
+  const windowHeight = window.outerHeight ?? window.innerHeight ?? 0;
+  const left = dualScreenLeft + Math.max(0, (windowWidth - width) / 2);
+  const top = dualScreenTop + Math.max(0, (windowHeight - height) / 2);
+  const features = `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`;
+  const popup = window.open(url, target, features);
+  popup?.focus?.();
+  return popup;
+};
+
+const waitForGoogleResult = (expectedState, popupRef, timeoutMs = GOOGLE_POPUP_TIMEOUT) => {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Google sign-in is only available in the browser.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const cleanup = () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', messageHandler);
+      }
+      clearTimeout(timeoutId);
+      clearInterval(pollId);
+      try { popupRef?.close(); } catch (e) { /* ignore */ }
+    };
+
+    const messageHandler = (event) => {
+      if (settled) return;
+      if (!event?.data || event.data.type !== 'google_oauth_result') return;
+      if (event.origin !== window.location.origin) return;
+      if (expectedState && event.data.state !== expectedState) return;
+      settled = true;
+      cleanup();
+      resolve(event.data);
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Timed out waiting for Google sign-in to complete.'));
+    }, timeoutMs);
+
+    const pollId = setInterval(() => {
+      if (settled) return;
+      if (!popupRef || popupRef.closed) {
+        settled = true;
+        cleanup();
+        reject(new Error('Google sign-in window was closed before completing.'));
+      }
+    }, 400);
+
+    window.addEventListener('message', messageHandler);
+  });
+};
 const defaultContextValue = {
   currentUser: null,
   loading: true,
@@ -14,6 +112,7 @@ const defaultContextValue = {
   switchRole: async () => { throw new Error('Auth not initialized'); },
   updateUserProfile: async () => { throw new Error('Auth not initialized'); },
   registerAsVendor: async () => { throw new Error('Auth not initialized'); },
+  signInWithGoogle: async () => { throw new Error('Auth not initialized'); },
   setAuthRedirect: () => {},
   getAuthRedirect: () => null,
   clearAuthRedirect: () => {},
@@ -122,6 +221,35 @@ export const AuthProvider = ({ children }) => {
     } finally { setLoading(false); }
   }, []);
 
+
+const persistAuthResult = useCallback((data) => {
+  if (!data) return null;
+  const normalizedUser = data.user ? normalizeUser(data.user) : null;
+  const tokenVal = data.accessToken || data.token || null;
+  if (tokenVal) {
+    storage.set('accessToken', tokenVal);
+    setAccessToken(tokenVal);
+  } else {
+    storage.remove('accessToken');
+    setAccessToken(null);
+  }
+  if (data.refreshToken) {
+    storage.set('refreshToken', data.refreshToken);
+    setRefreshToken(data.refreshToken);
+  } else {
+    storage.remove('refreshToken');
+    setRefreshToken(null);
+  }
+  if (normalizedUser) {
+    storage.set('currentUser', JSON.stringify(normalizedUser));
+    setCurrentUser(normalizedUser);
+  } else {
+    storage.remove('currentUser');
+    setCurrentUser(null);
+  }
+  return normalizedUser;
+}, []);
+
   const tryFetchAuth = async (path, options = {}) => {
       // Prefer the canonical /auth/* endpoints first to avoid noisy 404s,
       // but fall back to /auth/jwt/* for environments that still expose them.
@@ -180,6 +308,62 @@ export const AuthProvider = ({ children }) => {
       return u;
     } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }
   }, []);
+
+const signInWithGoogle = useCallback(async () => {
+  if (typeof window === 'undefined') {
+    const error = new Error('Google sign-in is only available in a browser environment.');
+    toast.error(error.message);
+    throw error;
+  }
+
+  setLoading(true);
+  try {
+    const origin = window.location.origin;
+    const nonce = createNonce();
+    const redirectUri = `${origin}/auth/google/callback`;
+    const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'token id_token',
+      scope: 'openid email profile',
+      include_granted_scopes: 'true',
+      prompt: 'select_account',
+      state,
+      nonce
+    });
+    const popup = openCenteredPopup(`${GOOGLE_AUTH_URL}?${params.toString()}`);
+    if (!popup) {
+      throw new Error('Pop-up blocked. Please enable pop-ups to continue with Google sign-in.');
+    }
+
+    const oauthResult = await waitForGoogleResult(state, popup);
+    const idToken = oauthResult?.idToken || oauthResult?.id_token;
+    if (!idToken) {
+      throw new Error('Google did not return a valid ID token.');
+    }
+
+    const resp = await tryFetchAuth('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const data = resp ? await resp.json().catch(() => ({})) : {};
+    if (!resp || !resp.ok) {
+      throw new Error(data.message || 'Google sign-in failed');
+    }
+
+    const user = persistAuthResult(data);
+    toast.success('Signed in with Google');
+    return user;
+  } catch (error) {
+    console.error('signInWithGoogle error', error);
+    toast.error(error.message || 'Google sign-in failed');
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+}, [getAuthRedirect, persistAuthResult]);
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -359,6 +543,7 @@ export const AuthProvider = ({ children }) => {
     removeRole,
     updateUserProfile,
     registerAsVendor,
+    signInWithGoogle,
     setAuthRedirect,
     getAuthRedirect,
     clearAuthRedirect,
