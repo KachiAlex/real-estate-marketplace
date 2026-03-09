@@ -255,6 +255,78 @@ export function PropertyProvider({ children }) {
     }
   }, [findLocalProperty, matchPropertyId]);
 
+  const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = {};
+      if (status) params.status = status;
+      if (verificationStatus) params.verificationStatus = verificationStatus;
+
+      const response = await apiClient.get('/admin/properties', { params });
+      const payload = response?.data || {};
+      const list = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.properties)
+          ? payload.properties
+          : [];
+
+      setProperties(list);
+
+      return {
+        success: true,
+        data: list,
+        stats: payload.stats || null,
+        pagination: payload.pagination || null
+      };
+    } catch (err) {
+      const message = err?.response?.data?.message || err.message || 'Failed to fetch admin properties';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyProperty = useCallback(async (propertyId, status, notes = '') => {
+    if (!propertyId) return false;
+    const incomingStatus = String(status || '').trim().toLowerCase();
+    let verificationStatus = incomingStatus;
+
+    if (['approved', 'approve', 'verify', 'verified'].includes(incomingStatus)) {
+      verificationStatus = 'verified';
+    } else if (['rejected', 'reject', 'declined'].includes(incomingStatus)) {
+      verificationStatus = 'rejected';
+    }
+
+    if (!['verified', 'rejected'].includes(verificationStatus)) {
+      console.warn('PropertyContext: Invalid verification status', status);
+      return false;
+    }
+
+    try {
+      const response = await apiClient.put(`/admin/properties/${propertyId}/verify`, {
+        verificationStatus,
+        verificationNotes: notes
+      });
+
+      const updated = response?.data?.data || response?.data?.property;
+
+      if (updated) {
+        setProperties((prev) => {
+          if (!Array.isArray(prev) || !prev.length) return prev;
+          return prev.map((prop) => (matchPropertyId(prop, propertyId) ? { ...prop, ...updated } : prop));
+        });
+      }
+
+      return true;
+    } catch (err) {
+      const message = err?.response?.data?.message || err.message || 'Failed to update verification status';
+      setError(message);
+      return false;
+    }
+  }, [matchPropertyId]);
+
   const toggleFavorite = useCallback(async (propertyId, propertyData = null) => {
     if (!currentUser || !currentUser.id) {
       return { success: false, requiresAuth: true };
@@ -337,6 +409,8 @@ export function PropertyProvider({ children }) {
     createProperty,
     updateProperty,
     fetchProperty,
+    fetchAdminProperties,
+    verifyProperty,
     getPropertyById: findLocalProperty,
     toggleFavorite,
   };
