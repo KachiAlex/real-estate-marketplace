@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FaTimes, 
   FaEye, 
@@ -18,6 +18,111 @@ import {
   FaVideo,
   FaSpinner
 } from 'react-icons/fa';
+
+const normalizeImageValue = (value) => {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const looksLikeJson = (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    );
+    if (looksLikeJson) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        return normalizeImageValue(parsed);
+      } catch (_) {
+        // fall through to treat as plain string
+      }
+    }
+
+    if (trimmed.includes(',')) {
+      const parts = trimmed.split(',').map((p) => p.trim()).filter(Boolean);
+      for (const part of parts) {
+        const normalized = normalizeImageValue(part);
+        if (normalized) return normalized;
+      }
+    }
+
+    return trimmed;
+  }
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const normalized = normalizeImageValue(entry);
+      if (normalized) return normalized;
+    }
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    return (
+      value.url ||
+      value.secure_url ||
+      value.secureUrl ||
+      value.downloadUrl ||
+      value.downloadURL ||
+      value.imageUrl ||
+      value.imageURL ||
+      value.path ||
+      value.src ||
+      value.source ||
+      value.uri ||
+      normalizeImageValue(value.data)
+    );
+  }
+
+  return null;
+};
+
+const collectPropertyImages = (property) => {
+  if (!property) return [];
+
+  const possibleSources = [
+    property.images,
+    property.media?.images,
+    property.assets?.images,
+    property.gallery,
+    property.mediaItems,
+    property.photos,
+    property.files,
+    property.attachments,
+    property.details?.images,
+    property.metadata?.images,
+    property.uploads,
+    property.image,
+    property.primaryImage,
+    property.mainImage,
+    property.coverImage,
+    property.featuredImage,
+    property.thumbnail
+  ];
+
+  const urls = [];
+  const pushUnique = (candidate) => {
+    const normalized = normalizeImageValue(candidate);
+    if (normalized && !urls.includes(normalized)) {
+      urls.push(normalized);
+    }
+  };
+
+  possibleSources.forEach((source) => {
+    if (!source) return;
+
+    if (Array.isArray(source)) {
+      source.forEach(pushUnique);
+    } else if (typeof source === 'object') {
+      Object.values(source).forEach(pushUnique);
+    } else {
+      pushUnique(source);
+    }
+  });
+
+  return urls;
+};
 
 const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onReject }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -165,6 +270,8 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
       </span>
     );
   };
+
+  const propertyImages = useMemo(() => collectPropertyImages(property), [property]);
 
   if (!isOpen || !property) return null;
 
@@ -333,12 +440,12 @@ const AdminPropertyDetailsModal = ({ property, isOpen, onClose, onApprove, onRej
           {activeTab === 'images' && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Images</h3>
-              {property.images && property.images.length > 0 ? (
+              {propertyImages.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {property.images.map((image, index) => (
+                  {propertyImages.map((imgSrc, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={image.url || image}
+                        src={imgSrc}
                         alt={`Property image ${index + 1}`}
                         className="w-full h-48 object-cover rounded-lg shadow-md"
                         onError={(e) => {
