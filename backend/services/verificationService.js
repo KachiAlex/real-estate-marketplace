@@ -41,12 +41,18 @@ const buildError = (message, statusCode = 400) => {
   return error;
 };
 
+const looksLikeUuid = (value) => typeof value === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+
 const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmount, propertyId, propertyName }) => {
   if (!paymentId) {
     throw buildError('Verification payment reference is required');
   }
 
-  let payment = await paymentService.getPaymentById(paymentId);
+  let payment = null;
+
+  if (looksLikeUuid(paymentId)) {
+    payment = await paymentService.getPaymentById(paymentId);
+  }
 
   if (!payment) {
     payment = await paymentService.getPaymentByReference(paymentId);

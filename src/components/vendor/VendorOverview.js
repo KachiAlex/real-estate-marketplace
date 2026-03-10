@@ -2,7 +2,7 @@ import React, { Suspense, useState, useMemo } from 'react';
 // Placeholder for chart library (e.g., recharts, chart.js)
 // import { LineChart, ... } from 'recharts';
 
-export default function VendorOverview({ stats, loading, onAddProperty, onApplyForVerification, applyVerificationLoading }) {
+export default function VendorOverview({ stats, loading, onAddProperty }) {
   // Example stats prop shape:
   // {
   //   activeListings, pendingListings, soldProperties, totalRevenue, totalInquiries, conversionRate,
@@ -20,26 +20,9 @@ export default function VendorOverview({ stats, loading, onAddProperty, onApplyF
           >
             + Add Property
           </button>
-          <button
-            className={`px-4 py-2 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2 ${
-              applyVerificationLoading
-                ? 'bg-green-300 text-white cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-            onClick={onApplyForVerification}
-            disabled={!onApplyForVerification || applyVerificationLoading}
-          >
-            {applyVerificationLoading && (
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-            )}
-            Apply for Verification
-          </button>
         </div>
         <p className="text-sm text-gray-500 max-w-xl">
-          Build trust faster—verify your standout listings so buyers can see a badge on your properties across the marketplace.
+          Build trust faster—showcase high-quality listings and keep your portfolio up to date to boost buyer confidence.
         </p>
       </div>
 

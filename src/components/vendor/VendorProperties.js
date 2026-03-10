@@ -36,24 +36,30 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const VerificationBadge = ({ verificationStatus, isVerified, onRequestVerification }) => {
-  if (isVerified) {
+const VerificationBadge = ({ property }) => {
+  if (!property) return null;
+
+  const normalizedVerificationStatus = property.verificationStatus?.toLowerCase?.();
+  const normalizedApplicationStatus = property.latestVerificationApplicationStatus?.toLowerCase?.();
+  const normalizedIsVerified = property.isVerified || normalizedVerificationStatus === 'verified' || normalizedApplicationStatus === 'approved';
+
+  if (normalizedIsVerified) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
         <span>✓</span> Verified
       </span>
     );
   }
-  
-  if (verificationStatus === 'pending') {
+
+  if (normalizedApplicationStatus === 'pending' || normalizedVerificationStatus === 'pending') {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-        <span>⏳</span> Pending Verification
+        <span>⏳</span> Application Sent
       </span>
     );
   }
 
-  if (verificationStatus === 'rejected') {
+  if (normalizedApplicationStatus === 'rejected' || normalizedVerificationStatus === 'rejected') {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
         <span>✗</span> Verification Rejected
@@ -166,6 +172,9 @@ export default function VendorProperties({
                 prop.state ||
                 'Location not specified';
               const lastUpdatedLabel = prop.lastUpdated ? new Date(prop.lastUpdated).toLocaleDateString() : '—';
+              const normalizedApplicationStatus = prop.latestVerificationApplicationStatus?.toLowerCase?.();
+              const normalizedVerificationStatus = prop.verificationStatus?.toLowerCase?.();
+              const canRequestVerification = !prop.isVerified && normalizedVerificationStatus !== 'pending' && normalizedApplicationStatus !== 'pending';
 
               return (
                 <div key={prop.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
@@ -184,7 +193,7 @@ export default function VendorProperties({
                       <StatusBadge status={prop.status} />
                     </div>
                     <div className="absolute top-4 right-4">
-                      <VerificationBadge verificationStatus={prop.verificationStatus} isVerified={prop.isVerified} />
+                      <VerificationBadge property={prop} />
                     </div>
                   </div>
                   <div className="p-5 flex flex-col flex-1">
@@ -218,7 +227,7 @@ export default function VendorProperties({
                     </div>
 
                     <div className="mt-4 flex flex-col gap-2">
-                      {!prop.isVerified && prop.verificationStatus !== 'pending' && (
+                      {canRequestVerification && (
                         <button
                           className="w-full text-sm px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           onClick={() => onRequestVerification?.(prop)}

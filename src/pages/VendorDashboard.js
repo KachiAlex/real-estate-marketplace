@@ -5,9 +5,6 @@ import { useAuth } from '../contexts/AuthContext-new';
 import { useVendor } from '../contexts/VendorContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardSwitch from '../components/DashboardSwitch';
-import toast from 'react-hot-toast';
-import apiClient from '../services/apiClient';
-import VerificationRequestModal from '../components/VerificationRequestModal';
 
 const TREND_LABELS = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'];
 const TREND_WEIGHTS = [12, 15, 18, 20, 18, 17];
@@ -32,11 +29,6 @@ export default function VendorDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [verificationPromptOpen, setVerificationPromptOpen] = useState(false);
-  const [verificationCandidates, setVerificationCandidates] = useState([]);
-  const [candidatesLoading, setCandidatesLoading] = useState(false);
-  const [selectedVerificationProperty, setSelectedVerificationProperty] = useState(null);
-  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -86,69 +78,6 @@ export default function VendorDashboard() {
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const handleAddProperty = () => navigate('/add-property');
-
-  const fetchVerificationCandidates = useCallback(async () => {
-    if (!currentUser?.id) {
-      setVerificationCandidates([]);
-      return;
-    }
-
-    setCandidatesLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append('perPage', '100');
-      if (currentUser.id) {
-        params.append('vendorId', currentUser.id);
-        params.append('ownerId', currentUser.id);
-      }
-      const response = await apiClient.get(`/properties?${params.toString()}`);
-      const data = response.data?.data || [];
-      const unverified = data.filter((prop) => !prop.isVerified && prop.verificationStatus !== 'pending');
-      setVerificationCandidates(unverified);
-    } catch (err) {
-      console.error('Vendor dashboard: failed to load verification candidates', err);
-      toast.error('Unable to load properties for verification. Please try again.');
-      setVerificationCandidates([]);
-    } finally {
-      setCandidatesLoading(false);
-    }
-  }, [currentUser?.id]);
-
-  useEffect(() => {
-    if (verificationPromptOpen) {
-      fetchVerificationCandidates();
-    }
-  }, [verificationPromptOpen, fetchVerificationCandidates]);
-
-  const handleApplyForVerification = () => {
-    if (!currentUser?.id) {
-      toast.error('You need to be signed in as a vendor to request verification.');
-      return;
-    }
-
-    setVerificationPromptOpen(true);
-    if (!verificationCandidates.length) {
-      fetchVerificationCandidates();
-    }
-  };
-
-  const handleSelectVerificationProperty = (property) => {
-    if (!property) return;
-    setSelectedVerificationProperty(property);
-    setVerificationPromptOpen(false);
-    setVerificationModalOpen(true);
-  };
-
-  const handleCloseVerificationModal = () => {
-    setVerificationModalOpen(false);
-    setSelectedVerificationProperty(null);
-  };
-
-  const handleVerificationSuccess = () => {
-    // Refresh stats to reflect verification changes
-    fetchStats();
-    fetchVerificationCandidates();
-  };
 
   const displayStats = useMemo(() => {
     if (stats && Object.keys(stats).length) return stats;
@@ -204,8 +133,6 @@ export default function VendorDashboard() {
             stats={displayStats}
             loading={loading || vendorLoading}
             onAddProperty={handleAddProperty}
-            onApplyForVerification={handleApplyForVerification}
-            applyVerificationLoading={candidatesLoading && verificationPromptOpen}
           />
         </div>
       )}
@@ -216,89 +143,6 @@ export default function VendorDashboard() {
         </div>
       )}
 
-      {/* Verification property picker */}
-      {verificationPromptOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Select a Property to Verify</h3>
-                <p className="text-sm text-gray-500 mt-1">Choose one of your unverified listings to start the verification process.</p>
-              </div>
-              <button
-                onClick={() => setVerificationPromptOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {candidatesLoading ? (
-                <div className="flex items-center justify-center py-10 text-gray-500">
-                  <svg className="w-6 h-6 animate-spin mr-2" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Loading your listings...
-                </div>
-              ) : verificationCandidates.length ? (
-                <div className="space-y-3">
-                  {verificationCandidates.map((prop) => (
-                    <button
-                      key={prop.id}
-                      className="w-full text-left border border-gray-200 rounded-lg p-4 hover:border-brand-blue hover:shadow transition"
-                      onClick={() => handleSelectVerificationProperty(prop)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-900">{prop.title || 'Untitled Property'}</p>
-                          <p className="text-sm text-gray-500">{prop.location?.address || 'Location not specified'}</p>
-                        </div>
-                        <span className="text-sm text-gray-400">{prop.status ? prop.status.toUpperCase() : '—'}</span>
-                      </div>
-                      <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                        <span>Views: {prop.views ?? 0}</span>
-                        <span>Inquiries: {prop.inquiries ?? 0}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10 text-gray-500">
-                  <p className="font-medium mb-2">No eligible properties found yet.</p>
-                  <p className="text-sm mb-4">Add a new listing or wait for pending verifications to complete.</p>
-                  <button
-                    onClick={() => {
-                      setVerificationPromptOpen(false);
-                      handleAddProperty();
-                    }}
-                    className="px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700"
-                  >
-                    + Add Property
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="p-5 border-t flex justify-end gap-3">
-              <button
-                onClick={() => setVerificationPromptOpen(false)}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <VerificationRequestModal
-        property={selectedVerificationProperty}
-        isOpen={verificationModalOpen}
-        onClose={handleCloseVerificationModal}
-        onSuccess={handleVerificationSuccess}
-      />
     </div>
   );
 }

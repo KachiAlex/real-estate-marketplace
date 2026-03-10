@@ -777,6 +777,7 @@ const AdminDashboard = () => {
     if (success) {
       setVerificationNotes('');
       setSelectedProperty(null);
+      await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
     }
   };
 
@@ -810,6 +811,7 @@ const AdminDashboard = () => {
       const success = await verifyProperty(propertyId, 'approved', adminNotes);
       
       if (success) {
+        await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
         // Send notification to vendor (simulated)
         await sendNotificationToVendor(propertyId, 'approved', adminNotes);
       } else {
@@ -831,6 +833,7 @@ const AdminDashboard = () => {
       const success = await verifyProperty(propertyId, 'rejected', notes);
       
       if (success) {
+        await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
         // Send notification to vendor
         await sendNotificationToVendor(propertyId, 'rejected', rejectionReason);
       } else {
@@ -1245,8 +1248,9 @@ const AdminDashboard = () => {
               ) : (
                 <AdminVerificationCenter
                   config={adminSettings}
-                  isAuthenticated={true} // Always true for admin users
+                  isAuthenticated={hasAdminToken}
                   onRequireAdminAuth={() => {
+                    setHasAdminToken(false);
                     setAuthWarning('Admin authentication required. Please log in again to manage verification settings.');
                   }}
                   onConfigChange={(updated) => setAdminSettings((prev) => ({
