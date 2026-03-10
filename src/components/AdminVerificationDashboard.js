@@ -96,6 +96,14 @@ const AdminVerificationDashboard = () => {
     ? applications 
     : applications.filter(app => app.status === statusFilter);
 
+  const getPaymentStatusLabel = (status) => {
+    if (!status) return 'Payment Pending';
+    if (status === 'completed') return 'Paid';
+    if (status === 'pending') return 'Payment Pending';
+    if (status === 'failed') return 'Payment Failed';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -182,9 +190,11 @@ const AdminVerificationDashboard = () => {
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         app.paymentStatus === 'completed'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          : app.paymentStatus === 'failed'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {app.paymentStatus?.charAt(0).toUpperCase() + app.paymentStatus?.slice(1)}
+                        {getPaymentStatusLabel(app.paymentStatus)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
@@ -260,8 +270,8 @@ const AdminVerificationDashboard = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700">
                   <span className="font-semibold">Payment Status:</span>{' '}
-                  <span className={selectedApp.paymentStatus === 'completed' ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
-                    {selectedApp.paymentStatus?.charAt(0).toUpperCase() + selectedApp.paymentStatus?.slice(1)}
+                  <span className={selectedApp.paymentStatus === 'completed' ? 'text-green-600 font-medium' : selectedApp.paymentStatus === 'failed' ? 'text-red-600 font-medium' : 'text-yellow-600 font-medium'}>
+                    {getPaymentStatusLabel(selectedApp.paymentStatus)}
                   </span>
                 </p>
               </div>

@@ -32,6 +32,68 @@ router.post('/seed-data', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// @desc    Suspend a user account
+// @route   PUT /api/admin/users/:id/suspend
+// @access  Private (Admin only)
+router.put('/users/:id/suspend', async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ success: false, message: 'You cannot suspend your own account' });
+    }
+
+    const user = await userService.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const updated = await userService.updateUser(req.params.id, {
+      isActive: false,
+      suspendedAt: new Date(),
+      suspendedBy: req.user.id
+    });
+
+    res.json({
+      success: true,
+      message: 'User suspended successfully',
+      data: updated
+    });
+  } catch (error) {
+    console.error('Admin suspend user error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @desc    Reactivate a user account
+// @route   PUT /api/admin/users/:id/activate
+// @access  Private (Admin only)
+router.put('/users/:id/activate', async (req, res) => {
+  try {
+    const user = await userService.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const updated = await userService.updateUser(req.params.id, {
+      isActive: true,
+      activatedAt: new Date(),
+      activatedBy: req.user.id,
+      suspendedAt: null,
+      suspendedBy: null
+    });
+
+    res.json({
+      success: true,
+      message: 'User activated successfully',
+      data: updated
+    });
+  } catch (error) {
+    console.error('Admin activate user error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 // @desc    Get current admin profile
 // @route   GET /api/admin/profile
 // @access  Private (Admin only)
@@ -212,9 +274,9 @@ router.post('/create-admin', [
   }
 });
 
-// Apply admin protection to all routes
-// router.use(protect);
-// router.use(authorize('admin'));
+// Apply admin protection to all routes defined after this middleware
+router.use(protect);
+router.use(authorize('admin'));
 
 // @desc    Get admin dashboard statistics
 // @route   GET /api/admin/stats

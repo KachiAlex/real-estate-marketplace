@@ -32,6 +32,23 @@ export default function VendorPropertiesContainer() {
   const [selectedPropertyDetail, setSelectedPropertyDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [verificationApplications, setVerificationApplications] = useState([]);
+  const verificationApplicationByPropertyId = useMemo(() => {
+    return verificationApplications.reduce((acc, application) => {
+      const propertyId = application.propertyId;
+      if (!propertyId) return acc;
+
+      const existing = acc[propertyId];
+      const applicationCreatedAt = application.createdAt ? new Date(application.createdAt).getTime() : 0;
+      if (!existing || applicationCreatedAt > existing.createdAtValue) {
+        acc[propertyId] = {
+          status: application.status || null,
+          createdAtValue: applicationCreatedAt,
+          raw: application
+        };
+      }
+      return acc;
+    }, {});
+  }, [verificationApplications]);
   // const [modalOpen, setModalOpen] = useState(false);
   // const [editingProperty, setEditingProperty] = useState(null);
   const { currentUser } = useAuth();
@@ -158,24 +175,6 @@ export default function VendorPropertiesContainer() {
       avgInquiries: Math.round(inquirySum / properties.length) || 0
     };
   }, [properties]);
-
-  const verificationApplicationByPropertyId = useMemo(() => {
-    return verificationApplications.reduce((acc, application) => {
-      const propertyId = application.propertyId;
-      if (!propertyId) return acc;
-
-      const existing = acc[propertyId];
-      const applicationCreatedAt = application.createdAt ? new Date(application.createdAt).getTime() : 0;
-      if (!existing || applicationCreatedAt > existing.createdAtValue) {
-        acc[propertyId] = {
-          status: application.status || null,
-          createdAtValue: applicationCreatedAt,
-          raw: application
-        };
-      }
-      return acc;
-    }, {});
-  }, [verificationApplications]);
 
   const propertiesWithVerification = useMemo(() => {
     if (!properties?.length) return [];
