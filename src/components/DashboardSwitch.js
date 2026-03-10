@@ -24,11 +24,6 @@ export default function DashboardSwitch() {
   // Get primary role and available dashboards
   const primaryRole = getPrimaryRole(user);
   const availableDashboards = getAvailableDashboards(user);
-
-  if (!availableDashboards || availableDashboards.length <= 1) {
-    return null;
-  }
-
   const currentPath = location.pathname;
 
   useEffect(() => {
@@ -63,6 +58,10 @@ export default function DashboardSwitch() {
       cancelled = true;
     };
   }, [currentPath, user, switchRole]);
+
+  if (!availableDashboards || availableDashboards.length <= 1) {
+    return null;
+  }
 
   // Enhanced switch handler: change active role then navigate
   const handleSwitch = async (targetRole, switchValueOverride = null) => {

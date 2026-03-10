@@ -71,7 +71,11 @@ exports.verificationValidation = {
     body('propertyUrl')
       .optional()
       .trim()
-      .isURL()
+      .isURL({
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_tld: false
+      })
       .withMessage('Property URL must be a valid link'),
 
     body('propertyLocation')

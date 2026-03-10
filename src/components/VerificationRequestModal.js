@@ -109,15 +109,18 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
         email: 'verification@propertyark.com',
         amount: verificationFee * 100,
         ref: `VERIFY-${property.id}-${Date.now()}`,
-        onClose: () => {
-          setPaymentLoading(false);
-          toast.error('Payment cancelled');
-        },
-        onSuccess: (response) => {
+        callback: (response) => {
           setPaymentLoading(false);
           setPaymentId(response.reference);
           setStep('confirm');
           toast.success('Payment successful! Proceeding with verification request...');
+        },
+        onClose: () => {
+          // Only treat as cancellation if we never received a payment reference
+          if (!paymentId) {
+            toast.error('Payment cancelled');
+          }
+          setPaymentLoading(false);
         }
       });
       handler.openIframe();

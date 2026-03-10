@@ -18,6 +18,40 @@ async function getPaymentById(id) {
   return Payment.findByPk(id);
 }
 
+async function getPaymentByReference(reference) {
+  if (!reference) return null;
+  return Payment.findOne({ where: { reference } });
+}
+
+async function createVerificationPaymentRecord({ reference, userId, amount, propertyId, provider = 'paystack', metadata = {} }) {
+  if (!reference || !userId) {
+    return null;
+  }
+
+  const existing = await getPaymentByReference(reference);
+  if (existing) {
+    return existing;
+  }
+
+  const safeAmount = Number(amount || 0);
+
+  return Payment.create({
+    userId,
+    propertyId: propertyId || null,
+    amount: safeAmount,
+    currency: 'NGN',
+    paymentType: 'property_verification',
+    status: 'completed',
+    provider,
+    reference,
+    metadata: {
+      ...(metadata || {}),
+      autoCreatedAt: new Date().toISOString(),
+      autoCreatedReason: 'verification_payment_fallback'
+    }
+  });
+}
+
 async function initializePayment({ user, amount, paymentMethod, paymentType, relatedEntity, description, currency = 'NGN' }) {
   const reference = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
   const payment = await Payment.create({ userId: user.id, amount, currency, paymentType, provider: paymentMethod, reference, status: 'pending', metadata: { relatedEntity, description } });
@@ -166,6 +200,8 @@ async function updateSubscriptionStatus(id, status) {
 module.exports = {
   listUserPayments,
   getPaymentById,
+  getPaymentByReference,
+  createVerificationPaymentRecord,
   initializePayment,
   verifyPayment,
   cancelPayment,

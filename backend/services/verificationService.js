@@ -41,12 +41,29 @@ const buildError = (message, statusCode = 400) => {
   return error;
 };
 
-const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmount }) => {
+const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmount, propertyId, propertyName }) => {
   if (!paymentId) {
     throw buildError('Verification payment reference is required');
   }
 
-  const payment = await paymentService.getPaymentById(paymentId);
+  let payment = await paymentService.getPaymentById(paymentId);
+
+  if (!payment) {
+    payment = await paymentService.getPaymentByReference(paymentId);
+  }
+
+  if (!payment) {
+    payment = await paymentService.createVerificationPaymentRecord({
+      reference: paymentId,
+      userId: applicantId,
+      amount: requiredAmount,
+      propertyId: propertyId || null,
+      metadata: {
+        propertyName: propertyName || null,
+        createdBy: 'verification_service_auto_fallback'
+      }
+    });
+  }
 
   if (!payment) {
     throw buildError('Verification payment record could not be found', 404);
@@ -132,7 +149,13 @@ const submitApplication = async (args = {}) => {
   if (verificationPaymentId) {
     const settings = await adminSettingsService.getSettings();
     const requiredAmount = settings?.verificationFee || 50000;
-    await ensureVerificationPayment({ paymentId: verificationPaymentId, applicantId: applicant.id, requiredAmount });
+    await ensureVerificationPayment({
+      paymentId: verificationPaymentId,
+      applicantId: applicant.id,
+      requiredAmount,
+      propertyId: property?.id || propertyId || null,
+      propertyName: property?.title || propertyName || null
+    });
     paymentValidated = true;
   }
 

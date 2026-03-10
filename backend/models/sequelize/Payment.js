@@ -28,7 +28,16 @@ module.exports = (sequelize) => {
       defaultValue: 'NGN'
     },
     paymentType: {
-      type: DataTypes.ENUM('property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'refund'),
+      type: DataTypes.ENUM(
+        'property_purchase',
+        'investment',
+        'escrow',
+        'subscription',
+        'commission',
+        'refund',
+        'property_verification',
+        'vendor_listing'
+      ),
       allowNull: false
     },
     status: {
