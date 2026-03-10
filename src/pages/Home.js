@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,7 @@ import {
   FaChartLine,
   FaEye,
   FaSort,
+  FaFilter,
   FaBed,
   FaBath,
   FaShieldAlt,
@@ -45,6 +46,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState(new Set());
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   // Pending filters (what user is selecting)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -382,28 +384,394 @@ const Home = () => {
     
     setCurrentPage(1);
     toast.success('All filters cleared');
+    setShowMobileFilters(false);
   };
+
+  const renderFilters = ({ showHeading = true } = {}) => (
+    <>
+      {showHeading && (
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">Property Filters</h3>
+          <button
+            onClick={handleResetAllFilters}
+            className="text-sm text-gray-300 hover:text-white"
+          >
+            Reset All
+          </button>
+        </div>
+      )}
+
+      {/* Active Filters */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          {appliedLocation && (
+            <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+              {appliedLocation}
+              <FaTimes
+                className="ml-2 cursor-pointer"
+                onClick={() => {
+                  setAppliedLocation('');
+                  setSelectedLocation('');
+                }}
+              />
+            </span>
+          )}
+          {appliedStatus && (
+            <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+              {appliedStatus}
+              <FaTimes
+                className="ml-2 cursor-pointer"
+                onClick={() => {
+                  setAppliedStatus('');
+                  setSelectedStatus('');
+                }}
+              />
+            </span>
+          )}
+          {appliedType && (
+            <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+              {appliedType}
+              <FaTimes
+                className="ml-2 cursor-pointer"
+                onClick={() => {
+                  setAppliedType('');
+                  setSelectedType('');
+                }}
+              />
+            </span>
+          )}
+          {appliedBedrooms && (
+            <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+              {appliedBedrooms} Bedrooms
+              <FaTimes
+                className="ml-2 cursor-pointer"
+                onClick={() => {
+                  setAppliedBedrooms('');
+                  setBedrooms('');
+                }}
+              />
+            </span>
+          )}
+          {appliedVendor && (
+            <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
+              Vendor (hidden)
+              <FaTimes
+                className="ml-2 cursor-pointer"
+                onClick={() => {
+                  setAppliedVendor('');
+                  setSelectedVendor('');
+                }}
+              />
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Location</label>
+        <select
+          value={selectedLocation}
+          onChange={(e) => setSelectedLocation(e.target.value)}
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          {locations.map(location => (
+            <option key={location} value={location}>{location}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Property Status */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Property Status</label>
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">All Status</option>
+          {propertyStatuses.map(status => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Property Type */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Property Type</label>
+        <select
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">All Types</option>
+          {propertyTypes.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Vendor Search */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Search by Vendor</label>
+        <input
+          type="text"
+          value={selectedVendor}
+          onChange={(e) => setSelectedVendor(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && selectedVendor && selectedVendor.trim()) {
+              navigate(`/properties?vendor=${encodeURIComponent(selectedVendor.trim())}`);
+            }
+          }}
+          placeholder="Enter vendor name..."
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        />
+      </div>
+
+      {/* Price Range */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Price Range (₦)</label>
+        <div className="space-y-4">
+          <div className="flex space-x-2 items-stretch">
+            <input
+              type="text"
+              value={priceRange[0].toLocaleString()}
+              onChange={(e) => {
+                const inputValue = e.target.value.replace(/,/g, '');
+                if (inputValue === '') {
+                  setPriceRange([0, priceRange[1]]);
+                  return;
+                }
+                const value = parseInt(inputValue) || 0;
+                setPriceRange([value, priceRange[1]]);
+              }}
+              onBlur={(e) => {
+                const inputValue = e.target.value.replace(/,/g, '');
+                if (inputValue === '') {
+                  setPriceRange([0, priceRange[1]]);
+                  return;
+                }
+                const value = parseInt(inputValue) || 0;
+                const clampedValue = Math.max(0, value);
+                setPriceRange([clampedValue, priceRange[1]]);
+              }}
+              className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
+              placeholder="Min Price"
+            />
+            <input
+              type="text"
+              value={priceRange[1].toLocaleString()}
+              onChange={(e) => {
+                const inputValue = e.target.value.replace(/,/g, '');
+                if (inputValue === '') {
+                  setPriceRange([priceRange[0], 1000000000]);
+                  return;
+                }
+                const value = parseInt(inputValue) || 200000000;
+                setPriceRange([priceRange[0], value]);
+              }}
+              onBlur={(e) => {
+                const inputValue = e.target.value.replace(/,/g, '');
+                if (inputValue === '') {
+                  setPriceRange([priceRange[0], 1000000000]);
+                  return;
+                }
+                const value = parseInt(inputValue) || 200000000;
+                const clampedValue = Math.max(value, priceRange[0]);
+                setPriceRange([priceRange[0], clampedValue]);
+              }}
+              className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
+              placeholder="Max Price"
+            />
+          </div>
+          <div className="relative">
+            <div className="relative h-2 bg-gray-600 rounded-full">
+              <div
+                className="absolute h-2 bg-orange-500 rounded-full"
+                style={{
+                  left: `${Math.min((priceRange[0] / Math.max(priceRange[1], 200000000)) * 100, 95)}%`,
+                  width: `${Math.max(((priceRange[1] - priceRange[0]) / Math.max(priceRange[1], 200000000)) * 100, 5)}%`
+                }}
+              ></div>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(priceRange[1], 200000000)}
+                step="500000"
+                value={priceRange[0]}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setPriceRange([value, priceRange[1]]);
+                }}
+                className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
+                style={{ zIndex: 2 }}
+              />
+              <input
+                type="range"
+                min="0"
+                max={Math.max(priceRange[1], 200000000)}
+                step="500000"
+                value={priceRange[1]}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setPriceRange([priceRange[0], value]);
+                }}
+                className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
+                style={{ zIndex: 3 }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
+              <span className="price-inline">{formatCurrency(0)}</span>
+              <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded price-inline">
+                {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
+              </span>
+              <span className="price-inline">{formatCurrency(Math.max(priceRange[1], 200000000))}+</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1 text-center">
+              Drag the slider handles or type any amount in the input fields above
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bedrooms */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Bedrooms</label>
+        <select
+          value={bedrooms}
+          onChange={(e) => setBedrooms(e.target.value)}
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Any</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5+">5+</option>
+        </select>
+      </div>
+
+      {/* Bathrooms */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Bathrooms</label>
+        <select
+          value={bathrooms}
+          onChange={(e) => setBathrooms(e.target.value)}
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Any</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5+">5+</option>
+        </select>
+      </div>
+
+      {/* Amenities */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-3">Amenities</label>
+        <div className="space-y-2">
+          {amenities.slice(0, showMoreAmenities ? amenities.length : 8).map((amenity) => (
+            <label key={amenity} className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selectedAmenities.includes(amenity)}
+                onChange={() => handleAmenityToggle(amenity)}
+                className="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500"
+              />
+              <span className="ml-2 text-sm">{amenity}</span>
+            </label>
+          ))}
+          {!showMoreAmenities && (
+            <button
+              onClick={() => setShowMoreAmenities(true)}
+              className="text-orange-500 text-sm hover:text-orange-400"
+            >
+              + Show more amenities
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Property Age */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-3">Property Age</label>
+        <div className="flex flex-wrap gap-2">
+          {['Any Age', 'New 0-5 yrs', '5-10 yrs Age'].map((age) => (
+            <button
+              key={age}
+              onClick={() => setPropertyAge(age)}
+              className={`px-3 py-2 rounded-full text-sm transition-colors ${
+                propertyAge === age
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {age}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter Buttons */}
+      <div className="space-y-3">
+        <button
+          onClick={handleApplyFilters}
+          disabled={isApplyingFilters}
+          className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {isApplyingFilters ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Applying Filters...
+            </>
+          ) : (
+            'Apply Filters'
+          )}
+        </button>
+        <button
+          onClick={handleResetAllFilters}
+          className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+    </>
+  );
 
   // Reset to page 1 when applied filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, appliedVendor]);
 
-  // Calculate pagination
+  // Pagination calculations
   const safeFilteredProperties = Array.isArray(filteredProperties) ? filteredProperties : [];
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
   const currentProperties = safeFilteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
   const totalPages = Math.ceil(safeFilteredProperties.length / propertiesPerPage);
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedSearchQuery?.trim()) count++;
+    if (appliedLocation) count++;
+    if (appliedType) count++;
+    if (appliedStatus) count++;
+    if (appliedBedrooms) count++;
+    if (appliedBathrooms) count++;
+    if (appliedVendor) count++;
+    if (Array.isArray(appliedPriceRange) && (appliedPriceRange[0] !== 0 || appliedPriceRange[1] !== 1000000000)) count++;
+    return count;
+  }, [appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedBedrooms, appliedBathrooms, appliedPriceRange, appliedVendor]);
 
   const handleApplyFilters = async () => {
     setIsApplyingFilters(true);
     try {
-      // Simulate a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Copy pending filters to applied filters
       setAppliedSearchQuery(searchQuery);
       setAppliedLocation(selectedLocation);
       setAppliedType(selectedType);
@@ -412,9 +780,9 @@ const Home = () => {
       setAppliedBathrooms(bathrooms);
       setAppliedPriceRange([...priceRange]);
       setAppliedVendor(selectedVendor);
-      
       setCurrentPage(1);
       toast.success('Filters applied successfully!');
+      setShowMobileFilters(false);
     } catch (error) {
       console.error('Error applying filters:', error);
       toast.error('Failed to apply filters');
@@ -423,23 +791,8 @@ const Home = () => {
     }
   };
 
-  // Clear all filters
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedLocation('Lagos');
-    setSelectedType('Apartment');
-    setSelectedStatus('');
-    setPriceRange([0, 100000000]);
-    setBedrooms('2');
-    setBathrooms('3');
-    setCurrentPage(1);
-    toast.success('Filters cleared');
-  };
+  const handleLearnMore = () => navigate('/about');
 
-  const handleLearnMore = () => {
-    navigate('/about');
-  };
-  
   const handleToggleFavorite = async (propertyId, property = null) => {
     if (!user) {
       toast.error('Please login to save properties to favorites');
@@ -449,8 +802,6 @@ const Home = () => {
 
     const storageKey = `favorites_${user.id}`;
     const wasFavorite = favorites.has(propertyId);
-
-    // Optimistic UI update
     const optimisticFavorites = new Set(favorites);
     if (wasFavorite) {
       optimisticFavorites.delete(propertyId);
@@ -463,40 +814,28 @@ const Home = () => {
     localStorage.setItem(storageKey, JSON.stringify(Array.from(optimisticFavorites)));
 
     try {
-      // If property not provided, try to find it in merged properties (including mock)
       let propertyToSave = property;
       if (!propertyToSave) {
-        // Check in mock properties first
-        propertyToSave = mockProperties.find(p => (p.id || p.propertyId) === propertyId);
-        // If not found, check in context properties
-        if (!propertyToSave) {
-          propertyToSave = properties.find(p => {
+        propertyToSave = mockProperties.find(p => (p.id || p.propertyId) === propertyId) ||
+          properties.find(p => {
             const propId = p.id || p.propertyId || p._id;
             return propId === propertyId || String(propId) === String(propertyId);
           });
-        }
       }
-      
+
       const propertyIdStr = String(propertyId);
       const result = await toggleFavorite(propertyIdStr, propertyToSave);
-      if (!result || !result.success) {
-        throw new Error('Failed to toggle favorite on server');
-      }
-      
-      // Dispatch event to notify other components (like Dashboard)
+      if (!result || !result.success) throw new Error('Failed to toggle favorite on server');
+
       window.dispatchEvent(new CustomEvent('favoritesUpdated', {
         detail: { propertyId: propertyIdStr, favorited: !wasFavorite }
       }));
-      
-      // Also trigger a storage event for cross-tab synchronization
       window.dispatchEvent(new StorageEvent('storage', {
         key: storageKey,
         newValue: JSON.stringify(Array.from(optimisticFavorites))
       }));
     } catch (error) {
       console.error('Error toggling favorite:', error);
-
-      // Revert optimistic update on error
       const revertedFavorites = new Set(optimisticFavorites);
       if (wasFavorite) {
         revertedFavorites.add(propertyId);
@@ -508,14 +847,13 @@ const Home = () => {
       toast.error('Failed to update saved properties. Please try again.');
     }
   };
-  
+
   const handleShareProperty = async (property) => {
     const shareData = {
       title: property.title,
       text: `Check out this amazing property: ${property.title}`,
       url: `${window.location.origin}/property/${property.propertyId || property.id}`
     };
-    
     try {
       if (navigator.share) {
         await navigator.share(shareData);
@@ -528,30 +866,36 @@ const Home = () => {
       toast.error('Failed to share property');
     }
   };
-  
-  
+
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
     setCurrentPage(1);
   };
-  
+
   const handlePaginationClick = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll to properties section instead of top of page
     const propertiesSection = document.getElementById('properties-section');
     if (propertiesSection) {
       propertiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      // Fallback to top if section not found
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  // Expose modal opener globally for StaticHeroBanner
+  // Expose modal opener globally
   useEffect(() => {
     window.openRegisterModal = () => setShowRegisterModal(true);
     return () => { window.openRegisterModal = undefined; };
   }, []);
+
+  useEffect(() => {
+    if (showMobileFilters) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showMobileFilters]);
 
   return (
     <>
@@ -699,355 +1043,33 @@ const Home = () => {
           </div>
         </div>
         
+        <div className="lg:hidden mb-6">
+          <button
+            onClick={() => setShowMobileFilters(true)}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3 px-4 text-gray-800 font-semibold shadow-sm"
+          >
+            <FaFilter />
+            Filters & Sort
+            {activeFilterCount > 0 && (
+              <span className="ml-2 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-orange-100 px-2 text-sm font-bold text-orange-600">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="w-full lg:w-80 bg-gray-800 text-white rounded-lg p-6 lg:sticky lg:top-24 lg:self-stretch lg:min-h-[calc(100vh-6rem)]">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold">Property Filters</h3>
-              <button 
-                onClick={handleResetAllFilters}
-                className="text-sm text-gray-300 hover:text-white"
-              >
-                Reset All
-              </button>
-            </div>
-
-            {/* Active Filters (showing applied filters) */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2">
-                {appliedLocation && (
-                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {appliedLocation} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
-                      setAppliedLocation('');
-                      setSelectedLocation('');
-                    }} />
-                  </span>
-                )}
-                {appliedStatus && (
-                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {appliedStatus} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
-                      setAppliedStatus('');
-                      setSelectedStatus('');
-                    }} />
-                  </span>
-                )}
-                {appliedType && (
-                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {appliedType} <FaTimes className="ml-2 cursor-pointer" onClick={() => {
-                      setAppliedType('');
-                      setSelectedType('');
-                    }} />
-                  </span>
-                )}
-                {appliedBedrooms && (
-                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    {appliedBedrooms} Bedrooms <FaTimes className="ml-2 cursor-pointer" onClick={() => {
-                      setAppliedBedrooms('');
-                      setBedrooms('');
-                    }} />
-                  </span>
-                )}
-                {appliedVendor && (
-                  <span className="flex items-center bg-orange-500 text-white px-3 py-1 rounded-full text-sm">
-                    Vendor (hidden) <FaTimes className="ml-2 cursor-pointer" onClick={() => {
-                      setAppliedVendor('');
-                      setSelectedVendor('');
-                    }} />
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Location</label>
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {locations.map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Property Status */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Property Status</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">All Status</option>
-                {propertyStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Property Type */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Property Type</label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">All Types</option>
-                {propertyTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Vendor Search */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Search by Vendor</label>
-              <input
-                  type="text"
-                  value={selectedVendor}
-                  onChange={(e) => setSelectedVendor(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && selectedVendor && selectedVendor.trim()) {
-                      navigate(`/properties?vendor=${encodeURIComponent(selectedVendor.trim())}`);
-                    }
-                  }}
-                  placeholder="Enter vendor name..."
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-            </div>
-
-            {/* Price Range */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Price Range (₦)</label>
-              <div className="space-y-4">
-                <div className="flex space-x-2 items-stretch">
-                  <input
-                    type="text"
-                    value={priceRange[0].toLocaleString()}
-                    onChange={(e) => {
-                      const inputValue = e.target.value.replace(/,/g, '');
-                      if (inputValue === '') {
-                        setPriceRange([0, priceRange[1]]);
-                        return;
-                      }
-                      const value = parseInt(inputValue) || 0;
-                      // Allow any minimum value - no restrictions
-                      setPriceRange([value, priceRange[1]]);
-                    }}
-                    onBlur={(e) => {
-                      const inputValue = e.target.value.replace(/,/g, '');
-                      if (inputValue === '') {
-                        setPriceRange([0, priceRange[1]]);
-                        return;
-                      }
-                      const value = parseInt(inputValue) || 0;
-                      // Only ensure non-negative values, no upper limit restriction
-                      const clampedValue = Math.max(0, value);
-                      setPriceRange([clampedValue, priceRange[1]]);
-                    }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
-                    placeholder="Min Price"
-                  />
-                  <input
-                    type="text"
-                    value={priceRange[1].toLocaleString()}
-                    onChange={(e) => {
-                      const inputValue = e.target.value.replace(/,/g, '');
-                      if (inputValue === '') {
-                        setPriceRange([priceRange[0], 1000000000]); // Default to 1B if empty
-                        return;
-                      }
-                      const value = parseInt(inputValue) || 200000000;
-                      // Allow any maximum value - no restrictions
-                      setPriceRange([priceRange[0], value]);
-                    }}
-                    onBlur={(e) => {
-                      const inputValue = e.target.value.replace(/,/g, '');
-                      if (inputValue === '') {
-                        setPriceRange([priceRange[0], 1000000000]);
-                        return;
-                      }
-                      const value = parseInt(inputValue) || 200000000;
-                      // Only ensure it's not less than minimum
-                      const clampedValue = Math.max(value, priceRange[0]);
-                      setPriceRange([priceRange[0], clampedValue]);
-                    }}
-                    className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-0"
-                    placeholder="Max Price"
-                  />
-                </div>
-                
-                {/* Interactive Range Slider */}
-                <div className="relative">
-                  <div className="relative h-2 bg-gray-600 rounded-full">
-                    <div 
-                      className="absolute h-2 bg-orange-500 rounded-full"
-                      style={{
-                        left: `${Math.min((priceRange[0] / Math.max(priceRange[1], 200000000)) * 100, 95)}%`,
-                        width: `${Math.max(((priceRange[1] - priceRange[0]) / Math.max(priceRange[1], 200000000)) * 100, 5)}%`
-                      }}
-                    ></div>
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.max(priceRange[1], 200000000)}
-                      step="500000"
-                      value={priceRange[0]}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        // Allow any minimum value without restriction
-                        setPriceRange([value, priceRange[1]]);
-                      }}
-                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
-                      style={{ zIndex: 2 }}
-                    />
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.max(priceRange[1], 200000000)}
-                      step="500000"
-                      value={priceRange[1]}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        // Allow any maximum value without restriction
-                        setPriceRange([priceRange[0], value]);
-                      }}
-                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer slider-thumb"
-                      style={{ zIndex: 3 }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center text-xs text-gray-300 mt-2">
-                    <span className="price-inline">{formatCurrency(0)}</span>
-                    <span className="text-orange-500 font-medium bg-gray-800 px-3 py-1 rounded price-inline">
-                      {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
-                    </span>
-                    <span className="price-inline">{formatCurrency(Math.max(priceRange[1], 200000000))}+</span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1 text-center">
-                    Drag the slider handles or type any amount in the input fields above
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bedrooms */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Bedrooms</label>
-              <select
-                value={bedrooms}
-                onChange={(e) => setBedrooms(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Any</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5+">5+</option>
-              </select>
-            </div>
-
-            {/* Bathrooms */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Bathrooms</label>
-              <select
-                value={bathrooms}
-                onChange={(e) => setBathrooms(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Any</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5+">5+</option>
-              </select>
-            </div>
-
-            {/* Amenities */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-3">Amenities</label>
-              <div className="space-y-2">
-                {amenities.slice(0, showMoreAmenities ? amenities.length : 8).map((amenity) => (
-                  <label key={amenity} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedAmenities.includes(amenity)}
-                      onChange={() => handleAmenityToggle(amenity)}
-                      className="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500"
-                    />
-                    <span className="ml-2 text-sm">{amenity}</span>
-                  </label>
-                ))}
-                {!showMoreAmenities && (
-                  <button
-                    onClick={() => setShowMoreAmenities(true)}
-                    className="text-orange-500 text-sm hover:text-orange-400"
-                  >
-                    + Show more amenities
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Property Age */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-3">Property Age</label>
-              <div className="flex space-x-2">
-                {['Any Age', 'New 0-5 yrs', '5-10 yrs Age'].map((age) => (
-                  <button
-                    key={age}
-                    onClick={() => setPropertyAge(age)}
-                    className={`px-3 py-2 rounded-full text-sm transition-colors ${
-                      propertyAge === age
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    {age}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Filter Buttons */}
-            <div className="space-y-3">
-              <button 
-                onClick={handleApplyFilters}
-                disabled={isApplyingFilters}
-                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {isApplyingFilters ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Applying Filters...
-                  </>
-                ) : (
-                  'Apply Filters'
-                )}
-              </button>
-              <button 
-                onClick={handleResetAllFilters}
-                className="w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-              >
-                Reset
-              </button>
-            </div>
+          <div className="hidden lg:block lg:w-80 bg-gray-800 text-white rounded-lg p-6 lg:sticky lg:top-24 lg:self-stretch lg:min-h-[calc(100vh-6rem)]">
+            {renderFilters()}
           </div>
 
           {/* Property Listings */}
           <div id="properties-section" className="w-full lg:flex-1">
             {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <p className="text-gray-700">{(filteredProperties?.length || 0)} {(filteredProperties?.length || 0) === 1 ? 'property' : 'properties'} found</p>
               {(filteredProperties?.length || 0) > 0 && (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 text-sm">
                   <FaSort className="text-gray-400" title="Sort properties" />
                   <select
                     value={sortBy}
@@ -1066,91 +1088,118 @@ const Home = () => {
 
             {/* Property Grid */}
             {(filteredProperties?.length || 0) > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentProperties.map((property) => (
-                <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                  <Link 
-                    to={`/property/${property.propertyId || property.id}`}
-                    className="block relative cursor-pointer"
-                  >
-                    <img
-                      src={property.image}
-                      alt={property.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className={`px-2 py-1 text-xs font-medium text-white rounded ${property.labelColor}`}>
-                        {property.label}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-3 left-3">
-                      <span className="text-2xl font-bold text-white price-inline">
-                        {formatCurrency(property.price || 0)}
-                      </span>
-                    </div>
-                  </Link>
-                  <div className="absolute top-3 right-3 flex space-x-2 z-10">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(property.id, property);
-                      }}
-                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
-                      title={favorites.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      <FaHeart className={`text-sm transition-colors ${
-                        favorites.has(property.id) ? 'text-red-500' : 'text-gray-400'
-                      }`} />
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShareProperty(property);
-                      }}
-                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
-                      title="Share property"
-                      aria-label="Share property"
-                    >
-                      <FaShare className="text-gray-400 text-sm hover:text-blue-500 transition-colors" />
-                    </button>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentProperties.map((property) => {
+                  const cardId = property.id || property.propertyId;
+                  const propertyImage = property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop';
+                  return (
+                    <div key={cardId} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+                      <div className="relative">
+                        <Link 
+                          to={`/property/${property.propertyId || property.id}`}
+                          className="block relative cursor-pointer"
+                        >
+                          <img
+                            src={propertyImage}
+                            alt={property.title}
+                            className="w-full h-56 sm:h-60 object-cover"
+                          />
+                          {property.label && (
+                            <div className="absolute top-3 left-3">
+                              <span className={`px-2 py-1 text-xs font-medium text-white rounded ${property.labelColor || 'bg-blue-500'}`}>
+                                {property.label}
+                              </span>
+                            </div>
+                          )}
+                          <div className="absolute bottom-3 left-3">
+                            <span className="text-2xl font-bold text-white price-inline">
+                              {formatCurrency(property.price || 0)}
+                            </span>
+                          </div>
+                        </Link>
+                        <div className="absolute top-3 right-3 flex space-x-2 z-10">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleShareProperty(property);
+                            }}
+                            className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+                            title="Share property"
+                            aria-label="Share property"
+                          >
+                            <FaShare className="text-gray-500 text-sm" />
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleToggleFavorite(cardId, property);
+                            }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                              favorites.has(cardId) ? 'bg-red-100 text-red-500' : 'bg-white text-gray-400 hover:text-red-500'
+                            }`}
+                            title={favorites.has(cardId) ? 'Remove from favorites' : 'Save to favorites'}
+                            aria-label="Toggle favorite"
+                          >
+                            <FaHeart className="text-sm" />
+                          </button>
+                        </div>
+                      </div>
 
-                  <Link 
-                    to={`/property/${property.propertyId || property.id}`}
-                    className="block p-4 cursor-pointer"
-                  >
-                    <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
-                    <div className="flex items-center text-gray-600 text-sm mb-2">
-                      <FaMapMarkerAlt className="mr-1" />
-                      <span>{property.location}</span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3">{property.description}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                      <div className="flex items-center space-x-4">
-                        <span className="flex items-center">
-                          <FaBed className="mr-1" />
-                          {property.bedrooms || property.details?.bedrooms || 0} Beds
-                        </span>
-                        <span className="flex items-center">
-                          <FaBath className="mr-1" />
-                          {property.bathrooms || property.details?.bathrooms || 0} Baths
-                        </span>
-                        <span className="flex items-center">
-                          <FaRulerCombined className="mr-1" />
-                          {property.sqft || property.details?.sqft || property.area || 0}m²
-                        </span>
+                      <div className="flex-1 flex flex-col">
+                        <Link 
+                          to={`/property/${property.propertyId || property.id}`}
+                          className="flex-1 p-4 cursor-pointer flex flex-col"
+                        >
+                          <h3 className="font-semibold text-gray-900 mb-1 text-base sm:text-lg">{property.title}</h3>
+                          <div className="flex items-start text-gray-600 text-sm mb-2 gap-1">
+                            <FaMapMarkerAlt className="mt-0.5" />
+                            <span className="truncate">{property.location}</span>
+                          </div>
+                          <p className="text-gray-600 text-sm mb-3 truncate">
+                            {property.description}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                            <span className="flex items-center">
+                              <FaBed className="mr-1" />
+                              {property.bedrooms || property.details?.bedrooms || 0} Beds
+                            </span>
+                            <span className="flex items-center">
+                              <FaBath className="mr-1" />
+                              {property.bathrooms || property.details?.bathrooms || 0} Baths
+                            </span>
+                            <span className="flex items-center">
+                              <FaRulerCombined className="mr-1" />
+                              {property.sqft || property.details?.sqft || property.area || 0}m²
+                            </span>
+                          </div>
+                        </Link>
+                        <div className="px-4 pb-4 space-y-2">
+                          <Link
+                            to={`/property/${property.propertyId || property.id}`}
+                            className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                            title={`View details for ${property.title}`}
+                          >
+                            View Details
+                            <FaArrowRight className="ml-2 text-sm" />
+                          </Link>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleScheduleViewing(property);
+                            }}
+                            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                            title={`Schedule a viewing for ${property.title}`}
+                          >
+                            <FaClock className="mr-2" />
+                            Schedule Viewing
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div
-                      className="flex items-center justify-center w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
-                      title={`View details for ${property.title}`}
-                    >
-                      View Details
-                      <FaArrowRight className="ml-2 text-sm" />
-                    </div>
-                  </Link>
-                </div>
-              ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-16">
@@ -1268,6 +1317,22 @@ const Home = () => {
           </div>
         </div>
       </div>
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-gray-900 text-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Filters & Sort</h3>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="text-sm text-gray-300 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            {renderFilters({ showHeading: false })}
+          </div>
+        </div>
+      )}
 
       {/* Security & Value Proposition Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 mt-12">
