@@ -7,7 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardSwitch from '../components/DashboardSwitch';
 import { useProperty } from '../contexts/PropertyContext';
 import { useInvestment } from '../contexts/InvestmentContext';
-import { useMortgage } from '../contexts/MortgageContext';
+// import { useMortgage } from '../contexts/MortgageContext';
+
 import { FaHeart, FaBell, FaQuestionCircle, FaShare, FaBed, FaBath, FaRuler, FaUser, FaCalendar, FaTag, FaHome, FaMapMarkerAlt, FaPhone, FaEnvelope, FaCheck, FaPlus, FaChartLine, FaMoneyBillWave, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
@@ -31,7 +32,8 @@ const Dashboard = () => {
   }, [user, navigate]);
   const { properties, loading, toggleFavorite } = useProperty();
   const { userInvestments, getUserInvestmentSummary } = useInvestment();
-  const { getUserMortgages, getPaymentSummary, getUserApplications, getApplicationsByStatus } = useMortgage();
+  // const { getUserMortgages, getPaymentSummary, getUserApplications, getApplicationsByStatus } = useMortgage();
+
   const [favorites, setFavorites] = useState(new Set());
 
   // Load favorites from localStorage
@@ -128,12 +130,6 @@ const Dashboard = () => {
     // Total earnings: sum of totalDividendsEarned (matches investment page)
     const totalEarnings = investmentSummary.totalDividends || 0;
 
-    // Get mortgage application data (moved outside callback)
-    const mortgageApplications = getUserApplications();
-    const pendingMortgageApps = getApplicationsByStatus('pending').length;
-    const underReviewMortgageApps = getApplicationsByStatus('under_review').length;
-    const approvedMortgageApps = getApplicationsByStatus('approved').length;
-
     // Get total properties count
     const totalProperties = properties.length || 0;
 
@@ -149,13 +145,9 @@ const Dashboard = () => {
       escrowTransactions: escrowCount,
       pendingPayments,
       totalEarnings,
-      monthlyBudget: user?.monthlyBudget || 5000000,
-      mortgageApplications: getUserApplications().length,
-      pendingMortgageApps: getApplicationsByStatus('pending').length,
-      underReviewMortgageApps: getApplicationsByStatus('under_review').length,
-      approvedMortgageApps: getApplicationsByStatus('approved').length
+      monthlyBudget: user?.monthlyBudget || 5000000
     }));
-  }, [user, properties.length, getUserInvestmentSummary, getUserApplications, getApplicationsByStatus]);
+  }, [user, properties.length, getUserInvestmentSummary]);
 
   // Listen for data changes from other components/pages
   useEffect(() => {
@@ -436,97 +428,27 @@ const Dashboard = () => {
       const activeInvestments = investmentSummary.activeInvestments || 0;
       const totalEarnings = investmentSummary.totalDividends || 0;
 
-      // Get mortgage data from MortgageContext
-      const mortgageSummary = getPaymentSummary();
-      const mortgagePayments = mortgageSummary.totalMonthlyPayments || 0;
-
       // Get total properties count
       const totalProperties = properties.length || 0;
 
-      // Try to get additional data from backend API (only if user has Firebase token)
-      const fetchBackendStats = async () => {
-        try {
-          // Check if user has a Firebase token before attempting API call
-          const { hasAuthToken } = await import('../utils/authToken');
-          const hasToken = await hasAuthToken();
-          
-          if (!hasToken) {
-            // Mock user or no Firebase token - skip API call and use local data only
-            console.log('Dashboard: No Firebase token available, using local data only');
-            setDashboardStats({
-              totalProperties,
-              savedProperties: savedCount,
-              activeInquiries,
-              scheduledViewings,
-              completedViewings,
-              totalInvested,
-              activeInvestments,
-              escrowTransactions: escrowCount,
-              monthlyBudget: user?.monthlyBudget || 5000000,
-              pendingPayments,
-              totalEarnings
-            });
-            return;
-          }
-
-          // Use apiClient which handles token refresh + retry
-          try {
-            const resp = await apiClient.get('/dashboard/user');
-            const data = resp.data || {};
-            if (data.success) {
-              const backend = data.data || {};
-              const backendInvestmentSummary = backend.investments || {};
-              const backendEscrowSummary = backend.escrow || {};
-
-              setDashboardStats(prev => ({
-                ...prev,
-                totalProperties: backend.totalProperties ?? totalProperties,
-                savedProperties: savedCount,
-                activeInquiries: activeInquiries || backend.activeInquiries || 0,
-                scheduledViewings: scheduledViewings || backend.scheduledViewings || 0,
-                completedViewings: completedViewings || backend.completedViewings || 0,
-                totalInvested: totalInvested || backendInvestmentSummary.totalInvested || 0,
-                activeInvestments: activeInvestments || backendInvestmentSummary.activeInvestments || 0,
-                escrowTransactions: escrowCount || backendEscrowSummary.count || 0,
-                pendingPayments: pendingPayments || backendEscrowSummary.pendingPayments || 0,
-                monthlyBudget: user?.monthlyBudget || 5000000,
-                totalEarnings: totalEarnings || user?.totalEarnings || 0
-              }));
-              return;
-            }
-          } catch (err) {
-            if (err?.response?.status === 401) {
-              console.log('Dashboard: API returned 401 - using local data only');
-            } else {
-              console.log('Dashboard: Error fetching backend stats (using local data)', err?.message || err);
-            }
-          }
-        } catch (error) {
-          // Suppress errors for mock users
-          console.log('Dashboard: Error fetching backend stats (using local data)', error.message);
-        }
-
-        // Fallback to local data only
-        setDashboardStats({
-          totalProperties,
-          savedProperties: savedCount,
-          activeInquiries,
-          scheduledViewings,
-          completedViewings,
-          totalInvested,
-          activeInvestments,
-          escrowTransactions: escrowCount,
-          monthlyBudget: user?.monthlyBudget || 5000000,
-          pendingPayments,
-          totalEarnings
-        });
-      };
-
-      fetchBackendStats();
+      setDashboardStats(prev => ({
+        ...prev,
+        totalProperties,
+        savedProperties: savedCount,
+        activeInquiries,
+        scheduledViewings,
+        completedViewings,
+        totalInvested,
+        activeInvestments,
+        escrowTransactions: escrowCount,
+        pendingPayments,
+        totalEarnings,
+        monthlyBudget: user?.monthlyBudget || 5000000
+      }));
     };
 
     loadDashboardStats();
-  }, [user, properties.length, userInvestments, getUserInvestmentSummary, getPaymentSummary]);
+  }, [user, properties.length, userInvestments, getUserInvestmentSummary]);
 
   // Refresh dashboard when navigating to this route (e.g., coming back from SavedProperties)
   useEffect(() => {
@@ -940,89 +862,9 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Mortgage Portfolio Section */}
-        {user && (() => {
-          const mortgages = getUserMortgages();
-          const mortgageSummary = getPaymentSummary();
-          
-          if (mortgages.length > 0) {
-            return (
-              <div className="mb-8">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Your Mortgage Portfolio</h3>
-                    <button
-                      onClick={() => navigate('/mortgages')}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      View All →
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    {/* Mortgage Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-blue-600 text-sm font-medium">Active Mortgages</p>
-                            <p className="text-blue-900 text-xl font-bold">{mortgageSummary.activeMortgages}</p>
-                          </div>
-                          <FaHome className="text-blue-600 text-xl" />
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-green-600 text-sm font-medium">Monthly Payments</p>
-                            <p className="text-green-900 text-xl font-bold">₦{mortgageSummary.totalMonthlyPayments.toLocaleString()}</p>
-                          </div>
-                          <FaMoneyBillWave className="text-green-600 text-xl" />
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-purple-600 text-sm font-medium">Total Paid</p>
-                            <p className="text-purple-900 text-xl font-bold">₦{mortgageSummary.totalPaid.toLocaleString()}</p>
-                          </div>
-                          <FaCheck className="text-purple-600 text-xl" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recent Mortgages */}
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-900 mb-3">Recent Mortgages</h4>
-                      <div className="space-y-3">
-                        {mortgages.slice(0, 2).map((mortgage) => (
-                          <div key={mortgage.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex-1">
-                              <h5 className="font-medium text-gray-900">{mortgage.propertyTitle}</h5>
-                              <p className="text-sm text-gray-600">
-                                Monthly: ₦{mortgage.monthlyPayment.toLocaleString()} • 
-                                Next Due: {new Date(mortgage.nextPaymentDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-gray-900">
-                                {mortgage.paymentsMade}/{mortgage.totalPayments}
-                              </p>
-                              <p className="text-sm text-gray-600">Payments</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {/* Mortgage Portfolio Section temporarily disabled */}
+        {false && <div />}
+        
 
         {/* Continue Browsing Section */}
         <div className="mb-8">

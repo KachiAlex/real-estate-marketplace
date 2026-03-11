@@ -67,8 +67,7 @@ const waitForGoogleResult = (expectedState, popupRef, timeoutMs = GOOGLE_POPUP_T
         window.removeEventListener('message', messageHandler);
       }
       clearTimeout(timeoutId);
-      clearInterval(pollId);
-      try { popupRef?.close(); } catch (e) { /* ignore */ }
+      // Removed polling for popup.closed to avoid COOP policy violations
     };
 
     const messageHandler = (event) => {
@@ -88,15 +87,7 @@ const waitForGoogleResult = (expectedState, popupRef, timeoutMs = GOOGLE_POPUP_T
       reject(new Error('Timed out waiting for Google sign-in to complete.'));
     }, timeoutMs);
 
-    const pollId = setInterval(() => {
-      if (settled) return;
-      if (!popupRef || popupRef.closed) {
-        settled = true;
-        cleanup();
-        reject(new Error('Google sign-in window was closed before completing.'));
-      }
-    }, 400);
-
+    // Removed polling interval - rely only on message events
     window.addEventListener('message', messageHandler);
   });
 };

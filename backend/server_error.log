@@ -1,0 +1,20 @@
+[2026-03-10T21:30:10.106Z] propertyService.listProperties error:
+{
+  "message": "relation \"properties\" does not exist",
+  "name": "SequelizeDatabaseError",
+  "stack": "Error\n    at Query.run (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\query.js:50:25)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\sequelize.js:315:28\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async PostgresQueryInterface.rawSelect (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\abstract\\query-interface.js:434:18)\n    at async Property.aggregate (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1277:19)\n    at async Property.count (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1306:20)\n    at async Promise.all (index 0)\n    at async Property.findAndCountAll (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1322:27)\n    at async Object.listProperties (D:\\real-estate-marketplace\\backend\\services\\propertyService.js:42:27)\n    at async D:\\real-estate-marketplace\\backend\\routes\\properties.js:57:22",
+  "sql": "SELECT count(*) AS \"count\" FROM \"properties\" AS \"Property\";",
+  "parent": "relation \"properties\" does not exist",
+  "original": "relation \"properties\" does not exist"
+}
+---
+[2026-03-10T21:30:10.371Z] propertyService.listProperties error:
+{
+  "message": "relation \"properties\" does not exist",
+  "name": "SequelizeDatabaseError",
+  "stack": "Error\n    at Query.run (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\postgres\\query.js:50:25)\n    at D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\sequelize.js:315:28\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async PostgresQueryInterface.rawSelect (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\dialects\\abstract\\query-interface.js:434:18)\n    at async Property.aggregate (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1277:19)\n    at async Property.count (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1306:20)\n    at async Promise.all (index 0)\n    at async Property.findAndCountAll (D:\\real-estate-marketplace\\backend\\node_modules\\sequelize\\lib\\model.js:1322:27)\n    at async Object.listProperties (D:\\real-estate-marketplace\\backend\\services\\propertyService.js:42:27)\n    at async D:\\real-estate-marketplace\\backend\\routes\\properties.js:57:22",
+  "sql": "SELECT count(*) AS \"count\" FROM \"properties\" AS \"Property\";",
+  "parent": "relation \"properties\" does not exist",
+  "original": "relation \"properties\" does not exist"
+}
+---

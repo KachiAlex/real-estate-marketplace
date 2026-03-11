@@ -14,15 +14,15 @@ import {
   FaCalendar
 } from 'react-icons/fa';
 
-const AdminDisputesManagement = ({ disputes }) => {
+const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', onResolveDispute, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedDispute, setSelectedDispute] = useState(null);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [resolutionType, setResolutionType] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
   // Enhanced mock disputes data with more details
   const enhancedDisputes = disputes.map(dispute => ({
@@ -77,24 +77,34 @@ const AdminDisputesManagement = ({ disputes }) => {
     setShowResolutionModal(true);
   };
 
-  const handleConfirmResolution = () => {
+  const handleConfirmResolution = async () => {
     if (!resolutionType || !adminNotes.trim()) {
       alert('Please select a resolution type and provide admin notes');
       return;
     }
 
-    // Simulate resolution
-    console.log('Resolving dispute:', {
-      disputeId: selectedDispute.id,
-      resolutionType,
-      adminNotes
-    });
+    if (!onResolveDispute) {
+      console.warn('onResolveDispute handler missing');
+      return;
+    }
 
-    alert(`Dispute resolved! Resolution: ${resolutionType}`);
-    setShowResolutionModal(false);
-    setResolutionType('');
-    setAdminNotes('');
-    setSelectedDispute(null);
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      await onResolveDispute({
+        disputeId: selectedDispute?.id,
+        resolutionType,
+        adminNotes
+      });
+      setShowResolutionModal(false);
+      setResolutionType('');
+      setAdminNotes('');
+      setSelectedDispute(null);
+    } catch (err) {
+      setActionError(err.message || 'Failed to resolve dispute');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -154,6 +164,14 @@ const AdminDisputesManagement = ({ disputes }) => {
               {filteredDisputes.filter(d => d.status === 'pending').length} Pending
             </span>
           </div>
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Refresh
+            </button>
+          )}
         </div>
       </div>
 
@@ -304,6 +322,12 @@ const AdminDisputesManagement = ({ disputes }) => {
                 />
               </div>
 
+              {actionError && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
+                  {actionError}
+                </div>
+              )}
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex items-start">
                   <FaExclamationTriangle className="text-yellow-600 mr-2 mt-0.5" />
@@ -329,9 +353,10 @@ const AdminDisputesManagement = ({ disputes }) => {
               </button>
               <button
                 onClick={handleConfirmResolution}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={actionLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
               >
-                Confirm Resolution
+                {actionLoading ? 'Processing...' : 'Confirm Resolution'}
               </button>
             </div>
           </div>

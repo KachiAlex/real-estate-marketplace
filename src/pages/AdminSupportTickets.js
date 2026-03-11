@@ -5,7 +5,6 @@ import apiClient from '../services/apiClient';
 import SupportTicketsErrorBoundary from '../components/SupportTicketsErrorBoundary';
 
 const AdminSupportTicketsInner = () => {
-  console.log('[AdminSupportTickets] render start');
   const [tickets, setTickets] = useState([]);
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -18,41 +17,21 @@ const AdminSupportTicketsInner = () => {
     setError(null);
     try {
       const resp = await apiClient.get('/support/admin/inquiries');
-      const data = resp.data || {};
-      if (!data?.success) throw new Error(data?.message || 'Failed to load tickets');
-      setTickets(data.data || []);
+      const payload = resp?.data || {};
+      if (!payload?.success) throw new Error(payload?.message || 'Failed to load tickets');
+      const inbound = Array.isArray(payload?.data) ? payload.data : [];
+      setTickets(inbound);
     } catch (err) {
       console.error('Admin tickets load error:', err);
-      setTickets([
-        {
-          id: 'ticket-1',
-          category: 'Technical Support',
-          status: 'open',
-          priority: 'high',
-          userName: 'John Doe',
-          userEmail: 'john@example.com',
-          message: 'Unable to upload property images',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'ticket-2',
-          category: 'Account',
-          status: 'in-progress',
-          priority: 'medium',
-          userName: 'Jane Smith',
-          userEmail: 'jane@example.com',
-          message: 'Need to update payment information',
-          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-        }
-      ]);
-      setError(err?.response?.data?.error || err.message || 'Failed to load tickets');
+      const apiError = err?.response?.data?.error || err?.response?.data?.message || err.message || 'Failed to load tickets';
+      setTickets([]);
+      setError(apiError);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('[AdminSupportTickets] useEffect triggered');
     loadTickets();
   }, []);
 
@@ -75,23 +54,54 @@ const AdminSupportTicketsInner = () => {
   const priorities = Array.from(new Set(tickets.map(t => t.priority || 'medium')));
   const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
 
-  const filteredTickets = useMemo(() => {
-    console.log('[AdminSupportTickets] useMemo running');
-    return tickets.filter(t =>
+  const filteredTickets = useMemo(() => (
+    tickets.filter(t =>
       (selectedPriority === 'all' || t.priority === selectedPriority) &&
       (selectedCategory === 'all' || t.category === selectedCategory)
+    )
+  ), [tickets, selectedPriority, selectedCategory]);
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-3">
+          <div className="h-5 w-48 bg-gray-200 rounded" />
+          <div className="h-4 w-full bg-gray-100 rounded" />
+          <div className="h-4 w-full bg-gray-100 rounded" />
+          <div className="h-32 w-full bg-gray-100 rounded" />
+        </div>
+      </div>
     );
-  }, [tickets, selectedPriority, selectedCategory]);
+  }
 
-  if (loading) return <div className="p-6">Loading tickets...</div>;
-  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (error) {
+    return (
+      <div className="p-6 text-sm">
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+          <p className="text-red-700 font-medium mb-2">Unable to load support tickets</p>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadTickets}
+            className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-white text-sm font-semibold hover:bg-red-700"
+          >
+            <FaSyncAlt className="text-xs" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  console.log('[AdminSupportTickets] render end, ticket count:', tickets.length);
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Admin — Support Tickets</h1>
-        <button className="btn" onClick={loadTickets}><FaSyncAlt className="inline mr-2"/> Refresh</button>
+        <button
+          className="btn"
+          onClick={loadTickets}
+          disabled={loading}
+        >
+          <FaSyncAlt className="inline mr-2"/> Refresh
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-6">
@@ -112,7 +122,10 @@ const AdminSupportTicketsInner = () => {
       </div>
 
       {filteredTickets.length === 0 ? (
-        <div className="bg-white p-6 rounded shadow">No tickets found for selected filters.</div>
+        <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-500 border border-dashed border-gray-200">
+          <p className="text-base font-semibold text-gray-700 mb-1">No tickets found</p>
+          <p className="text-sm">Try adjusting your filters or click refresh to fetch the latest inquiries.</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {filteredTickets.map(ticket => (

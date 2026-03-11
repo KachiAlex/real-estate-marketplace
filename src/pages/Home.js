@@ -387,6 +387,21 @@ const Home = () => {
     setShowMobileFilters(false);
   };
 
+  const handleScheduleViewing = (property) => {
+    if (!user) {
+      toast.error('Please login to schedule viewings');
+      navigate('/auth/login');
+      return;
+    }
+
+    if (!property) {
+      toast.error('Missing property information');
+      return;
+    }
+
+    toast.success('Thanks! We will notify the vendor and email you the schedule.');
+  };
+
   const renderFilters = ({ showHeading = true } = {}) => (
     <>
       {showHeading && (

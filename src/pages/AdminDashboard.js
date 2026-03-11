@@ -1,25 +1,32 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useProperty } from '../contexts/PropertyContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
-import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
-import AdminDisputesManagement from '../components/AdminDisputesManagement';
-import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
-import AdminVerificationDashboard from '../components/AdminVerificationDashboard';
-import AdminSupportTickets from './AdminSupportTickets';
-// Mortgage flow temporarily disabled
-// import AdminMortgageBankVerification from '../components/AdminMortgageBankVerification';
-import TableSkeleton from '../components/TableSkeleton';
-import Breadcrumbs from '../components/Breadcrumbs';
-import AdminListingsStatusChart from '../components/AdminListingsStatusChart';
-import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
 import toast from 'react-hot-toast';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import AdminDisputesManagement from '../components/AdminDisputesManagement';
+import AdminEscrowVolumeChart from '../components/AdminEscrowVolumeChart';
+import AdminListingsStatusChart from '../components/AdminListingsStatusChart';
+import AdminPropertyDetailsModal from '../components/AdminPropertyDetailsModal';
+import AdminSidebar, { ADMIN_MENU_ITEMS } from '../components/layout/AdminSidebar';
+import AdminSupportTickets from './AdminSupportTickets';
+import AdminVerificationCenter from '../components/AdminVerificationCenterNew';
+import AdminVerificationDashboard from '../components/AdminVerificationDashboard';
+import Breadcrumbs from '../components/Breadcrumbs';
+import TableSkeleton from '../components/TableSkeleton';
+import { useAuth } from '../contexts/AuthContext';
+import { useProperty } from '../contexts/PropertyContext';
+import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch, hasAuthToken } from '../utils/authToken';
-import apiClient from '../services/apiClient';
+
+const ESCROW_STATUS_OPTIONS = ['pending', 'active', 'completed', 'cancelled', 'disputed'];
+const ESCROW_RESOLUTION_OPTIONS = [
+  { value: 'buyer_favor', label: "Rule in Buyer's Favor" },
+  { value: 'seller_favor', label: "Rule in Seller's Favor" },
+  { value: 'partial_refund', label: 'Partial Refund to Buyer' },
+  { value: 'full_refund', label: 'Full Refund to Buyer' }
+];
 
 const MOCK_USERS = [
   {
@@ -97,60 +104,6 @@ const MOCK_USERS = [
   }
 ];
 
-const MOCK_ESCROWS = [
-  {
-    id: '1',
-    propertyId: '1',
-    propertyTitle: 'Luxury Villa in Lekki',
-    buyerId: '1',
-    buyerName: 'John Doe',
-    sellerId: '2',
-    sellerName: 'Jane Smith',
-    amount: 50000000,
-    status: 'active',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    propertyId: '2',
-    propertyTitle: 'Modern Apartment in Victoria Island',
-    buyerId: '3',
-    buyerName: 'Michael Brown',
-    sellerId: '4',
-    sellerName: 'Sarah Johnson',
-    amount: 75000000,
-    status: 'disputed',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    propertyId: '3',
-    propertyTitle: 'Penthouse in Ikoyi',
-    buyerId: '6',
-    buyerName: 'Onyedikachi Akoma',
-    sellerId: '1',
-    sellerName: 'John Doe',
-    amount: 120000000,
-    status: 'pending',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-const MOCK_DISPUTES = [
-  {
-    id: '2',
-    propertyId: '2',
-    propertyTitle: 'Modern Apartment in Victoria Island',
-    buyerId: '3',
-    buyerName: 'Michael Brown',
-    sellerId: '4',
-    sellerName: 'Sarah Johnson',
-    amount: 75000000,
-    status: 'disputed',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const { 
@@ -186,6 +139,13 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [selectedPropertyForModal, setSelectedPropertyForModal] = useState(null);
+  const [selectedEscrowTransaction, setSelectedEscrowTransaction] = useState(null);
+  const [showEscrowActionModal, setShowEscrowActionModal] = useState(false);
+  const [escrowActionType, setEscrowActionType] = useState('status');
+  const [escrowStatusValue, setEscrowStatusValue] = useState('pending');
+  const [escrowResolutionType, setEscrowResolutionType] = useState('buyer_favor');
+  const [escrowActionNotes, setEscrowActionNotes] = useState('');
+  const [escrowActionLoading, setEscrowActionLoading] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -199,8 +159,14 @@ const AdminDashboard = () => {
   const [hasAdminToken, setHasAdminToken] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [escrowLoading, setEscrowLoading] = useState(false);
+  const [disputeLoading, setDisputeLoading] = useState(false);
+  const [escrowError, setEscrowError] = useState('');
+  const [disputeError, setDisputeError] = useState('');
   const usersLoadedRef = useRef(false);
   const statsRefreshIntervalRef = useRef(null);
+  const escrowsLoadedRef = useRef(false);
+  const disputesLoadedRef = useRef(false);
   const [blogPosts, setBlogPosts] = useState([
     {
       id: 'blog-1',
@@ -221,10 +187,12 @@ const AdminDashboard = () => {
       excerpt: 'Everything our buyers should know about the revamped PropertyArk mortgage partners.'
     }
   ]);
+  const initialDraftPost = { title: '', category: '', status: 'draft', content: '' };
   const [blogFilter, setBlogFilter] = useState('all');
   const [blogCategoryFilter, setBlogCategoryFilter] = useState('all');
   const [blogSearch, setBlogSearch] = useState('');
-  const [draftPost, setDraftPost] = useState({ title: '', category: '', status: 'draft', content: '' });
+  const [draftPost, setDraftPost] = useState(initialDraftPost);
+  const isMountedRef = useRef(true);
 
   const handleAdminLogout = useCallback(async () => {
     try {
@@ -267,6 +235,20 @@ const AdminDashboard = () => {
 
   const contentWidthClasses = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16';
 
+  useEffect(() => {
+    loadVerificationConfig();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadVerificationConfig]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    const allowedTabs = ['properties','verification','escrow','disputes','users','blog','support'];
+    if (tabParam && allowedTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+
   const normalizedSearch = userSearch.trim().toLowerCase();
   const propertyAnalytics = useMemo(() => {
     // Always calculate from the actual properties array to ensure accuracy
@@ -301,6 +283,52 @@ const AdminDashboard = () => {
       pendingRate
     };
   }, [properties]);
+
+  const blogStats = useMemo(() => {
+    return blogPosts.reduce((acc, post) => {
+      acc.total += 1;
+      if (post.status === 'published') acc.published += 1;
+      if (post.status === 'draft') acc.drafts += 1;
+      if (post.status === 'scheduled') acc.scheduled += 1;
+      return acc;
+    }, { total: 0, published: 0, drafts: 0, scheduled: 0 });
+  }, [blogPosts]);
+
+  const blogCategories = useMemo(() => {
+    const categories = new Set();
+    blogPosts.forEach((post) => {
+      if (post.category) categories.add(post.category);
+    });
+    return Array.from(categories).sort();
+  }, [blogPosts]);
+
+  const filteredBlogPosts = useMemo(() => {
+    return blogPosts.filter((post) => {
+      const matchesStatus = blogFilter === 'all' || post.status === blogFilter;
+      const matchesCategory = blogCategoryFilter === 'all' || post.category === blogCategoryFilter;
+      const normalizedSearch = blogSearch.trim().toLowerCase();
+      const matchesSearch = !normalizedSearch ||
+        post.title?.toLowerCase().includes(normalizedSearch) ||
+        post.excerpt?.toLowerCase().includes(normalizedSearch);
+      return matchesStatus && matchesCategory && matchesSearch;
+    });
+  }, [blogPosts, blogFilter, blogCategoryFilter, blogSearch]);
+
+  const updateStatsFromProperties = useCallback(() => {
+    setStats({
+      total: propertyAnalytics.total,
+      pending: propertyAnalytics.pending,
+      approved: propertyAnalytics.approved,
+      rejected: propertyAnalytics.rejected
+    });
+  }, [propertyAnalytics]);
+
+  const refreshStats = useCallback(() => {
+    updateStatsFromProperties();
+    if (!statsRefreshIntervalRef.current) {
+      statsRefreshIntervalRef.current = setInterval(updateStatsFromProperties, 60000);
+    }
+  }, [updateStatsFromProperties]);
   const filteredUsers = useMemo(() => (
     users.filter((u) => {
       const matchesSearch = !normalizedSearch ||
@@ -542,428 +570,134 @@ const AdminDashboard = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    let isMounted = true;
-    const verifyTokenState = async () => {
-      const tokenExists = await hasAuthToken();
-      if (!isMounted) return;
-      setHasAdminToken(Boolean(tokenExists));
-      if (!tokenExists) {
+  }, [loadingUsers]);
+
+  const fetchEscrowTransactions = useCallback(async (params = {}) => {
+    if (!user || user.role !== 'admin') return;
+    setEscrowLoading(true);
+    setEscrowError('');
+    try {
+      const response = await apiClient.get('/escrow', {
+        params: {
+          type: 'admin',
+          limit: 100,
+          ...params
+        }
+      });
+      const payload = response?.data?.data;
+      const list = Array.isArray(payload?.transactions)
+        ? payload.transactions
+        : Array.isArray(response?.data?.transactions)
+          ? response.data.transactions
+          : Array.isArray(payload)
+            ? payload
+            : [];
+      setEscrows(list);
+      escrowsLoadedRef.current = true;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to load escrow transactions';
+      setEscrowError(message);
+    } finally {
+      setEscrowLoading(false);
+    }
+  }, [user]);
+
+  const fetchAdminDisputes = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    setDisputeLoading(true);
+    setDisputeError('');
+    try {
+      const response = await apiClient.get('/admin/disputes');
+      const list = Array.isArray(response?.data?.data) ? response.data.data : [];
+      setDisputes(list);
+      disputesLoadedRef.current = true;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to load disputes';
+      setDisputeError(message);
+    } finally {
+      setDisputeLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const checkAdminToken = async () => {
+      const token = await hasAuthToken();
+      if (!isMountedRef.current) return;
+      setHasAdminToken(Boolean(token));
+      if (!token) {
         setAuthWarning('Admin authentication required. Please log in with an admin account (e.g., admin@propertyark.com / Admin#2026!) so protected endpoints can be accessed.');
       } else {
         setAuthWarning('');
       }
     };
 
-    verifyTokenState();
+    checkAdminToken();
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
+      if (statsRefreshIntervalRef.current) {
+        clearInterval(statsRefreshIntervalRef.current);
+        statsRefreshIntervalRef.current = null;
+      }
     };
   }, [user]);
 
-  // Initialize activeTab from URL once on mount
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const t = params.get('tab');
-    const allowedTabs = ['properties','verification','escrow','disputes','users','blog','support'];
-    if (t && allowedTabs.includes(t)) {
-      setActiveTab(t);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (user?.role !== 'admin') return;
+    fetchEscrowTransactions();
+    fetchAdminDisputes();
+  }, [user?.role, fetchEscrowTransactions, fetchAdminDisputes]);
 
   useEffect(() => {
-    if (activeTab === 'verification' && user?.role === 'admin') {
-      if (!adminSettings && !loadingVerificationSettings) {
-        loadVerificationConfig();
-      }
+    if (user?.role !== 'admin') return;
+    if (activeTab === 'escrow' && !escrowLoading && !escrowsLoadedRef.current) {
+      fetchEscrowTransactions();
     }
-  }, [activeTab, user, adminSettings, loadingVerificationSettings, loadVerificationConfig]);
-
-
-  const handleSwitchTab = (tabId) => {
-    setActiveTab(tabId);
-    const params = new URLSearchParams(location.search);
-    params.set('tab', tabId);
-    navigate({ pathname: '/admin', search: params.toString() }, { replace: true });
-    setIsSidebarOpen(false);
-  };
+    if (activeTab === 'disputes' && !disputeLoading && !disputesLoadedRef.current) {
+      fetchAdminDisputes();
+    }
+  }, [activeTab, user?.role, fetchEscrowTransactions, fetchAdminDisputes, escrowLoading, disputeLoading]);
 
   useEffect(() => {
-    // Only load users when the tab is active and user is admin
-    if (activeTab === 'users' && user?.role === 'admin') {
-      const roleParam = userRoleFilter !== 'all' ? userRoleFilter : undefined;
-      loadUsersFromApi({ role: roleParam });
+    if (!statsLoading && user?.role === 'admin' && !statsRefreshIntervalRef.current) {
+      refreshStats();
     }
-  }, [activeTab, userRoleFilter, user?.role, loadUsersFromApi]);
+  }, [statsLoading, user?.role, statsRefreshIntervalRef]);
 
-  const blogStats = useMemo(() => {
-    const published = blogPosts.filter((post) => post.status === 'published').length;
-    const drafts = blogPosts.filter((post) => post.status !== 'published').length;
-    const scheduled = blogPosts.filter((post) => post.status === 'scheduled').length;
-    return {
-      total: blogPosts.length,
-      published,
-      drafts,
-      scheduled
-    };
-  }, [blogPosts]);
+  // ...
 
-  const blogCategories = useMemo(() => {
-    const set = new Set(blogPosts.map((post) => post.category).filter(Boolean));
-    if (draftPost.category) {
-      set.add(draftPost.category);
-    }
-    return Array.from(set);
-  }, [blogPosts, draftPost.category]);
-
-  const filteredBlogPosts = useMemo(() => (
-    blogPosts.filter((post) => {
-      const matchesFilter = blogFilter === 'all' || post.status === blogFilter;
-      const matchesCategory = blogCategoryFilter === 'all' || post.category === blogCategoryFilter;
-      const matchesSearch = !blogSearch || post.title.toLowerCase().includes(blogSearch.toLowerCase());
-      return matchesFilter && matchesCategory && matchesSearch;
-    })
-  ), [blogPosts, blogFilter, blogCategoryFilter, blogSearch]);
-
-  const handleDraftChange = (field, value) => {
-    setDraftPost((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const resetDraftPost = () => {
-    setDraftPost({ title: '', category: '', status: 'draft', content: '' });
-  };
-
-  const handleCreateBlogPost = () => {
-    if (!draftPost.title || !draftPost.category || !draftPost.content) {
-      toast.error('Please provide title, category and content.');
-      return;
-    }
-    const newPost = {
-      id: `blog-${Date.now()}`,
-      title: draftPost.title,
-      category: draftPost.category,
-      status: draftPost.status || 'draft',
-      author: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Admin Team',
-      publishedAt: new Date().toISOString(),
-      content: draftPost.content,
-      excerpt: draftPost.content.slice(0, 140)
-    };
-    setBlogPosts((prev) => [newPost, ...prev]);
-    resetDraftPost();
-    toast.success('Blog draft saved locally');
-  };
-
-  const handleBlogStatusToggle = (id) => {
-    setBlogPosts((prev) => prev.map((post) => {
-      if (post.id !== id) return post;
-      const nextStatus = post.status === 'published' ? 'draft' : 'published';
-      return { ...post, status: nextStatus, publishedAt: new Date().toISOString() };
-    }));
-  };
-
-  const handleDeleteBlogPost = (id) => {
-    if (!window.confirm('Remove this blog post?')) return;
-    setBlogPosts((prev) => prev.filter((post) => post.id !== id));
-  };
-
-  // Sync blog posts to localStorage for home page display
-  useEffect(() => {
-    if (blogPosts.length > 0) {
-      localStorage.setItem('blogPosts', JSON.stringify(blogPosts));
-    }
-  }, [blogPosts]);
-
-  // Load other admin data
-  useEffect(() => {
-    const load = async () => {
-      try {
-        console.log('AdminDashboard: Using mock data (API endpoints unavailable)');
-        
-        // Mock users data
-        const mockUsers = [
-          { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'buyer', isVerified: true, createdAt: '2024-01-15' },
-          { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'vendor', isVerified: true, createdAt: '2024-01-16' },
-          { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', role: 'buyer', isVerified: true, createdAt: '2024-01-17' },
-          { id: '4', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', role: 'vendor', isVerified: true, createdAt: '2024-01-18' },
-          { id: '5', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', isVerified: true, createdAt: '2024-01-01' },
-          { id: '6', firstName: 'Onyedikachi', lastName: 'Akoma', email: 'onyedika.akoma@gmail.com', role: 'buyer', isVerified: true, createdAt: '2024-01-20' }
-        ];
-
-        // Mock escrow data with full details
-        const mockEscrows = [
-          { 
-            id: '1', 
-            propertyId: '1', 
-            propertyTitle: 'Luxury Villa in Lekki',
-            buyerId: '1', 
-            buyerName: 'John Doe',
-            sellerId: '2', 
-            sellerName: 'Jane Smith',
-            amount: 50000000, 
-            status: 'active', 
-            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() 
-          },
-          { 
-            id: '2', 
-            propertyId: '2', 
-            propertyTitle: 'Modern Apartment in Victoria Island',
-            buyerId: '3', 
-            buyerName: 'Michael Brown',
-            sellerId: '4', 
-            sellerName: 'Sarah Johnson',
-            amount: 75000000, 
-            status: 'disputed', 
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() 
-          },
-          { 
-            id: '3', 
-            propertyId: '3', 
-            propertyTitle: 'Penthouse in Ikoyi',
-            buyerId: '6', 
-            buyerName: 'Onyedikachi Akoma',
-            sellerId: '1', 
-            sellerName: 'John Doe',
-            amount: 120000000, 
-            status: 'pending', 
-            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() 
-          }
-        ];
-        
-        // Mock disputes data with full details
-        const mockDisputes = [
-          { 
-            id: '2', 
-            propertyId: '2', 
-            propertyTitle: 'Modern Apartment in Victoria Island',
-            buyerId: '3', 
-            buyerName: 'Michael Brown',
-            sellerId: '4', 
-            sellerName: 'Sarah Johnson',
-            amount: 75000000, 
-            status: 'disputed', 
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() 
-          }
-        ];
-
-        // Set mock data
-        setEscrows(mockEscrows);
-        setDisputes(mockDisputes);
-        
-        console.log('AdminDashboard: Data loaded successfully');
-      } catch (error) {
-        console.error('AdminDashboard: Error loading admin data:', error);
-      }
-    };
-    
-    if (user && user.role === 'admin') {
-      load();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const handleStatusFilter = (status) => {
-    setSelectedStatus(status);
-    fetchAdminProperties(status, selectedVerificationStatus);
-  };
-
-  const handleVerificationFilter = (verificationStatus) => {
-    setSelectedVerificationStatus(verificationStatus);
-    fetchAdminProperties(selectedStatus, verificationStatus);
-  };
-
-  const handleVerifyProperty = async (propertyId, verificationStatus) => {
-    const success = await verifyProperty(propertyId, verificationStatus, verificationNotes);
-    if (success) {
-      setVerificationNotes('');
-      setSelectedProperty(null);
-      await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-    }
-  };
-
-  const openVerificationModal = (property) => {
-    setSelectedProperty(property);
-    setVerificationNotes('');
-  };
-
-  const closeVerificationModal = () => {
-    setSelectedProperty(null);
-    setVerificationNotes('');
-  };
-
-  // Property modal handlers
-  const openPropertyModal = (property) => {
-    setSelectedPropertyForModal(property);
-    setShowPropertyModal(true);
-  };
-
-  const closePropertyModal = () => {
-    setSelectedPropertyForModal(null);
-    setShowPropertyModal(false);
-  };
-
-  // Property approval/rejection handlers
-  const handlePropertyApprove = async (propertyId, adminNotes) => {
-    try {
-      console.log('Approving property:', propertyId, 'with notes:', adminNotes);
-      
-      // Use verifyProperty from PropertyContext which handles Firestore directly
-      const success = await verifyProperty(propertyId, 'approved', adminNotes);
-      
-      if (success) {
-        await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-        // Send notification to vendor (simulated)
-        await sendNotificationToVendor(propertyId, 'approved', adminNotes);
-      } else {
-        throw new Error('Failed to approve property');
-      }
-    } catch (error) {
-      console.error('Error approving property:', error);
-      toast.error('Error approving property: ' + error.message);
-      throw error;
-    }
-  };
-
-  const handlePropertyReject = async (propertyId, rejectionReason, adminNotes) => {
-    try {
-      console.log('Rejecting property:', propertyId, 'with reason:', rejectionReason);
-      
-      // Use verifyProperty from PropertyContext which handles Firestore directly
-      const notes = rejectionReason ? `${rejectionReason}. ${adminNotes || ''}`.trim() : adminNotes;
-      const success = await verifyProperty(propertyId, 'rejected', notes);
-      
-      if (success) {
-        await fetchAdminProperties(selectedStatus, selectedVerificationStatus);
-        // Send notification to vendor
-        await sendNotificationToVendor(propertyId, 'rejected', rejectionReason);
-      } else {
-        throw new Error('Failed to reject property');
-      }
-    } catch (error) {
-      console.error('Error rejecting property:', error);
-      toast.error('Error rejecting property: ' + error.message);
-      throw error;
-    }
-  };
-
-  // Send notification to vendor (simulated)
-  const sendNotificationToVendor = async (propertyId, action, message) => {
-    try {
-      // Find the property to get vendor info
-      const property = properties.find(p => p.id === propertyId);
-      if (!property) return;
-
-      const notificationData = {
-        userId: property.vendorId || property.ownerId,
-        type: 'property_approval',
-        title: `Property ${action === 'approved' ? 'Approved for Listing' : 'Rejected'}`,
-        message: action === 'approved' 
-          ? `Your property "${property.title}" has been approved and is now visible on the home page for buyers to see.`
-          : `Your property "${property.title}" listing was rejected: ${message}`,
-        data: {
-          propertyId,
-          action,
-          propertyTitle: property.title,
-          adminNotes: message
-        }
-      };
-
-      await fetch(getApiUrl('/notifications'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notificationData)
-      });
-
-      console.log(`Notification sent to vendor for property ${action}:`, notificationData);
-    } catch (error) {
-      console.error('Error sending notification to vendor:', error);
-    }
-  };
-
-  // User management handlers
-  const handleSuspendUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to suspend this user?')) return;
-    
-    try {
-      const response = await fetch(`/api/admin/users/${userId}/suspend`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success('User suspended successfully');
-      } else {
-        toast.error('Failed to suspend user: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error suspending user:', error);
-      toast.error('Error suspending user');
-    }
-  };
-
-  const handleActivateUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to activate this user?')) return;
-    
-    try {
-      const response = await fetch(`/api/admin/users/${userId}/activate`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success('User activated successfully');
-      } else {
-        toast.error('Failed to activate user: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error activating user:', error);
-      toast.error('Error activating user');
-    }
-  };
-
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success('User deleted successfully');
-      } else {
-        toast.error('Failed to delete user: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error('Error deleting user');
-    }
-  };
-
-  const handleArchiveUser = (userId) => handleDeleteUser(userId);
-
-  const handleToggleUser = (userId, isSelected) => {
+  const handleToggleUser = useCallback((userId, checked) => {
     setSelectedUserIds((prev) => {
-      if (isSelected) {
-        return prev.includes(userId) ? prev : [...prev, userId];
-      }
+      if (checked) return Array.from(new Set([...prev, userId]));
       return prev.filter((id) => id !== userId);
     });
-  };
+  }, []);
 
-  const handleToggleAllUsers = (selectAll) => {
+  const handleToggleAllUsers = useCallback((selectAll) => {
     if (selectAll) {
       setSelectedUserIds(filteredUsers.map((u) => u.id));
     } else {
       setSelectedUserIds([]);
     }
-  };
+  }, [filteredUsers]);
 
-  const handleBulkAction = (action) => {
+  const handleUserStatusChange = useCallback(async (userId, nextStatus) => {
+    if (!userId || !nextStatus) return;
+    try {
+      await apiClient.patch(`/admin/users/${userId}/status`, { status: nextStatus });
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus, isActive: nextStatus === 'active' } : u)));
+      toast.success(`User ${nextStatus === 'active' ? 'activated' : nextStatus === 'suspended' ? 'suspended' : 'archived'}`);
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to update user status';
+      toast.error(message);
+    }
+  }, []);
+
+  const handleActivateUser = useCallback((userId) => handleUserStatusChange(userId, 'active'), [handleUserStatusChange]);
+  const handleSuspendUser = useCallback((userId) => handleUserStatusChange(userId, 'suspended'), [handleUserStatusChange]);
+  const handleArchiveUser = useCallback((userId) => handleUserStatusChange(userId, 'archived'), [handleUserStatusChange]);
+
+  const handleBulkAction = useCallback((action) => {
     if (!selectedUserIds.length) return;
     const performAction = {
       activate: handleActivateUser,
@@ -973,7 +707,210 @@ const AdminDashboard = () => {
     if (!performAction) return;
     selectedUserIds.forEach((userId) => performAction(userId));
     setSelectedUserIds([]);
+  }, [handleActivateUser, handleSuspendUser, handleArchiveUser, selectedUserIds]);
+
+  const handleResolveDispute = useCallback(async ({ disputeId, resolutionType, adminNotes }) => {
+    if (!disputeId) return false;
+    const normalizedResolution = resolutionType === 'reject' ? 'rejected' : resolutionType;
+    const status = resolutionType === 'reject' ? 'closed' : 'resolved';
+    try {
+      await apiClient.patch(`/admin/disputes/${disputeId}`, {
+        status,
+        resolutionNotes: adminNotes,
+        resolution: normalizedResolution
+      });
+      toast.success('Dispute updated successfully');
+      await fetchAdminDisputes();
+      return true;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to resolve dispute';
+      toast.error(message);
+      throw new Error(message);
+    }
+  }, [fetchAdminDisputes]);
+
+  const handleEscrowStatusUpdate = useCallback(async ({ transactionId, status, notes }) => {
+    if (!transactionId || !status) return false;
+    try {
+      await apiClient.put(`/escrow/${transactionId}/status`, {
+        status,
+        notes
+      });
+      toast.success('Escrow status updated');
+      await fetchEscrowTransactions();
+      return true;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to update escrow status';
+      toast.error(message);
+      throw new Error(message);
+    }
+  }, [fetchEscrowTransactions]);
+
+  const handleEscrowDisputeResolution = useCallback(async ({ transactionId, resolution, adminNotes }) => {
+    if (!transactionId || !resolution) return false;
+    try {
+      await apiClient.put(`/escrow/${transactionId}/resolve-dispute`, {
+        resolution,
+        adminNotes
+      });
+      toast.success('Escrow dispute resolved');
+      await fetchEscrowTransactions();
+      return true;
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to resolve escrow dispute';
+      toast.error(message);
+      throw new Error(message);
+    }
+  }, [fetchEscrowTransactions]);
+
+  const openEscrowActionModal = (transaction, type = 'status') => {
+    setSelectedEscrowTransaction(transaction);
+    setEscrowActionType(type);
+    setEscrowStatusValue((transaction?.status || 'pending').toLowerCase());
+    setEscrowResolutionType('buyer_favor');
+    setEscrowActionNotes('');
+    setShowEscrowActionModal(true);
   };
+
+  const closeEscrowActionModal = () => {
+    setShowEscrowActionModal(false);
+    setSelectedEscrowTransaction(null);
+    setEscrowActionNotes('');
+  };
+
+  const submitEscrowAction = async () => {
+    if (!selectedEscrowTransaction) return;
+    try {
+      setEscrowActionLoading(true);
+      if (escrowActionType === 'status') {
+        if (!escrowStatusValue) {
+          toast.error('Select a status to continue');
+          return;
+        }
+        await handleEscrowStatusUpdate({
+          transactionId: selectedEscrowTransaction.id,
+          status: escrowStatusValue,
+          notes: escrowActionNotes
+        });
+      } else {
+        if (!escrowResolutionType) {
+          toast.error('Select a resolution to continue');
+          return;
+        }
+        if (!escrowActionNotes || escrowActionNotes.trim().length < 10) {
+          toast.error('Add admin notes (at least 10 characters)');
+          return;
+        }
+        await handleEscrowDisputeResolution({
+          transactionId: selectedEscrowTransaction.id,
+          resolution: escrowResolutionType,
+          adminNotes: escrowActionNotes
+        });
+      }
+      closeEscrowActionModal();
+    } catch (error) {
+      console.error('Escrow action failed:', error);
+    } finally {
+      setEscrowActionLoading(false);
+    }
+  };
+
+  const handleSwitchTab = useCallback((tabId) => {
+    if (!tabId) return;
+    const allowedTabs = ['properties','verification','escrow','disputes','users','blog','support'];
+    const nextTab = allowedTabs.includes(tabId) ? tabId : 'properties';
+    setActiveTab(nextTab);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', nextTab);
+    navigate({ search: params.toString() }, { replace: true });
+  }, [location.search, navigate]);
+
+  const openPropertyModal = useCallback((property) => {
+    setSelectedPropertyForModal(property);
+    setShowPropertyModal(true);
+  }, []);
+
+  const closePropertyModal = useCallback(() => {
+    setShowPropertyModal(false);
+    setSelectedPropertyForModal(null);
+  }, []);
+
+  const handleVerifyProperty = useCallback(async (propertyId, status, notes = '') => {
+    if (!propertyId) return false;
+    try {
+      await verifyProperty(propertyId, status, notes);
+      toast.success(`Property ${status === 'approved' ? 'approved' : 'rejected'}`);
+      return true;
+    } catch (error) {
+      toast.error(error?.message || 'Verification update failed');
+      return false;
+    }
+  }, [verifyProperty]);
+
+  const handlePropertyApprove = useCallback(async (propertyId, notes = '') => {
+    await handleVerifyProperty(propertyId, 'approved', notes);
+    closePropertyModal();
+  }, [handleVerifyProperty, closePropertyModal]);
+
+  const handlePropertyReject = useCallback(async (propertyId, reason = '', notes = '') => {
+    await handleVerifyProperty(propertyId, 'rejected', `${reason}${notes ? ` - ${notes}` : ''}`);
+    closePropertyModal();
+  }, [handleVerifyProperty, closePropertyModal]);
+
+  const openVerificationModal = useCallback((property) => {
+    setSelectedProperty(property);
+  }, []);
+
+  const closeVerificationModal = useCallback(() => {
+    setSelectedProperty(null);
+    setVerificationNotes('');
+  }, []);
+
+  const handleStatusFilter = useCallback((status) => {
+    setSelectedStatus(status);
+    fetchAdminProperties(status, selectedVerificationStatus);
+  }, [fetchAdminProperties, selectedVerificationStatus]);
+
+  const handleVerificationFilter = useCallback((verificationStatus) => {
+    setSelectedVerificationStatus(verificationStatus);
+    fetchAdminProperties(selectedStatus, verificationStatus);
+  }, [fetchAdminProperties, selectedStatus]);
+
+  const handleBlogStatusToggle = useCallback((postId) => {
+    setBlogPosts((prev) => prev.map((post) => {
+      if (post.id !== postId) return post;
+      const nextStatus = post.status === 'published' ? 'draft' : 'published';
+      return { ...post, status: nextStatus };
+    }));
+  }, []);
+
+  const handleDeleteBlogPost = useCallback((postId) => {
+    setBlogPosts((prev) => prev.filter((post) => post.id !== postId));
+  }, []);
+
+  const handleDraftChange = useCallback((field, value) => {
+    setDraftPost((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const resetDraftPost = useCallback(() => {
+    setDraftPost(initialDraftPost);
+  }, []);
+
+  const handleCreateBlogPost = useCallback(() => {
+    if (!draftPost.title.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    const newPost = {
+      ...draftPost,
+      id: `blog-${Date.now()}`,
+      author: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Admin Team',
+      publishedAt: new Date().toISOString()
+    };
+    setBlogPosts((prev) => [newPost, ...prev]);
+    resetDraftPost();
+    toast.success('Draft saved');
+  }, [draftPost, user, resetDraftPost]);
 
   if (!user || user.role !== 'admin') {
     return (
@@ -1282,7 +1219,13 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <AdminDisputesManagement disputes={disputes} />
+              <AdminDisputesManagement
+                disputes={disputes}
+                loading={disputeLoading}
+                error={disputeError}
+                onResolveDispute={handleResolveDispute}
+                onRefresh={fetchAdminDisputes}
+              />
             </div>
           </div>
         )}
@@ -1750,88 +1693,149 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => fetchEscrowTransactions()}
+                    disabled={escrowLoading}
+                    className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Update</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {escrows.map(tx => (
-                      <tr key={tx.id}>
-                        <td className="px-6 py-4 text-sm">{tx.id}</td>
-                        <td className="px-6 py-4 text-sm">{tx.propertyTitle}</td>
-                        <td className="px-6 py-4 text-sm">{tx.buyerName}</td>
-                        <td className="px-6 py-4 text-sm">{tx.sellerName}</td>
-                        <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
-                        <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="lg:hidden space-y-4">
-                {escrows.map((tx) => {
-                  const statusKey = (tx.status || 'pending').toLowerCase();
-                  const statusClass = statusKey === 'active'
-                    ? 'bg-green-50 text-green-700'
-                    : statusKey === 'disputed'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-yellow-50 text-yellow-700';
-                  const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
-                  return (
-                    <div key={tx.id} className="p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{tx.propertyTitle}</p>
-                          <p className="text-xs text-gray-500">ID: {tx.id}</p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
+              {escrowLoading && (
+                <div className="p-6">
+                  <TableSkeleton rows={4} columns={6} />
+                </div>
+              )}
+              {!escrowLoading && escrowError && (
+                <div className="p-6 text-sm text-red-600">
+                  {escrowError}
+                </div>
+              )}
+              {!escrowLoading && !escrowError && escrows.length > 0 && (
+                <>
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Update</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {escrows.map(tx => (
+                          <tr key={tx.id}>
+                            <td className="px-6 py-4 text-sm">{tx.id}</td>
+                            <td className="px-6 py-4 text-sm">{tx.propertyTitle || tx.property?.title || '—'}</td>
+                            <td className="px-6 py-4 text-sm">{tx.buyerName || tx.buyer?.name || '—'}</td>
+                            <td className="px-6 py-4 text-sm">{tx.sellerName || tx.seller?.name || '—'}</td>
+                            <td className="px-6 py-4 text-sm">₦{Number(tx.amount || 0).toLocaleString()}</td>
+                            <td className="px-6 py-4 text-sm">{(tx.status || '').toUpperCase()}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => openEscrowActionModal(tx, 'status')}
+                                  className="px-3 py-1 text-xs font-medium border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                >
+                                  Update Status
+                                </button>
+                                {(tx.status || '').toLowerCase() === 'disputed' && (
+                                  <button
+                                    onClick={() => openEscrowActionModal(tx, 'resolution')}
+                                    className="px-3 py-1 text-xs font-medium border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                                  >
+                                    Resolve Dispute
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="lg:hidden space-y-4">
+                    {escrows.map((tx) => {
+                      const statusKey = (tx.status || 'pending').toLowerCase();
+                      const statusClass = statusKey === 'active'
+                        ? 'bg-green-50 text-green-700'
+                        : statusKey === 'disputed'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-yellow-50 text-yellow-700';
+                      const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
+                      return (
+                        <div key={tx.id} className="p-4 space-y-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{tx.propertyTitle || tx.property?.title || 'Escrow Transaction'}</p>
+                              <p className="text-xs text-gray-500">ID: {tx.id}</p>
+                            </div>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Buyer</p>
-                          <p className="font-medium text-gray-900">{tx.buyerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Seller</p>
-                          <p className="font-medium text-gray-900">{tx.sellerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Amount</p>
-                          <p className="font-medium text-gray-900">₦{Number(tx.amount || 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-gray-400">Created</p>
-                          <p className="font-medium text-gray-900">
-                            {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-gray-400">Buyer</p>
+                              <p className="font-medium text-gray-900">{tx.buyerName || tx.buyer?.name || '—'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-gray-400">Seller</p>
+                              <p className="font-medium text-gray-900">{tx.sellerName || tx.seller?.name || '—'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-gray-400">Amount</p>
+                              <p className="font-medium text-gray-900">₦{Number(tx.amount || 0).toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-gray-400">Created</p>
+                              <p className="font-medium text-gray-900">
+                                {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
 
-                      <div className="text-xs text-gray-500">
-                        Updated {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : 'recently'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          <div className="text-xs text-gray-500">
+                            Updated {tx.updatedAt ? new Date(tx.updatedAt).toLocaleDateString() : 'recently'}
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => openEscrowActionModal(tx, 'status')}
+                              className="w-full px-3 py-2 text-xs font-medium border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                              Update Status
+                            </button>
+                            {(tx.status || '').toLowerCase() === 'disputed' && (
+                              <button
+                                onClick={() => openEscrowActionModal(tx, 'resolution')}
+                                className="w-full px-3 py-2 text-xs font-medium border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                              >
+                                Resolve Dispute
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              {!escrowLoading && !escrowError && escrows.length === 0 && (
+                <div className="p-6 text-sm text-gray-500">No escrow transactions available.</div>
+              )}
             </div>
           </div>
         )}
@@ -2216,6 +2220,94 @@ const AdminDashboard = () => {
                   className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEscrowActionModal && selectedEscrowTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 px-4 py-8">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {escrowActionType === 'status' ? 'Update Escrow Status' : 'Resolve Escrow Dispute'}
+                  </h3>
+                  <p className="text-sm text-gray-500">Transaction ID: {selectedEscrowTransaction.id}</p>
+                </div>
+                <button
+                  onClick={closeEscrowActionModal}
+                  className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
+                >
+                  <HiOutlineX className="w-5 h-5" />
+                </button>
+              </div>
+
+              {escrowActionType === 'status' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Escrow Status</label>
+                  <select
+                    value={escrowStatusValue}
+                    onChange={(e) => setEscrowStatusValue(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-blue"
+                  >
+                    {ESCROW_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>{status.charAt(0).toUpperCase() + status.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
+                  <div className="space-y-2">
+                    {ESCROW_RESOLUTION_OPTIONS.map((option) => (
+                      <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="radio"
+                          name="escrow-resolution"
+                          value={option.value}
+                          checked={escrowResolutionType === option.value}
+                          onChange={(e) => setEscrowResolutionType(e.target.value)}
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {escrowActionType === 'status' ? 'Notes (optional)' : 'Admin Notes (required)'}
+                </label>
+                <textarea
+                  value={escrowActionNotes}
+                  onChange={(e) => setEscrowActionNotes(e.target.value)}
+                  rows={escrowActionType === 'status' ? 3 : 4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-blue"
+                  placeholder={escrowActionType === 'status'
+                    ? 'Add internal notes about this status change (optional)'
+                    : 'Explain the investigation outcome and decision (min 10 characters)'}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={closeEscrowActionModal}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={escrowActionLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitEscrowAction}
+                  disabled={escrowActionLoading}
+                  className="px-4 py-2 rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 disabled:opacity-60"
+                >
+                  {escrowActionLoading ? 'Processing...' : 'Confirm Action'}
                 </button>
               </div>
             </div>
