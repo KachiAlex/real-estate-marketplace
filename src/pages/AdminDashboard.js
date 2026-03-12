@@ -2009,6 +2009,9 @@ const AdminDashboard = () => {
                   {escrowError}
                 </div>
               )}
+              {!escrowLoading && !escrowError && escrows.length === 0 && (
+                <div className="p-6 text-sm text-gray-500">No escrow transactions found.</div>
+              )}
               {!escrowLoading && !escrowError && escrows.length > 0 && (
                 <>
                   <div className="hidden lg:block overflow-x-auto">

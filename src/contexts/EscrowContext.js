@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../utils/apiConfig';
+import { getAuthToken } from '../utils/authToken';
 
 // Mock escrow transactions
 const mockEscrowTransactions = [
@@ -84,19 +86,89 @@ export const EscrowProvider = ({ children }) => {
 
       const { type = 'property', investmentData = null } = options;
       const isInvestment = type === 'investment';
-      
-      const escrowFee = Math.round(amount * 0.005); // 0.5% escrow fee
-      const totalAmount = amount + escrowFee;
 
+      const escrowFee = Math.round(amount * 0.005);
+      const totalAmount = amount + escrowFee;
+      const expectedCompletion = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // --- Try to persist to backend DB (property purchases only) ---
+      if (!isInvestment && itemId) {
+        try {
+          const token = await getAuthToken() ||
+            (typeof window !== 'undefined' ? (localStorage.getItem('accessToken') || localStorage.getItem('token')) : null);
+
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers.Authorization = `Bearer ${token}`;
+
+          const resp = await fetch(getApiUrl('/escrow'), {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              propertyId: String(itemId),
+              amount: Number(amount),
+              paymentMethod: 'paystack',
+              expectedCompletion,
+              currency: 'NGN'
+            })
+          });
+
+          const data = await resp.json().catch(() => ({}));
+
+          if (resp.ok && data.success && data.data?.id) {
+            // Build enriched local transaction merging backend data with display fields
+            const backendTx = data.data;
+            const enriched = {
+              ...backendTx,
+              propertyTitle: 'Property Transaction',
+              buyerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+              buyerEmail: user.email,
+              sellerName: 'Property Owner',
+              escrowFee,
+              totalAmount,
+              documents: [
+                { name: 'Purchase Agreement', status: 'pending' },
+                { name: 'Property Inspection Report', status: 'pending' },
+                { name: 'Title Search', status: 'pending' }
+              ],
+              milestones: [
+                { name: 'Initial Payment', status: 'pending', date: null, amount: Math.round(amount * 0.1) },
+                { name: 'Property Inspection', status: 'pending', date: null, amount: 0 },
+                { name: 'Final Payment', status: 'pending', date: null, amount: Math.round(amount * 0.9) }
+              ]
+            };
+
+            const updatedTransactions = [...escrowTransactions.filter(t => t.id !== enriched.id), enriched];
+            setEscrowTransactions(updatedTransactions);
+            localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
+            window.dispatchEvent(new CustomEvent('escrowUpdated', { detail: { transactions: updatedTransactions } }));
+
+            toast.success('Escrow transaction created successfully!');
+            return { success: true, data: enriched, id: enriched.id };
+          }
+
+          // If an active escrow already exists for this property the backend returns 400.
+          // Surface the message and still return a usable local record so the UI can continue.
+          const existingMsg = data.message || '';
+          if (resp.status === 400 && /already exists/i.test(existingMsg)) {
+            toast(existingMsg || 'An active escrow already exists for this property.');
+          } else if (!resp.ok) {
+            console.warn('EscrowContext: backend escrow create failed', resp.status, data);
+          }
+        } catch (apiErr) {
+          console.warn('EscrowContext: failed to persist escrow to backend, falling back to local', apiErr.message);
+        }
+      }
+
+      // --- Local fallback (used for investments or when backend call fails) ---
       const transactionId = `ESC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-      
+
       const newTransaction = {
         id: transactionId,
         [isInvestment ? 'investmentId' : 'propertyId']: itemId,
         propertyTitle: investmentData?.title || investmentData?.investmentTitle || 'Property Transaction',
         investmentTitle: investmentData?.title || investmentData?.investmentTitle || null,
         buyerId: buyerId || user.id || user.uid,
-        buyerName: user.firstName + ' ' + user.lastName,
+        buyerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
         buyerEmail: user.email,
         sellerId: sellerId || null,
         sellerName: investmentData?.sponsor?.name || investmentData?.vendor || 'Property Owner',
@@ -108,7 +180,7 @@ export const EscrowProvider = ({ children }) => {
         type: isInvestment ? 'investment' : 'sale',
         paymentMethod: 'card',
         createdAt: new Date().toISOString(),
-        expectedCompletion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        expectedCompletion,
         documents: isInvestment ? [
           { name: 'Investment Agreement', status: 'pending' },
           { name: 'Property Deed (Collateral)', status: 'awaiting_vendor_documents' },
@@ -129,7 +201,6 @@ export const EscrowProvider = ({ children }) => {
         ],
         escrowFee,
         totalAmount,
-        // Investment-specific fields
         ...(isInvestment && investmentData ? {
           expectedROI: investmentData.expectedROI || investmentData.expectedReturn || 0,
           lockPeriod: investmentData.lockPeriod || investmentData.termMonths || investmentData.duration || 0,
@@ -140,15 +211,9 @@ export const EscrowProvider = ({ children }) => {
 
       const updatedTransactions = [...escrowTransactions, newTransaction];
       setEscrowTransactions(updatedTransactions);
-      
-      // Store in localStorage for persistence
       localStorage.setItem('escrowTransactions', JSON.stringify(updatedTransactions));
-      
-      // Dispatch event to notify dashboard
-      window.dispatchEvent(new CustomEvent('escrowUpdated', {
-        detail: { transactions: updatedTransactions }
-      }));
-      
+      window.dispatchEvent(new CustomEvent('escrowUpdated', { detail: { transactions: updatedTransactions } }));
+
       toast.success('Escrow transaction created successfully!');
       return { success: true, data: newTransaction, id: transactionId };
     } catch (error) {
