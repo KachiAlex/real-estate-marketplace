@@ -198,19 +198,60 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(null);
 
   useEffect(() => {
-    try {
-      const a = storage.get('accessToken');
-      const r = storage.get('refreshToken');
-      const u = storage.get('currentUser');
-      if (a && r && u) {
-        setAccessToken(a);
-        setRefreshToken(r);
-        try { setCurrentUser(normalizeUser(JSON.parse(u))); } catch (e) { setCurrentUser(null); }
+    let isMounted = true;
+
+    const hydrateAuth = async () => {
+      try {
+        const storedAccess = storage.get('accessToken');
+        const storedRefresh = storage.get('refreshToken');
+        const storedUser = storage.get('currentUser');
+
+        if (storedAccess) setAccessToken(storedAccess);
+        if (storedRefresh) setRefreshToken(storedRefresh);
+
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (isMounted) setCurrentUser(normalizeUser(parsed));
+          } catch (err) {
+            console.warn('Failed to parse stored user', err);
+            storage.remove('currentUser');
+            if (isMounted) setCurrentUser(null);
+          }
+        } else if (storedAccess) {
+          try {
+            const resp = await fetch(getApiUrl('/auth/jwt/me'), {
+              method: 'GET',
+              headers: { Authorization: `Bearer ${storedAccess}` }
+            }).catch(() => null);
+            if (resp && resp.ok) {
+              const data = await resp.json().catch(() => ({}));
+              const normalized = normalizeUser(data.user || data);
+              if (normalized) {
+                storage.set('currentUser', JSON.stringify(normalized));
+                if (isMounted) setCurrentUser(normalized);
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to hydrate user from token', err);
+          }
+        }
+      } catch (e) {
+        console.error('Auth init error', e);
+        storage.remove('accessToken'); storage.remove('refreshToken'); storage.remove('currentUser');
+        if (isMounted) {
+          setAccessToken(null);
+          setRefreshToken(null);
+          setCurrentUser(null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (e) {
-      console.error('Auth init error', e);
-      storage.remove('accessToken'); storage.remove('refreshToken'); storage.remove('currentUser');
-    } finally { setLoading(false); }
+    };
+
+    hydrateAuth();
+
+    return () => { isMounted = false; };
   }, []);
 
 
