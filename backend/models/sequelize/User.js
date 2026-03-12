@@ -58,6 +58,10 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
+    status: {
+      type: DataTypes.ENUM('active', 'suspended', 'archived'),
+      defaultValue: 'active'
+    },
     kycStatus: {
       type: DataTypes.ENUM('pending', 'approved', 'rejected'),
       defaultValue: 'pending'

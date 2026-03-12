@@ -117,7 +117,7 @@ router.patch('/users/:id/status', protect, authorize('admin'), [
     }
 
     const { status } = req.body;
-    const updates = {};
+    const updates = { status };
 
     if (status === 'active') {
       updates.isActive = true;

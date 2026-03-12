@@ -160,6 +160,10 @@ const User = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
+    status: {
+      type: DataTypes.ENUM('active', 'suspended', 'archived'),
+      defaultValue: 'active'
+    },
     kycStatus: {
       type: DataTypes.STRING,
       defaultValue: 'pending' // 'pending', 'verified', 'rejected'
