@@ -459,6 +459,34 @@ const AdminDashboard = () => {
     loadBlogCategories();
   }, [user?.role, loadBlogCategories]);
 
+  const loadBlogPosts = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    setBlogLoading(true);
+    setBlogError('');
+    try {
+      const params = {
+        limit: 100,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc'
+      };
+      if (blogFilter !== 'all') params.status = blogFilter;
+      if (blogCategoryFilter !== 'all') params.category = blogCategoryFilter;
+      if (blogSearch.trim()) params.search = blogSearch.trim();
+      const result = await adminListBlogs(params);
+      if (!isMountedRef.current) return;
+      setBlogPosts(Array.isArray(result?.posts) ? result.posts : []);
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to load blog posts';
+      if (!isMountedRef.current) return;
+      setBlogError(message);
+      toast.error(message);
+    } finally {
+      if (isMountedRef.current) {
+        setBlogLoading(false);
+      }
+    }
+  }, [user, blogFilter, blogCategoryFilter, blogSearch]);
+
   useEffect(() => {
     if (user?.role !== 'admin' || activeTab !== 'blog') return;
     loadBlogPosts();
@@ -796,34 +824,6 @@ const AdminDashboard = () => {
   }, [user]);
 
 
-
-  const loadBlogPosts = useCallback(async () => {
-    if (!user || user.role !== 'admin') return;
-    setBlogLoading(true);
-    setBlogError('');
-    try {
-      const params = {
-        limit: 100,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc'
-      };
-      if (blogFilter !== 'all') params.status = blogFilter;
-      if (blogCategoryFilter !== 'all') params.category = blogCategoryFilter;
-      if (blogSearch.trim()) params.search = blogSearch.trim();
-      const result = await adminListBlogs(params);
-      if (!isMountedRef.current) return;
-      setBlogPosts(Array.isArray(result?.posts) ? result.posts : []);
-    } catch (error) {
-      const message = error?.response?.data?.message || error.message || 'Failed to load blog posts';
-      if (!isMountedRef.current) return;
-      setBlogError(message);
-      toast.error(message);
-    } finally {
-      if (isMountedRef.current) {
-        setBlogLoading(false);
-      }
-    }
-  }, [user, blogFilter, blogCategoryFilter, blogSearch]);
 
   useEffect(() => {
     const checkAdminToken = async () => {
