@@ -438,6 +438,22 @@ const AdminDashboard = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadVerificationConfig]);
 
+  const loadBlogCategories = useCallback(async () => {
+    try {
+      const categories = await fetchBlogCategories();
+      const normalized = Array.isArray(categories)
+        ? categories
+            .map((cat) => (typeof cat === 'string' ? cat : cat?.slug || cat?.category))
+            .filter(Boolean)
+        : [];
+      if (normalized.length) {
+        setBlogCategoriesRemote((prev) => Array.from(new Set([...(prev || []), ...normalized])));
+      }
+    } catch (error) {
+      console.warn('AdminDashboard: Failed to load blog categories', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (user?.role !== 'admin') return;
     loadBlogCategories();
@@ -779,21 +795,7 @@ const AdminDashboard = () => {
     }
   }, [user]);
 
-  const loadBlogCategories = useCallback(async () => {
-    try {
-      const categories = await fetchBlogCategories();
-      const normalized = Array.isArray(categories)
-        ? categories
-            .map((cat) => (typeof cat === 'string' ? cat : cat?.slug || cat?.category))
-            .filter(Boolean)
-        : [];
-      if (normalized.length) {
-        setBlogCategoriesRemote((prev) => Array.from(new Set([...(prev || []), ...normalized])));
-      }
-    } catch (error) {
-      console.warn('AdminDashboard: Failed to load blog categories', error);
-    }
-  }, []);
+
 
   const loadBlogPosts = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
