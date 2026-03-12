@@ -18,6 +18,11 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  const resolveUserId = () => {
+    if (!currentUser) return null;
+    return currentUser.id || currentUser.uid || currentUser._id || currentUser.userId || null;
+  };
+
   const handleSubmit = async (e) => {
     e && e.preventDefault();
     if (!form.subject || !form.category || !form.message) {
@@ -25,7 +30,8 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (!currentUser || !currentUser.id) {
+    const userId = resolveUserId();
+    if (!userId) {
       toast.error('Please log in to submit a support ticket');
       // Do not redirect to login modal after submission attempt
       return;
@@ -40,7 +46,7 @@ const CreateTicketModal = ({ onClose, onSuccess }) => {
         priority: form.priority,
         contactEmail: form.contactEmail?.trim() || undefined,
         contactPhone: form.contactPhone?.trim() || undefined,
-        userId: currentUser.id
+        userId
       };
 
       const resp = await apiClient.post('/support/inquiry', payload);
