@@ -695,7 +695,8 @@ const AdminDashboard = () => {
       const response = await apiClient.get('/escrow', {
         params: {
           type: 'admin',
-          limit: 100,
+          // backend validation allows a maximum of 50, avoid 400 errors
+          limit: 50,
           ...params
         }
       });
