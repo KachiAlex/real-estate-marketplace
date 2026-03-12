@@ -65,15 +65,45 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
 
     const userId = req.user.id || req.user.uid || req.user.email;
     const userEmail = req.user.email || 'unknown@example.com';
-    const userName = req.user.firstName && req.user.lastName
-      ? `${req.user.firstName} ${req.user.lastName}`
-      : req.user.name || req.user.displayName || 'Unknown User';
+
+    let resolvedUserId = userId;
+    let resolvedUserRecord = null;
+    try {
+      if (userId) {
+        resolvedUserRecord = await db.User.findByPk(userId);
+      }
+      if (!resolvedUserRecord && userEmail) {
+        resolvedUserRecord = await db.User.findOne({ where: { email: userEmail } });
+      }
+      if (resolvedUserRecord) {
+        resolvedUserId = resolvedUserRecord.id;
+      }
+    } catch (lookupErr) {
+      logger.warn('Support inquiry user lookup failed', {
+        message: lookupErr?.message,
+        userId,
+        userEmail
+      });
+    }
+
+    if (!resolvedUserId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unable to resolve user account for support inquiry. Please re-login and try again.'
+      });
+    }
+
+    const userName = (resolvedUserRecord?.firstName && resolvedUserRecord?.lastName)
+      ? `${resolvedUserRecord.firstName} ${resolvedUserRecord.lastName}`
+      : (req.user.firstName && req.user.lastName)
+        ? `${req.user.firstName} ${req.user.lastName}`
+        : req.user.name || req.user.displayName || 'Unknown User';
 
     const sourceRole = req.user?.activeRole || req.user?.role || (Array.isArray(req.user?.roles) ? req.user.roles[0] : undefined) || 'buyer';
 
     const inquiry = await db.SupportInquiry.create({
       id: uuidv4(),
-      userId,
+      userId: resolvedUserId,
       subject: subject.trim(),
       message,
       category,
