@@ -1024,15 +1024,7 @@ const EscrowPaymentFlow = ({
 
 
 
-            {checkoutUrl && (
-              <button
-                type="button"
-                onClick={handleOpenCheckout}
-                className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold"
-              >
-                Pay with Paystack
-              </button>
-            )}
+            
 
             {pendingPayment && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
