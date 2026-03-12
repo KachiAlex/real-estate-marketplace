@@ -131,6 +131,29 @@ const Properties = () => {
     return statusMap[urlStatus?.toLowerCase()] || urlStatus;
   };
 
+  const buildLocationSearchString = useCallback((property) => {
+    if (!property) return '';
+
+    // If location is already a string, return the lowercase version safely
+    if (typeof property.location === 'string') {
+      return property.location.toLowerCase();
+    }
+
+    const parts = [];
+
+    if (property.location && typeof property.location === 'object') {
+      if (property.location.address) parts.push(property.location.address);
+      if (property.location.city) parts.push(property.location.city);
+      if (property.location.state) parts.push(property.location.state);
+    }
+
+    if (property.address) parts.push(property.address);
+    if (property.city) parts.push(property.city);
+    if (property.state) parts.push(property.state);
+
+    return parts.join(', ').toLowerCase();
+  }, []);
+
   // Filtered properties using applied filters (only updates when Apply Filters is clicked)
   const filteredProperties = useMemo(() => {
     let filtered = [...safeProperties];
@@ -196,16 +219,19 @@ const Properties = () => {
     // Apply search query (works independently or with location filter)
     if (appliedSearchQuery.trim()) {
       const query = appliedSearchQuery.toLowerCase();
-      filtered = filtered.filter(property => 
-        property.title?.toLowerCase().includes(query) ||
-        property.description?.toLowerCase().includes(query) ||
-        property.location?.toLowerCase().includes(query) ||
-        property.address?.toLowerCase().includes(query) ||
-        (property.city && property.city.toLowerCase().includes(query)) ||
-        (property.state && property.state.toLowerCase().includes(query)) ||
-        (property.location?.city && typeof property.location === 'object' && property.location.city.toLowerCase().includes(query)) ||
-        (property.location?.state && typeof property.location === 'object' && property.location.state.toLowerCase().includes(query))
-      );
+      filtered = filtered.filter(property => {
+        const locationString = buildLocationSearchString(property);
+        return (
+          property.title?.toLowerCase().includes(query) ||
+          property.description?.toLowerCase().includes(query) ||
+          locationString.includes(query) ||
+          property.address?.toLowerCase().includes(query) ||
+          (property.city && property.city.toLowerCase().includes(query)) ||
+          (property.state && property.state.toLowerCase().includes(query)) ||
+          (property.location?.city && typeof property.location === 'object' && property.location.city.toLowerCase().includes(query)) ||
+          (property.location?.state && typeof property.location === 'object' && property.location.state.toLowerCase().includes(query))
+        );
+      });
     }
 
     // Apply type filter
@@ -330,7 +356,7 @@ const Properties = () => {
     }
 
     return sorted;
-  }, [safeProperties, appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedPriceRange, appliedVendor, sortBy]);
+  }, [safeProperties, appliedSearchQuery, appliedLocation, appliedType, appliedStatus, appliedPriceRange, appliedVendor, sortBy, buildLocationSearchString]);
 
   const filterOptions = useMemo(() => {
     const types = Array.from(new Set(safeProperties.map(p => p.type).filter(Boolean)));
