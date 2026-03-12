@@ -109,7 +109,7 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
     : popularSearches.slice(0, 5);
 
   return (
-    <div className="relative h-[600px] w-full overflow-hidden shadow-2xl">
+    <div className="relative h-[420px] sm:h-[520px] md:h-[600px] w-full overflow-hidden shadow-2xl">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"

@@ -16,7 +16,8 @@ import {
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight,
-  FaUser
+  FaUser,
+  FaTimes
 } from 'react-icons/fa';
 
 const VendorSidebar = () => {
@@ -24,7 +25,7 @@ const VendorSidebar = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { isAgent, isPropertyOwner, documentStatus } = useVendor();
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, isMobileSidebarOpen, closeMobileSidebar } = useSidebar();
   
   const menuItems = [
     { path: '/vendor/dashboard', label: 'Overview', icon: FaHome },
@@ -95,7 +96,14 @@ const VendorSidebar = () => {
   };
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg h-full fixed left-0 top-0 overflow-y-auto flex flex-col transition-all duration-300 z-50`}>
+    <>
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[60] lg:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
+      <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg h-full fixed left-0 top-0 overflow-y-auto flex flex-col transition-all duration-300 z-[70] transform lg:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
       {/* Logo */}
       <div className="px-4 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
@@ -121,13 +129,22 @@ const VendorSidebar = () => {
               <FaHome className="text-white text-sm" />
             </div>
           </Link>
-          <button
-            onClick={toggleSidebar}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? <FaChevronRight className="h-4 w-4 text-gray-600" /> : <FaChevronLeft className="h-4 w-4 text-gray-600" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={closeMobileSidebar}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+              aria-label="Close sidebar"
+            >
+              <FaTimes className="h-4 w-4 text-gray-600" />
+            </button>
+            <button
+              onClick={toggleSidebar}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors hidden lg:block"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? <FaChevronRight className="h-4 w-4 text-gray-600" /> : <FaChevronLeft className="h-4 w-4 text-gray-600" />}
+            </button>
+          </div>
         </div>
         {!isCollapsed && (
           <p className="text-xs text-gray-500 ml-1">Vendor Portal</p>
@@ -287,6 +304,7 @@ const VendorSidebar = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

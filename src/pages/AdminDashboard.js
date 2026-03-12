@@ -1173,7 +1173,7 @@ const AdminDashboard = () => {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleAdminLogout} />
-        <div className="flex-1 ml-64 flex items-center justify-center">
+        <div className="flex-1 ml-0 lg:ml-64 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading admin dashboard...</p>

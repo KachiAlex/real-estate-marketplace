@@ -911,8 +911,18 @@ const Properties = () => {
       )}
 
       <div className="flex flex-col lg:flex-row gap-6">
+        {/* Mobile filter toggle */}
+        <div className="lg:hidden flex justify-between items-center">
+          <button
+            onClick={() => setShowFilters(f => !f)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 6a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm3 6a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" /></svg>
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+        </div>
         {/* Left Sidebar - Filters */}
-        <div className="w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className={`w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${showFilters ? '' : 'hidden'} lg:block`}>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
           
           {/* Search Input */}
