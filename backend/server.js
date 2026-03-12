@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const subscriptionScheduler = require('./services/subscriptionScheduler');
 const socketIo = require('socket.io');
+const cors = require('cors');
 // Load environment variables from the project root, not backend directory.
 // This ensures the centralized .env (which contains DB credentials, JWT secrets, etc.)
 // is always sourced regardless of the working directory used by npm scripts.
@@ -27,38 +28,10 @@ const allowedOrigins = [
   'https://real-estate-marketplace-37544.firebaseapp.com'
 ].filter(Boolean);
 
-// Global CORS middleware must run before any routes
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const isFirebaseHosting = origin && (origin.includes('.web.app') || origin.includes('.firebaseapp.com'));
-  const isAllowedOrigin = origin && (allowedOrigins.includes(origin) || isFirebaseHosting || process.env.NODE_ENV === 'development');
-
-  if (origin) {
-    if (!isAllowedOrigin) {
-      console.warn('⚠️ [CORS] Origin not explicitly allowed, temporarily permitting:', origin);
-    }
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Vary', 'Origin');
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Mock-User-Email, X-Mock-User'
-  );
-  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
-  res.header('Access-Control-Max-Age', '600');
-
-  if (req.method === 'OPTIONS') {
-    console.log('✅ [CORS] Preflight handled for', req.originalUrl, 'origin:', origin || 'N/A');
-    return res.status(200).end();
-  }
-
-  next();
-});
+// Global CORS middleware using shared security configuration
+app.use(cors(securityConfig.cors));
+// Ensure preflight requests short-circuit immediately
+app.options('*', cors(securityConfig.cors));
 
 // ABSOLUTE FIRST ROUTE: Register forgot-password BEFORE ANYTHING ELSE
 // This ensures it works even if anything else fails

@@ -1,13 +1,27 @@
-const DEFAULT_API_BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  process.env.API_BASE_URL ||
-  'https://real-estate-marketplace-1-k8jp.onrender.com';
+const REMOTE_FALLBACK_BASE_URL = 'https://real-estate-marketplace-1-k8jp.onrender.com';
 
 const isLocalhost = (value) => {
   if (!value || typeof value !== 'string') return false;
   const lower = value.toLowerCase();
   return lower.includes('localhost') || lower.includes('127.0.0.1');
 };
+
+const getEnvBase = () => process.env.REACT_APP_API_URL || process.env.API_BASE_URL;
+
+const DEFAULT_API_BASE_URL = (() => {
+  const envBase = getEnvBase();
+  if (envBase) return envBase;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if (isLocalhost(host)) {
+      // Point to the local backend when the frontend runs on localhost
+      return 'http://localhost:5001';
+    }
+  }
+
+  return REMOTE_FALLBACK_BASE_URL;
+})();
 
 const normalizeBaseUrl = (base) => {
   if (!base) return DEFAULT_API_BASE_URL;
@@ -26,7 +40,7 @@ const normalizeBaseUrl = (base) => {
   return normalized;
 };
 
-export const getApiBaseUrl = () => normalizeBaseUrl(process.env.REACT_APP_API_URL || DEFAULT_API_BASE_URL);
+export const getApiBaseUrl = () => normalizeBaseUrl(getEnvBase() || DEFAULT_API_BASE_URL);
 
 export const getApiUrl = (path = '') => {
   const base = getApiBaseUrl();

@@ -235,6 +235,81 @@ const AdminDashboard = () => {
 
   const contentWidthClasses = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16';
 
+  const loadVerificationConfig = useCallback(async () => {
+    if (loadingVerificationSettings) return;
+    
+    // Skip API calls in development mode to prevent 401 errors
+    if (window.location.hostname === 'localhost') {
+      console.log('AdminDashboard: Skipping verification config API call in development mode');
+      // Set default config for development
+      setAdminSettings({
+        verificationFee: 50000,
+        verificationBadgeColor: '#10B981',
+        vendorSubscriptionFee: 50000
+      });
+      return;
+    }
+    
+    try {
+      setLoadingVerificationSettings(true);
+
+      let mergedConfig = null;
+
+      try {
+        const configResponse = await fetch(getApiUrl('/verification/config'));
+        const configPayload = await configResponse.json().catch(() => ({}));
+        if (configResponse.ok && configPayload?.success && configPayload?.data) {
+          mergedConfig = configPayload.data;
+        }
+      } catch (configError) {
+        console.warn('AdminDashboard: verification config fetch failed', configError?.message || configError);
+      }
+
+      const tokenAvailable = await hasAuthToken();
+      if (tokenAvailable) {
+        try {
+          const adminResponse = await authenticatedFetch(getApiUrl('/admin/settings'));
+          const adminPayload = await adminResponse.json().catch(() => ({}));
+          if (adminResponse.ok && adminPayload?.success && adminPayload?.data) {
+            mergedConfig = { ...(mergedConfig || {}), ...adminPayload.data };
+          } else if (adminResponse.status === 401) {
+            setHasAdminToken(false);
+            setAuthWarning('Admin authentication expired. Please log in again to manage verification settings.');
+          }
+        } catch (adminError) {
+          console.warn('AdminDashboard: admin settings fetch failed', adminError?.message || adminError);
+        }
+      }
+
+      if (!mergedConfig) {
+        // Set default config instead of throwing error
+        mergedConfig = {
+          verificationFee: 50000,
+          verificationBadgeColor: '#10B981',
+          vendorSubscriptionFee: 50000
+        };
+        console.warn('AdminDashboard: Using default verification settings');
+      }
+
+      // Ensure vendorSubscriptionFee is present
+      if (typeof mergedConfig.vendorSubscriptionFee !== 'number') {
+        mergedConfig.vendorSubscriptionFee = 50000;
+      }
+      setAdminSettings(mergedConfig);
+    } catch (error) {
+      console.warn('AdminDashboard: unable to load verification settings', error);
+      // Set default config on error
+      setAdminSettings({
+        verificationFee: 50000,
+        verificationBadgeColor: '#10B981',
+        vendorSubscriptionFee: 50000
+      });
+      toast.error(error?.message || 'Failed to load verification settings');
+    } finally {
+      setLoadingVerificationSettings(false);
+    }
+  }, [loadingVerificationSettings]);
+
   useEffect(() => {
     loadVerificationConfig();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -365,81 +440,6 @@ const AdminDashboard = () => {
     return stats;
   }, [disputes]);
 
-
-  const loadVerificationConfig = useCallback(async () => {
-    if (loadingVerificationSettings) return;
-    
-    // Skip API calls in development mode to prevent 401 errors
-    if (window.location.hostname === 'localhost') {
-      console.log('AdminDashboard: Skipping verification config API call in development mode');
-      // Set default config for development
-      setAdminSettings({
-        verificationFee: 50000,
-        verificationBadgeColor: '#10B981',
-        vendorSubscriptionFee: 50000
-      });
-      return;
-    }
-    
-    try {
-      setLoadingVerificationSettings(true);
-
-      let mergedConfig = null;
-
-      try {
-        const configResponse = await fetch(getApiUrl('/verification/config'));
-        const configPayload = await configResponse.json().catch(() => ({}));
-        if (configResponse.ok && configPayload?.success && configPayload?.data) {
-          mergedConfig = configPayload.data;
-        }
-      } catch (configError) {
-        console.warn('AdminDashboard: verification config fetch failed', configError?.message || configError);
-      }
-
-      const tokenAvailable = await hasAuthToken();
-      if (tokenAvailable) {
-        try {
-          const adminResponse = await authenticatedFetch(getApiUrl('/admin/settings'));
-          const adminPayload = await adminResponse.json().catch(() => ({}));
-          if (adminResponse.ok && adminPayload?.success && adminPayload?.data) {
-            mergedConfig = { ...(mergedConfig || {}), ...adminPayload.data };
-          } else if (adminResponse.status === 401) {
-            setHasAdminToken(false);
-            setAuthWarning('Admin authentication expired. Please log in again to manage verification settings.');
-          }
-        } catch (adminError) {
-          console.warn('AdminDashboard: admin settings fetch failed', adminError?.message || adminError);
-        }
-      }
-
-      if (!mergedConfig) {
-        // Set default config instead of throwing error
-        mergedConfig = {
-          verificationFee: 50000,
-          verificationBadgeColor: '#10B981',
-          vendorSubscriptionFee: 50000
-        };
-        console.warn('AdminDashboard: Using default verification settings');
-      }
-
-      // Ensure vendorSubscriptionFee is present
-      if (typeof mergedConfig.vendorSubscriptionFee !== 'number') {
-        mergedConfig.vendorSubscriptionFee = 50000;
-      }
-      setAdminSettings(mergedConfig);
-    } catch (error) {
-      console.warn('AdminDashboard: unable to load verification settings', error);
-      // Set default config on error
-      setAdminSettings({
-        verificationFee: 50000,
-        verificationBadgeColor: '#10B981',
-        vendorSubscriptionFee: 50000
-      });
-      toast.error(error?.message || 'Failed to load verification settings');
-    } finally {
-      setLoadingVerificationSettings(false);
-    }
-  }, [loadingVerificationSettings]);
 
   const loadUsersFromApi = useCallback(async ({ page = 1, limit = 100, role } = {}) => {
     if (!user || user.role !== 'admin' || loadingUsers || usersLoadedRef.current) return;
