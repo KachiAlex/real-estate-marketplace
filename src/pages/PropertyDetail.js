@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,6 +24,75 @@ const PropertyDetail = () => {
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+
+  const resolveVendorPhone = useCallback((prop) => {
+    if (!prop) return '';
+
+    const phoneSources = [];
+    const collect = (value) => {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+        return;
+      }
+      if (typeof value === 'object') {
+        collect(value.phone);
+        collect(value.whatsapp);
+        collect(value.primary);
+        collect(value.number);
+        return;
+      }
+      phoneSources.push(String(value));
+    };
+
+    collect(prop.vendorPhone);
+    collect(prop.contactPhone);
+    collect(prop.contact?.phone);
+    collect(prop.contact?.whatsapp);
+    collect(prop.owner?.phone);
+    collect(prop.owner?.contactPhone);
+    collect(prop.owner?.phoneNumber);
+    collect(prop.owner?.contact?.phone);
+    collect(prop.owner?.contact?.whatsapp);
+    collect(prop.vendor?.phone);
+    collect(prop.vendor?.contactPhone);
+    collect(prop.vendor?.phoneNumber);
+    collect(prop.vendor?.contact?.phone);
+    collect(prop.agent?.phone);
+    collect(prop.agent?.contact?.phone);
+    collect(prop.agentContact?.phone);
+    collect(prop.agentContact?.whatsapp);
+
+    return phoneSources.find((value) => value.trim().length > 0) || '';
+  }, []);
+
+  const normalizePhoneNumber = useCallback((value) => {
+    if (!value) return '';
+    let digits = String(value).replace(/\D/g, '');
+    if (!digits) return '';
+
+    if (digits.startsWith('00')) {
+      digits = digits.substring(2);
+    }
+
+    if (digits.startsWith('234')) {
+      return digits;
+    }
+
+    if (digits.startsWith('0')) {
+      return `234${digits.substring(1)}`;
+    }
+
+    if (digits.length <= 11) {
+      return `234${digits}`;
+    }
+
+    return digits;
+  }, []);
+
+  const vendorPhoneRaw = useMemo(() => resolveVendorPhone(property), [property, resolveVendorPhone]);
+  const vendorPhone = useMemo(() => normalizePhoneNumber(vendorPhoneRaw), [vendorPhoneRaw, normalizePhoneNumber]);
+  const hasVendorPhone = Boolean(vendorPhone);
 
   // Fetch properties on mount if not already loaded
   useEffect(() => {
@@ -319,32 +388,14 @@ const PropertyDetail = () => {
       // User can continue viewing the property without being forced to login
       return;
     }
-    
-    // Create inquiry
-    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via WhatsApp.`);
-    
-    // Get vendor's phone number
-    const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
-    
-    if (!vendorPhone) {
+
+    if (!hasVendorPhone) {
       toast.error('Vendor phone number not available');
       return;
     }
-    
-    // Format phone number for WhatsApp
-    // Remove all non-digit characters
-    let formattedPhone = vendorPhone.replace(/\D/g, '');
-    
-    // Handle Nigerian phone numbers (country code: 234)
-    if (formattedPhone.startsWith('234')) {
-      // Already has country code, no change needed
-    } else if (formattedPhone.startsWith('0')) {
-      // Remove leading 0 and add country code
-      formattedPhone = '234' + formattedPhone.substring(1);
-    } else {
-      // Add country code if missing
-      formattedPhone = '234' + formattedPhone;
-    }
+
+    // Create inquiry
+    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via WhatsApp.`);
     
     // Create WhatsApp message
     const propertyTitle = property?.title || 'Property';
@@ -354,7 +405,7 @@ const PropertyDetail = () => {
     );
     
     // Open WhatsApp
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+    const whatsappUrl = `https://wa.me/${vendorPhone}?text=${message}`;
     window.open(whatsappUrl, '_blank');
     
     toast.success('Opening WhatsApp... Inquiry saved to My Inquiries.');
@@ -440,34 +491,16 @@ const PropertyDetail = () => {
       return;
     }
 
-    // Create inquiry
-    createInquiry(property, 'call', `I'm interested in ${property.title}. Please contact me via phone call.`);
-    
-    // Get vendor's phone number
-    const vendorPhone = property?.owner?.phone || property?.vendorPhone || property?.contactPhone || property?.vendor?.phone;
-    
-    if (!vendorPhone) {
+    if (!hasVendorPhone) {
       toast.error('Vendor phone number not available');
       return;
     }
-    
-    // Format phone number for tel: link
-    // Remove all non-digit characters
-    let formattedPhone = vendorPhone.replace(/\D/g, '');
-    
-    // Handle Nigerian phone numbers (country code: 234)
-    if (formattedPhone.startsWith('234')) {
-      // Already has country code
-    } else if (formattedPhone.startsWith('0')) {
-      // Remove leading 0 and add country code
-      formattedPhone = '234' + formattedPhone.substring(1);
-    } else {
-      // Assume it's a local number, add country code
-      formattedPhone = '234' + formattedPhone;
-    }
+
+    // Create inquiry
+    createInquiry(property, 'call', `I'm interested in ${property.title}. Please contact me via phone call.`);
     
     // Create tel: link and trigger phone dialer
-    window.location.href = `tel:+${formattedPhone}`;
+    window.location.href = `tel:+${vendorPhone}`;
     
     toast.success('Inquiry saved to My Inquiries.');
   };
@@ -661,37 +694,6 @@ const PropertyDetail = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={handleContactOwner}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
-                >
-                  <FaWhatsapp className="mr-2" />
-                  Contact Vendor
-                </button>
-                <button
-                  onClick={handleScheduleViewing}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
-                >
-                  <FaCalendar className="mr-2" />
-                  Schedule Viewing
-                </button>
-                <button
-                  onClick={handleCallVendor}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
-                >
-                  <FaPhone className="mr-2" />
-                  Call Vendor
-                </button>
-              </div>
-            </div>
-
-            {/* Vendor Information */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Vendor</h3>
               <div className="space-y-3">
                 <div className="flex items-center">
