@@ -29,9 +29,6 @@ export default function Header() {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
-  // Debug auth state
-  console.log('Header auth currentUser:', currentUser);
-
   return (
     <header className="bg-white shadow fixed top-0 inset-x-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex justify-between items-center h-16 py-2">
@@ -133,26 +130,26 @@ export default function Header() {
       </div>
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="md:hidden py-4 border-t border-gray-200">
-          <nav className="flex flex-col space-y-4 px-4">
-            <Link to="/" className="text-gray-700 hover:text-red-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
-            <Link to="/properties?status=For%20Sale" className="text-gray-700 hover:text-red-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>For Sale</Link>
-            <Link to="/properties?status=For%20Rent" className="text-gray-700 hover:text-red-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>For Rent</Link>
-            <Link to="/properties?status=Shortlet" className="text-gray-700 hover:text-red-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Shortlet</Link>
-            
+        <div className="lg:hidden py-2 border-t border-gray-200 shadow-md">
+          <nav className="flex flex-col px-4">
+            <Link to="/" className="flex items-center min-h-[44px] text-gray-700 hover:text-brand-orange font-medium" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link to="/properties?status=For%20Sale" className="flex items-center min-h-[44px] text-gray-700 hover:text-brand-orange font-medium" onClick={() => setIsMobileMenuOpen(false)}>For Sale</Link>
+            <Link to="/properties?status=For%20Rent" className="flex items-center min-h-[44px] text-gray-700 hover:text-brand-orange font-medium" onClick={() => setIsMobileMenuOpen(false)}>For Rent</Link>
+            <Link to="/properties?status=Shortlet" className="flex items-center min-h-[44px] text-gray-700 hover:text-brand-orange font-medium" onClick={() => setIsMobileMenuOpen(false)}>Shortlet</Link>
+
             {/* Mobile Professional Services Dropdown */}
-            <div className="space-y-2">
+            <div>
               <button
                 onClick={() => setServicesDropdownOpen(!servicesDropdownOpen)}
-                className="w-full text-left text-gray-700 hover:text-red-600 font-medium flex items-center justify-between"
+                className="w-full min-h-[44px] flex items-center justify-between text-gray-700 hover:text-brand-orange font-medium"
               >
                 Professional Services
                 <svg className={`w-4 h-4 transition-transform ${servicesDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {servicesDropdownOpen && (
-                <div className="pl-4 space-y-2 border-l-2 border-gray-300">
+                <div className="pl-4 mb-2 space-y-1 border-l-2 border-gray-200">
                   {professionalServices.map((service) => (
                     <button
                       key={service.service}
@@ -161,7 +158,7 @@ export default function Header() {
                         setServicesDropdownOpen(false);
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full text-left text-gray-600 hover:text-brand-blue text-sm"
+                      className="w-full min-h-[44px] flex items-center text-left text-gray-600 hover:text-brand-blue text-sm"
                     >
                       {service.name}
                     </button>
@@ -169,8 +166,37 @@ export default function Header() {
                 </div>
               )}
             </div>
-            
-            <Link to="/auth/login" className="text-gray-700 hover:text-red-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Sign in</Link>
+
+            {/* Mobile auth section */}
+            <div className="border-t border-gray-100 pt-1 mt-1">
+              {currentUser ? (
+                <>
+                  <div className="flex items-center gap-3 min-h-[44px] text-sm text-gray-700 font-medium">
+                    {currentUser.avatar || currentUser.photoURL ? (
+                      <img src={currentUser.avatar || currentUser.photoURL} alt="avatar" className="h-7 w-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-7 w-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-xs font-medium">
+                        {(currentUser.firstName || currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span>{currentUser.firstName || currentUser.displayName || (currentUser.email && currentUser.email.split('@')[0])}</span>
+                  </div>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard'); }} className="w-full min-h-[44px] flex items-center text-gray-700 hover:text-brand-orange font-medium text-sm">Dashboard</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/profile'); }} className="w-full min-h-[44px] flex items-center text-gray-700 hover:text-brand-orange font-medium text-sm">Profile</button>
+                  {(currentUser?.role === 'admin' || currentUser?.roles?.includes('admin')) && (
+                    <button onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }} className="w-full min-h-[44px] flex items-center text-gray-700 hover:text-brand-orange font-medium text-sm">Admin Panel</button>
+                  )}
+                  <button
+                    onClick={async () => { setIsMobileMenuOpen(false); await logout(); navigate('/', { replace: true }); }}
+                    className="w-full min-h-[44px] flex items-center text-red-600 hover:text-red-700 font-medium text-sm"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link to="/auth/login" className="flex items-center min-h-[44px] text-brand-blue hover:text-brand-orange font-medium" onClick={() => setIsMobileMenuOpen(false)}>Sign in</Link>
+              )}
+            </div>
           </nav>
         </div>
       )}
