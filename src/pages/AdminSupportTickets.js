@@ -8,6 +8,7 @@ const AdminSupportTicketsInner = () => {
   const [tickets, setTickets] = useState([]);
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedRole, setSelectedRole] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -53,13 +54,15 @@ const AdminSupportTicketsInner = () => {
 
   const priorities = Array.from(new Set(tickets.map(t => t.priority || 'medium')));
   const categories = Array.from(new Set(tickets.map(t => t.category || 'other')));
+  const sourceRoles = Array.from(new Set(tickets.map(t => t.sourceRole || 'buyer')));
 
   const filteredTickets = useMemo(() => (
     tickets.filter(t =>
       (selectedPriority === 'all' || t.priority === selectedPriority) &&
-      (selectedCategory === 'all' || t.category === selectedCategory)
+      (selectedCategory === 'all' || t.category === selectedCategory) &&
+      (selectedRole === 'all' || (t.sourceRole || 'buyer') === selectedRole)
     )
-  ), [tickets, selectedPriority, selectedCategory]);
+  ), [tickets, selectedPriority, selectedCategory, selectedRole]);
 
   if (loading) {
     return (
@@ -119,6 +122,15 @@ const AdminSupportTicketsInner = () => {
             {categories.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Source</label>
+          <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)} className="border px-2 py-1 rounded">
+            <option value="all">All</option>
+            {sourceRoles.map(role => (
+              <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {filteredTickets.length === 0 ? (
@@ -148,6 +160,9 @@ const AdminSupportTicketsInner = () => {
                           ? 'bg-amber-100 text-amber-700'
                           : 'bg-gray-100 text-gray-700'}`}>
                       {ticket.priority ? ticket.priority.toUpperCase() : 'MEDIUM'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                      {ticket.sourceRole ? ticket.sourceRole.toUpperCase() : 'BUYER'}
                     </span>
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ticket.status === 'resolved'
                       ? 'bg-green-100 text-green-700'

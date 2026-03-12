@@ -43,6 +43,9 @@ module.exports = (sequelize) => {
     contactPhone: {
       type: DataTypes.STRING
     },
+    sourceRole: {
+      type: DataTypes.STRING
+    },
     category: {
       type: DataTypes.STRING
     },

@@ -17,6 +17,7 @@ const buildInquiryResponse = (inquiryInstance) => {
     subject: inquiry.subject,
     message: inquiry.message,
     category: inquiry.category,
+    sourceRole: inquiry.sourceRole,
     status: inquiry.status,
     priority: inquiry.priority,
     isRead: inquiry.isRead,
@@ -68,6 +69,8 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       ? `${req.user.firstName} ${req.user.lastName}`
       : req.user.name || req.user.displayName || 'Unknown User';
 
+    const sourceRole = req.user?.activeRole || req.user?.role || (Array.isArray(req.user?.roles) ? req.user.roles[0] : undefined) || 'buyer';
+
     const inquiry = await db.SupportInquiry.create({
       id: uuidv4(),
       userId,
@@ -79,7 +82,8 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
       userName,
       userEmailSnapshot: userEmail,
       contactEmail: contactEmail || userEmail,
-      contactPhone: contactPhone || req.user.phone || req.user.phoneNumber || null
+      contactPhone: contactPhone || req.user.phone || req.user.phoneNumber || null,
+      sourceRole
     });
 
     logger.info('Support inquiry created', {
