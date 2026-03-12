@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
-import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
+// import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
@@ -10,7 +10,7 @@ import { getApiUrl } from '../../utils/apiConfig';
 import { uploadToCloudinaryDirect } from '../../utils/cloudinaryDirectUpload';
 
 const RegisterPage = ({ isModal = false, onClose }) => {
-  const { register, loading, signInWithGoogle } = useAuth();
+  const { register, loading } = useAuth(); // signInWithGoogle removed
   const navigate = useNavigate();
   const [form, setForm] = useState({
     firstName: '',
@@ -71,24 +71,24 @@ const RegisterPage = ({ isModal = false, onClose }) => {
 
 };
 
-const handleGoogleSignIn = async () => {
-  try {
-    setError('');
-    const user = await signInWithGoogle();
-    const redirect = sessionStorage.getItem('authRedirect');
-    if (redirect) {
-      sessionStorage.removeItem('authRedirect');
-      navigate(redirect, { replace: true });
-    } else {
-      navigate(getPostLoginRoute(user), { replace: true });
-    }
-    if (isModal && onClose) {
-      onClose({ type: 'navigate' });
-    }
-  } catch (googleError) {
-    setError(googleError.message || 'Unable to continue with Google right now.');
-  }
-};
+// const handleGoogleSignIn = async () => {
+// try {
+//   setError('');
+//   const user = await signInWithGoogle();
+//   const redirect = sessionStorage.getItem('authRedirect');
+//   if (redirect) {
+//     sessionStorage.removeItem('authRedirect');
+//     navigate(redirect, { replace: true });
+//   } else {
+//     navigate(getPostLoginRoute(user), { replace: true });
+//   }
+//   if (isModal && onClose) {
+//     onClose({ type: 'navigate' });
+//   }
+// } catch (googleError) {
+//   setError(googleError.message || 'Unable to continue with Google right now.');
+// }
+// };
 
 const toggleRole
  = (r) => {
@@ -180,7 +180,7 @@ const toggleRole
         onClose={onClose}
 
 >
-  <div className="mb-6 space-y-4">
+  {/* <div className="mb-6 space-y-4">
     <GoogleAuthButton
       label="Sign up with Google"
       onClick={handleGoogleSignIn}
@@ -191,7 +191,7 @@ const toggleRole
       <span>or complete the form</span>
       <span className="h-px flex-1 bg-white/10" />
     </div>
-  </div>
+  </div> */}
 <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="rounded-2xl border border-red-400/70 bg-red-500/10 px-4 py-3 text-sm text-red-200">

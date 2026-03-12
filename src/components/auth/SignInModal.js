@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
-import GoogleAuthButton from './GoogleAuthButton';
+// import GoogleAuthButton from './GoogleAuthButton';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const SignInModal = ({ onClose }) => {
-  const { login, loading, signInWithGoogle } = useAuth();
+  const { login, loading } = useAuth(); // signInWithGoogle removed
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,22 +41,22 @@ const SignInModal = ({ onClose }) => {
 
 };
 
-const handleGoogleSignIn = async () => {
-  try {
-    setError('');
-    const user = await signInWithGoogle();
-    const redirect = sessionStorage.getItem('authRedirect');
-    if (redirect) {
-      sessionStorage.removeItem('authRedirect');
-      navigate(redirect, { replace: true });
-    } else {
-      navigate(getPostLoginRoute(user), { replace: true });
-    }
-    if (onClose) onClose();
-  } catch (googleError) {
-    setError(googleError.message || 'Unable to sign in with Google right now.');
-  }
-};
+// const handleGoogleSignIn = async () => {
+//   try {
+//     setError('');
+//     const user = await signInWithGoogle();
+//     const redirect = sessionStorage.getItem('authRedirect');
+//     if (redirect) {
+//       sessionStorage.removeItem('authRedirect');
+//       navigate(redirect, { replace: true });
+//     } else {
+//       navigate(getPostLoginRoute(user), { replace: true });
+//     }
+//     if (onClose) onClose();
+//   } catch (googleError) {
+//     setError(googleError.message || 'Unable to sign in with Google right now.');
+//   }
+// };
 
 return (
 
@@ -113,13 +113,13 @@ return (
 
 </div>
 
-<div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+{/* <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
   <span className="h-px flex-1 bg-white/10" />
   <span>or</span>
   <span className="h-px flex-1 bg-white/10" />
 </div>
 
-<GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
+<GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} /> */}
 
 <div className="flex items-center justify-between text-sm text-slate-300">
             <button
