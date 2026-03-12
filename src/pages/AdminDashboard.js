@@ -623,24 +623,8 @@ const AdminDashboard = () => {
 
 
   const loadUsersFromApi = useCallback(async ({ page = 1, limit = 100, role } = {}) => {
-    if (!user || user.role !== 'admin' || loadingUsers || usersLoadedRef.current) return;
-    
-    // Skip API calls in development mode to prevent 401 errors
-    if (window.location.hostname === 'localhost') {
-      console.log('AdminDashboard: Skipping users API call in development mode');
-      // Set mock data for development
-      const mockUsersData = role ? MOCK_USERS.filter((u) => u.role === role) : MOCK_USERS;
-      // Normalize: treat undefined isActive as true (active)
-      const normalizedMockUsers = mockUsersData.map(u => ({
-        ...u,
-        isActive: u.isActive !== false
-      }));
-      setUsers(normalizedMockUsers);
-      setVendors(normalizedMockUsers.filter((u) => u.role === 'vendor'));
-      setBuyers(normalizedMockUsers.filter((u) => u.role === 'buyer'));
-      return;
-    }
-    
+    if (!user || user.role !== 'admin' || usersLoadedRef.current) return;
+
     setLoadingUsers(true);
     try {
       const tokenAvailable = await hasAuthToken();
@@ -708,7 +692,7 @@ const AdminDashboard = () => {
     } finally {
       setLoadingUsers(false);
     }
-  }, [user, loadingUsers, hasAdminToken]);
+  }, [user, hasAdminToken]);
 
   const getPropertyLocation = (property) => {
     try {
@@ -853,7 +837,8 @@ const AdminDashboard = () => {
     if (user?.role !== 'admin') return;
     fetchEscrowTransactions({ page: 1 });
     fetchAdminDisputes();
-  }, [user?.role, fetchEscrowTransactions, fetchAdminDisputes]);
+    loadUsersFromApi({ page: 1, limit: 100 });
+  }, [user?.role, fetchEscrowTransactions, fetchAdminDisputes, loadUsersFromApi]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
