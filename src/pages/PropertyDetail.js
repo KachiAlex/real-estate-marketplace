@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -551,344 +551,335 @@ const PropertyDetail = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <div className="mb-8">
-          <Breadcrumbs items={breadcrumbItems} />
-        </div>
+    <Fragment>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb */}
+          <div className="mb-8">
+            <Breadcrumbs items={breadcrumbItems} />
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Image Gallery */}
-            <div className="mb-8">
-              <div className="relative">
-                <img
-                  src={getCurrentImage()}
-                  alt={property.title}
-                  className="w-full h-96 object-cover rounded-lg"
-                  key={`main-image-${activeImage}`}
-                />
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium price-inline">
-                    {formatCurrency(property.price || 0)}
-                  </span>
-                  <button
-                    onClick={handleToggleFavorite}
-                    className={`bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors ${
-                      isFavorite ? 'text-red-500' : ''
-                    }`}
-                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <FaHeart className={isFavorite ? 'fill-current' : ''} />
-                  </button>
-                  <button
-                    onClick={handleShareProperty}
-                    className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
-                  >
-                    <FaShare />
-                  </button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              {/* Image Gallery */}
+              <div className="mb-8">
+                <div className="relative">
+                  <img
+                    src={getCurrentImage()}
+                    alt={property.title}
+                    className="w-full h-96 object-cover rounded-lg"
+                    key={`main-image-${activeImage}`}
+                  />
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium price-inline">
+                      {formatCurrency(property.price || 0)}
+                    </span>
+                    <button
+                      onClick={handleToggleFavorite}
+                      className={`bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors ${
+                        isFavorite ? 'text-red-500' : ''
+                      }`}
+                      title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <FaHeart className={isFavorite ? 'fill-current' : ''} />
+                    </button>
+                    <button
+                      onClick={handleShareProperty}
+                      className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
+                    >
+                      <FaShare />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Thumbnail Images */}
+                {property.images && Array.isArray(property.images) && property.images.length > 1 && (
+                  <div className="mt-4 flex space-x-2 overflow-x-auto pb-2">
+                    {property.images.map((image, index) => (
+                      <button
+                        key={`thumb-${index}`}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveImage(index);
+                        }}
+                        className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all ${
+                          activeImage === index 
+                            ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-2' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <img
+                          src={getImageUrl(image)}
+                          alt={`${property.title} ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Property Details */}
+              <div className="bg-white rounded-lg shadow p-6 mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
+                <p className="text-lg text-gray-600 mb-6">
+                  {(() => {
+                    if (typeof property.location === 'string') {
+                      return property.location;
+                    }
+                    if (property.location && typeof property.location === 'object') {
+                      const address = property.location.address || '';
+                      const city = property.location.city || '';
+                      const state = property.location.state || '';
+                      const result = [address, city, state].filter(Boolean).join(', ');
+                      return result || 'Location not specified';
+                    }
+                    return 'Location not specified';
+                  })()}
+                </p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                      <FaBed className="mr-2" />
+                      {property.bedrooms || property.details?.bedrooms || 0}
+                    </div>
+                    <div className="text-sm text-gray-500">Bedrooms</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                      <FaBath className="mr-2" />
+                      {property.bathrooms || property.details?.bathrooms || 0}
+                    </div>
+                    <div className="text-sm text-gray-500">Bathrooms</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                      <FaRulerCombined className="mr-2" />
+                      {property.area || property.details?.sqft || 0}
+                    </div>
+                    <div className="text-sm text-gray-500">Sq Ft</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 capitalize">
+                      {property.type}
+                    </div>
+                    <div className="text-sm text-gray-500">Type</div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
+                  <p className="text-gray-600 leading-relaxed">{property.description}</p>
                 </div>
               </div>
-              
-              {/* Thumbnail Images */}
-              {property.images && Array.isArray(property.images) && property.images.length > 1 && (
-                <div className="mt-4 flex space-x-2 overflow-x-auto pb-2">
-                  {property.images.map((image, index) => (
-                    <button
-                      key={`thumb-${index}`}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setActiveImage(index);
-                      }}
-                      className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all ${
-                        activeImage === index 
-                          ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-2' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <img
-                        src={getImageUrl(image)}
-                        alt={`${property.title} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+
+              {/* Amenities */}
+              {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {property.amenities.map((amenity, index) => (
+                      <div key={index} className="flex items-center">
+                        <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-gray-700">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Property Details */}
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
-              <p className="text-lg text-gray-600 mb-6">
-                {(() => {
-                  if (typeof property.location === 'string') {
-                    return property.location;
-                  }
-                  if (property.location && typeof property.location === 'object') {
-                    const address = property.location.address || '';
-                    const city = property.location.city || '';
-                    const state = property.location.state || '';
-                    const result = [address, city, state].filter(Boolean).join(', ');
-                    return result || 'Location not specified';
-                  }
-                  return 'Location not specified';
-                })()}
-              </p>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
-                    <FaBed className="mr-2" />
-                    {property.bedrooms || property.details?.bedrooms || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Bedrooms</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
-                    <FaBath className="mr-2" />
-                    {property.bathrooms || property.details?.bathrooms || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Bathrooms</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
-                    <FaRulerCombined className="mr-2" />
-                    {property.area || property.details?.sqft || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Sq Ft</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 capitalize">
-                    {property.type}
-                  </div>
-                  <div className="text-sm text-gray-500">Type</div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
-                <p className="text-gray-600 leading-relaxed">{property.description}</p>
-              </div>
-            </div>
-
-            {/* Amenities */}
-            {property.amenities && property.amenities.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {property.amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-gray-700">{amenity}</span>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Vendor</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-gray-600 font-semibold">
+                        {property.owner?.firstName?.[0] || property.vendor?.firstName?.[0] || 'V'}
+                        {property.owner?.lastName?.[0] || property.vendor?.lastName?.[0] || 'D'}
+                      </span>
                     </div>
-                  ))}
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {property.owner?.firstName || property.vendor?.firstName || 'Vendor'} {property.owner?.lastName || property.vendor?.lastName || ''}
+                      </div>
+                      <div className="text-sm text-gray-500">Property Vendor</div>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t">
+                    <div className="flex items-start text-gray-600 mb-3">
+                      <FaMapMarkerAlt className="mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">
+                        {(() => {
+                          const address = property.address || '';
+                          const city = property.city || '';
+                          const state = property.state || '';
+                          const zipCode = property.zipCode || '';
+
+                          if (address || city || state) {
+                            const parts = [address, city, state, zipCode].filter(part => part && part !== 'undefined');
+                            if (parts.length > 0) {
+                              return parts.join(', ');
+                            }
+                          }
+
+                          if (property.location && typeof property.location === 'object') {
+                            const objAddress = property.location.address;
+                            const objCity = property.location.city;
+                            const objState = property.location.state;
+                            const objZip = property.location.zipCode;
+                            const parts = [objAddress, objCity, objState, objZip].filter(part => part && part !== 'undefined');
+                            if (parts.length > 0) {
+                              return parts.join(', ');
+                            }
+                          }
+
+                          if (typeof property.location === 'string' && property.location.trim() !== '' && !property.location.includes('undefined')) {
+                            return property.location;
+                          }
+
+                          return 'Location not specified';
+                        })()}
+                      </span>
+                    </div>
+
+                    {property.createdAt && (
+                      <div className="flex items-center text-gray-600 mb-3 text-sm">
+                        <FaCalendar className="mr-2" />
+                        <span>
+                          Listed: {(() => {
+                            const date = new Date(property.createdAt);
+                            if (isNaN(date.getTime())) {
+                              return property.createdAt;
+                            }
+                            return date.toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            });
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <span>Views: {property.views || 0}</span>
+                      <span className="mx-2">•</span>
+                      <span>{property.isVerified ? '✅ Verified' : '⏳ Pending Verification'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Sidebar */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Vendor</h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-gray-600 font-semibold">
-                      {property.owner?.firstName?.[0] || property.vendor?.firstName?.[0] || 'V'}
-                      {property.owner?.lastName?.[0] || property.vendor?.lastName?.[0] || 'D'}
-                    </span>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Purchase Information</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Property Value:</span>
+                    <span className="font-semibold price-inline">{formatCurrency(property.price || 0)}</span>
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {property.owner?.firstName || property.vendor?.firstName || 'Vendor'} {property.owner?.lastName || property.vendor?.lastName || ''}
-                    </div>
-                    <div className="text-sm text-gray-500">Property Vendor</div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Property Type:</span>
+                    <span className="font-semibold capitalize">{property.status?.replace('-', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Escrow Fee (0.5%):</span>
+                    <span className="font-semibold price-inline">{formatCurrency(Math.round((property.price || 0) * 0.005))}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-3">
+                    <span className="text-gray-900 font-semibold">Total Amount:</span>
+                    <span className="font-bold text-lg price-inline">{formatCurrency(Math.round((property.price || 0) * 1.005))}</span>
                   </div>
                 </div>
-                <div className="pt-3 border-t">
-                  <div className="flex items-start text-gray-600 mb-3">
-                    <FaMapMarkerAlt className="mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">
-                      {(() => {
-                        // First, try to get location from separate address, city, state properties (most reliable)
-                        const address = property.address || '';
-                        const city = property.city || '';
-                        const state = property.state || '';
-                        const zipCode = property.zipCode || '';
-                        
-                        if (address || city || state) {
-                          const parts = [address, city, state, zipCode].filter(part => part && part !== '' && part !== null && part !== undefined && part !== 'undefined');
-                          if (parts.length > 0) {
-                            return parts.join(', ');
-                          }
-                        }
-                        
-                        // Handle object location - check if fields exist and are not undefined
-                        if (property.location && typeof property.location === 'object') {
-                          const objAddress = property.location.address;
-                          const objCity = property.location.city;
-                          const objState = property.location.state;
-                          const objZipCode = property.location.zipCode;
-                          
-                          const parts = [objAddress, objCity, objState, objZipCode].filter(part => part && part !== '' && part !== null && part !== undefined && part !== 'undefined');
-                          if (parts.length > 0) {
-                            return parts.join(', ');
-                          }
-                        }
-                        
-                        // Handle string location (from transformed properties) - but check it doesn't contain "undefined"
-                        if (typeof property.location === 'string' && property.location.trim() !== '' && !property.location.includes('undefined')) {
-                          return property.location;
-                        }
-                        
-                        return 'Location not specified';
-                      })()}
-                    </span>
+                <div className="mt-4 space-y-2">
+                  <PropertyPurchaseButton
+                    property={property}
+                    className="bg-green-600 hover:bg-green-700"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Property ID:</span>
+                    <span className="font-medium">{property.id}</span>
                   </div>
-                  
-                  {/* Listing Date */}
                   {property.createdAt && (
-                    <div className="flex items-center text-gray-600 mb-3 text-sm">
-                      <FaCalendar className="mr-2" />
-                      <span>
-                        Listed: {(() => {
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Listed:</span>
+                      <span className="font-medium">
+                        {(() => {
                           const date = new Date(property.createdAt);
                           if (isNaN(date.getTime())) {
-                            return property.createdAt;
+                            return property.createdAt || property.dateListed || 'N/A';
                           }
-                          return date.toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
+                          return date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
                           });
                         })()}
                       </span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center text-gray-600 text-sm">
-                    <span>Views: {property.views || 0}</span>
-                    <span className="mx-2">•</span>
-                    <span>
-                      {property.isVerified ? '✅ Verified' : '⏳ Pending Verification'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Purchase Information */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Purchase Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Property Value:</span>
-                  <span className="font-semibold price-inline">{formatCurrency(property.price || 0)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Property Type:</span>
-                  <span className="font-semibold capitalize">{property.status?.replace('-', ' ')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Escrow Fee (0.5%):</span>
-                  <span className="font-semibold price-inline">{formatCurrency(Math.round((property.price || 0) * 0.005))}</span>
-                </div>
-                <div className="flex justify-between border-t pt-3">
-                  <span className="text-gray-900 font-semibold">Total Amount:</span>
-                  <span className="font-bold text-lg price-inline">{formatCurrency(Math.round((property.price || 0) * 1.005))}</span>
-                </div>
-              </div>
-              
-              <div className="mt-4 space-y-2">
-                <PropertyPurchaseButton
-                  property={property}
-                  className="bg-green-600 hover:bg-green-700"
-                />
-              </div>
-            </div>
-
-            {/* Property Info */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Property ID:</span>
-                  <span className="font-medium">{property.id}</span>
-                </div>
-                {property.createdAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Listed:</span>
+                    <span className="text-gray-600">Status:</span>
+                    <span className="font-medium text-green-600">Available</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Vendor:</span>
                     <span className="font-medium">
-                      {(() => {
-                        const date = new Date(property.createdAt);
-                        if (isNaN(date.getTime())) {
-                          return property.createdAt || property.dateListed || 'N/A';
-                        }
-                        return date.toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        });
-                      })()}
+                      {property.ownerName || `${property.owner?.firstName || property.vendor?.firstName || ''} ${property.owner?.lastName || property.vendor?.lastName || ''}`.trim() || 'Vendor'}
                     </span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className="font-medium text-green-600">Available</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Vendor:</span>
-                  <span className="font-medium">{property.ownerName || `${property.owner?.firstName || property.vendor?.firstName || ''} ${property.owner?.lastName || property.vendor?.lastName || ''}`.trim() || 'Vendor'}</span>
-                </div>
-                
-                {/* Location link */}
-                {property.location?.googleMapsUrl && (
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Location</h4>
-                    <div className="space-y-2">
-                      <a
-                        href={property.location.googleMapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center w-full px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
-                      >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Show on Google map
-                      </a>
+
+                  {property.location?.googleMapsUrl && (
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Location</h4>
+                      <div className="space-y-2">
+                        <a
+                          href={property.location.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center w-full px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          Show on Google map
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Inquiry Modal */}
       {showInquiryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Send Inquiry</h3>
-              <button
-                onClick={() => setShowInquiryModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowInquiryModal(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-600">
                 Send a message to the property vendor about <strong>{property.title}</strong>
@@ -906,7 +897,7 @@ const PropertyDetail = () => {
                   placeholder="I'm interested in this property. Could you please provide more information about..."
                 />
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowInquiryModal(false)}
@@ -926,16 +917,12 @@ const PropertyDetail = () => {
         </div>
       )}
 
-      {/* Schedule Viewing Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Schedule Viewing</h3>
-              <button
-                onClick={() => setShowScheduleModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowScheduleModal(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -980,7 +967,7 @@ const PropertyDetail = () => {
           </div>
         </div>
       )}
-    </div>
+    </Fragment>
   );
 };
 
