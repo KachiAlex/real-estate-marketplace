@@ -5,55 +5,42 @@ const { protect, authorize } = require('../middleware/auth');
 const { validate, sanitizeInput } = require('../middleware/validation');
 const { body, param, query } = require('express-validator');
 
-// Validation rules
+const CATEGORY_OPTIONS = [
+  'real-estate-tips',
+  'market-news',
+  'investment-guides',
+  'property-showcase',
+  'legal-advice',
+  'home-improvement',
+  'neighborhood-spotlight',
+  'buyer-guides',
+  'seller-guides',
+  'rental-advice',
+  'mortgage-financing',
+  'property-management'
+];
+
 const blogValidation = [
-  body('title')
-    .trim()
-    .isLength({ min: 10, max: 200 })
-    .withMessage('Title must be between 10 and 200 characters'),
-  body('excerpt')
-    .trim()
-    .isLength({ min: 50, max: 500 })
-    .withMessage('Excerpt must be between 50 and 500 characters'),
-  body('content')
-    .trim()
-    .isLength({ min: 100 })
-    .withMessage('Content must be at least 100 characters'),
-  body('category')
-    .isIn([
-      'real-estate-tips',
-      'market-news',
-      'investment-guides',
-      'property-showcase',
-      'legal-advice',
-      'home-improvement',
-      'neighborhood-spotlight',
-      'buyer-guides',
-      'seller-guides',
-      'rental-advice',
-      'mortgage-financing',
-      'property-management'
-    ])
-    .withMessage('Invalid category'),
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array'),
-  body('featuredImage.url')
-    .isURL()
-    .withMessage('Featured image must be a valid URL'),
-  body('status')
-    .optional()
-    .isIn(['draft', 'published', 'archived'])
-    .withMessage('Invalid status'),
-  body('featured')
-    .optional()
-    .isBoolean()
-    .withMessage('Featured must be a boolean'),
-  body('allowComments')
-    .optional()
-    .isBoolean()
-    .withMessage('Allow comments must be a boolean')
+  body('title').trim().isLength({ min: 10, max: 200 }).withMessage('Title must be between 10 and 200 characters'),
+  body('excerpt').optional().trim().isLength({ min: 50, max: 500 }).withMessage('Excerpt must be between 50 and 500 characters'),
+  body('content').trim().isLength({ min: 100 }).withMessage('Content must be at least 100 characters'),
+  body('category').isIn(CATEGORY_OPTIONS).withMessage('Invalid category'),
+  body('tags').optional().isArray().withMessage('Tags must be an array'),
+  body('featuredImage').optional().custom((value) => {
+    if (typeof value === 'string') return true;
+    if (typeof value === 'object' && value !== null) {
+      if (!value.url) {
+        throw new Error('Featured image must include a url');
+      }
+    }
+    return true;
+  }),
+  body('slug').optional().isSlug().withMessage('Slug must be URL friendly'),
+  body('status').optional().isIn(['draft', 'published', 'archived']).withMessage('Invalid status'),
+  body('featured').optional().isBoolean().withMessage('Featured must be a boolean'),
+  body('allowComments').optional().isBoolean().withMessage('Allow comments must be a boolean'),
+  body('publishedAt').optional().isISO8601().withMessage('Published date must be ISO8601'),
+  body('authorId').optional().isUUID().withMessage('Author ID must be a valid UUID')
 ];
 
 // @desc    Test route - simple blog endpoint without validation
@@ -502,6 +489,117 @@ router.get('/tags', async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+});
+
+// Admin-only management routes (must remain after public routes to avoid conflicts)
+router.use(protect, authorize('admin'), sanitizeInput);
+
+// @desc    Admin list blogs with filters (drafts, scheduled, etc.)
+// @route   GET /api/blog/admin
+// @access  Private/Admin
+router.get('/admin', [
+  query('status').optional().isString(),
+  query('search').optional().isString(),
+  query('authorId').optional().isUUID(),
+  query('category').optional().isString(),
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('sortBy').optional().isString(),
+  query('sortOrder').optional().isIn(['asc', 'desc']),
+  validate()
+], async (req, res) => {
+  try {
+    const {
+      status,
+      search,
+      authorId,
+      category,
+      page = 1,
+      limit = 20,
+      sortBy = 'updatedAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const result = await blogService.getBlogs(
+      { status, search, authorId, category },
+      sortBy,
+      sortOrder,
+      parseInt(limit),
+      (parseInt(page) - 1) * parseInt(limit)
+    );
+
+    res.json({ success: true, data: result.blogs, total: result.total });
+  } catch (error) {
+    console.error('Error listing admin blogs:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @desc    Admin create blog post
+// @route   POST /api/blog
+// @access  Private/Admin
+router.post('/', blogValidation, validate(), async (req, res) => {
+  try {
+    const authorId = req.body.authorId || req.user.id;
+    const blog = await blogService.createBlog({ ...req.body, authorId });
+    res.status(201).json({ success: true, data: blog });
+  } catch (error) {
+    console.error('Error creating blog:', error);
+    res.status(400).json({ success: false, message: error.message || 'Failed to create blog' });
+  }
+});
+
+// @desc    Admin update blog post
+// @route   PUT /api/blog/:id
+// @access  Private/Admin
+router.put('/:id', [
+  param('id').isUUID().withMessage('Blog id must be a UUID'),
+  ...blogValidation
+], validate(), async (req, res) => {
+  try {
+    const updated = await blogService.updateBlog(req.params.id, req.body);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Error updating blog:', error);
+    res.status(error.message === 'Blog not found' ? 404 : 400).json({ success: false, message: error.message });
+  }
+});
+
+// @desc    Admin toggle status/publish
+// @route   PATCH /api/blog/:id/status
+// @access  Private/Admin
+router.patch('/:id/status', [
+  param('id').isUUID().withMessage('Blog id must be a UUID'),
+  body('status').isIn(['draft', 'published', 'archived']).withMessage('Invalid status'),
+  body('publishedAt').optional().isISO8601().withMessage('Published date must be ISO8601'),
+  validate()
+], async (req, res) => {
+  try {
+    const updated = await blogService.updateBlogStatus(req.params.id, req.body.status, req.body.publishedAt);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Error updating blog status:', error);
+    res.status(error.message === 'Blog not found' ? 404 : 400).json({ success: false, message: error.message });
+  }
+});
+
+// @desc    Admin delete blog
+// @route   DELETE /api/blog/:id
+// @access  Private/Admin
+router.delete('/:id', [
+  param('id').isUUID().withMessage('Blog id must be a UUID'),
+  validate()
+], async (req, res) => {
+  try {
+    const deleted = await blogService.deleteBlog(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
+    res.json({ success: true, message: 'Blog deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting blog:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete blog' });
   }
 });
 

@@ -1,22 +1,64 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BlogCard from '../components/BlogCard';
-import { getAllBlogPosts, getPublishedBlogPosts } from '../data/blogPosts';
+import { getPublishedBlogPosts } from '../data/blogPosts';
+import { fetchPublishedBlogs } from '../api/blog';
+
+const FALLBACK_POSTS = getPublishedBlogPosts();
 
 const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [posts, setPosts] = useState(FALLBACK_POSTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [usingFallback, setUsingFallback] = useState(true);
 
-  const categories = useMemo(() => {
-    const allPosts = getAllBlogPosts();
-    const categorySet = new Set(allPosts.map((post) => post.category).filter(Boolean));
-    return ['all', ...Array.from(categorySet)];
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPosts = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const remotePosts = await fetchPublishedBlogs({ limit: 60 });
+        if (!isMounted) return;
+
+        if (remotePosts.length > 0) {
+          setPosts(remotePosts);
+          setUsingFallback(false);
+        } else {
+          setPosts([]);
+          setUsingFallback(false);
+          setError('No articles available yet. Check back soon!');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch blog posts, using fallback data', err);
+        if (!isMounted) return;
+        setPosts(FALLBACK_POSTS);
+        setUsingFallback(true);
+        setError('Showing sample articles while we reconnect to the blog service.');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPosts();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  const categories = useMemo(() => {
+    const categorySet = new Set(posts.map((post) => post.category).filter(Boolean));
+    return ['all', ...Array.from(categorySet)];
+  }, [posts]);
+
   const filteredPosts = useMemo(() => {
-    const posts = getPublishedBlogPosts();
     if (selectedCategory === 'all') return posts;
     return posts.filter((post) => post.category === selectedCategory);
-  }, [selectedCategory]);
+  }, [posts, selectedCategory]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -47,9 +89,13 @@ const Blog = () => {
           ))}
         </div>
 
-        {filteredPosts.length === 0 ? (
+        {loading ? (
           <div className="text-center bg-white border border-dashed border-gray-200 rounded-2xl py-16">
-            <p className="text-gray-500">No articles available in this category yet.</p>
+            <p className="text-gray-500">Loading the latest insights...</p>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center bg-white border border-dashed border-gray-200 rounded-2xl py-16">
+            <p className="text-gray-500">{error || 'No articles available in this category yet.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -57,6 +103,12 @@ const Blog = () => {
               <BlogCard key={post.id} post={post} />
             ))}
           </div>
+        )}
+
+        {usingFallback && !loading && (
+          <p className="mt-8 text-center text-sm text-gray-500">
+            Showing sample articles while we reconnect to the live blog feed.
+          </p>
         )}
 
         <div className="mt-16 flex justify-center">

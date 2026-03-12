@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { FaArrowLeft, FaCalendar, FaTag } from 'react-icons/fa';
 import BlogCard from '../components/BlogCard';
 import { findBlogPost, getPublishedBlogPosts } from '../data/blogPosts';
+import { fetchBlogBySlug, fetchRelatedBlogs } from '../api/blog';
 
 const formatDate = (date) =>
   date
@@ -13,15 +14,94 @@ const formatDate = (date) =>
       })
     : '';
 
+const FALLBACK_POSTS = getPublishedBlogPosts();
+
 const BlogDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const post = findBlogPost(slug);
+  const [post, setPost] = useState(() => findBlogPost(slug));
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [usingFallback, setUsingFallback] = useState(!post);
 
-  const morePosts = useMemo(() => {
-    const posts = getPublishedBlogPosts().filter((p) => p.id !== post?.id);
-    return posts.slice(0, 3);
-  }, [post?.id]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const buildFallbackRelated = (currentPost) =>
+      FALLBACK_POSTS.filter((p) => p.id !== currentPost?.id).slice(0, 3);
+
+    const loadBlog = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const remotePost = await fetchBlogBySlug(slug);
+        if (!isMounted) return;
+
+        if (remotePost) {
+          setPost(remotePost);
+          setUsingFallback(false);
+          const remoteRelated = await fetchRelatedBlogs(remotePost.slug, { limit: 3 });
+          if (!isMounted) return;
+          if (remoteRelated.length > 0) {
+            setRelatedPosts(remoteRelated);
+          } else {
+            setRelatedPosts(buildFallbackRelated(remotePost));
+          }
+        } else {
+          const fallbackPost = findBlogPost(slug);
+          if (fallbackPost) {
+            setPost(fallbackPost);
+            setUsingFallback(true);
+            setError('Showing sample article while we reconnect to the blog service.');
+            setRelatedPosts(buildFallbackRelated(fallbackPost));
+          } else {
+            setPost(null);
+            setRelatedPosts([]);
+            setError('Article not found');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load blog post, using fallback data', err);
+        if (!isMounted) return;
+        const fallbackPost = findBlogPost(slug);
+        if (fallbackPost) {
+          setPost(fallbackPost);
+          setUsingFallback(true);
+          setError('Showing sample article while we reconnect to the blog service.');
+          setRelatedPosts(buildFallbackRelated(fallbackPost));
+        } else {
+          setPost(null);
+          setRelatedPosts([]);
+          setError('Article not found');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadBlog();
+    return () => {
+      isMounted = false;
+    };
+  }, [slug]);
+
+  const paragraphs = useMemo(() => post?.content?.split(/\n{2,}/).filter(Boolean) || [], [post?.content]);
+  const morePosts = useMemo(() => relatedPosts, [relatedPosts]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-xl p-10 max-w-lg w-full text-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-gray-400 mb-4">Blog</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-3">Loading article...</h1>
+          <p className="text-gray-500">Fetching the latest details for you.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -30,8 +110,7 @@ const BlogDetail = () => {
           <p className="text-sm uppercase tracking-[0.3em] text-gray-400 mb-4">Blog</p>
           <h1 className="text-3xl font-semibold text-gray-900 mb-3">Article not found</h1>
           <p className="text-gray-500 mb-8">
-            The article you are looking for may have been unpublished or moved. Please return to the blog to
-            explore our latest insights.
+            {error || 'The article you are looking for may have been unpublished or moved. Please return to the blog to explore our latest insights.'}
           </p>
           <Link
             to="/blog"
@@ -43,8 +122,6 @@ const BlogDetail = () => {
       </div>
     );
   }
-
-  const paragraphs = post.content?.split(/\n{2,}/).filter(Boolean) || [];
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -69,6 +146,11 @@ const BlogDetail = () => {
               {post.category}
             </span>
           </div>
+          {usingFallback && (
+            <p className="mt-4 text-sm text-white/80">
+              Showing sample article while we reconnect to the live blog feed.
+            </p>
+          )}
         </div>
       </header>
 

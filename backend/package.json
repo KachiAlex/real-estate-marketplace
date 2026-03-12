@@ -48,6 +48,7 @@
     "pg-hstore": "^2.3.4",
     "real-estate-marketplace": "file:..",
     "sequelize": "^6.37.7",
+    "slugify": "^1.6.6",
     "socket.io": "^4.8.1",
     "stripe": "^13.5.0",
     "uuid": "^13.0.0"
