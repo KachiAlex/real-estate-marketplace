@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const { verifyToken } = require('../middleware/authJwt');
+const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
 
 const router = express.Router();
 const util = require('util');
@@ -37,28 +38,86 @@ const deriveNamesFromGooglePayload = (payload = {}) => {
 };
 
 const ensureRoleArray = (roles, fallbackRole = 'user') => {
+  let resolved = [];
+
   if (Array.isArray(roles) && roles.length) {
-    return roles.map(r => String(r).trim().toLowerCase()).filter(Boolean);
+    resolved = roles.slice();
+  } else if (roles && typeof roles === 'string') {
+    const trimmed = roles.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          resolved = parsed;
+        }
+      } catch (e) {
+        resolved = [trimmed];
+      }
+    }
+    if (!resolved.length) {
+      resolved = [trimmed];
+    }
+  } else if (roles && typeof roles === 'object') {
+    resolved = Array.isArray(roles) ? roles.slice() : Object.values(roles).filter(Boolean);
   }
-  if (roles && typeof roles === 'string') {
-    const value = roles.trim().toLowerCase();
-    return value ? [value] : [];
+
+  if ((!resolved || !resolved.length) && fallbackRole) {
+    resolved = [fallbackRole];
   }
-  return fallbackRole ? [String(fallbackRole).trim().toLowerCase()] : [];
+
+  const normalized = resolved
+    .map(r => String(r).trim().toLowerCase())
+    .filter(Boolean);
+
+  const fallback = fallbackRole ? String(fallbackRole).trim().toLowerCase() : null;
+  if (fallback && !normalized.includes(fallback)) {
+    normalized.push(fallback);
+  }
+
+  return Array.from(new Set(normalized));
 };
 
-const buildUserResponse = (user) => ({
-  id: user.id,
-  email: user.email,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  phone: user.phone,
-  role: user.role,
-  roles: ensureRoleArray(user.roles, user.role || 'user'),
-  activeRole: user.activeRole || user.role || 'user',
-  avatar: user.avatar,
-  isVerified: user.isVerified
-});
+const parseJsonField = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return value;
+    }
+  }
+  return value;
+};
+
+const buildUserResponse = (user) => {
+  const safeUser = user && typeof user.toJSON === 'function' ? user.toJSON() : user;
+  const roles = ensureRoleArray(safeUser.roles, safeUser.role || 'user');
+  let activeRole = safeUser.activeRole ? String(safeUser.activeRole).trim().toLowerCase() : null;
+  if (!activeRole && roles.length) {
+    activeRole = roles[0];
+  }
+
+  const vendorData = parseJsonField(safeUser.vendorData);
+  const buyerData = parseJsonField(safeUser.buyerData);
+  const kycStatus = safeUser.kycStatus || vendorData?.kycStatus || null;
+
+  return {
+    id: safeUser.id,
+    email: safeUser.email,
+    firstName: safeUser.firstName,
+    lastName: safeUser.lastName,
+    phone: safeUser.phone,
+    role: safeUser.role,
+    roles,
+    activeRole: activeRole || safeUser.role || 'user',
+    avatar: safeUser.avatar,
+    isVerified: safeUser.isVerified,
+    isActive: safeUser.isActive,
+    vendorData,
+    buyerData,
+    kycStatus
+  };
+};
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -653,18 +712,7 @@ router.post('/login', [
       message: 'Login successful',
       accessToken,
       refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        roles: user.roles,
-        activeRole: user.activeRole || user.role,
-        avatar: user.avatar,
-        isVerified: user.isVerified
-      }
+      user: buildUserResponse(user)
     });
   } catch (error) {
     appendDebug('login:error ' + (error && error.message ? error.message : JSON.stringify(error || {})));
@@ -718,16 +766,7 @@ router.post('/refresh', async (req, res) => {
       res.json({
         success: true,
         accessToken: newAccessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          roles: user.roles,
-          avatar: user.avatar,
-          isVerified: user.isVerified
-        }
+        user: buildUserResponse(user)
       });
     } catch (tokenError) {
       return res.status(401).json({ 
@@ -786,21 +825,7 @@ router.get('/me', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        roles: user.roles,
-        activeRole: user.activeRole || user.role,
-        avatar: user.avatar,
-        isVerified: user.isVerified,
-        isActive: user.isActive,
-        kycStatus: user.kycStatus || (user.vendorData && user.vendorData.kycStatus) || null,
-        vendorData: user.vendorData || null
-      }
+      user: buildUserResponse(user)
     });
   } catch (error) {
     console.error('Get user error:', error);
@@ -985,13 +1010,13 @@ router.post('/logout', verifyToken, (req, res) => {
 router.post('/switch-role', verifyToken, async (req, res) => {
   try {
     let { role } = req.body;
-    const allowed = ['user', 'buyer', 'vendor', 'admin'];
+    if (typeof role === 'string') {
+      role = role.trim().toLowerCase();
+    }
+    const allowed = ['user', 'buyer', 'vendor', 'admin', 'mortgage_bank', 'investor', 'agent'];
     if (!role || !allowed.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
-
-    // Normalize aliases: accept 'buyer' as 'user' internally
-    if (role === 'buyer') role = 'user';
 
     // Handle local fallback users (development/test) whose ids are like 'local-...'
     if (typeof req.userId === 'string' && req.userId.startsWith('local-')) {
@@ -1004,12 +1029,12 @@ router.post('/switch-role', verifyToken, async (req, res) => {
         const idx = locals.findIndex(u => u.id === req.userId);
         if (idx >= 0) {
           const lu = locals[idx];
-          let localRoles = Array.isArray(lu.roles) ? lu.roles.map(r => String(r).toLowerCase()) : [String(lu.role || 'user').toLowerCase()];
-          if (!localRoles.includes(role)) localRoles.push(role);
-          localRoles = Array.from(new Set(localRoles));
-          lu.role = role;
-          lu.roles = localRoles;
-          lu.activeRole = role;
+          const normalizedLocalRoles = normalizeRoles(lu.roles || lu.role || []);
+          const mergedLocalRoles = normalizeRoles([...normalizedLocalRoles, role]);
+          const nextLocalActive = chooseActiveRole(lu.activeRole, role, mergedLocalRoles);
+          lu.role = nextLocalActive;
+          lu.roles = mergedLocalRoles;
+          lu.activeRole = nextLocalActive;
           try { fs.writeFileSync(localPath, JSON.stringify(locals, null, 2)); } catch (e) { /* ignore dev write errors */ }
 
           const accessToken = generateToken(lu.id);
@@ -1019,19 +1044,7 @@ router.post('/switch-role', verifyToken, async (req, res) => {
             message: 'Role switched successfully',
             accessToken,
             refreshToken,
-            user: {
-              id: lu.id,
-              email: lu.email,
-              firstName: lu.firstName,
-              lastName: lu.lastName,
-              phone: lu.phone,
-              role: lu.role,
-              roles: lu.roles,
-              activeRole: lu.activeRole || role,
-              avatar: lu.avatar,
-              isVerified: lu.isVerified,
-              isActive: lu.isActive
-            }
+            user: buildUserResponse(lu)
           });
         }
       } catch (err) {
@@ -1045,12 +1058,12 @@ router.post('/switch-role', verifyToken, async (req, res) => {
     }
 
     // Ensure roles is an array and normalized
-    let roles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
-    if (!roles.includes(role)) roles.push(role);
-    roles = Array.from(new Set(roles));
+    const existingRoles = normalizeRoles(user.roles || user.role || []);
+    const mergedRoles = normalizeRoles([...existingRoles, role]);
+    const nextActiveRole = chooseActiveRole(user.activeRole, role, mergedRoles);
 
     // Update user role, roles and persist activeRole
-    await user.update({ role, roles, activeRole: role });
+    await user.update({ role: nextActiveRole, roles: mergedRoles, activeRole: nextActiveRole });
 
     // Reload user to reflect DB changes
     const updated = await User.findByPk(req.userId);
@@ -1064,19 +1077,7 @@ router.post('/switch-role', verifyToken, async (req, res) => {
       message: 'Role switched successfully',
       accessToken,
       refreshToken,
-      user: {
-        id: updated.id,
-        email: updated.email,
-        firstName: updated.firstName,
-        lastName: updated.lastName,
-        phone: updated.phone,
-        role: updated.role,
-        roles: updated.roles,
-        activeRole: updated.activeRole || role,
-        avatar: updated.avatar,
-        isVerified: updated.isVerified,
-        isActive: updated.isActive
-      }
+      user: buildUserResponse(updated)
     });
   } catch (error) {
     console.error('Switch role error:', error);
