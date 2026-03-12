@@ -571,7 +571,6 @@ const AdminDashboard = () => {
       return;
     }
     
-    usersLoadedRef.current = true;
     setLoadingUsers(true);
     try {
       const tokenAvailable = await hasAuthToken();
@@ -585,8 +584,11 @@ const AdminDashboard = () => {
       if (role) {
         params.set('role', role);
       }
-      const response = await authenticatedFetch(`${getApiUrl(`/admin/users?${params.toString()}`)}`);
+      const url = `${getApiUrl(`/admin/users?${params.toString()}`)}`;
+      console.log('AdminDashboard: Fetching users URL:', url);
+      const response = await authenticatedFetch(url);
       const payload = await response.json().catch(() => ({}));
+      console.log('AdminDashboard: users response status:', response.status, 'payload:', payload);
 
       if (!response.ok || !payload?.success) {
         // Handle 401 specifically to prevent infinite retries
@@ -615,6 +617,8 @@ const AdminDashboard = () => {
           ...payload.pagination
         }));
       }
+      // Mark as loaded only after a successful fetch
+      usersLoadedRef.current = true;
       setAuthWarning('');
     } catch (error) {
       console.warn('AdminDashboard: Failed to fetch users', error);
