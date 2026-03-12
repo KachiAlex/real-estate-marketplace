@@ -87,6 +87,21 @@ export const initializePaystackPayment = async ({ email, amount, reference, meta
     amount: Number(amount || 0) * 100, // Paystack expects amount in kobo
     ref: reference,
     metadata,
+    // Called when payment completes successfully inside the Paystack modal
+    callback: (response) => {
+      console.log('🔥 PaystackService: Paystack callback invoked', response);
+      try {
+        if (onSuccess && typeof onSuccess === 'function') {
+          onSuccess(response);
+        }
+        // Backwards compatible global hook
+        if (window.paystackOnSuccess && typeof window.paystackOnSuccess === 'function') {
+          window.paystackOnSuccess(response);
+        }
+      } catch (err) {
+        console.error('🔥 PaystackService: error in onSuccess handler', err);
+      }
+    },
     onClose: () => {
       console.log('🔥 PaystackService: Modal closed by user');
       if (onClose) {
