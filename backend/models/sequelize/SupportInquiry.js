@@ -83,8 +83,7 @@ module.exports = (sequelize) => {
     }
   }, {
     tableName: 'support_inquiries',
-    timestamps: true,
-    underscored: true
+    timestamps: true
   });
 
   return SupportInquiry;

@@ -713,6 +713,8 @@ const AdminDashboard = () => {
       const message = error?.response?.data?.message || error.message || 'Failed to load escrow transactions';
       setEscrowError(message);
     } finally {
+      setEscrowLoading(false);
+    }
   }, [user]);
 
   const fetchAdminDisputes = useCallback(async () => {
