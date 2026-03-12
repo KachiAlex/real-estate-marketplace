@@ -292,6 +292,31 @@ const AdminDashboard = () => {
   const [blogActionBusyId, setBlogActionBusyId] = useState(null);
   const isMountedRef = useRef(true);
 
+  const [draftPost, setDraftPost] = useState({ title: '', category: 'General', status: 'draft', content: '' });
+  const handleDraftChange = (field, value) => setDraftPost((p) => ({ ...p, [field]: value }));
+  const resetDraftPost = () => setDraftPost({ title: '', category: 'General', status: 'draft', content: '' });
+  const handleCreateBlogPost = async () => {
+    try {
+      setBlogSaving(true);
+      const newPost = {
+        id: `tmp-${Date.now()}`,
+        title: draftPost.title || 'Untitled',
+        excerpt: (draftPost.content || '').slice(0, 140),
+        category: draftPost.category || 'General',
+        status: draftPost.status || 'draft',
+        publishedAt: draftPost.status === 'published' ? new Date().toISOString() : null
+      };
+      setBlogPosts((prev) => [newPost, ...prev]);
+      resetDraftPost();
+      toast.success('Blog post saved locally');
+    } catch (e) {
+      console.error('Create blog post failed', e);
+      toast.error('Failed to create blog post');
+    } finally {
+      setBlogSaving(false);
+    }
+  };
+
   const handleAdminLogout = useCallback(async () => {
     try {
       await logout();
@@ -1552,45 +1577,46 @@ const AdminDashboard = () => {
                   <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-gray-500">
                     No blog posts match the selected filters.
                   </div>
-                  {/* Mobile pagination controls */}
-                  <div className="px-4 py-3 border-t border-gray-100 lg:hidden flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { if (pagination.currentPage > 1) fetchEscrowTransactions({ page: pagination.currentPage - 1 }); }}
-                        disabled={pagination.currentPage <= 1 || escrowLoading}
-                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Prev
-                      </button>
-                      <span className="text-sm text-gray-700">{pagination.currentPage}/{pagination.totalPages}</span>
-                      <button
-                        type="button"
-                        onClick={() => { if (pagination.currentPage < pagination.totalPages) fetchEscrowTransactions({ page: pagination.currentPage + 1 }); }}
-                        disabled={pagination.currentPage >= pagination.totalPages || escrowLoading}
-                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </div>
-                    <div>
-                      <select
-                        value={pagination.itemsPerPage}
-                        onChange={(e) => {
-                          const newSize = Number(e.target.value) || 20;
-                          setPagination((prev) => ({ ...prev, itemsPerPage: newSize, currentPage: 1 }));
-                          fetchEscrowTransactions({ page: 1, limit: newSize });
-                        }}
-                        className="border border-gray-200 rounded-md px-2 py-1 text-sm"
-                      >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                      </select>
-                    </div>
-                  </div>
                 ) : (
-                  filteredBlogPosts.map((post) => (
+                  <>
+                    {/* Mobile pagination controls */}
+                    <div className="px-4 py-3 border-t border-gray-100 lg:hidden flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { if (pagination.currentPage > 1) fetchEscrowTransactions({ page: pagination.currentPage - 1 }); }}
+                          disabled={pagination.currentPage <= 1 || escrowLoading}
+                          className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Prev
+                        </button>
+                        <span className="text-sm text-gray-700">{pagination.currentPage}/{pagination.totalPages}</span>
+                        <button
+                          type="button"
+                          onClick={() => { if (pagination.currentPage < pagination.totalPages) fetchEscrowTransactions({ page: pagination.currentPage + 1 }); }}
+                          disabled={pagination.currentPage >= pagination.totalPages || escrowLoading}
+                          className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                      <div>
+                        <select
+                          value={pagination.itemsPerPage}
+                          onChange={(e) => {
+                            const newSize = Number(e.target.value) || 20;
+                            setPagination((prev) => ({ ...prev, itemsPerPage: newSize, currentPage: 1 }));
+                            fetchEscrowTransactions({ page: 1, limit: newSize });
+                          }}
+                          className="border border-gray-200 rounded-md px-2 py-1 text-sm"
+                        >
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                    </div>
+                    {filteredBlogPosts.map((post) => (
                     <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4">
                       <div className="flex flex-wrap items-center gap-3 justify-between">
                         <div>
