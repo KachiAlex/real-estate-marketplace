@@ -19,6 +19,14 @@ import { useProperty } from '../contexts/PropertyContext';
 import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch, hasAuthToken } from '../utils/authToken';
+import {
+  adminListBlogs,
+  adminCreateBlog,
+  adminUpdateBlog,
+  adminUpdateBlogStatus,
+  adminDeleteBlog,
+  fetchBlogCategories
+} from '../api/blog';
 
 const ESCROW_STATUS_OPTIONS = ['pending', 'active', 'completed', 'cancelled', 'disputed'];
 const ESCROW_RESOLUTION_OPTIONS = [
@@ -27,6 +35,109 @@ const ESCROW_RESOLUTION_OPTIONS = [
   { value: 'partial_refund', label: 'Partial Refund to Buyer' },
   { value: 'full_refund', label: 'Full Refund to Buyer' }
 ];
+
+const BLOG_CATEGORY_OPTIONS = [
+  'real-estate-tips',
+  'market-news',
+  'investment-guides',
+  'property-showcase',
+  'legal-advice',
+  'home-improvement',
+  'neighborhood-spotlight',
+  'buyer-guides',
+  'seller-guides',
+  'rental-advice',
+  'mortgage-financing',
+  'property-management'
+];
+
+const BLOG_STATUS_OPTIONS = ['draft', 'published', 'archived'];
+
+const buildInitialBlogEditorState = () => ({
+  id: null,
+  title: '',
+  slug: '',
+  category: BLOG_CATEGORY_OPTIONS[0],
+  status: 'draft',
+  excerpt: '',
+  content: '',
+  tagsInput: '',
+  featuredImage: '',
+  featured: false,
+  allowComments: true,
+  publishedAt: ''
+});
+
+const parseTagsInput = (value = '') =>
+  value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+const humanizeCategory = (slug = '') =>
+  slug
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+const formatDateForInput = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (num) => num.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const normalizePublishedAtInput = (value) => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString();
+};
+
+const mapBlogToEditorState = (blog) => ({
+  id: blog?.id || null,
+  title: blog?.title || '',
+  slug: blog?.slug || '',
+  category: blog?.category || BLOG_CATEGORY_OPTIONS[0],
+  status: blog?.status || 'draft',
+  excerpt: blog?.excerpt || '',
+  content: blog?.content || '',
+  tagsInput: Array.isArray(blog?.tags) ? blog.tags.join(', ') : '',
+  featuredImage: typeof blog?.featuredImage === 'string' ? blog.featuredImage : blog?.featuredImage?.url || '',
+  featured: Boolean(blog?.featured),
+  allowComments: blog?.allowComments !== undefined ? Boolean(blog.allowComments) : true,
+  publishedAt: formatDateForInput(blog?.publishedAt)
+});
+
+const buildPayloadFromEditor = (editorState, authorId) => {
+  if (!editorState?.title?.trim()) {
+    throw new Error('Title is required');
+  }
+  if (!editorState?.content || editorState.content.trim().length < 100) {
+    throw new Error('Content must be at least 100 characters');
+  }
+
+  const payload = {
+    title: editorState.title.trim(),
+    category: editorState.category,
+    status: editorState.status,
+    excerpt: editorState.excerpt?.trim() || undefined,
+    content: editorState.content,
+    tags: parseTagsInput(editorState.tagsInput),
+    featuredImage: editorState.featuredImage?.trim() || undefined,
+    featured: Boolean(editorState.featured),
+    allowComments: Boolean(editorState.allowComments),
+    authorId
+  };
+
+  const normalizedPublishedAt = normalizePublishedAtInput(editorState.publishedAt);
+  if (normalizedPublishedAt) {
+    payload.publishedAt = normalizedPublishedAt;
+  }
+
+  return payload;
+};
 
 const MOCK_USERS = [
   {
@@ -167,31 +278,18 @@ const AdminDashboard = () => {
   const statsRefreshIntervalRef = useRef(null);
   const escrowsLoadedRef = useRef(false);
   const disputesLoadedRef = useRef(false);
-  const [blogPosts, setBlogPosts] = useState([
-    {
-      id: 'blog-1',
-      title: 'January Market Update',
-      category: 'Market Trends',
-      status: 'published',
-      author: 'Admin Team',
-      publishedAt: '2024-01-28T09:15:00Z',
-      excerpt: 'Rental demand across Lekki and Ikoyi jumped 18% MoM. Here is how it impacts investors...'
-    },
-    {
-      id: 'blog-2',
-      title: 'Mortgage Playbook 2024',
-      category: 'Mortgage',
-      status: 'draft',
-      author: 'Mortgage Desk',
-      publishedAt: '2024-02-14T12:00:00Z',
-      excerpt: 'Everything our buyers should know about the revamped PropertyArk mortgage partners.'
-    }
-  ]);
-  const initialDraftPost = { title: '', category: '', status: 'draft', content: '' };
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [blogLoading, setBlogLoading] = useState(false);
+  const [blogError, setBlogError] = useState('');
+  const [blogSaving, setBlogSaving] = useState(false);
+  const [blogCategoriesRemote, setBlogCategoriesRemote] = useState(BLOG_CATEGORY_OPTIONS);
   const [blogFilter, setBlogFilter] = useState('all');
   const [blogCategoryFilter, setBlogCategoryFilter] = useState('all');
   const [blogSearch, setBlogSearch] = useState('');
-  const [draftPost, setDraftPost] = useState(initialDraftPost);
+  const [blogEditor, setBlogEditor] = useState(buildInitialBlogEditorState());
+  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+  const [editingBlogId, setEditingBlogId] = useState(null);
+  const [blogActionBusyId, setBlogActionBusyId] = useState(null);
   const isMountedRef = useRef(true);
 
   const handleAdminLogout = useCallback(async () => {
@@ -316,6 +414,16 @@ const AdminDashboard = () => {
   }, [loadVerificationConfig]);
 
   useEffect(() => {
+    if (user?.role !== 'admin') return;
+    loadBlogCategories();
+  }, [user?.role, loadBlogCategories]);
+
+  useEffect(() => {
+    if (user?.role !== 'admin' || activeTab !== 'blog') return;
+    loadBlogPosts();
+  }, [user?.role, activeTab, loadBlogPosts]);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     const allowedTabs = ['properties','verification','escrow','disputes','users','blog','support'];
@@ -360,22 +468,25 @@ const AdminDashboard = () => {
   }, [properties]);
 
   const blogStats = useMemo(() => {
-    return blogPosts.reduce((acc, post) => {
-      acc.total += 1;
-      if (post.status === 'published') acc.published += 1;
-      if (post.status === 'draft') acc.drafts += 1;
-      if (post.status === 'scheduled') acc.scheduled += 1;
-      return acc;
-    }, { total: 0, published: 0, drafts: 0, scheduled: 0 });
+    return blogPosts.reduce(
+      (acc, post) => {
+        acc.total += 1;
+        if (post.status === 'published') acc.published += 1;
+        if (post.status === 'draft') acc.drafts += 1;
+        if (post.status === 'scheduled' || post.status === 'archived') acc.scheduled += 1;
+        return acc;
+      },
+      { total: 0, published: 0, drafts: 0, scheduled: 0 }
+    );
   }, [blogPosts]);
 
   const blogCategories = useMemo(() => {
-    const categories = new Set();
+    const categories = new Set(blogCategoriesRemote || []);
     blogPosts.forEach((post) => {
       if (post.category) categories.add(post.category);
     });
     return Array.from(categories).sort();
-  }, [blogPosts]);
+  }, [blogPosts, blogCategoriesRemote]);
 
   const filteredBlogPosts = useMemo(() => {
     return blogPosts.filter((post) => {
@@ -598,8 +709,6 @@ const AdminDashboard = () => {
       const message = error?.response?.data?.message || error.message || 'Failed to load escrow transactions';
       setEscrowError(message);
     } finally {
-      setEscrowLoading(false);
-    }
   }, [user]);
 
   const fetchAdminDisputes = useCallback(async () => {
@@ -618,6 +727,50 @@ const AdminDashboard = () => {
       setDisputeLoading(false);
     }
   }, [user]);
+
+  const loadBlogCategories = useCallback(async () => {
+    try {
+      const categories = await fetchBlogCategories();
+      const normalized = Array.isArray(categories)
+        ? categories
+            .map((cat) => (typeof cat === 'string' ? cat : cat?.slug || cat?.category))
+            .filter(Boolean)
+        : [];
+      if (normalized.length) {
+        setBlogCategoriesRemote((prev) => Array.from(new Set([...(prev || []), ...normalized])));
+      }
+    } catch (error) {
+      console.warn('AdminDashboard: Failed to load blog categories', error);
+    }
+  }, []);
+
+  const loadBlogPosts = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    setBlogLoading(true);
+    setBlogError('');
+    try {
+      const params = {
+        limit: 100,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc'
+      };
+      if (blogFilter !== 'all') params.status = blogFilter;
+      if (blogCategoryFilter !== 'all') params.category = blogCategoryFilter;
+      if (blogSearch.trim()) params.search = blogSearch.trim();
+      const result = await adminListBlogs(params);
+      if (!isMountedRef.current) return;
+      setBlogPosts(Array.isArray(result?.posts) ? result.posts : []);
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to load blog posts';
+      if (!isMountedRef.current) return;
+      setBlogError(message);
+      toast.error(message);
+    } finally {
+      if (isMountedRef.current) {
+        setBlogLoading(false);
+      }
+    }
+  }, [user, blogFilter, blogCategoryFilter, blogSearch]);
 
   useEffect(() => {
     const checkAdminToken = async () => {
@@ -876,41 +1029,88 @@ const AdminDashboard = () => {
     fetchAdminProperties(selectedStatus, verificationStatus);
   }, [fetchAdminProperties, selectedStatus]);
 
-  const handleBlogStatusToggle = useCallback((postId) => {
-    setBlogPosts((prev) => prev.map((post) => {
-      if (post.id !== postId) return post;
-      const nextStatus = post.status === 'published' ? 'draft' : 'published';
-      return { ...post, status: nextStatus };
-    }));
+  const handleBlogEditorChange = useCallback((field, value) => {
+    setBlogEditor((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleDeleteBlogPost = useCallback((postId) => {
-    setBlogPosts((prev) => prev.filter((post) => post.id !== postId));
+  const openCreateBlogModal = useCallback(() => {
+    setBlogEditor(buildInitialBlogEditorState());
+    setEditingBlogId(null);
+    setIsBlogModalOpen(true);
   }, []);
 
-  const handleDraftChange = useCallback((field, value) => {
-    setDraftPost((prev) => ({ ...prev, [field]: value }));
+  const openEditBlogModal = useCallback((post) => {
+    if (!post) return;
+    setBlogEditor(mapBlogToEditorState(post));
+    setEditingBlogId(post.id);
+    setIsBlogModalOpen(true);
   }, []);
 
-  const resetDraftPost = useCallback(() => {
-    setDraftPost(initialDraftPost);
+  const closeBlogModal = useCallback(() => {
+    setIsBlogModalOpen(false);
+    setEditingBlogId(null);
+    setBlogEditor(buildInitialBlogEditorState());
   }, []);
 
-  const handleCreateBlogPost = useCallback(() => {
-    if (!draftPost.title.trim()) {
-      toast.error('Title is required');
+  const handleBlogSubmit = useCallback(async () => {
+    if (!user?.id) {
+      toast.error('Admin authentication required');
       return;
     }
-    const newPost = {
-      ...draftPost,
-      id: `blog-${Date.now()}`,
-      author: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Admin Team',
-      publishedAt: new Date().toISOString()
-    };
-    setBlogPosts((prev) => [newPost, ...prev]);
-    resetDraftPost();
-    toast.success('Draft saved');
-  }, [draftPost, user, resetDraftPost]);
+    try {
+      setBlogSaving(true);
+      const payload = buildPayloadFromEditor(blogEditor, user.id);
+      if (editingBlogId) {
+        await adminUpdateBlog(editingBlogId, payload);
+        toast.success('Post updated');
+      } else {
+        await adminCreateBlog(payload);
+        toast.success('Post created');
+      }
+      closeBlogModal();
+      await loadBlogPosts();
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to save post';
+      toast.error(message);
+    } finally {
+      setBlogSaving(false);
+    }
+  }, [blogEditor, editingBlogId, user?.id, closeBlogModal, loadBlogPosts]);
+
+  const handleBlogStatusToggle = useCallback(async (post, nextStatus) => {
+    if (!post?.id) return;
+    const calculatedStatus = nextStatus || (post.status === 'published' ? 'draft' : 'published');
+    try {
+      setBlogActionBusyId(post.id);
+      const updated = await adminUpdateBlogStatus(
+        post.id,
+        calculatedStatus,
+        calculatedStatus === 'published' ? new Date().toISOString() : undefined
+      );
+      setBlogPosts((prev) => prev.map((p) => (p.id === post.id ? updated : p)));
+      toast.success(`Post ${calculatedStatus === 'published' ? 'published' : 'moved to drafts'}`);
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to update status';
+      toast.error(message);
+    } finally {
+      setBlogActionBusyId(null);
+    }
+  }, []);
+
+  const handleDeleteBlogPost = useCallback(async (postId) => {
+    if (!postId) return;
+    try {
+      setBlogActionBusyId(postId);
+      await adminDeleteBlog(postId);
+      setBlogPosts((prev) => prev.filter((post) => post.id !== postId));
+      toast.success('Post deleted');
+    } catch (error) {
+      const message = error?.response?.data?.message || error.message || 'Failed to delete post';
+      toast.error(message);
+    } finally {
+      setBlogActionBusyId(null);
+    }
+  }, []);
 
   if (!user || user.role !== 'admin') {
     return (
@@ -1251,6 +1451,20 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div>
+                <p className="text-sm font-semibold text-brand-orange tracking-[0.3em] uppercase">Editorial Control</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-2">Manage PropertyArk stories</h3>
+                <p className="text-sm text-gray-500 mt-1">Create market updates, investment guides, and announcements from one place.</p>
+              </div>
+              <button
+                onClick={openCreateBlogModal}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-blue text-white font-semibold shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/90 transition"
+              >
+                + Compose New Post
+              </button>
+            </div>
+
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <div className="grid gap-4 lg:grid-cols-4">
                 <div>
@@ -1271,9 +1485,11 @@ const AdminDashboard = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
                   >
                     <option value="all">All Posts</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Drafts</option>
-                    <option value="scheduled">Scheduled</option>
+                    {BLOG_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
