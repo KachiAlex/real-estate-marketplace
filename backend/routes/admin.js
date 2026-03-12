@@ -94,6 +94,51 @@ router.put('/users/:id/activate', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// @desc    Update a user's status (activate / suspend / archive)
+// @route   PATCH /api/admin/users/:id/status
+// @access  Private (Admin only)
+router.patch('/users/:id/status', protect, authorize('admin'), [
+  body('status').isIn(['active', 'suspended', 'archived']).withMessage('Invalid status value')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ success: false, message: 'You cannot change your own account status' });
+    }
+
+    const user = await userService.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { status } = req.body;
+    const updates = {};
+
+    if (status === 'active') {
+      updates.isActive = true;
+    } else {
+      // suspended or archived both set the account inactive
+      updates.isActive = false;
+    }
+
+    const updated = await userService.updateUser(req.params.id, updates);
+
+    res.json({
+      success: true,
+      message: `User ${status} successfully`,
+      data: updated
+    });
+  } catch (error) {
+    console.error('Admin update user status error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @desc    Get current admin profile
 // @route   GET /api/admin/profile
 // @access  Private (Admin only)
