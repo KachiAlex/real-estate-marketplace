@@ -489,8 +489,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (user?.role !== 'admin' || activeTab !== 'blog') return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     loadBlogPosts();
-  }, [user?.role, activeTab, loadBlogPosts]);
+  }, [user?.role, activeTab, blogFilter, blogCategoryFilter, blogSearch]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
