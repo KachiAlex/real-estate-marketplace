@@ -687,20 +687,24 @@ const AdminDashboard = () => {
   useEffect(() => {
   }, [loadingUsers]);
 
-  const fetchEscrowTransactions = useCallback(async (params = {}) => {
+  const fetchEscrowTransactions = useCallback(async ({ page, limit, ...params } = {}) => {
     if (!user || user.role !== 'admin') return;
     setEscrowLoading(true);
     setEscrowError('');
     try {
+      const requestedPage = page || pagination.currentPage || 1;
+      const requestedLimit = limit || pagination.itemsPerPage || 20;
+
       const response = await apiClient.get('/escrow', {
         params: {
           type: 'admin',
-          // backend validation allows a maximum of 50, avoid 400 errors
-          limit: 50,
+          limit: requestedLimit,
+          page: requestedPage,
           ...params
         }
       });
-      const payload = response?.data?.data;
+
+      const payload = response?.data?.data || response?.data || {};
       const list = Array.isArray(payload?.transactions)
         ? payload.transactions
         : Array.isArray(response?.data?.transactions)
@@ -708,7 +712,22 @@ const AdminDashboard = () => {
           : Array.isArray(payload)
             ? payload
             : [];
+
       setEscrows(list);
+
+      if (payload.pagination) {
+        setPagination((prev) => ({
+          ...prev,
+          currentPage: payload.pagination.currentPage || requestedPage,
+          itemsPerPage: payload.pagination.itemsPerPage || requestedLimit,
+          totalItems: payload.pagination.totalItems || prev.totalItems,
+          totalPages: payload.pagination.totalPages || prev.totalPages
+        }));
+      } else {
+        // fallback: set minimal pagination
+        setPagination((prev) => ({ ...prev, currentPage: requestedPage, itemsPerPage: requestedLimit }));
+      }
+
       escrowsLoadedRef.current = true;
     } catch (error) {
       const message = error?.response?.data?.message || error.message || 'Failed to load escrow transactions';
@@ -716,7 +735,7 @@ const AdminDashboard = () => {
     } finally {
       setEscrowLoading(false);
     }
-  }, [user]);
+  }, [user, pagination.currentPage, pagination.itemsPerPage]);
 
   const fetchAdminDisputes = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
@@ -804,14 +823,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
-    fetchEscrowTransactions();
+    fetchEscrowTransactions({ page: 1 });
     fetchAdminDisputes();
   }, [user?.role, fetchEscrowTransactions, fetchAdminDisputes]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
     if (activeTab === 'escrow' && !escrowLoading && !escrowsLoadedRef.current) {
-      fetchEscrowTransactions();
+      fetchEscrowTransactions({ page: 1 });
     }
     if (activeTab === 'disputes' && !disputeLoading && !disputesLoadedRef.current) {
       fetchAdminDisputes();
@@ -1533,6 +1552,43 @@ const AdminDashboard = () => {
                   <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-gray-500">
                     No blog posts match the selected filters.
                   </div>
+                  {/* Mobile pagination controls */}
+                  <div className="px-4 py-3 border-t border-gray-100 lg:hidden flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { if (pagination.currentPage > 1) fetchEscrowTransactions({ page: pagination.currentPage - 1 }); }}
+                        disabled={pagination.currentPage <= 1 || escrowLoading}
+                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Prev
+                      </button>
+                      <span className="text-sm text-gray-700">{pagination.currentPage}/{pagination.totalPages}</span>
+                      <button
+                        type="button"
+                        onClick={() => { if (pagination.currentPage < pagination.totalPages) fetchEscrowTransactions({ page: pagination.currentPage + 1 }); }}
+                        disabled={pagination.currentPage >= pagination.totalPages || escrowLoading}
+                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                    <div>
+                      <select
+                        value={pagination.itemsPerPage}
+                        onChange={(e) => {
+                          const newSize = Number(e.target.value) || 20;
+                          setPagination((prev) => ({ ...prev, itemsPerPage: newSize, currentPage: 1 }));
+                          fetchEscrowTransactions({ page: 1, limit: newSize });
+                        }}
+                        className="border border-gray-200 rounded-md px-2 py-1 text-sm"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+                  </div>
                 ) : (
                   filteredBlogPosts.map((post) => (
                     <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4">
@@ -1920,7 +1976,7 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => fetchEscrowTransactions()}
+                    onClick={() => fetchEscrowTransactions({ page: pagination.currentPage })}
                     disabled={escrowLoading}
                     className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -1988,6 +2044,47 @@ const AdminDashboard = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  {/* Desktop pagination controls */}
+                  <div className="px-6 py-3 border-t border-gray-100 hidden lg:flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { if (pagination.currentPage > 1) fetchEscrowTransactions({ page: pagination.currentPage - 1 }); }}
+                        disabled={pagination.currentPage <= 1 || escrowLoading}
+                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+
+                      <span className="text-sm text-gray-700">Page {pagination.currentPage} of {pagination.totalPages}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => { if (pagination.currentPage < pagination.totalPages) fetchEscrowTransactions({ page: pagination.currentPage + 1 }); }}
+                        disabled={pagination.currentPage >= pagination.totalPages || escrowLoading}
+                        className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Page size</label>
+                      <select
+                        value={pagination.itemsPerPage}
+                        onChange={(e) => {
+                          const newSize = Number(e.target.value) || 20;
+                          setPagination((prev) => ({ ...prev, itemsPerPage: newSize, currentPage: 1 }));
+                          fetchEscrowTransactions({ page: 1, limit: newSize });
+                        }}
+                        className="border border-gray-200 rounded-md px-2 py-1 text-sm"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="lg:hidden space-y-4">
                     {escrows.map((tx) => {
