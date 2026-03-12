@@ -572,7 +572,7 @@ const AddProperty = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-8 md:py-12">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12">
@@ -597,7 +597,7 @@ const AddProperty = () => {
         )}
 
         {/* Form Container */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-8">
             {errors.general && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-xl">

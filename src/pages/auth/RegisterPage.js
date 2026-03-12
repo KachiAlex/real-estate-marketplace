@@ -206,7 +206,7 @@ const toggleRole
               type="text"
               value={form.firstName}
               onChange={handleChange('firstName')}
-              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+              className="mt-2 w-full h-11 min-h-[44px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
               placeholder="Jane"
             />
           </label>
@@ -216,7 +216,7 @@ const toggleRole
               type="text"
               value={form.lastName}
               onChange={handleChange('lastName')}
-              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+              className="mt-2 w-full h-11 min-h-[44px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
               placeholder="Doe"
             />
           </label>
@@ -309,7 +309,7 @@ const toggleRole
               type="password"
               value={form.password}
               onChange={handleChange('password')}
-              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+              className="mt-2 w-full h-11 min-h-[44px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
               placeholder="Create a password"
             />
           </label>
@@ -319,7 +319,7 @@ const toggleRole
               type="password"
               value={form.confirmPassword}
               onChange={handleChange('confirmPassword')}
-              className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+              className="mt-2 w-full h-11 min-h-[44px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-white focus:outline-none focus:ring-2 focus:ring-amber-400/70"
               placeholder="Re-enter password"
             />
           </label>

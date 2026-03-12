@@ -104,7 +104,7 @@ export default function VendorDashboard() {
   }, [stats, vendorProfile, loading]);
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-6 md:py-8 px-4">
       <DashboardSwitch />
       <h2 className="text-2xl font-bold text-brand-blue mb-4">Vendor Dashboard</h2>
       <div className="bg-white rounded shadow p-6 mb-6">
