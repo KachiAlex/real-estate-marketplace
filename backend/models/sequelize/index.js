@@ -16,6 +16,7 @@ module.exports = {
   SupportInquiry: require('./SupportInquiry'),
   VerificationApplication: require('./VerificationApplication'),
   Message: require('./Message'),
+  Conversation: require('./Conversation'),
   Notification: require('./Notification'),
   SavedProperty: require('./SavedProperty'),
   PropertyInquiry: require('./PropertyInquiry'),

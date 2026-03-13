@@ -35,7 +35,28 @@ router.post('/start', authenticateToken, async (req, res) => {
 
     logger.info('Starting chat', { buyerId, vendorId, propertyId, starterId });
 
-    // Create a message record to start the conversation
+    // Ensure participant IDs are sorted for consistent conversation lookup
+    const [participant1Id, participant2Id] = [buyerId, vendorId].sort();
+
+    // Find or create conversation
+    let conversation = await db.Conversation.findOne({
+      where: {
+        propertyId: propertyId,
+        participant1Id: participant1Id,
+        participant2Id: participant2Id
+      }
+    });
+
+    if (!conversation) {
+      conversation = await db.Conversation.create({
+        propertyId: propertyId,
+        participant1Id: participant1Id,
+        participant2Id: participant2Id
+      });
+      logger.info('Created new conversation', { conversationId: conversation.id });
+    }
+
+    // Create the initial message
     const message = await db.Message.create({
       senderId: starterId,
       recipientId: vendorId === starterId ? buyerId : vendorId,
@@ -52,16 +73,21 @@ router.post('/start', authenticateToken, async (req, res) => {
       });
     }
 
-    // Return a chatId that can be used to identify this conversation
-    // For now, we'll use a combination of propertyId and the lesser of the two userIds to form a stable chat ID
-    const sortedIds = [buyerId, vendorId].sort();
-    const chatId = `${propertyId}-${sortedIds[0]}-${sortedIds[1]}`;
+    // Update conversation's lastMessage pointers
+    await conversation.update({
+      lastMessageId: message.id,
+      lastMessageAt: new Date()
+    });
 
-    logger.info('Chat started successfully', { chatId, messageId: message.id });
+    // Use stable chatId format
+    const chatId = `${propertyId}-${participant1Id}-${participant2Id}`;
+
+    logger.info('Chat started successfully', { chatId, messageId: message.id, conversationId: conversation.id });
 
     return res.json({
       success: true,
       chatId: chatId,
+      conversationId: conversation.id,
       messageId: message.id,
       message: 'Chat initialized successfully'
     });
@@ -76,83 +102,82 @@ router.post('/start', authenticateToken, async (req, res) => {
 
 /**
  * @route   GET /api/chats/conversations
- * @desc    Fetch all conversations for authenticated user
+ * @desc    Fetch all conversations for authenticated user with pagination
  * @access  Private
- * @returns { success: bool, data: conversations[] }
+ * @query   page=1, limit=20
+ * @returns { success: bool, data: conversations[], meta: { total, page, limit } }
  */
 router.get('/conversations', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
 
-    logger.info('Fetching conversations for user', { userId });
+    logger.info('Fetching conversations for user', { userId, page, limit });
 
-    // Get all messages where user is sender or recipient
-    const messages = await db.Message.findAll({
+    // Get conversations where user is either participant
+    const { count, rows: conversations } = await db.Conversation.findAndCountAll({
       where: {
         [db.Sequelize.Op.or]: [
-          { senderId: userId },
-          { recipientId: userId }
+          { participant1Id: userId },
+          { participant2Id: userId }
         ]
       },
-      order: [['createdAt', 'DESC']],
       include: [
         {
           model: db.User,
-          as: 'sender',
+          as: 'participant1',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
         },
         {
           model: db.User,
-          as: 'recipient',
+          as: 'participant2',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+        },
+        {
+          model: db.Property,
+          as: 'property',
+          attributes: ['id', 'title', 'price']
         }
-      ]
+      ],
+      order: [['lastMessageAt', 'DESC']],
+      limit: limit,
+      offset: offset
     });
 
-    if (!messages || messages.length === 0) {
-      return res.json({
-        success: true,
-        data: []
-      });
-    }
-
-    // Group messages by conversation (propertyId + participant pair)
-    const conversationsMap = {};
-    messages.forEach((msg) => {
-      const otherUserId = msg.senderId === userId ? msg.recipientId : msg.senderId;
-      const conversationKey = `${msg.propertyId}-${userId}-${otherUserId}`;
-
-      if (!conversationsMap[conversationKey]) {
-        const otherUser = msg.senderId === userId ? msg.recipient : msg.sender;
-        conversationsMap[conversationKey] = {
-          id: conversationKey,
-          propertyId: msg.propertyId,
-          contact: {
-            id: otherUserId,
-            name: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : 'Unknown',
-            role: 'vendor',
-            email: otherUser?.email,
-            phone: otherUser?.phone
-          },
-          lastMessage: {
-            text: msg.content,
-            timestamp: msg.createdAt
-          },
-          unreadCount: 0
-        };
-      }
-
-      // Count unread messages
-      if (!msg.isRead && msg.recipientId === userId) {
-        conversationsMap[conversationKey].unreadCount++;
-      }
+    // Format conversations for frontend
+    const formattedConversations = conversations.map((conv) => {
+      const otherParticipant = conv.participant1Id === userId ? conv.participant2 : conv.participant1;
+      return {
+        id: `${conv.propertyId}-${conv.participant1Id}-${conv.participant2Id}`,
+        conversationId: conv.id,
+        propertyId: conv.propertyId,
+        contact: {
+          id: otherParticipant.id,
+          name: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
+          role: 'vendor',
+          email: otherParticipant.email,
+          phone: otherParticipant.phone
+        },
+        property: {
+          id: conv.property.id,
+          title: conv.property.title,
+          price: conv.property.price
+        },
+        lastMessageAt: conv.lastMessageAt
+      };
     });
-
-    const conversations = Object.values(conversationsMap);
 
     return res.json({
       success: true,
-      data: conversations
+      data: formattedConversations,
+      meta: {
+        total: count,
+        page: page,
+        limit: limit,
+        pages: Math.ceil(count / limit)
+      }
     });
   } catch (error) {
     logger.error('Error fetching conversations', { error: error.message });
@@ -165,33 +190,37 @@ router.get('/conversations', authenticateToken, async (req, res) => {
 
 /**
  * @route   GET /api/chats/:chatId/messages
- * @desc    Fetch messages for a specific chat
+ * @desc    Fetch messages for a specific chat with pagination
  * @access  Private
- * @params  chatId (format: propertyId-userId1-userId2)
- * @returns { success: bool, data: messages[] }
+ * @params  chatId (format: propertyId-participant1Id-participant2Id)
+ * @query   page=1, limit=50
+ * @returns { success: bool, data: messages[], meta: { total, page, limit } }
  */
 router.get('/:chatId/messages', authenticateToken, async (req, res) => {
   try {
     const { chatId } = req.params;
     const userId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+    const offset = (page - 1) * limit;
 
-    logger.info('Fetching messages for chat', { chatId, userId });
+    logger.info('Fetching messages for chat', { chatId, userId, page, limit });
 
     // Parse the chatId to extract propertyId and participants
-    const [propertyId, user1, user2] = chatId.split('-');
+    const [propertyId, participant1, participant2] = chatId.split('-');
 
     // Verify user is participant
-    if (userId !== user1 && userId !== user2) {
+    if (userId !== participant1 && userId !== participant2) {
       return res.status(403).json({
         success: false,
         error: 'You are not a participant in this chat'
       });
     }
 
-    const otherUserId = userId === user1 ? user2 : user1;
+    const otherUserId = userId === participant1 ? participant2 : participant1;
 
-    // Fetch all messages in this conversation
-    const messages = await db.Message.findAll({
+    // Fetch messages with pagination
+    const { count, rows: messages } = await db.Message.findAndCountAll({
       where: {
         propertyId: propertyId,
         [db.Sequelize.Op.or]: [
@@ -205,18 +234,24 @@ router.get('/:chatId/messages', authenticateToken, async (req, res) => {
           }
         ]
       },
-      order: [['createdAt', 'ASC']],
       include: [
         {
           model: db.User,
           as: 'sender',
-          attributes: ['id', 'firstName', 'lastName', 'email']
+          attributes: ['id', 'firstName', 'lastName']
         }
-      ]
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+      offset: offset,
+      subQuery: false
     });
 
-    // Mark all unread messages as read
-    await db.Message.update(
+    // Reverse to show oldest first
+    const reversedMessages = messages.reverse();
+
+    // Mark all unread messages as read in background (don't await)
+    db.Message.update(
       { isRead: true, readAt: new Date() },
       {
         where: {
@@ -226,9 +261,9 @@ router.get('/:chatId/messages', authenticateToken, async (req, res) => {
           isRead: false
         }
       }
-    );
+    ).catch(err => logger.error('Failed to mark messages as read', { error: err.message }));
 
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = reversedMessages.map(msg => ({
       id: msg.id,
       senderId: msg.senderId,
       senderName: msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName}` : 'Unknown',
@@ -239,7 +274,13 @@ router.get('/:chatId/messages', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      data: formattedMessages
+      data: formattedMessages,
+      meta: {
+        total: count,
+        page: page,
+        limit: limit,
+        pages: Math.ceil(count / limit)
+      }
     });
   } catch (error) {
     logger.error('Error fetching messages', { error: error.message });
@@ -264,7 +305,7 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
     const { content } = req.body;
     const senderId = req.user.id;
 
-    if (!content) {
+    if (!content || !content.trim()) {
       return res.status(400).json({
         success: false,
         error: 'Message content is required'
@@ -274,17 +315,17 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
     logger.info('Sending message in chat', { chatId, senderId });
 
     // Parse the chatId
-    const [propertyId, user1, user2] = chatId.split('-');
+    const [propertyId, participant1, participant2] = chatId.split('-');
 
     // Verify user is participant
-    if (senderId !== user1 && senderId !== user2) {
+    if (senderId !== participant1 && senderId !== participant2) {
       return res.status(403).json({
         success: false,
         error: 'You are not a participant in this chat'
       });
     }
 
-    const recipientId = senderId === user1 ? user2 : user1;
+    const recipientId = senderId === participant1 ? participant2 : participant1;
 
     // Create message
     const message = await db.Message.create({
@@ -292,7 +333,7 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
       recipientId: recipientId,
       propertyId: propertyId,
       subject: 'Inquiry',
-      content: content,
+      content: content.trim(),
       isRead: false
     });
 
@@ -303,11 +344,32 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
       });
     }
 
+    // Update or create conversation
+    const sortedParticipants = [participant1, participant2].sort();
+    await db.Conversation.findOrCreate({
+      where: {
+        propertyId: propertyId,
+        participant1Id: sortedParticipants[0],
+        participant2Id: sortedParticipants[1]
+      },
+      defaults: {
+        lastMessageId: message.id,
+        lastMessageAt: new Date()
+      }
+    }).then(([conv]) => {
+      // Update lastMessage pointers
+      conv.update({
+        lastMessageId: message.id,
+        lastMessageAt: new Date()
+      }).catch(err => logger.error('Failed to update conversation', { error: err.message }));
+    });
+
     return res.status(201).json({
       success: true,
       data: {
         id: message.id,
         senderId: message.senderId,
+        recipientId: message.recipientId,
         content: message.content,
         timestamp: message.createdAt
       }

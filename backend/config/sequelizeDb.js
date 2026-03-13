@@ -86,6 +86,7 @@ const {
   SupportInquiry,
   VerificationApplication,
   Message,
+  Conversation,
   Notification,
   SavedProperty,
   PropertyInquiry,
@@ -115,6 +116,7 @@ const db = {
   SupportInquiry: SupportInquiry(sequelize),
   VerificationApplication: VerificationApplication(sequelize),
   Message: Message(sequelize),
+  Conversation: Conversation(sequelize),
   Notification: Notification(sequelize),
   SavedProperty: SavedProperty(sequelize),
   PropertyInquiry: PropertyInquiry(sequelize),
@@ -157,6 +159,14 @@ db.User.hasMany(db.Message, { foreignKey: 'senderId', as: 'sentMessages' });
 db.User.hasMany(db.Message, { foreignKey: 'recipientId', as: 'receivedMessages' });
 db.Message.belongsTo(db.User, { foreignKey: 'senderId', as: 'sender' });
 db.Message.belongsTo(db.User, { foreignKey: 'recipientId', as: 'recipient' });
+
+// Conversation relationships
+db.User.hasMany(db.Conversation, { foreignKey: 'participant1Id', as: 'conversationsAsParticipant1' });
+db.User.hasMany(db.Conversation, { foreignKey: 'participant2Id', as: 'conversationsAsParticipant2' });
+db.Conversation.belongsTo(db.User, { foreignKey: 'participant1Id', as: 'participant1' });
+db.Conversation.belongsTo(db.User, { foreignKey: 'participant2Id', as: 'participant2' });
+db.Conversation.belongsTo(db.Property, { foreignKey: 'propertyId', as: 'property' });
+db.Property.hasMany(db.Conversation, { foreignKey: 'propertyId', as: 'conversations' });
 
 db.User.hasMany(db.Notification, { foreignKey: 'userId', as: 'notifications' });
 db.Notification.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
