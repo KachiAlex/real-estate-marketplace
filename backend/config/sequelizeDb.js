@@ -228,6 +228,13 @@ db.Mortgage.belongsTo(db.MortgageApplication, { foreignKey: 'applicationId', as:
 db.EscrowTransaction.hasOne(db.DisputeResolution, { foreignKey: 'escrowId', as: 'dispute' });
 db.DisputeResolution.belongsTo(db.EscrowTransaction, { foreignKey: 'escrowId', as: 'escrow' });
 
+// DisputeResolution relationships with resolver and escalator
+db.User.hasMany(db.DisputeResolution, { foreignKey: 'resolvedBy', as: 'resolvedDisputes' });
+db.DisputeResolution.belongsTo(db.User, { foreignKey: 'resolvedBy', as: 'resolver' });
+
+db.User.hasMany(db.DisputeResolution, { foreignKey: 'escalatedBy', as: 'escalatedDisputes' });
+db.DisputeResolution.belongsTo(db.User, { foreignKey: 'escalatedBy', as: 'escalator' });
+
 // Subscription relationships
 db.User.hasMany(db.Subscription, { foreignKey: 'vendorId', as: 'subscriptions' });
 db.Subscription.belongsTo(db.User, { foreignKey: 'vendorId', as: 'vendor' });

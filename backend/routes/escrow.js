@@ -223,6 +223,67 @@ router.put('/:id/resolve-dispute',
   }
 );
 
+// @desc    Submit seller response to dispute
+// @route   PUT /api/escrow/:id/dispute-response
+// @access  Private (Seller)
+router.put('/:id/dispute-response',
+  protect,
+  sanitizeInput,
+  validate([
+    validateEscrowId,
+    body('sellerResponse').trim().isLength({ min: 10, max: 1000 }).withMessage('Response must be between 10 and 1000 characters'),
+    body('sellerEvidence').optional().isArray().withMessage('Evidence must be an array')
+  ]),
+  async (req, res) => {
+    try {
+      const transaction = await escrowService.submitSellerResponse({
+        transactionId: req.params.id,
+        sellerResponse: req.body.sellerResponse,
+        sellerEvidence: req.body.sellerEvidence,
+        user: req.user
+      });
+
+      res.json({
+        success: true,
+        message: 'Response submitted successfully',
+        data: transaction
+      });
+    } catch (error) {
+      handleServiceError(res, error, 'Failed to submit dispute response');
+    }
+  }
+);
+
+// @desc    Escalate dispute (Admin only)
+// @route   POST /api/escrow/:id/dispute-escalate
+// @access  Private (Admin)
+router.post('/:id/dispute-escalate',
+  protect,
+  authorize('admin'),
+  sanitizeInput,
+  validate([
+    validateEscrowId,
+    body('escalationReason').trim().isLength({ min: 10, max: 500 }).withMessage('Escalation reason must be between 10 and 500 characters')
+  ]),
+  async (req, res) => {
+    try {
+      const transaction = await escrowService.escalateDispute({
+        transactionId: req.params.id,
+        escalationReason: req.body.escalationReason,
+        user: req.user
+      });
+
+      res.json({
+        success: true,
+        message: 'Dispute escalated successfully',
+        data: transaction
+      });
+    } catch (error) {
+      handleServiceError(res, error, 'Failed to escalate dispute');
+    }
+  }
+);
+
 // @desc    Upload document to escrow transaction
 // @route   POST /api/escrow/:id/documents
 // @access  Private

@@ -838,4 +838,183 @@ router.put('/mortgage-banks/:id/verify', [
   }
 });
 
+// @desc    Get all disputes with SLA status
+// @route   GET /api/admin/disputes
+// @access  Private (Admin only)
+router.get('/disputes', protect, authorize('admin'), [
+  query('status')
+    .optional()
+    .isIn(['open', 'in_review', 'resolved', 'escalated', 'closed'])
+    .withMessage('Invalid status filter'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('sortBy')
+    .optional()
+    .isIn(['createdAt', 'firstResponseDeadline', 'resolutionDeadline'])
+    .withMessage('Invalid sort field')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const escrowService = require('../services/escrowService.clean');
+    const { status, page = 1, limit = 20, sortBy = 'createdAt' } = req.query;
+
+    // Get disputes with filtering and pagination
+    const disputes = await escrowService.listDisputes({
+      user: req.user,
+      status: status || undefined,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+
+    // Enhance disputes with SLA status
+    const now = new Date();
+    const enhancedDisputes = disputes.rows.map(dispute => {
+      const disputeData = dispute.toJSON ? dispute.toJSON() : dispute;
+      
+      // Calculate SLA status
+      const firstResponseDeadline = new Date(disputeData.firstResponseDeadline);
+      const resolutionDeadline = new Date(disputeData.resolutionDeadline);
+      
+      let slaStatus = 'on-track';
+      let urgencyLevel = 'normal';
+      
+      if (disputeData.status === 'open') {
+        const hoursUntilFirstResponse = (firstResponseDeadline - now) / (1000 * 60 * 60);
+        if (hoursUntilFirstResponse < 0) {
+          slaStatus = 'overdue';
+          urgencyLevel = 'critical';
+        } else if (hoursUntilFirstResponse < 2) {
+          slaStatus = 'at-risk';
+          urgencyLevel = 'high';
+        }
+      } else if (disputeData.status === 'in_review') {
+        const hoursUntilResolution = (resolutionDeadline - now) / (1000 * 60 * 60);
+        if (hoursUntilResolution < 0) {
+          slaStatus = 'overdue';
+          urgencyLevel = 'critical';
+        } else if (hoursUntilResolution < 6) {
+          slaStatus = 'at-risk';
+          urgencyLevel = 'high';
+        }
+      }
+      
+      return {
+        ...disputeData,
+        slaStatus,
+        urgencyLevel,
+        hoursUntilDeadline: Math.round(
+          (disputeData.status === 'open' 
+            ? (firstResponseDeadline - now) 
+            : (resolutionDeadline - now)) / (1000 * 60 * 60)
+        )
+      };
+    });
+
+    // Sort by requested field
+    if (sortBy === 'firstResponseDeadline') {
+      enhancedDisputes.sort((a, b) => new Date(a.firstResponseDeadline) - new Date(b.firstResponseDeadline));
+    } else if (sortBy === 'resolutionDeadline') {
+      enhancedDisputes.sort((a, b) => new Date(a.resolutionDeadline) - new Date(b.resolutionDeadline));
+    } else {
+      enhancedDisputes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    res.json({
+      success: true,
+      data: enhancedDisputes,
+      pagination: {
+        total: disputes.count,
+        totalPages: Math.ceil(disputes.count / parseInt(limit)),
+        currentPage: parseInt(page),
+        pageSize: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Admin get disputes error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error'
+    });
+  }
+});
+
+// @desc    Get dispute by ID
+// @route   GET /api/admin/disputes/:disputeId
+// @access  Private (Admin only)
+router.get('/disputes/:disputeId', protect, authorize('admin'), async (req, res) => {
+  try {
+    const escrowService = require('../services/escrowService.clean');
+    const dispute = await escrowService.getDisputeById(req.params.disputeId, req.user);
+
+    if (!dispute) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dispute not found'
+      });
+    }
+
+    // Enhance with SLA status
+    const now = new Date();
+    const disputeData = dispute.toJSON ? dispute.toJSON() : dispute;
+    const firstResponseDeadline = new Date(disputeData.firstResponseDeadline);
+    const resolutionDeadline = new Date(disputeData.resolutionDeadline);
+    
+    let slaStatus = 'on-track';
+    let urgencyLevel = 'normal';
+    
+    if (disputeData.status === 'open') {
+      const hoursUntilFirstResponse = (firstResponseDeadline - now) / (1000 * 60 * 60);
+      if (hoursUntilFirstResponse < 0) {
+        slaStatus = 'overdue';
+        urgencyLevel = 'critical';
+      } else if (hoursUntilFirstResponse < 2) {
+        slaStatus = 'at-risk';
+        urgencyLevel = 'high';
+      }
+    } else if (disputeData.status === 'in_review') {
+      const hoursUntilResolution = (resolutionDeadline - now) / (1000 * 60 * 60);
+      if (hoursUntilResolution < 0) {
+        slaStatus = 'overdue';
+        urgencyLevel = 'critical';
+      } else if (hoursUntilResolution < 6) {
+        slaStatus = 'at-risk';
+        urgencyLevel = 'high';
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...disputeData,
+        slaStatus,
+        urgencyLevel,
+        hoursUntilDeadline: Math.round(
+          (disputeData.status === 'open' 
+            ? (firstResponseDeadline - now) 
+            : (resolutionDeadline - now)) / (1000 * 60 * 60)
+        )
+      }
+    });
+  } catch (error) {
+    console.error('Admin get dispute error:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Server error'
+    });
+  }
+});
+
 module.exports = router;

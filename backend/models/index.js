@@ -971,12 +971,56 @@ const DisputeResolution = (sequelize) => {
       references: { model: 'Users', key: 'id' }
     },
     reason: DataTypes.TEXT,
+    description: DataTypes.TEXT,
     status: {
-      type: DataTypes.ENUM('open', 'in_review', 'resolved', 'escalated'),
+      type: DataTypes.ENUM('open', 'in_review', 'resolved', 'escalated', 'closed'),
       defaultValue: 'open'
     },
-    resolution: DataTypes.TEXT,
-    documents: DataTypes.JSON,
+    resolution: {
+      type: DataTypes.ENUM('buyer_favor', 'seller_favor', 'partial_refund', 'full_refund')
+    },
+    adminNotes: DataTypes.TEXT,
+    documents: {
+      type: DataTypes.JSON,
+      comment: 'Array of buyer evidence files with URLs and metadata'
+    },
+    sellerResponse: {
+      type: DataTypes.TEXT,
+      comment: 'Seller written response to dispute'
+    },
+    sellerEvidence: {
+      type: DataTypes.JSON,
+      comment: 'Array of seller counter-evidence files'
+    },
+    firstResponseDeadline: {
+      type: DataTypes.DATE,
+      comment: 'SLA deadline for first admin response (24 hours from filing)'
+    },
+    resolutionDeadline: {
+      type: DataTypes.DATE,
+      comment: 'SLA deadline for full resolution (72 hours from filing)'
+    },
+    resolvedAt: {
+      type: DataTypes.DATE,
+      comment: 'When dispute was resolved'
+    },
+    resolvedBy: {
+      type: DataTypes.UUID,
+      references: { model: 'Users', key: 'id' }
+    },
+    escalatedAt: {
+      type: DataTypes.DATE,
+      comment: 'When dispute was escalated (SLA breach or manual)'
+    },
+    escalatedBy: {
+      type: DataTypes.UUID,
+      references: { model: 'Users', key: 'id' }
+    },
+    timeline: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+      comment: 'Array of dispute events for audit trail'
+    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
@@ -990,7 +1034,9 @@ const DisputeResolution = (sequelize) => {
     underscored: true,
     indexes: [
       { fields: ['escrowId'] },
-      { fields: ['status'] }
+      { fields: ['status'] },
+      { fields: ['initiatedBy'] },
+      { fields: ['resolvedBy'] }
     ]
   });
 };
