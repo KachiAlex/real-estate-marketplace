@@ -622,7 +622,7 @@ router.post('/login', [
       console.warn('User.findOne failed — attempting fallback SELECT (possible missing column):', dbErr.message);
       // Fallback: do a minimal raw SELECT that only references commonly present columns
       try {
-        const fallbackSql = 'SELECT id, email, password, "firstName", "lastName", phone, role, roles, avatar, "isVerified" FROM "users" WHERE email = :email LIMIT 1';
+        const fallbackSql = 'SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified" FROM "users" WHERE email = :email LIMIT 1';
         const [rows] = await User.sequelize.query(fallbackSql, { replacements: { email: email.toLowerCase() } });
         user = (rows && rows[0]) ? rows[0] : null; // plain object
       } catch (fallbackErr) {

@@ -55,10 +55,16 @@ router.post('/profile', authenticateToken, [
       updatedAt: new Date()
     };
 
+    // Import role utilities for proper role switching
+    const { chooseActiveRole } = require('../utils/roleUtils');
+    
+    // Determine the appropriate active role - preserve existing preference if already set
+    const newActiveRole = chooseActiveRole(user.activeRole, 'buyer', updatedRoles);
+
     // Update user with buyer data and roles in one transaction
     await user.update({
       roles: updatedRoles,
-      activeRole: 'buyer',
+      activeRole: newActiveRole,
       buyerData: {
         ...(user.buyerData || {}),
         ...buyerData

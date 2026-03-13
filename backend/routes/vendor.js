@@ -106,8 +106,11 @@ router.post('/kyc/verify', protect, async (req, res) => {
     let existingRoles = user.roles;
     try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = Array.isArray(user.roles) ? user.roles : []; }
     existingRoles = Array.from(new Set([...(existingRoles || []), 'vendor']));
+    
+    // Use chooseActiveRole to preserve user's active role preference if already set
+    const activeRole = chooseActiveRole(user.activeRole, 'vendor', existingRoles);
 
-    await user.update({ role: 'vendor', roles: existingRoles, activeRole: 'vendor', vendorData });
+    await user.update({ role: activeRole || 'vendor', roles: existingRoles, activeRole: activeRole || 'vendor', vendorData });
 
     res.json({ success: true, data: { verified, vendorData } });
   } catch (error) {

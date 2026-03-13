@@ -435,8 +435,11 @@ router.post('/vendors/:id/kyc/approve', protect, authorize('admin'), async (req,
   try {
     const userId = req.params.id;
     const db = require('../config/sequelizeDb');
-    const rows = await db.sequelize.query(`SELECT id, "vendorData"::text as vendorText FROM users WHERE id = :id LIMIT 1`, { replacements: { id: userId }, type: db.sequelize.QueryTypes.SELECT });
+    const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
+    
+    const rows = await db.sequelize.query(`SELECT id, "vendorData"::text as vendorText, roles, "activeRole" FROM users WHERE id = :id LIMIT 1`, { replacements: { id: userId }, type: db.sequelize.QueryTypes.SELECT });
     if (!rows || !rows.length) return res.status(404).json({ success: false, message: 'User not found' });
+    
     const r = rows[0];
     let vd = {};
     try { vd = r.vendorText ? JSON.parse(r.vendorText) : {}; } catch (e) { vd = {}; }
@@ -444,7 +447,14 @@ router.post('/vendors/:id/kyc/approve', protect, authorize('admin'), async (req,
     vd.kycReviewedBy = req.user?.id || 'admin';
     vd.kycReviewedAt = new Date();
     vd.onboardingComplete = true;
-    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json, role = 'vendor', "roles" = :roles::json, "activeRole" = 'vendor' WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), roles: JSON.stringify(['vendor']), id: userId } });
+    
+    // Preserve existing roles and ensure vendor is included
+    let existingRoles = r.roles;
+    try { existingRoles = Array.isArray(existingRoles) ? existingRoles : (existingRoles ? JSON.parse(existingRoles) : []); } catch (e) { existingRoles = []; }
+    const preservedRoles = normalizeRoles([...existingRoles, 'vendor']);
+    const nextActiveRole = chooseActiveRole(r.activeRole, 'vendor', preservedRoles);
+    
+    await db.sequelize.query(`UPDATE users SET "vendorData" = :vd::json, role = :activeRole, "roles" = :roles::json, "activeRole" = :activeRole WHERE id = :id`, { replacements: { vd: JSON.stringify(vd), roles: JSON.stringify(preservedRoles), activeRole: nextActiveRole, id: userId } });
     res.json({ success: true, message: 'KYC approved' });
   } catch (e) {
     console.error('Approve KYC error:', e);
