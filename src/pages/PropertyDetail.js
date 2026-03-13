@@ -799,6 +799,23 @@ const PropertyDetail = () => {
                       <span>{property.isVerified ? '✅ Verified' : '⏳ Pending Verification'}</span>
                     </div>
                   </div>
+
+                  <div className="flex gap-2 pt-3 border-t mt-3">
+                    <button
+                      onClick={handleContactOwner}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      <FaEnvelope size={14} />
+                      Contact Vendor
+                    </button>
+                    <button
+                      onClick={handleCallVendor}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
+                    >
+                      <FaPhone size={14} />
+                      Call Vendor
+                    </button>
+                  </div>
                 </div>
               </div>
 
