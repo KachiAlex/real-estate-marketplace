@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { getAuthToken } from '../utils/authToken';
 import { initializePaystackPayment } from '../services/paystackService';
+import { connectSocket, joinEscrowRoom, leaveEscrowRoom, onEvent, offEvent } from '../services/socketService';
 
 const ESCROW_PAYMENT_STORAGE_KEY = 'escrowPayments';
 
@@ -328,6 +329,103 @@ const EscrowPaymentFlow = ({
   useEffect(() => {
     hydratePendingPayment();
   }, [hydratePendingPayment]);
+
+  // Socket.IO Integration for Real-Time Payment & Escrow Updates
+  useEffect(() => {
+    if (!user?.accessToken) {
+      console.log('[Socket] No auth token available, skipping Socket.IO connection');
+      return;
+    }
+
+    console.log('[Socket] Connecting to Socket.IO with user:', user.id);
+    try {
+      connectSocket(user.accessToken);
+    } catch (error) {
+      console.warn('[Socket] Failed to connect:', error);
+    }
+
+    // Listen for payment status updates
+    const handlePaymentCompleted = (data) => {
+      console.log('[Socket] Payment completed event received:', data);
+      setPaymentStatus('completed');
+      setPaymentError('');
+      removeEscrowPaymentEntry(data.paymentId);
+      markEscrowTransactionFunded(
+        data.escrowId || activeEscrowId,
+        data.reference,
+        data.provider || 'paystack'
+      );
+      setActiveEscrowId(data.escrowId || activeEscrowId);
+      setPendingPayment(null);
+      setCheckoutUrl('');
+      toast.success('Payment verified! Funds are now held securely in escrow.');
+    };
+
+    const handlePaymentFailed = (data) => {
+      console.log('[Socket] Payment failed event received:', data);
+      setPaymentStatus('failed');
+      setPaymentError(data.message || 'Payment processing failed');
+      toast.error(data.message || 'Payment processing failed');
+    };
+
+    // Listen for escrow status updates
+    const handleEscrowFunded = (data) => {
+      console.log('[Socket] Escrow funded event received:', data);
+      if (data.escrowId === activeEscrowId) {
+        setPaymentStatus('completed');
+        toast.success('Escrow account funded successfully!');
+      }
+    };
+
+    const handleEscrowStatusChanged = (data) => {
+      console.log('[Socket] Escrow status changed event received:', data);
+      if (data.escrowId === activeEscrowId) {
+        toast.info(`Escrow status updated to: ${data.status}`);
+      }
+    };
+
+    const handleEscrowDisputed = (data) => {
+      console.log('[Socket] Escrow disputed event received:', data);
+      if (data.escrowId === activeEscrowId) {
+        toast.error('A dispute has been filed for this escrow transaction');
+      }
+    };
+
+    const handleEscrowCancelled = (data) => {
+      console.log('[Socket] Escrow cancelled event received:', data);
+      if (data.escrowId === activeEscrowId) {
+        setPaymentStatus('failed');
+        toast.warning('Escrow transaction has been cancelled');
+      }
+    };
+
+    // Register Socket.IO event listeners
+    onEvent('payment:completed', handlePaymentCompleted);
+    onEvent('payment:failed', handlePaymentFailed);
+    onEvent('escrow:funded', handleEscrowFunded);
+    onEvent('escrow:status_changed', handleEscrowStatusChanged);
+    onEvent('escrow:disputed', handleEscrowDisputed);
+    onEvent('escrow:cancelled', handleEscrowCancelled);
+
+    // Join escrow room if available
+    if (activeEscrowId) {
+      joinEscrowRoom(activeEscrowId);
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      offEvent('payment:completed', handlePaymentCompleted);
+      offEvent('payment:failed', handlePaymentFailed);
+      offEvent('escrow:funded', handleEscrowFunded);
+      offEvent('escrow:status_changed', handleEscrowStatusChanged);
+      offEvent('escrow:disputed', handleEscrowDisputed);
+      offEvent('escrow:cancelled', handleEscrowCancelled);
+
+      if (activeEscrowId) {
+        leaveEscrowRoom(activeEscrowId);
+      }
+    };
+  }, [user, activeEscrowId, toast]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;

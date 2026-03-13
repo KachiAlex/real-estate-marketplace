@@ -2,7 +2,6 @@
   "name": "property-ark-mobile",
   "version": "1.0.0",
   "main": "index.js",
-  "workspaces": false,
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -32,8 +31,5 @@
   "devDependencies": {
     "@babel/core": "^7.25.0"
   },
-  "private": true,
-  "workspaces": {
-    "nohoist": ["**"]
-  }
+  "private": true
 }

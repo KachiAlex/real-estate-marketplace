@@ -157,10 +157,93 @@ async function cancelPayment({ paymentId, userId, reason }) {
 
 async function processRefund({ paymentId, amount, reason, processedBy }) {
   const payment = await Payment.findByPk(paymentId);
-  if (!payment) throw Object.assign(new Error('Payment not found'), { statusCode: 404 });
+  if (!payment) {
+    const error = new Error('Payment not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  
+  if (!amount || amount <= 0) {
+    const error = new Error('Refund amount must be greater than 0');
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  if (amount > payment.amount) {
+    const error = new Error('Refund amount exceeds payment amount');
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  // Call Paystack refund API
+  if (payment.provider === 'paystack' && payment.reference) {
+    console.log(`[REFUND] Processing Paystack refund for ${payment.reference}`);
+    
+    const refundResult = await paystackService.refundPayment(payment.reference, amount);
+    if (!refundResult.success) {
+      const error = new Error('Refund failed: ' + refundResult.message);
+      error.statusCode = 400;
+      throw error;
+    }
+    
+    console.log(`[REFUND] Paystack refund successful: ${refundResult.data?.reference}`);
+  }
+  
+  // Update payment record
   payment.status = 'refunded';
-  payment.metadata = { ...payment.metadata, refundAmount: amount, refundReason: reason, refundedBy: processedBy };
+  payment.metadata = {
+    ...payment.metadata,
+    refundAmount: amount,
+    refundReason: reason,
+    refundedBy: processedBy,
+    refundedAt: new Date().toISOString()
+  };
   await payment.save();
+  
+  console.log(`[REFUND] Payment ${paymentId} marked as refunded`);
+  
+  // If escrow, mark as cancelled
+  if (payment.paymentType === 'escrow') {
+    const escrowId = payment.metadata?.relatedEntity?.id;
+    if (escrowId) {
+      const escrow = await db.EscrowTransaction?.findByPk(escrowId);
+      if (escrow) {
+        await escrow.update({ 
+          status: 'cancelled', 
+          cancelledAt: new Date()
+        });
+        
+        console.log(`[REFUND] Escrow ${escrowId} marked as cancelled`);
+        
+        // Notify buyer
+        try {
+          await db.Notification?.create({
+            recipientId: payment.userId,
+            type: 'escrow_cancelled',
+            title: 'Escrow Cancelled',
+            message: `Escrow has been cancelled. Refund of ₦${amount?.toLocaleString() || 0} has been processed.`,
+            data: { escrowId }
+          });
+        } catch (e) {
+          console.warn('[REFUND] Failed to notify buyer:', e.message);
+        }
+        
+        // Notify seller
+        try {
+          await db.Notification?.create({
+            recipientId: escrow.sellerId,
+            type: 'escrow_cancelled',
+            title: 'Escrow Cancelled',
+            message: 'The escrow for your property has been cancelled by the buyer.',
+            data: { escrowId }
+          });
+        } catch (e) {
+          console.warn('[REFUND] Failed to notify seller:', e.message);
+        }
+      }
+    }
+  }
+  
   return payment;
 }
 
@@ -172,8 +255,197 @@ async function getPaymentStats() {
 }
 
 async function processWebhook({ provider, headers, payload }) {
-  // Placeholder: provider-specific logic lives in provider modules
-  return { provider, received: true };
+  try {
+    console.log(`[WEBHOOK] Processing ${provider} webhook`);
+    
+    // 1. SIGNATURE VERIFICATION
+    let isValid = false;
+    
+    if (provider === 'paystack') {
+      isValid = paystackService.verifyWebhook(headers, payload);
+    }
+    
+    if (!isValid) {
+      console.warn(`[WEBHOOK] Invalid signature for ${provider}`);
+      const error = new Error('Webhook signature invalid');
+      error.statusCode = 401;
+      throw error;
+    }
+    
+    // 2. EXTRACT REFERENCE AND STATUS
+    let reference, status, amount;
+    
+    if (provider === 'paystack') {
+      reference = payload.data?.reference;
+      status = payload.data?.status;
+      amount = payload.data?.amount / 100; // Convert from kobo
+    }
+    
+    if (!reference) {
+      console.warn('[WEBHOOK] No reference in webhook payload');
+      return { success: true, alreadyProcessed: true };
+    }
+    
+    console.log(`[WEBHOOK] Reference: ${reference}, Status: ${status}, Amount: ${amount}`);
+    
+    // 3. FIND PAYMENT
+    const payment = await Payment.findOne({ where: { reference } });
+    
+    if (!payment) {
+      console.warn(`[WEBHOOK] Payment not found for reference: ${reference}`);
+      return { success: true, alreadyProcessed: true };
+    }
+    
+    // If already processed, return success
+    if (payment.status === 'completed') {
+      console.log(`[WEBHOOK] Payment already processed: ${payment.id}`);
+      return { success: true, alreadyProcessed: true };
+    }
+    
+    // 4. UPDATE PAYMENT STATUS
+    if (status === 'success') {
+      payment.status = 'completed';
+      payment.metadata = {
+        ...payment.metadata,
+        webhookReceived: true,
+        webhookAmount: amount,
+        webhookReceivedAt: new Date().toISOString(),
+        webhookStatus: status
+      };
+      await payment.save();
+      
+      console.log(`[WEBHOOK] Payment marked completed: ${payment.id}`);
+      
+      // 5. HANDLE BY PAYMENT TYPE
+      switch (payment.paymentType) {
+        case 'escrow': {
+          const escrowId = payment.metadata?.relatedEntity?.id;
+          if (escrowId) {
+            const escrow = await db.EscrowTransaction.findByPk(escrowId);
+            if (escrow) {
+              await escrow.update({
+                status: 'funded',
+                fundedAt: new Date()
+              });
+              
+              console.log(`[WEBHOOK] Escrow ${escrowId} marked funded`);
+              
+              // Notify seller
+              try {
+                await db.Notification?.create({
+                  recipientId: escrow.sellerId,
+                  type: 'escrow_funded',
+                  title: 'Escrow Payment Received',
+                  message: `Buyer has completed payment of ₦${amount?.toLocaleString() || 0}. Please upload required documents.`,
+                  data: { escrowId },
+                  priority: 'high'
+                });
+              } catch (e) {
+                console.warn('[WEBHOOK] Failed to create seller notification:', e.message);
+              }
+            }
+          }
+          break;
+        }
+        
+        case 'investment': {
+          const investmentId = payment.metadata?.relatedEntity?.id;
+          if (investmentId) {
+            const investment = await db.Investment?.findByPk(investmentId);
+            if (investment && db.UserInvestment) {
+              const userInvestment = await db.UserInvestment.create({
+                userId: payment.userId,
+                investmentId,
+                amount,
+                status: 'active',
+                investmentDate: new Date()
+              });
+              
+              console.log(`[WEBHOOK] User investment created: ${userInvestment.id}`);
+            }
+          }
+          break;
+        }
+        
+        case 'vendor_listing': {
+          const propertyId = payment.metadata?.relatedEntity?.id;
+          if (propertyId) {
+            const property = await db.Property?.findByPk(propertyId);
+            if (property) {
+              await property.update({
+                status: 'listed',
+                listedAt: new Date()
+              });
+              
+              console.log(`[WEBHOOK] Property ${propertyId} marked listed`);
+            }
+          }
+          break;
+        }
+        
+        case 'subscription': {
+          const userId = payment.userId;
+          const plan = payment.metadata?.plan;
+          
+          if (db.Subscription) {
+            const subscription = await db.Subscription.create({
+              userId,
+              plan,
+              status: 'active',
+              startDate: new Date(),
+              renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            });
+            
+            console.log(`[WEBHOOK] Subscription created: ${subscription.id}`);
+          }
+          break;
+        }
+      }
+      
+      // 6. NOTIFY USER
+      try {
+        await db.Notification?.create({
+          recipientId: payment.userId,
+          type: 'payment_success',
+          title: 'Payment Successful',
+          message: `Payment of ₦${amount?.toLocaleString() || 0} has been received`,
+          data: { paymentId: payment.id }
+        });
+      } catch (e) {
+        console.warn('[WEBHOOK] Failed to create user notification:', e.message);
+      }
+      
+    } else if (status === 'failed') {
+      payment.status = 'failed';
+      payment.metadata = {
+        ...payment.metadata,
+        failureReason: payload.data?.gateway_response || 'Payment failed',
+        failureData: payload.data
+      };
+      await payment.save();
+      
+      console.log(`[WEBHOOK] Payment marked failed: ${payment.id}`);
+      
+      try {
+        await db.Notification?.create({
+          recipientId: payment.userId,
+          type: 'payment_failed',
+          title: 'Payment Failed',
+          message: 'Your payment could not be processed. Please try again.',
+          data: { paymentId: payment.id }
+        });
+      } catch (e) {
+        console.warn('[WEBHOOK] Failed to create failure notification:', e.message);
+      }
+    }
+    
+    return { success: true, processed: true };
+    
+  } catch (error) {
+    console.error('[WEBHOOK] Error processing webhook:', error.message);
+    // Still return success to prevent Paystack retry
+    return { success: true, error: error.message };
+  }
 }
 
 async function createSubscription({ userId, plan, paymentId, trialDays = 7 }) {
