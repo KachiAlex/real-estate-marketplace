@@ -224,13 +224,13 @@ const toggleRole
 
         <div className="text-sm text-slate-200">
           <span className="font-medium">Register as</span>
-          <div className="mt-2 flex gap-3">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={roles.includes('user')} onChange={() => toggleRole('user')} />
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <label className="inline-flex min-h-[44px] items-center gap-3 px-3 py-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+              <input type="checkbox" checked={roles.includes('user')} onChange={() => toggleRole('user')} className="w-4 h-4 cursor-pointer" />
               <span>Buyer</span>
             </label>
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={roles.includes('vendor')} onChange={() => toggleRole('vendor')} />
+            <label className="inline-flex min-h-[44px] items-center gap-3 px-3 py-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+              <input type="checkbox" checked={roles.includes('vendor')} onChange={() => toggleRole('vendor')} className="w-4 h-4 cursor-pointer" />
               <span>Vendor</span>
             </label>
           </div>

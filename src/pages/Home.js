@@ -1334,7 +1334,7 @@ const Home = () => {
       </div>
       {showMobileFilters && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-gray-900 text-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl p-6">
+          <div className="bg-gray-900 text-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold">Filters & Sort</h3>
               <button

@@ -62,7 +62,7 @@ return (
 
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={() => { if (onClose) onClose(); }} />
-      <div className="relative w-full max-w-md rounded-2xl bg-white/5 border border-white/10 p-6 shadow-2xl backdrop-blur-lg">
+      <div className="relative w-full max-w-md rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 shadow-2xl backdrop-blur-lg mx-4 sm:mx-0 max-h-[90vh] sm:max-h-none overflow-y-auto sm:overflow-visible">
         <button onClick={() => { if (onClose) onClose(); }} className="absolute top-3 right-3 text-white">✕</button>
         <h2 className="text-xl font-semibold text-white mb-2">Welcome back</h2>
         <p className="text-sm text-slate-300 mb-4">Sign in to pick up where you left off — properties, alerts, and requests stay in sync across every device.</p>
@@ -81,7 +81,7 @@ return (
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-white/60 focus:outline-none"
+              className="w-full h-11 min-h-[44px] mt-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-white/60 focus:outline-none"
               placeholder="you@email.com"
               autoComplete="email"
             />
@@ -94,7 +94,7 @@ return (
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-white/60 focus:outline-none"
+              className="w-full h-11 min-h-[44px] mt-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-white/60 focus:outline-none"
               placeholder="Enter your password"
               autoComplete="current-password"
             />
