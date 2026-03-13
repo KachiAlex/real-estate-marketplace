@@ -402,7 +402,14 @@ try {
   console.error('Failed to load buyer routes:', error.message);
 }
 
-// Chat routes removed - chat functionality disabled
+// Chats routes for buyer-vendor messaging
+try {
+  const chatsRouter = require('./routes/chats');
+  app.use('/api/chats', chatsRouter);
+  infoLogger('Chats routes loaded successfully');
+} catch (error) {
+  errorLogger('Failed to load chats routes:', error);
+}
 
 try {
   const supportRouter = require('./routes/support');
