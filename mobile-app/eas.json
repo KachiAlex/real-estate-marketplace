@@ -6,16 +6,23 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "yarn": false,
+      "npmScript": "build:android"
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
-      }
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "yarn": false,
+      "npmScript": "build:android"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "yarn": false,
+      "npmScript": "build:android"
     }
   },
   "submit": {
