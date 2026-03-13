@@ -3,9 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import apiClient from '../services/apiClient';
 import { createInspectionRequest } from '../services/inspectionService';
-import { getApiUrl } from '../utils/apiConfig';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
 import frontendMockProperties from '../data/mockProperties';
@@ -386,7 +385,6 @@ const PropertyDetail = () => {
     
     if (!user) {
       toast.error('Please login to contact property vendor');
-      // User can continue viewing the property without being forced to login
       return;
     }
 
@@ -396,9 +394,9 @@ const PropertyDetail = () => {
     }
 
     // Create inquiry
-    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via WhatsApp.`);
+    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via in-app message.`);
     
-    // Try to start an in-app chat (backend will create/return chatId) and navigate to Messages
+    // Start an in-app chat via authenticated backend endpoint
     try {
       const payload = {
         buyerId: user.id,
@@ -408,30 +406,17 @@ const PropertyDetail = () => {
         initialMessage: `Hi, I'm interested in ${property.title}. Could you please provide more information?`
       };
 
-      const res = await fetch(getApiUrl('/chats/start'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const json = await res.json();
-      if (res.ok && json?.chatId) {
-        navigate('/messages', { state: { chatId: json.chatId } });
-        toast.success('Opening in-app messages... Inquiry saved to My Inquiries.');
+      const res = await apiClient.post('/chats/start', payload);
+      
+      if (res.data?.chatId) {
+        navigate('/messages', { state: { chatId: res.data.chatId } });
+        toast.success('Opening in-app messages...');
       } else {
-        throw new Error(json?.error || 'Failed to start chat');
+        throw new Error(res.data?.error || 'Failed to start chat');
       }
     } catch (err) {
       console.error('Error starting in-app chat:', err);
-      // Fallback: open WhatsApp if available
-      const propertyTitle = property?.title || 'Property';
-      const propertyPrice = property?.price ? formatCurrency(property.price) : '';
-      const message = encodeURIComponent(
-        `Hi, I'm interested in your property: ${propertyTitle}${propertyPrice ? ` (${propertyPrice})` : ''}. Could you please provide more information?`
-      );
-      const whatsappUrl = `https://wa.me/${vendorPhone}?text=${message}`;
-      window.open(whatsappUrl, '_blank');
-      toast.success('Opening WhatsApp... Inquiry saved to My Inquiries.');
+      toast.error('Failed to open chat. Please try again.');
     }
   };
 
