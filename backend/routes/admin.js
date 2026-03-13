@@ -212,6 +212,93 @@ router.get('/escrow/volumes', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// @desc    Get payment attempts for escrow transactions (track failed payments)
+// @route   GET /api/admin/escrow/:escrowId/payments
+// @access  Private (Admin only)
+router.get('/escrow/:escrowId/payments', async (req, res) => {
+  try {
+    const { escrowId } = req.params;
+    const db = require('../config/sequelizeDb');
+    
+    // Find escrow transaction
+    const escrow = await db.EscrowTransaction?.findByPk(escrowId);
+    if (!escrow) {
+      return res.status(404).json({ success: false, message: 'Escrow transaction not found' });
+    }
+    
+    // Get all payments related to this escrow
+    const payments = await db.Payment?.findAll({
+      where: {
+        paymentType: 'escrow',
+        metadata: {
+          [db.Sequelize.Op.contains]: { 
+            relatedEntity: { 
+              id: escrowId 
+            } 
+          }
+        }
+      },
+      order: [['createdAt', 'DESC']]
+    });
+    
+    res.json({ 
+      success: true, 
+      data: {
+        escrow: escrow.toJSON?.() || escrow,
+        payments: payments?.map(p => p.toJSON?.() || p) || []
+      }
+    });
+  } catch (error) {
+    console.error('Admin escrow payments error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @desc    Get failed payment attempts for escrow (admin tracking)
+// @route   GET /api/admin/escrow-payments/failed
+// @access  Private (Admin only)
+router.get('/escrow-payments/failed', async (req, res) => {
+  try {
+    const db = require('../config/sequelizeDb');
+    const { limit = 50, page = 1 } = req.query;
+    const offset = (Math.max(Number(page), 1) - 1) * Number(limit);
+    
+    // Get failed escrow payments
+    const { rows, count } = await db.Payment?.findAndCountAll({
+      where: {
+        status: 'failed',
+        paymentType: 'escrow'
+      },
+      order: [['createdAt', 'DESC']],
+      limit: Number(limit),
+      offset,
+      include: [
+        {
+          association: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ]
+    }) || { rows: [], count: 0 };
+    
+    res.json({
+      success: true,
+      data: {
+        payments: rows?.map(p => p.toJSON?.() || p) || [],
+        pagination: {
+          currentPage: Number(page),
+          itemsPerPage: Number(limit),
+          totalItems: count,
+          totalPages: Math.ceil(count / Number(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Admin failed escrow payments error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @desc    Get property status summary for admin charts
 // @route   GET /api/admin/properties/status-summary
 // @access  Private (Admin only)

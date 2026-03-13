@@ -257,6 +257,9 @@ const AdminDashboard = () => {
   const [escrowResolutionType, setEscrowResolutionType] = useState('buyer_favor');
   const [escrowActionNotes, setEscrowActionNotes] = useState('');
   const [escrowActionLoading, setEscrowActionLoading] = useState(false);
+  const [escrowStatusFilter, setEscrowStatusFilter] = useState('all');
+  const [failedPayments, setFailedPayments] = useState([]);
+  const [showFailedPayments, setShowFailedPayments] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -741,19 +744,21 @@ const AdminDashboard = () => {
   useEffect(() => {
   }, [loadingUsers]);
 
-  const fetchEscrowTransactions = useCallback(async ({ page, limit, ...params } = {}) => {
+  const fetchEscrowTransactions = useCallback(async ({ page, limit, status, ...params } = {}) => {
     if (!user || user.role !== 'admin') return;
     setEscrowLoading(true);
     setEscrowError('');
     try {
       const requestedPage = page || pagination.currentPage || 1;
       const requestedLimit = limit || pagination.itemsPerPage || 20;
+      const statusFilter = status || escrowStatusFilter;
 
       const response = await apiClient.get('/escrow', {
         params: {
           type: 'admin',
           limit: requestedLimit,
           page: requestedPage,
+          ...(statusFilter !== 'all' && { status: statusFilter }),
           ...params
         }
       });
@@ -789,7 +794,7 @@ const AdminDashboard = () => {
     } finally {
       setEscrowLoading(false);
     }
-  }, [user, pagination.currentPage, pagination.itemsPerPage]);
+  }, [user, pagination.currentPage, pagination.itemsPerPage, escrowStatusFilter]);
 
   const fetchAdminDisputes = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
@@ -807,6 +812,22 @@ const AdminDashboard = () => {
       setDisputeLoading(false);
     }
   }, [user]);
+
+  const fetchFailedPayments = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    try {
+      const response = await apiClient.get('/admin/escrow-payments/failed', { params: { limit: 20 } });
+      const payments = Array.isArray(response?.data?.data?.payments) ? response.data.data.payments : [];
+      setFailedPayments(payments);
+    } catch (error) {
+      console.warn('Failed to load failed payments:', error?.message);
+    }
+  }, [user]);
+
+  const handleEscrowStatusFilterChange = useCallback((status) => {
+    setEscrowStatusFilter(status);
+    fetchEscrowTransactions({ page: 1, status });
+  }, [fetchEscrowTransactions]);
 
 
 
@@ -844,11 +865,12 @@ const AdminDashboard = () => {
     if (user?.role !== 'admin') return;
     if (activeTab === 'escrow' && !escrowLoading && !escrowsLoadedRef.current) {
       fetchEscrowTransactions({ page: 1 });
+      fetchFailedPayments();
     }
     if (activeTab === 'disputes' && !disputeLoading && !disputesLoadedRef.current) {
       fetchAdminDisputes();
     }
-  }, [activeTab, user?.role, fetchEscrowTransactions, fetchAdminDisputes, escrowLoading, disputeLoading]);
+  }, [activeTab, user?.role, fetchEscrowTransactions, fetchAdminDisputes, fetchFailedPayments, escrowLoading, disputeLoading]);
 
   useEffect(() => {
     if (!statsLoading && user?.role === 'admin' && !statsRefreshIntervalRef.current) {
@@ -1991,7 +2013,29 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <select
+                    value={escrowStatusFilter}
+                    onChange={(e) => handleEscrowStatusFilterChange(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 bg-white"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="funded">Funded</option>
+                    <option value="completed">Completed</option>
+                    <option value="failed">Failed</option>
+                    <option value="disputed">Disputed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                  {failedPayments.length > 0 && (
+                    <button
+                      onClick={() => setShowFailedPayments(!showFailedPayments)}
+                      className="inline-flex items-center rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Failed Payments ({failedPayments.length})
+                    </button>
+                  )}
                   <button
                     onClick={() => fetchEscrowTransactions({ page: pagination.currentPage })}
                     disabled={escrowLoading}
@@ -2175,6 +2219,86 @@ const AdminDashboard = () => {
               )}
               {!escrowLoading && !escrowError && escrows.length === 0 && (
                 <div className="p-6 text-sm text-gray-500">No escrow transactions available.</div>
+              )}
+
+              {/* Failed Payments Section */}
+              {showFailedPayments && failedPayments.length > 0 && (
+                <div className="mt-6 p-6 bg-red-50 rounded-2xl border border-red-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-900">Failed Payment Attempts</h3>
+                      <p className="text-sm text-red-700 mt-1">Total failed payments: {failedPayments.length}</p>
+                    </div>
+                    <button
+                      onClick={() => setShowFailedPayments(false)}
+                      className="text-red-600 hover:text-red-900 text-lg"
+                      aria-label="Close failed payments"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full divide-y divide-red-200">
+                      <thead className="bg-red-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-red-900 uppercase tracking-wider">Payment ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-red-900 uppercase tracking-wider">Amount</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-red-900 uppercase tracking-wider">Buyer</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-red-900 uppercase tracking-wider">Reason</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-red-900 uppercase tracking-wider">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-red-200">
+                        {failedPayments.map(payment => (
+                          <tr key={payment.id} className="hover:bg-red-50">
+                            <td className="px-4 py-3 text-sm font-mono text-gray-900">{payment.id.substring(0, 8)}...</td>
+                            <td className="px-4 py-3 text-sm font-semibold text-red-600">₦{Number(payment.amount || 0).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{payment.buyerName || payment.user?.name || 'Unknown'}</td>
+                            <td className="px-4 py-3 text-sm text-red-700">{payment.reason || payment.gateway_response || 'Unknown error'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="lg:hidden space-y-3">
+                    {failedPayments.map(payment => (
+                      <div key={payment.id} className="p-4 bg-white rounded-lg border border-red-200 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <p className="text-xs font-mono text-gray-500">ID: {payment.id.substring(0, 12)}...</p>
+                          <p className="text-sm font-semibold text-red-600">₦{Number(payment.amount || 0).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Buyer</p>
+                          <p className="text-sm font-medium text-gray-900">{payment.buyerName || payment.user?.name || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-400">Failure Reason</p>
+                          <p className="text-sm text-red-700">{payment.reason || payment.gateway_response || 'Unknown error'}</p>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {showFailedPayments && failedPayments.length === 0 && (
+                <div className="mt-6 p-6 bg-green-50 rounded-2xl border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">✓</div>
+                    <div>
+                      <p className="text-lg font-semibold text-green-900">No Failed Payments</p>
+                      <p className="text-sm text-green-700">All payment attempts have been successful.</p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>

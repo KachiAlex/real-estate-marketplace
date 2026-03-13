@@ -426,6 +426,47 @@ async function processWebhook({ provider, headers, payload }) {
       
       console.log(`[WEBHOOK] Payment marked failed: ${payment.id}`);
       
+      // Mark escrow as failed if this was an escrow payment
+      if (payment.paymentType === 'escrow') {
+        const escrowId = payment.metadata?.relatedEntity?.id;
+        if (escrowId) {
+          const escrow = await db.EscrowTransaction.findByPk(escrowId);
+          if (escrow && escrow.status === 'pending') {
+            await escrow.update({
+              status: 'failed'
+            });
+            
+            console.log(`[WEBHOOK] Escrow ${escrowId} marked failed due to payment failure`);
+            
+            // Notify buyer
+            try {
+              await db.Notification?.create({
+                recipientId: escrow.buyerId,
+                type: 'escrow_payment_failed',
+                title: 'Escrow Payment Failed',
+                message: `Your payment for escrow transaction failed. Please try again.`,
+                data: { escrowId, paymentId: payment.id }
+              });
+            } catch (e) {
+              console.warn('[WEBHOOK] Failed to create buyer failure notification:', e.message);
+            }
+            
+            // Notify seller
+            try {
+              await db.Notification?.create({
+                recipientId: escrow.sellerId,
+                type: 'escrow_payment_failed',
+                title: 'Buyer Payment Failed',
+                message: `The buyer's payment for the escrow transaction has failed.`,
+                data: { escrowId }
+              });
+            } catch (e) {
+              console.warn('[WEBHOOK] Failed to create seller failure notification:', e.message);
+            }
+          }
+        }
+      }
+      
       try {
         await db.Notification?.create({
           recipientId: payment.userId,

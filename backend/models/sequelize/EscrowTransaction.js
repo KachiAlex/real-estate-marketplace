@@ -28,7 +28,7 @@ module.exports = (sequelize) => {
       defaultValue: 'NGN'
     },
     status: {
-      type: DataTypes.ENUM('pending', 'funded', 'completed', 'disputed', 'cancelled'),
+      type: DataTypes.ENUM('pending', 'funded', 'completed', 'disputed', 'cancelled', 'failed', 'refunded'),
       defaultValue: 'pending'
     },
     escrowAgent: {
