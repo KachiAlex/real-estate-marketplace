@@ -206,7 +206,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               {/* Payment Button */}
               <button
                 onClick={handlePayNow}
-                className=\"w-full bg-blue-600 text-white h-12 min-h-[44px] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center text-sm sm:text-base\"
+                className="w-full bg-blue-600 text-white h-12 min-h-[44px] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center text-sm sm:text-base"
               >
                 <FaCreditCard className="mr-2 flex-shrink-0" />
                 <span className="truncate">Pay {formatCurrency(plan.amount)} with Paystack</span>
