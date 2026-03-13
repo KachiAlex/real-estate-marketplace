@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { createInspectionRequest } from '../services/inspectionService';
+import { getApiUrl } from '../utils/apiConfig';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
 import frontendMockProperties from '../data/mockProperties';
@@ -380,7 +381,7 @@ const PropertyDetail = () => {
     return inquiry;
   };
 
-  const handleContactOwner = () => {
+  const handleContactOwner = async () => {
     console.log('Contact Owner clicked, property:', property, 'user:', user);
     
     if (!user) {
@@ -397,18 +398,41 @@ const PropertyDetail = () => {
     // Create inquiry
     createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via WhatsApp.`);
     
-    // Create WhatsApp message
-    const propertyTitle = property?.title || 'Property';
-    const propertyPrice = property?.price ? formatCurrency(property.price) : '';
-    const message = encodeURIComponent(
-      `Hi, I'm interested in your property: ${propertyTitle}${propertyPrice ? ` (${propertyPrice})` : ''}. Could you please provide more information?`
-    );
-    
-    // Open WhatsApp
-    const whatsappUrl = `https://wa.me/${vendorPhone}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-    
-    toast.success('Opening WhatsApp... Inquiry saved to My Inquiries.');
+    // Try to start an in-app chat (backend will create/return chatId) and navigate to Messages
+    try {
+      const payload = {
+        buyerId: user.id,
+        vendorId: property.vendorId || property.owner?.id || property.vendor?.id || '',
+        propertyId: property.id,
+        starterId: user.id,
+        initialMessage: `Hi, I'm interested in ${property.title}. Could you please provide more information?`
+      };
+
+      const res = await fetch(getApiUrl('/chats/start'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      if (res.ok && json?.chatId) {
+        navigate('/messages', { state: { chatId: json.chatId } });
+        toast.success('Opening in-app messages... Inquiry saved to My Inquiries.');
+      } else {
+        throw new Error(json?.error || 'Failed to start chat');
+      }
+    } catch (err) {
+      console.error('Error starting in-app chat:', err);
+      // Fallback: open WhatsApp if available
+      const propertyTitle = property?.title || 'Property';
+      const propertyPrice = property?.price ? formatCurrency(property.price) : '';
+      const message = encodeURIComponent(
+        `Hi, I'm interested in your property: ${propertyTitle}${propertyPrice ? ` (${propertyPrice})` : ''}. Could you please provide more information?`
+      );
+      const whatsappUrl = `https://wa.me/${vendorPhone}?text=${message}`;
+      window.open(whatsappUrl, '_blank');
+      toast.success('Opening WhatsApp... Inquiry saved to My Inquiries.');
+    }
   };
 
   const handleSendInquiry = () => {
