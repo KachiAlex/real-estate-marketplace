@@ -383,4 +383,229 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/chats/:chatId/messages/:messageId
+ * @desc    Edit a sent message
+ * @access  Private (only sender can edit)
+ * @params  chatId, messageId
+ * @body    { content }
+ * @returns { success: bool, data: message }
+ */
+router.put('/:chatId/messages/:messageId', authenticateToken, async (req, res) => {
+  try {
+    const { chatId, messageId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message content cannot be empty'
+      });
+    }
+
+    logger.info('Editing message', { chatId, messageId, userId });
+
+    // Fetch the message
+    const message = await db.Message.findByPk(messageId);
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found'
+      });
+    }
+
+    // Verify sender is owner
+    if (message.senderId !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only edit your own messages'
+      });
+    }
+
+    // Verify message is not deleted
+    if (message.deletedAt) {
+      return res.status(410).json({
+        success: false,
+        error: 'Cannot edit a deleted message'
+      });
+    }
+
+    // Store original content and update message
+    const originalContent = message.originalContent || message.content;
+    await message.update({
+      content: content.trim(),
+      originalContent: originalContent,
+      editedAt: new Date()
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        id: message.id,
+        content: message.content,
+        editedAt: message.editedAt
+      }
+    });
+  } catch (error) {
+    logger.error('Error editing message', { error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to edit message'
+    });
+  }
+});
+
+/**
+ * @route   DELETE /api/chats/:chatId/messages/:messageId
+ * @desc    Soft-delete a message (only sender can delete)
+ * @access  Private
+ * @params  chatId, messageId
+ * @returns { success: bool }
+ */
+router.delete('/:chatId/messages/:messageId', authenticateToken, async (req, res) => {
+  try {
+    const { chatId, messageId } = req.params;
+    const userId = req.user.id;
+
+    logger.info('Deleting message', { chatId, messageId, userId });
+
+    // Fetch the message
+    const message = await db.Message.findByPk(messageId);
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found'
+      });
+    }
+
+    // Verify sender is owner
+    if (message.senderId !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only delete your own messages'
+      });
+    }
+
+    // Soft delete
+    await message.update({
+      deletedAt: new Date(),
+      deletedBy: userId
+    });
+
+    logger.info('Message soft-deleted', { messageId });
+
+    return res.json({
+      success: true,
+      message: 'Message deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Error deleting message', { error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to delete message'
+    });
+  }
+});
+
+/**
+ * @route   GET /api/chats/:chatId/search
+ * @desc    Search messages in a conversation (full-text search)
+ * @access  Private
+ * @params  chatId
+ * @query   q=searchTerm, page=1, limit=20
+ * @returns { success: bool, data: messages[], meta: { total, page } }
+ */
+router.get('/:chatId/search', authenticateToken, async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { q: searchQuery } = req.query;
+    const userId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query is required'
+      });
+    }
+
+    logger.info('Searching messages', { chatId, searchQuery, userId });
+
+    // Parse the chatId
+    const [propertyId, participant1, participant2] = chatId.split('-');
+
+    // Verify user is participant
+    if (userId !== participant1 && userId !== participant2) {
+      return res.status(403).json({
+        success: false,
+        error: 'You are not a participant in this chat'
+      });
+    }
+
+    const otherUserId = userId === participant1 ? participant2 : participant1;
+
+    // Search with PostgreSQL full-text search
+    const { count, rows: messages } = await db.Message.findAndCountAll({
+      where: {
+        propertyId: propertyId,
+        deletedAt: null,
+        [db.Sequelize.Op.or]: [
+          {
+            senderId: userId,
+            recipientId: otherUserId
+          },
+          {
+            senderId: otherUserId,
+            recipientId: userId
+          }
+        ],
+        content: {
+          [db.Sequelize.Op.iLike]: `%${searchQuery}%`
+        }
+      },
+      include: [
+        {
+          model: db.User,
+          as: 'sender',
+          attributes: ['id', 'firstName', 'lastName']
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+      offset: offset,
+      subQuery: false
+    });
+
+    const formattedMessages = messages.map(msg => ({
+      id: msg.id,
+      senderId: msg.senderId,
+      senderName: msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName}` : 'Unknown',
+      content: msg.content,
+      timestamp: msg.createdAt,
+      editedAt: msg.editedAt
+    }));
+
+    return res.json({
+      success: true,
+      data: formattedMessages,
+      meta: {
+        query: searchQuery,
+        total: count,
+        page: page,
+        limit: limit,
+        pages: Math.ceil(count / limit)
+      }
+    });
+  } catch (error) {
+    logger.error('Error searching messages', { error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to search messages'
+    });
+  }
+});
+
 module.exports = router;

@@ -94,16 +94,23 @@ const { requireRole, requireAnyRole, checkOwnership } = require('./middleware/ro
 // Import services (needed by setImmediate below)
 const notificationService = require('./services/notificationService');
 const emailService = require('./services/emailService');
+const SocketMessagingService = require('./services/socketMessagingService');
 
 // Initialize non-Mongo services immediately (Firestore-only mode)
 setImmediate(async () => {
   try {
     notificationService.initializeSocketIO(io);
   } catch (ioError) {
-    console.warn('⚠️ Socket.IO initialization failed:', ioError.message);
+    console.warn('⚠️ Socket.IO notification initialization failed:', ioError.message);
   }
 
-  // Chat service removed - chat functionality disabled
+  try {
+    const socketMessaging = new SocketMessagingService(io);
+    socketMessaging.initializeHandlers();
+    infoLogger('Socket.IO messaging initialized');
+  } catch (socketError) {
+    console.warn('⚠️ Socket.IO messaging initialization failed:', socketError.message);
+  }
 
   try {
     const emailStatus = await emailService.verifyConnection();

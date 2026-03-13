@@ -32,6 +32,22 @@ module.exports = (sequelize) => {
     readAt: {
       type: DataTypes.DATE
     },
+    editedAt: {
+      type: DataTypes.DATE,
+      comment: 'Last edit timestamp'
+    },
+    originalContent: {
+      type: DataTypes.TEXT,
+      comment: 'Original content before edits'
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      comment: 'Soft delete timestamp'
+    },
+    deletedBy: {
+      type: DataTypes.UUID,
+      comment: 'User who deleted the message'
+    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
@@ -42,8 +58,28 @@ module.exports = (sequelize) => {
     }
   }, {
     tableName: 'messages',
-    timestamps: true
+    timestamps: true,
+    indexes: [
+      {
+        fields: ['senderId', 'createdAt'],
+        name: 'idx_messages_sender_date'
+      },
+      {
+        fields: ['recipientId', 'isRead', 'createdAt'],
+        name: 'idx_messages_recipient_read_date'
+      },
+      {
+        fields: ['propertyId', 'createdAt'],
+        name: 'idx_messages_property_date'
+      },
+      {
+        fields: ['deletedAt'],
+        name: 'idx_messages_deleted',
+        where: { deletedAt: null }
+      }
+    ]
   });
 
   return Message;
 };
+
