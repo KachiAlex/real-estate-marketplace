@@ -31,6 +31,7 @@ import {
 import toast from 'react-hot-toast';
 import HomeSections from '../components/HomeSections';
 import StaticHeroBanner from '../components/StaticHeroBanner';
+import LazyImage from '../components/LazyImage';
 import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
 import BlogCard from '../components/BlogCard';
@@ -1114,7 +1115,7 @@ const Home = () => {
                           to={`/property/${property.propertyId || property.id}`}
                           className="block relative cursor-pointer"
                         >
-                          <img
+                          <LazyImage
                             src={propertyImage}
                             alt={property.title}
                             className="w-full h-56 sm:h-60 object-cover"

@@ -883,6 +883,7 @@ const Dashboard = () => {
                     src={property.image}
                     alt={property.title}
                     className="property-card-image"
+                    loading="lazy"
                   />
                   {property.tag && (
                     <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>
@@ -1032,6 +1033,7 @@ const Dashboard = () => {
                     src={property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
                     alt={property.title}
                     className="w-full h-48 object-cover"
+                    loading="lazy"
                   />
                   </div>
                   {property.tag && (

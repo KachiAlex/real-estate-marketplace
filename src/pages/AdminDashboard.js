@@ -1818,6 +1818,7 @@ const AdminDashboard = () => {
                                 className="h-12 w-12 rounded-lg object-cover"
                                 src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
                                 alt={property.title}
+                                loading="lazy"
                               />
                             </div>
                             <div className="ml-4">
@@ -1913,6 +1914,7 @@ const AdminDashboard = () => {
                           src={property.images[0]?.url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&h=100&fit=crop'}
                           alt={property.title}
                           className="h-16 w-16 rounded-lg object-cover"
+                          loading="lazy"
                         />
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900">{property.title}</p>
