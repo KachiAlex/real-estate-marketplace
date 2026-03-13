@@ -4,7 +4,6 @@
   "description": "A comprehensive real estate marketplace platform with property sales, rentals, and investment features",
   "private": true,
   "workspaces": [
-    "mobile-app",
     "packages/*"
   ],
   "main": "backend/server.js",
