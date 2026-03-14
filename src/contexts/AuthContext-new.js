@@ -157,12 +157,29 @@ const normalizeUser = (u) => {
   if (!u) return u;
   const roles = u.roles || (u.role ? [u.role] : (u.userType ? [u.userType] : []));
   // Ensure roles is an array of lowercased, trimmed values
-  const normRoles = Array.isArray(roles) ? roles.map(r => String(r).trim().toLowerCase()) : [];
+  let normRoles = Array.isArray(roles) ? roles.map(r => String(r).trim().toLowerCase()).filter(Boolean) : [];
+  
+  // CRITICAL FIX: Preserve FULL roles array from localStorage
+  let storedRoles = normRoles;
+  if (!normRoles.length) {
+    try {
+      const storedUser = storage.get('currentUser');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (Array.isArray(parsed.roles) && parsed.roles.length) {
+          storedRoles = parsed.roles.map(r => String(r).trim().toLowerCase()).filter(Boolean);
+          normRoles = storedRoles;
+        }
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
 
-  // CRITICAL: Preserve activeRole from localStorage if backend doesn't return it
+  // CRITICAL FIX: Preserve activeRole from localStorage if backend doesn't return it
   let activeRole = u.activeRole ? String(u.activeRole).trim().toLowerCase() : null;
   
-  // If no activeRole in the incoming data, check localStorage first
+  // If no activeRole in the incoming data, check localStorage
   if (!activeRole) {
     try {
       const storedUser = storage.get('currentUser');
@@ -184,11 +201,14 @@ const normalizeUser = (u) => {
     } else if (u.userType) {
       activeRole = String(u.userType).trim().toLowerCase();
     } else {
-      activeRole = normRoles[0] || undefined;
+      activeRole = normRoles[0] || 'user';
     }
   }
 
-  return { ...u, roles: normRoles, activeRole };
+  // Ensure activeRole is in roles array
+  const finalRoles = [...new Set([...normRoles, activeRole].filter(Boolean))];
+  
+  return { ...u, roles: finalRoles, activeRole };
 };
 
 export const AuthProvider = ({ children }) => {
@@ -259,6 +279,8 @@ const persistAuthResult = useCallback((data) => {
   if (!data) return null;
   const normalizedUser = data.user ? normalizeUser(data.user) : null;
   const tokenVal = data.accessToken || data.token || null;
+  
+  // Persist tokens
   if (tokenVal) {
     storage.set('accessToken', tokenVal);
     setAccessToken(tokenVal);
@@ -273,9 +295,17 @@ const persistAuthResult = useCallback((data) => {
     storage.remove('refreshToken');
     setRefreshToken(null);
   }
+  
+  // CRITICAL FIX: Persist complete user object including full roles array
   if (normalizedUser) {
-    storage.set('currentUser', JSON.stringify(normalizedUser));
-    setCurrentUser(normalizedUser);
+    // Ensure roles is always an array
+    const userToStore = {
+      ...normalizedUser,
+      roles: Array.isArray(normalizedUser.roles) ? [...normalizedUser.roles] : [],
+      activeRole: normalizedUser.activeRole || 'user'
+    };
+    storage.set('currentUser', JSON.stringify(userToStore));
+    setCurrentUser(userToStore);
   } else {
     storage.remove('currentUser');
     setCurrentUser(null);
@@ -462,8 +492,12 @@ const persistAuthResult = useCallback((data) => {
     try {
       if (!accessToken || !currentUser) throw new Error('User not logged in');
       if (String(accessToken).startsWith('mock')) {
-        const updated = normalizeUser({ ...currentUser, role: newRole, roles: Array.from(new Set([...(currentUser.roles || []), newRole])), activeRole: newRole });
-        localStorage.setItem('currentUser', JSON.stringify(updated)); setCurrentUser(updated); return updated;
+        const mergedRoles = Array.from(new Set([...(currentUser.roles || []), newRole].filter(Boolean)));
+        const updated = normalizeUser({ ...currentUser, role: newRole, roles: mergedRoles, activeRole: newRole });
+        // CRITICAL: Persist complete user object with all roles
+        storage.set('currentUser', JSON.stringify(updated));
+        setCurrentUser(updated);
+        return updated;
       }
       let resp = await tryFetchAuth('/api/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
       let data = resp ? await resp.json().catch(() => ({})) : {};
@@ -499,10 +533,17 @@ const persistAuthResult = useCallback((data) => {
         try { const me = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } }); if (me && me.ok) { const md = await me.json().catch(() => ({})); serverUser = md.user || md; } } catch (e) {}
       }
       const updated = normalizeUser(serverUser || { ...currentUser, ...data.user });
-      updated.roles = Array.isArray(updated.roles) ? [...new Set(updated.roles)] : [];
-      if (newRole && !updated.roles.includes(newRole)) updated.roles.push(newRole);
-      if (!updated.activeRole && newRole) updated.activeRole = newRole;
-      localStorage.setItem('currentUser', JSON.stringify(updated)); setCurrentUser(updated);
+      // CRITICAL: Ensure roles array is always preserved and merged
+      updated.roles = Array.isArray(updated.roles) ? [...new Set(updated.roles)].filter(Boolean) : [];
+      if (newRole && !updated.roles.includes(newRole.toLowerCase())) {
+        updated.roles.push(newRole.toLowerCase());
+      }
+      if (!updated.activeRole && newRole) {
+        updated.activeRole = newRole.toLowerCase();
+      }
+      // CRITICAL: Persist complete user object with all roles
+      storage.set('currentUser', JSON.stringify(updated));
+      setCurrentUser(updated);
       if (!silent) toast.success('Role switched');
       return updated;
     } catch (e) {

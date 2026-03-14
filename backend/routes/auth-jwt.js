@@ -92,7 +92,8 @@ const parseJsonField = (value) => {
 const buildUserResponse = (user) => {
   try {
     const safeUser = user && typeof user.toJSON === 'function' ? user.toJSON() : user;
-    const roles = ensureRoleArray(safeUser.roles, safeUser.role || 'user');
+    // CRITICAL FIX: Ensure roles is always an array
+    let roles = ensureRoleArray(safeUser.roles, safeUser.role || 'user');
     let activeRole = safeUser.activeRole ? String(safeUser.activeRole).trim().toLowerCase() : null;
     if (!activeRole && roles.length) {
       activeRole = roles[0];
@@ -130,7 +131,7 @@ const buildUserResponse = (user) => {
       lastName: safeUser.lastName,
       phone: safeUser.phone,
       role: safeUser.role,
-      roles,
+      roles: roles,  // CRITICAL: Always return as array
       activeRole: activeRole || safeUser.role || 'user',
       avatar: safeUser.avatar,
       isVerified: safeUser.isVerified,
@@ -648,9 +649,19 @@ router.post('/login', [
       console.warn('User.findOne failed — attempting fallback SELECT (possible missing column):', dbErr.message);
       // Fallback: do a minimal raw SELECT that only references commonly present columns
       try {
-        const fallbackSql = 'SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified" FROM "users" WHERE email = :email LIMIT 1';
+        const fallbackSql = 'SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive" FROM "users" WHERE email = :email LIMIT 1';
         const [rows] = await User.sequelize.query(fallbackSql, { replacements: { email: email.toLowerCase() } });
         user = (rows && rows[0]) ? rows[0] : null; // plain object
+        // CRITICAL FIX: Parse roles from JSON string if needed
+        if (user && typeof user.roles === 'string') {
+          try {
+            user.roles = JSON.parse(user.roles);
+          } catch (e) {
+            user.roles = [user.role || 'user'];
+          }
+        } else if (user && !Array.isArray(user.roles)) {
+          user.roles = [user.role || 'user'];
+        }
       } catch (fallbackErr) {
         console.error('Fallback SELECT failed:', fallbackErr);
         // If DB connection/auth errors occur, attempt local JSON user fallback (development)
@@ -685,10 +696,8 @@ router.post('/login', [
         const usersPath = path.resolve(__dirname, '..', 'data', 'local_users.json');
         if (fs.existsSync(usersPath)) {
           const list = JSON.parse(fs.readFileSync(usersPath, 'utf8') || '[]');
-          const found = list.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
-          if (found) {
-            // Use the local user object as 'user'
-            user = found;
+          const found = list.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());\n          if (found) {
+            // Ensure roles is an array for local users too\n            if (typeof found.roles === 'string') {\n              try { found.roles = JSON.parse(found.roles); } catch (e) { found.roles = [found.role || 'user']; }\n            } else if (!Array.isArray(found.roles)) {\n              found.roles = [found.role || 'user'];\n            }\n            user = found;
           }
         }
       } catch (localErr) {
