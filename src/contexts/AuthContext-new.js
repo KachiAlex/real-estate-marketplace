@@ -232,6 +232,7 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
+            console.log('✅ HYDRATE: From localStorage -', { roles: parsed.roles, activeRole: parsed.activeRole });
             if (isMounted) setCurrentUser(normalizeUser(parsed));
           } catch (err) {
             console.warn('Failed to parse stored user', err);
@@ -246,7 +247,9 @@ export const AuthProvider = ({ children }) => {
             }).catch(() => null);
             if (resp && resp.ok) {
               const data = await resp.json().catch(() => ({}));
+              console.log('✅ HYDRATE: /me response -', { roles: data.user?.roles, role: data.user?.role });
               const normalized = normalizeUser(data.user || data);
+              console.log('✅ HYDRATE: After normalize -', { roles: normalized.roles, activeRole: normalized.activeRole });
               if (normalized) {
                 storage.set('currentUser', JSON.stringify(normalized));
                 if (isMounted) setCurrentUser(normalized);
@@ -355,12 +358,18 @@ const persistAuthResult = useCallback((data) => {
     try {
       const resp = await tryFetchAuth('/auth/jwt/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
+      console.log('✅ LOGIN: Backend response -', { hasUser: !!data.user, userRoles: data.user?.roles, userRole: data.user?.role });
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
+      console.log('✅ LOGIN: After normalizeUser -', { roles: u.roles, activeRole: u.activeRole });
       const tokenVal = data.accessToken || data.token || null;
       if (tokenVal) { storage.set('accessToken', tokenVal); setAccessToken(tokenVal); } else { storage.remove('accessToken'); setAccessToken(null); }
       if (data.refreshToken) { storage.set('refreshToken', data.refreshToken); setRefreshToken(data.refreshToken); } else { storage.remove('refreshToken'); setRefreshToken(null); }
-      if (u) { storage.set('currentUser', JSON.stringify(u)); setCurrentUser(u); } else { storage.remove('currentUser'); setCurrentUser(null); }
+      if (u) { 
+        console.log('✅ LOGIN: Storing to localStorage -', { roles: u.roles, activeRole: u.activeRole });
+        storage.set('currentUser', JSON.stringify(u)); 
+        setCurrentUser(u); 
+      } else { storage.remove('currentUser'); setCurrentUser(null); }
       toast.success('Login successful');
       return u;
     } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }
