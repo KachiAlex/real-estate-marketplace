@@ -113,6 +113,7 @@ const { requireRole, requireAnyRole, checkOwnership } = require('./middleware/ro
 const notificationService = require('./services/notificationService');
 const emailService = require('./services/emailService');
 const SocketMessagingService = require('./services/socketMessagingService');
+const { seedMockProperties } = require('./utils/seedMockProperties');
 
 // Initialize non-Mongo services immediately (Firestore-only mode)
 setImmediate(async () => {
@@ -776,10 +777,21 @@ try {
       console.log(`Server running on port ${PORT} (logger unavailable)`);
     }
     
+    // Seed mock properties into database
+    setImmediate(async () => {
+      try {
+        console.log('🌱 Seeding mock properties...');
+        await seedMockProperties(db);
+        console.log('✅ Mock properties seeding completed');
+      } catch (seedError) {
+        console.warn('⚠️ Mock properties seeding failed (non-fatal):', seedError.message);
+      }
+    });
+    
     if (process.env.NODE_ENV === 'development') {
       console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🏠 Properties: http://localhost:${PORT}/api/properties`);
-      console.log(`👤 Auth: http://localhost:${PORT}/api/auth/login`);
+      console.log(`👤 Auth: http://localhost:${PORT}/api/login`);
       console.log(`💰 Escrow: http://localhost:${PORT}/api/escrow`);
       console.log(`💼 Investments: http://localhost:${PORT}/api/investments`);
       console.log(`📁 Upload: http://localhost:${PORT}/api/upload`);
