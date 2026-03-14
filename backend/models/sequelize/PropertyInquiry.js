@@ -15,6 +15,30 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: false
     },
+    vendorId: {
+      type: DataTypes.UUID,
+      allowNull: true
+    },
+    conversationId: {
+      type: DataTypes.UUID,
+      allowNull: true
+    },
+    propertyTitle: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    propertyPrice: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: true
+    },
+    propertyImage: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    inquiryType: {
+      type: DataTypes.ENUM('message', 'call', 'viewing'),
+      defaultValue: 'message'
+    },
     message: {
       type: DataTypes.TEXT
     },

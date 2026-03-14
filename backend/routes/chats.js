@@ -214,6 +214,52 @@ router.post('/start', authenticateToken, async (req, res) => {
     // Use stable chatId format
     const chatId = `${propertyId}-${participant1Id}-${participant2Id}`;
 
+    // Create or update inquiry record in database
+    try {
+      // Get property details
+      const property = await db.Property.findByPk(propertyId, {
+        attributes: ['id', 'title', 'price', 'images']
+      });
+
+      const propertyTitle = property?.title || 'Property';
+      const propertyPrice = property?.price || 0;
+      const propertyImage = property?.images?.[0]?.url || property?.images?.[0] || '';
+
+      // Check if inquiry already exists
+      const existingInquiry = await db.PropertyInquiry.findOne({
+        where: {
+          propertyId,
+          buyerId,
+          status: ['pending', 'responded']
+        }
+      });
+
+      if (!existingInquiry) {
+        // Create new inquiry
+        await db.PropertyInquiry.create({
+          propertyId,
+          buyerId,
+          vendorId,
+          conversationId: conversation.id,
+          propertyTitle,
+          propertyPrice,
+          propertyImage,
+          inquiryType: 'message',
+          message: initialMessage,
+          status: 'pending'
+        });
+        logger.info('Inquiry created for conversation', { conversationId: conversation.id, propertyId });
+      } else {
+        // Update existing inquiry with conversation ID
+        await existingInquiry.update({
+          conversationId: conversation.id
+        });
+        logger.info('Inquiry updated with conversation ID', { inquiryId: existingInquiry.id });
+      }
+    } catch (inquiryErr) {
+      logger.warn('Failed to create/update inquiry (non-fatal):', inquiryErr.message);
+    }
+
     logger.info('Chat started successfully', { chatId, messageId: message.id, conversationId: conversation.id });
 
     return res.json({

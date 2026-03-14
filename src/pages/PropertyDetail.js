@@ -405,15 +405,24 @@ const PropertyDetail = () => {
       return;
     }
 
+    // Validate vendor ID exists
+    const vendorId = property.vendorId || property.owner?.id || property.vendor?.id;
+    if (!vendorId) {
+      toast.error('Vendor information not available for this property');
+      console.warn('[Chat] Vendor ID missing:', {
+        propertyVendorId: property.vendorId,
+        ownerId: property.owner?.id,
+        vendorId: property.vendor?.id
+      });
+      return;
+    }
+
     setSendingMessage(true);
     try {
-      // Create inquiry
-      createInquiry(property, 'message', `I'm interested in ${property.title}. Message: ${contactVendorMessage}`);
-      
       // Start an in-app chat via authenticated backend endpoint
       const payload = {
         buyerId: user.id,
-        vendorId: property.vendorId || property.owner?.id || property.vendor?.id || '',
+        vendorId: vendorId,
         propertyId: property.id,
         starterId: user.id,
         initialMessage: contactVendorMessage
@@ -424,9 +433,17 @@ const PropertyDetail = () => {
       console.log('[Chat] Response received:', res.data);
       
       if (res.data?.success || res.data?.chatId) {
-        toast.success('Message sent successfully! Check the Messages tab to continue the conversation.');
+        // Close modal first
         setShowContactVendorModal(false);
         setContactVendorMessage('');
+        
+        // Show success toast and navigate to messages
+        toast.success('Message sent! Opening Messages tab...');
+        
+        // Delay navigation to let modal close smoothly
+        setTimeout(() => {
+          navigate('/messages', { state: { autoSelectConversation: res.data.chatId } });
+        }, 500);
       } else {
         const errorMsg = res.data?.error || res.data?.message || 'Failed to send message';
         console.error('[Chat] No success in response:', errorMsg);

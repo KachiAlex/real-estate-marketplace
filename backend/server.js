@@ -452,6 +452,15 @@ try {
   errorLogger('Failed to load chats routes:', error);
 }
 
+// Inquiries routes for property inquiries
+try {
+  const inquiriesRouter = require('./routes/inquiries');
+  app.use('/api/inquiries', inquiriesRouter);
+  infoLogger('Inquiries routes loaded successfully');
+} catch (error) {
+  errorLogger('Failed to load inquiries routes:', error);
+}
+
 try {
   const supportRouter = require('./routes/support');
   app.use('/api/support', supportRouter);

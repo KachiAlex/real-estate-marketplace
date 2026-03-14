@@ -46,3 +46,11 @@ SyntaxError: Expected property name or '}' in JSON at position 1
     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
 Additional: {}
 ---
+[2026-03-14T08:47:59.875Z] ERROR: Failed to seed mock properties:
+Error: Failed to seed mock properties:
+    at Object.error (D:\real-estate-marketplace\backend\config\logger.js:46:19)
+    at seedMockProperties (D:\real-estate-marketplace\backend\utils\seedMockProperties.js:79:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Immediate.<anonymous> (D:\real-estate-marketplace\backend\server.js:784:9)
+Additional: {"0":"s","1":"y","2":"n","3":"t","4":"a","5":"x","6":" ","7":"e","8":"r","9":"r","10":"o","11":"r","12":" ","13":"a","14":"t","15":" ","16":"o","17":"r","18":" ","19":"n","20":"e","21":"a","22":"r","23":" ","24":"\"","25":"O","26":"N","27":"\"","module":"SeedMockProperties"}
+---

@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import MinimalChat from '../components/MinimalChat';
 import { FaEnvelope, FaSearch, FaSync } from 'react-icons/fa';
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast';
 
 const Messages = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,9 +23,11 @@ const Messages = () => {
       const data = Array.isArray(payload?.data) ? payload.data : [];
       console.log('[Messages] Conversations loaded:', data);
       setConversations(data);
+      return data;
     } catch (err) {
       console.error('Failed to load conversations', err);
       setConversations([]);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -42,7 +46,20 @@ const Messages = () => {
   };
 
   useEffect(() => {
-    fetchConversations();
+    fetchConversations().then((data) => {
+      // Auto-select conversation if navigated from PropertyDetail
+      const autoSelectConversation = location.state?.autoSelectConversation;
+      if (autoSelectConversation && data.length > 0) {
+        const targetConv = data.find(c => c.id === autoSelectConversation);
+        if (targetConv) {
+          setSelectedConversation(targetConv);
+          console.log('[Messages] Auto-selected conversation:', autoSelectConversation);
+        } else {
+          // If not found, select the most recent
+          setSelectedConversation(data[0]);
+        }
+      }
+    });
 
     // Auto-refresh every 10 seconds to catch new conversations
     const interval = setInterval(fetchConversations, 10000);
