@@ -221,7 +221,8 @@ router.post('/start', authenticateToken, async (req, res) => {
       chatId: chatId,
       conversationId: conversation.id,
       messageId: message.id,
-      message: 'Chat initialized successfully'
+      message: 'Message sent successfully',
+      notification: 'Your message has been sent to the vendor'
     });
   } catch (error) {
     logger.error('Error starting chat', { error: error.message, stack: error.stack });
