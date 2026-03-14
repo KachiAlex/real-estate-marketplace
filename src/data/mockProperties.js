@@ -1,5 +1,5 @@
 const MOCK_VENDOR = {
-  id: 'mock-vendor-001',
+  id: '550e8400-e29b-41d4-a716-446655440001',
   firstName: 'Mock',
   lastName: 'Vendor',
   email: 'mock.vendor@example.com',
@@ -12,7 +12,7 @@ const MOCK_VENDOR = {
 // dataset realistic while letting us track everything with one account.
 const rawMockProperties = [
   {
-    id: 'prop_001',
+    id: '550e8400-e29b-41d4-a716-446655440002',
     title: 'Beautiful Family Home in Lekki Phase 1',
     description: 'Spacious 3-bedroom home with modern amenities, stunning views of the lagoon, and premium finishes throughout. Perfect for families seeking luxury living.',
     price: 185000000,
@@ -32,7 +32,7 @@ const rawMockProperties = [
     createdAt: '2024-01-10'
   },
   {
-    id: 'prop_002',
+    id: '550e8400-e29b-41d4-a716-446655440003',
     title: 'Modern Downtown Apartment in Victoria Island',
     description: 'Luxury 2-bedroom apartment in the heart of Victoria Island with premium finishes, city views, and access to world-class amenities.',
     price: 1200000,
@@ -51,7 +51,7 @@ const rawMockProperties = [
     createdAt: '2024-01-08'
   },
   {
-    id: 'prop_003',
+    id: '550e8400-e29b-41d4-a716-446655440004',
     title: 'Luxury Penthouse Suite with Ocean Views',
     description: 'Stunning penthouse with panoramic city and ocean views, premium finishes, and exclusive access to rooftop amenities.',
     price: 520000000,
@@ -71,7 +71,7 @@ const rawMockProperties = [
     createdAt: '2024-01-05'
   },
   {
-    id: 'prop_004',
+    id: '550e8400-e29b-41d4-a716-446655440005',
     title: 'Cozy Studio Apartment in Surulere',
     description: 'Perfect starter home in a vibrant neighborhood with modern amenities and easy access to transportation.',
     price: 800000,
@@ -90,7 +90,7 @@ const rawMockProperties = [
     createdAt: '2024-01-12'
   },
   {
-    id: 'prop_005',
+    id: '550e8400-e29b-41d4-a716-446655440006',
     title: 'Suburban Villa with Private Pool',
     description: 'Spacious family villa with private pool, garden, and premium amenities in a secure gated community.',
     price: 310000000,
@@ -110,7 +110,7 @@ const rawMockProperties = [
     createdAt: '2024-01-15'
   },
   {
-    id: 'prop_006',
+    id: '550e8400-e29b-41d4-a716-446655440007',
     title: 'Commercial Office Space in Ikeja GRA',
     description: 'Prime commercial space perfect for business operations with modern facilities and excellent location.',
     price: 3500000,
@@ -129,7 +129,7 @@ const rawMockProperties = [
     createdAt: '2024-01-18'
   },
   {
-    id: 'prop_007',
+    id: '550e8400-e29b-41d4-a716-446655440008',
     title: 'Luxury Townhouse in Ikoyi',
     description: 'Elegant townhouse with premium finishes, private garden, and access to exclusive community amenities.',
     price: 450000000,
@@ -148,7 +148,7 @@ const rawMockProperties = [
     createdAt: '2024-01-06'
   },
   {
-    id: 'prop_008',
+    id: '550e8400-e29b-41d4-a716-446655440009',
     title: 'Modern Apartment in Yaba',
     description: 'Contemporary 2-bedroom apartment with modern amenities and easy access to business districts.',
     price: 950000,
@@ -167,7 +167,7 @@ const rawMockProperties = [
     createdAt: '2024-01-14'
   },
   {
-    id: 'prop_009',
+    id: '550e8400-e29b-41d4-a716-44665544000a',
     title: 'Executive Duplex in Magodo',
     description: 'Spacious executive duplex with premium finishes, private pool, and exclusive community access.',
     price: 280000000,
@@ -186,7 +186,7 @@ const rawMockProperties = [
     createdAt: '2024-01-03'
   },
   {
-    id: 'prop_010',
+    id: '550e8400-e29b-41d4-a716-44665544000b',
     title: 'Luxury Apartment in Banana Island',
     description: 'Exclusive apartment with panoramic ocean views and access to world-class amenities.',
     price: 380000000,
@@ -205,7 +205,7 @@ const rawMockProperties = [
     createdAt: '2024-01-01'
   },
   {
-    id: 'prop_011',
+    id: '550e8400-e29b-41d4-a716-44665544000c',
     title: 'Commercial Retail Space in Victoria Island',
     description: 'Prime retail space in bustling Victoria Island, perfect for retail businesses and restaurants.',
     price: 2800000,
@@ -224,7 +224,7 @@ const rawMockProperties = [
     createdAt: '2024-01-16'
   },
   {
-    id: 'prop_012',
+    id: '550e8400-e29b-41d4-a716-44665544000d',
     title: 'Family Home in Gbagada',
     description: 'Comfortable family home with modern amenities and easy access to schools and hospitals.',
     price: 150000000,
@@ -243,7 +243,7 @@ const rawMockProperties = [
     createdAt: '2024-01-19'
   },
   {
-    id: 'prop_013',
+    id: '550e8400-e29b-41d4-a716-44665544000e',
     title: 'Modern Studio in Port Harcourt',
     description: 'Contemporary studio apartment perfect for young professionals with modern amenities.',
     price: 650000,
@@ -262,7 +262,7 @@ const rawMockProperties = [
     createdAt: '2024-01-17'
   },
   {
-    id: 'prop_014',
+    id: '550e8400-e29b-41d4-a716-44665544000f',
     title: 'Executive Villa in Port Harcourt',
     description: 'Luxury villa with premium finishes, private garden, and exclusive amenities in a secure community.',
     price: 220000000,
@@ -281,7 +281,7 @@ const rawMockProperties = [
     createdAt: '2024-01-11'
   },
   {
-    id: 'prop_015',
+    id: '550e8400-e29b-41d4-a716-446655440010',
     title: 'Medical Professional Apartment',
     description: 'Comfortable apartment perfect for medical professionals with modern amenities and easy access to hospitals.',
     price: 750000,
@@ -300,7 +300,7 @@ const rawMockProperties = [
     createdAt: '2024-01-13'
   },
   {
-    id: 'prop_016',
+    id: '550e8400-e29b-41d4-a716-446655440011',
     title: 'Luxury Apartment in Ikoyi',
     description: 'Exclusive apartment with premium finishes and access to world-class amenities.',
     price: 420000000,
@@ -319,7 +319,7 @@ const rawMockProperties = [
     createdAt: '2024-01-07'
   },
   {
-    id: 'prop_017',
+    id: '550e8400-e29b-41d4-a716-446655440012',
     title: 'Modern Townhouse in Lekki',
     description: 'Contemporary townhouse with premium finishes and access to community amenities.',
     price: 180000000,
@@ -338,7 +338,7 @@ const rawMockProperties = [
     createdAt: '2024-01-09'
   },
   {
-    id: 'prop_018',
+    id: '550e8400-e29b-41d4-a716-446655440013',
     title: 'Architectural Masterpiece in Gbagada',
     description: 'Unique architectural design with premium finishes and modern amenities.',
     price: 195000000,
@@ -357,7 +357,7 @@ const rawMockProperties = [
     createdAt: '2024-01-04'
   },
   {
-    id: 'prop_019',
+    id: '550e8400-e29b-41d4-a716-446655440014',
     title: 'Luxury Penthouse in Victoria Island',
     description: 'Exclusive penthouse with panoramic ocean views and premium amenities.',
     price: 650000000,
@@ -376,7 +376,7 @@ const rawMockProperties = [
     createdAt: '2024-01-02'
   },
   {
-    id: 'prop_020',
+    id: '550e8400-e29b-41d4-a716-446655440015',
     title: 'Cozy Studio in Surulere',
     description: 'Perfect starter home in a vibrant neighborhood with modern amenities.',
     price: 550000,
