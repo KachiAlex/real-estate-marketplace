@@ -465,7 +465,7 @@ const persistAuthResult = useCallback((data) => {
         const updated = normalizeUser({ ...currentUser, role: newRole, roles: Array.from(new Set([...(currentUser.roles || []), newRole])), activeRole: newRole });
         localStorage.setItem('currentUser', JSON.stringify(updated)); setCurrentUser(updated); return updated;
       }
-      let resp = await tryFetchAuth('/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
+      let resp = await tryFetchAuth('/api/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
       let data = resp ? await resp.json().catch(() => ({})) : {};
 
       if (!resp || resp.status === 404) {
@@ -518,7 +518,7 @@ const persistAuthResult = useCallback((data) => {
   const updateUserProfile = useCallback(async (updates) => {
     try {
       if (!currentUser) throw new Error('Not logged in');
-      const resp = await tryFetchAuth('/auth/jwt/update-profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+      const resp = await tryFetchAuth('/api/auth/jwt/update-profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       console.log('updateUserProfile response', resp && resp.status, data);
       if (!resp || !resp.ok) {

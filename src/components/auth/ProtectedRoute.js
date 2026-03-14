@@ -46,7 +46,10 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
   // A user is a buyer if they have 'buyer' or 'user' role, or if they have no roles (default to buyer)
   const isBuyer = userRoles.includes('buyer') || userRoles.includes('user') || userRoles.length === 0;
   
-  console.log('🔥 ProtectedRoute: Role detection', { path, userRoles, isAdmin, isVendor, isBuyer, userRole: user.role });
+  // Role detection logged only in development for debugging
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('ProtectedRoute: Role detection check for path:', path);
+  }
 
   const isAdminRoute = path === '/admin' || path.startsWith('/admin/');
   const buyerPrefixes = ['/buyer', '/my-inquiries', '/my-inspections', '/my-properties', '/saved-properties', '/alerts'];
@@ -69,18 +72,15 @@ const ProtectedRoute = ({ children, requiredRoles = null }) => {
       console.warn('Access denied: Non-vendor user attempted vendor route:', path, 'Roles:', userRoles);
       return <Navigate to="/dashboard" replace />;
     }
-    console.log('🔥 ProtectedRoute: Allowing vendor route access to:', path);
     return children;
   }
 
   // Buyer route access control
   if (isBuyerRoute) {
-    console.log('🔥 ProtectedRoute: Buyer route check', { path, isBuyer, isAdmin, userRoles });
     if (!isBuyer && !isAdmin) {
       console.warn('Access denied: User without buyer role attempted buyer route:', path, 'Roles:', userRoles);
       return <Navigate to="/dashboard" replace />;
     }
-    console.log('🔥 ProtectedRoute: Allowing buyer route access to:', path);
     return children;
   }
 

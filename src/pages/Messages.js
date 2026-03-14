@@ -18,7 +18,7 @@ const Messages = () => {
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      const resp = await apiClient.get('/chats/conversations');
+      const resp = await apiClient.get('/api/chats/conversations');
       const payload = resp.data || {};
       const data = Array.isArray(payload?.data) ? payload.data : [];
       console.log('[Messages] Conversations loaded:', data);
