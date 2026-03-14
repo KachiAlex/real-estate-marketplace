@@ -279,6 +279,7 @@ const AdminDashboard = () => {
   const [disputeError, setDisputeError] = useState('');
   const usersLoadedRef = useRef(false);
   const statsRefreshIntervalRef = useRef(null);
+  const usersRefreshIntervalRef = useRef(null);
   const escrowsLoadedRef = useRef(false);
   const disputesLoadedRef = useRef(false);
   const [blogPosts, setBlogPosts] = useState([]);
@@ -851,6 +852,10 @@ const AdminDashboard = () => {
         clearInterval(statsRefreshIntervalRef.current);
         statsRefreshIntervalRef.current = null;
       }
+      if (usersRefreshIntervalRef.current) {
+        clearInterval(usersRefreshIntervalRef.current);
+        usersRefreshIntervalRef.current = null;
+      }
     };
   }, [user]);
 
@@ -877,6 +882,39 @@ const AdminDashboard = () => {
       refreshStats();
     }
   }, [statsLoading, user?.role, statsRefreshIntervalRef]);
+
+  // Real-time user stats updates - refresh every 30 seconds when users tab is active
+  useEffect(() => {
+    if (user?.role !== 'admin' || activeTab !== 'users') {
+      // Clear interval when not on users tab
+      if (usersRefreshIntervalRef.current) {
+        clearInterval(usersRefreshIntervalRef.current);
+        usersRefreshIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Reset loaded flag to allow fresh load
+    usersLoadedRef.current = false;
+
+    // Load users immediately
+    loadUsersFromApi({ page: 1, limit: 100 });
+
+    // Set up polling interval to refresh every 30 seconds
+    if (!usersRefreshIntervalRef.current) {
+      usersRefreshIntervalRef.current = setInterval(() => {
+        usersLoadedRef.current = false;
+        loadUsersFromApi({ page: 1, limit: 100 });
+      }, 30000);
+    }
+
+    return () => {
+      if (usersRefreshIntervalRef.current) {
+        clearInterval(usersRefreshIntervalRef.current);
+        usersRefreshIntervalRef.current = null;
+      }
+    };
+  }, [activeTab, user?.role, loadUsersFromApi]);
 
   // ...
 
@@ -2313,7 +2351,7 @@ const AdminDashboard = () => {
                   <h2 className="text-lg font-semibold text-gray-900">Users Overview</h2>
                   <p className="text-sm text-gray-500">Manage buyer, vendor, and admin accounts in one view.</p>
                 </div>
-                <div className="grid grid-cols-2 sm:flex gap-2 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-sm">
                   <div className="px-3 py-2 bg-blue-50 rounded-lg text-blue-700">
                     <p className="text-xs uppercase tracking-wide text-blue-400">Active</p>
                     <p className="text-base font-semibold">{users.length}</p>
@@ -2325,6 +2363,14 @@ const AdminDashboard = () => {
                   <div className="px-3 py-2 bg-red-50 rounded-lg text-red-700">
                     <p className="text-xs uppercase tracking-wide text-red-400">Suspended</p>
                     <p className="text-base font-semibold">{users.filter(u => u.status === 'suspended' || u.isActive === false).length}</p>
+                  </div>
+                  <div className="px-3 py-2 bg-purple-50 rounded-lg text-purple-700">
+                    <p className="text-xs uppercase tracking-wide text-purple-400">Buyers</p>
+                    <p className="text-base font-semibold">{users.filter(u => u.role === 'buyer').length}</p>
+                  </div>
+                  <div className="px-3 py-2 bg-orange-50 rounded-lg text-orange-700">
+                    <p className="text-xs uppercase tracking-wide text-orange-400">Vendors</p>
+                    <p className="text-base font-semibold">{users.filter(u => u.role === 'vendor').length}</p>
                   </div>
                 </div>
               </div>
