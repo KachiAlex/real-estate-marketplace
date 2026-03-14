@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
 const db = require('../config/sequelizeDb');
+const { v4: uuidv4 } = require('uuid');
 
 const logger = createLogger('ChatsRoutes');
 
@@ -39,32 +40,90 @@ router.post('/start', authenticateToken, async (req, res) => {
     const [participant1Id, participant2Id] = [buyerId, vendorId].sort();
 
     // Find or create conversation
-    let conversation = await db.Conversation.findOne({
-      where: {
-        propertyId: propertyId,
-        participant1Id: participant1Id,
-        participant2Id: participant2Id
+    let conversation;
+    try {
+      conversation = await db.Conversation.findOne({
+        where: {
+          propertyId: propertyId,
+          participant1Id: participant1Id,
+          participant2Id: participant2Id
+        }
+      });
+    } catch (convErr) {
+      logger.warn('Conversation.findOne failed, attempting raw query:', convErr.message);
+      try {
+        const [results] = await db.Conversation.sequelize.query(
+          `SELECT id, "propertyId", "participant1Id", "participant2Id", "lastMessageId", "lastMessageAt", "createdAt", "updatedAt"
+           FROM conversations
+           WHERE "propertyId" = :propertyId AND "participant1Id" = :participant1Id AND "participant2Id" = :participant2Id
+           LIMIT 1`,
+          { replacements: { propertyId, participant1Id, participant2Id } }
+        );
+        conversation = results && results[0] ? results[0] : null;
+      } catch (rawErr) {
+        logger.error('Conversation raw query failed:', rawErr.message);
+        throw convErr;
       }
-    });
+    }
 
     if (!conversation) {
-      conversation = await db.Conversation.create({
-        propertyId: propertyId,
-        participant1Id: participant1Id,
-        participant2Id: participant2Id
-      });
-      logger.info('Created new conversation', { conversationId: conversation.id });
+      try {
+        const convData = {
+          propertyId,
+          participant1Id,
+          participant2Id,
+          lastMessageAt: new Date()
+        };
+        conversation = await db.Conversation.create(convData);
+        logger.info('Created new conversation', { conversationId: conversation.id });
+      } catch (createErr) {
+        logger.error('Failed to create conversation:', createErr.message);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to create conversation'
+        });
+      }
     }
 
     // Create the initial message
-    const message = await db.Message.create({
-      senderId: starterId,
-      recipientId: vendorId === starterId ? buyerId : vendorId,
-      propertyId: propertyId,
-      subject: 'Property Inquiry',
-      content: initialMessage,
-      isRead: false
-    });
+    let message;
+    try {
+      const msgData = {
+        senderId: starterId,
+        recipientId: vendorId === starterId ? buyerId : vendorId,
+        propertyId: propertyId,
+        subject: 'Property Inquiry',
+        content: initialMessage,
+        isRead: false
+      };
+      message = await db.Message.create(msgData);
+    } catch (msgErr) {
+      logger.warn('Message.create failed, attempting raw insert:', msgErr.message);
+      try {
+        const msgId = uuidv4();
+        await db.Message.sequelize.query(
+          `INSERT INTO messages (id, "senderId", "recipientId", "propertyId", subject, content, "isRead", "createdAt", "updatedAt")
+           VALUES (:id, :senderId, :recipientId, :propertyId, :subject, :content, :isRead, :createdAt, :updatedAt)`,
+          {
+            replacements: {
+              id: msgId,
+              senderId: starterId,
+              recipientId: vendorId === starterId ? buyerId : vendorId,
+              propertyId: propertyId,
+              subject: 'Property Inquiry',
+              content: initialMessage,
+              isRead: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          }
+        );
+        message = { id: msgId };
+      } catch (rawErr) {
+        logger.error('Message raw insert failed:', rawErr.message);
+        throw msgErr;
+      }
+    }
 
     if (!message) {
       return res.status(500).json({
@@ -74,10 +133,28 @@ router.post('/start', authenticateToken, async (req, res) => {
     }
 
     // Update conversation's lastMessage pointers
-    await conversation.update({
-      lastMessageId: message.id,
-      lastMessageAt: new Date()
-    });
+    try {
+      if (typeof conversation.update === 'function') {
+        await conversation.update({
+          lastMessageId: message.id,
+          lastMessageAt: new Date()
+        });
+      } else {
+        // Raw update for fallback
+        await db.Conversation.sequelize.query(
+          `UPDATE conversations SET "lastMessageId" = :messageId, "lastMessageAt" = :now WHERE id = :conversationId`,
+          {
+            replacements: {
+              messageId: message.id,
+              conversationId: conversation.id,
+              now: new Date()
+            }
+          }
+        );
+      }
+    } catch (updateErr) {
+      logger.warn('Failed to update conversation (non-fatal):', updateErr.message);
+    }
 
     // Use stable chatId format
     const chatId = `${propertyId}-${participant1Id}-${participant2Id}`;
