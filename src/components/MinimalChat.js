@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient';
 import { getApiUrl } from '../utils/apiConfig';
 
@@ -85,10 +86,17 @@ export default function MinimalChat({ userId, peerId }) {
       // Replace optimistic message with saved message (server id/timestamp)
       setMessages((prev) => prev.map(m => (m.id === tempId ? saved : m)));
       setStatus((prev) => ({ ...prev, [saved.message?.id || saved.id || tempId]: { delivered: true, read: false } }));
+      
+      // Show success toast
+      toast.success('Message sent', { duration: 2000 });
     } catch (err) {
       console.error('MinimalChat: failed to persist message', err);
       // mark as failed
       setStatus((prev) => ({ ...prev, [tempId]: { ...(prev[tempId] || {}), failed: true } }));
+      
+      // Show error toast
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to send message';
+      toast.error(errorMsg);
     }
   };
 

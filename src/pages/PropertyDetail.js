@@ -419,18 +419,23 @@ const PropertyDetail = () => {
         initialMessage: contactVendorMessage
       };
 
+      console.log('[Chat] Sending message with payload:', payload);
       const res = await apiClient.post('/chats/start', payload);
+      console.log('[Chat] Response received:', res.data);
       
-      if (res.data?.chatId) {
-        toast.success('Message sent! Check the Messages tab to continue the conversation.');
+      if (res.data?.success || res.data?.chatId) {
+        toast.success('Message sent successfully! Check the Messages tab to continue the conversation.');
         setShowContactVendorModal(false);
         setContactVendorMessage('');
       } else {
-        throw new Error(res.data?.error || 'Failed to send message');
+        const errorMsg = res.data?.error || res.data?.message || 'Failed to send message';
+        console.error('[Chat] No success in response:', errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      console.error('Error sending contact message:', err);
-      toast.error(err.response?.data?.error || 'Failed to send message. Please try again.');
+      console.error('[Chat] Error sending message:', err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to send message. Please try again.';
+      toast.error(errorMsg);
     } finally {
       setSendingMessage(false);
     }
