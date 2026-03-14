@@ -2,7 +2,8 @@
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/apiClient';
 import MinimalChat from '../components/MinimalChat';
-import { FaEnvelope, FaSearch } from 'react-icons/fa';
+import { FaEnvelope, FaSearch, FaSync } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -10,25 +11,54 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchConversations = async () => {
+    setLoading(true);
+    try {
+      const resp = await apiClient.get('/chats/conversations');
+      const payload = resp.data || {};
+      const data = Array.isArray(payload?.data) ? payload.data : [];
+      console.log('[Messages] Conversations loaded:', data);
+      setConversations(data);
+    } catch (err) {
+      console.error('Failed to load conversations', err);
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchConversations();
+      toast.success('Conversations refreshed', { duration: 1500 });
+    } catch (err) {
+      toast.error('Failed to refresh conversations');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      setLoading(true);
-      try {
-        const resp = await apiClient.get('/chats/conversations');
-        const payload = resp.data || {};
-        const data = Array.isArray(payload?.data) ? payload.data : [];
-        console.log('[Messages] Conversations loaded:', data);
-        setConversations(data);
-      } catch (err) {
-        console.error('Failed to load conversations', err);
-        setConversations([]);
-      } finally {
-        setLoading(false);
+    fetchConversations();
+
+    // Auto-refresh every 10 seconds to catch new conversations
+    const interval = setInterval(fetchConversations, 10000);
+    
+    // Also refresh when window becomes visible (user switches tabs back)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchConversations();
       }
     };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    fetchConversations();
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const filtered = conversations.filter(c => {
@@ -45,8 +75,18 @@ const Messages = () => {
       <div className="flex h-full bg-white rounded-lg shadow overflow-hidden">
         <div className="w-80 border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Messages</h2>
-            <div className="mt-3 relative">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold">Messages</h2>
+              <button 
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Refresh conversations"
+              >
+                <FaSync className={`${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="relative">
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
               <input
                 className="w-full pl-10 pr-3 py-2 border rounded-md"
