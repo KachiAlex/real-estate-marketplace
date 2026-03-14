@@ -4,8 +4,44 @@ const { authenticateToken } = require('../middleware/auth');
 const { createLogger } = require('../config/logger');
 const db = require('../config/sequelizeDb');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const logger = createLogger('ChatsRoutes');
+
+/**
+ * Generate a deterministic UUID v5 from a string
+ * Useful for converting non-UUID IDs to UUID format
+ */
+function generateUUIDFromString(str, namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8') {
+  const hash = crypto.createHash('sha1');
+  hash.update(namespace.replace(/-/g, ''), 'hex');
+  hash.update(str, 'utf8');
+  const digest = hash.digest();
+  
+  digest[6] = (digest[6] & 0x0f) | 0x50;
+  digest[8] = (digest[8] & 0x3f) | 0x80;
+  
+  return [
+    digest.toString('hex', 0, 4),
+    digest.toString('hex', 4, 6),
+    digest.toString('hex', 6, 8),
+    digest.toString('hex', 8, 10),
+    digest.toString('hex', 10, 16)
+  ].join('-');
+}
+
+/**
+ * Ensure ID is in UUID format (v4 or valid UUID string)
+ */
+function normalizeToUUID(id) {
+  if (!id) return null;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(id)) {
+    return id; // Already a valid UUID
+  }
+  // Convert string ID to deterministic UUID
+  return generateUUIDFromString(id);
+}
 
 /**
  * @route   POST /api/chats/start
@@ -49,15 +85,26 @@ router.post('/start', authenticateToken, async (req, res) => {
 
     logger.info('Starting chat', { buyerId, vendorId, propertyId, starterId });
 
+    // Normalize IDs to UUID format for consistent database storage
+    const normalizedPropertyId = normalizeToUUID(propertyId);
+    const normalizedBuyerId = normalizeToUUID(buyerId);
+    const normalizedVendorId = normalizeToUUID(vendorId);
+    
+    logger.info('Normalized IDs', { 
+      propertyId: normalizedPropertyId, 
+      buyerId: normalizedBuyerId, 
+      vendorId: normalizedVendorId 
+    });
+
     // Ensure participant IDs are sorted for consistent conversation lookup
-    const [participant1Id, participant2Id] = [buyerId, vendorId].sort();
+    const [participant1Id, participant2Id] = [normalizedBuyerId, normalizedVendorId].sort();
 
     // Find or create conversation
     let conversation;
     try {
       conversation = await db.Conversation.findOne({
         where: {
-          propertyId: propertyId,
+          propertyId: normalizedPropertyId,
           participant1Id: participant1Id,
           participant2Id: participant2Id
         }
@@ -81,9 +128,9 @@ router.post('/start', authenticateToken, async (req, res) => {
         const [results] = await db.sequelize.query(
           `SELECT id, "propertyId", "participant1Id", "participant2Id", "lastMessageId", "lastMessageAt", "createdAt", "updatedAt"
            FROM conversations
-           WHERE "propertyId"::TEXT = :propertyId AND "participant1Id"::TEXT = :participant1Id AND "participant2Id"::TEXT = :participant2Id
+           WHERE "propertyId" = :propertyId AND "participant1Id" = :participant1Id AND "participant2Id" = :participant2Id
            LIMIT 1`,
-          { replacements: { propertyId, participant1Id, participant2Id } }
+          { replacements: { propertyId: normalizedPropertyId, participant1Id, participant2Id } }
         );
         conversation = results && results[0] ? results[0] : null;
       } catch (rawErr) {
@@ -98,7 +145,7 @@ router.post('/start', authenticateToken, async (req, res) => {
     if (!conversation) {
       try {
         const convData = {
-          propertyId,
+          propertyId: normalizedPropertyId,
           participant1Id,
           participant2Id,
           lastMessageAt: new Date()
@@ -108,7 +155,6 @@ router.post('/start', authenticateToken, async (req, res) => {
       } catch (createErr) {
         logger.error('Failed to create conversation:', createErr.message);
         try {
-          const msgId = uuidv4();
           const convId = uuidv4();
           await db.sequelize.query(
             `INSERT INTO conversations (id, "propertyId", "participant1Id", "participant2Id", "lastMessageAt", "createdAt", "updatedAt")
@@ -116,7 +162,7 @@ router.post('/start', authenticateToken, async (req, res) => {
             {
               replacements: {
                 id: convId,
-                propertyId,
+                propertyId: normalizedPropertyId,
                 participant1Id,
                 participant2Id,
                 lastMessageAt: new Date(),
@@ -141,9 +187,9 @@ router.post('/start', authenticateToken, async (req, res) => {
     let message;
     try {
       const msgData = {
-        senderId: starterId,
-        recipientId: vendorId === starterId ? buyerId : vendorId,
-        propertyId: propertyId,
+        senderId: normalizedBuyerId,
+        recipientId: normalizedVendorId,
+        propertyId: normalizedPropertyId,
         subject: 'Property Inquiry',
         content: initialMessage,
         isRead: false
@@ -159,9 +205,9 @@ router.post('/start', authenticateToken, async (req, res) => {
           {
             replacements: {
               id: msgId,
-              senderId: starterId,
-              recipientId: vendorId === starterId ? buyerId : vendorId,
-              propertyId: propertyId,
+              senderId: normalizedBuyerId,
+              recipientId: normalizedVendorId,
+              propertyId: normalizedPropertyId,
               subject: 'Property Inquiry',
               content: initialMessage,
               isRead: false,
@@ -212,7 +258,7 @@ router.post('/start', authenticateToken, async (req, res) => {
     }
 
     // Use stable chatId format
-    const chatId = `${propertyId}-${participant1Id}-${participant2Id}`;
+    const chatId = `${normalizedPropertyId}-${participant1Id}-${participant2Id}`;
 
     logger.info('Chat started successfully', { chatId, messageId: message.id, conversationId: conversation.id });
 
