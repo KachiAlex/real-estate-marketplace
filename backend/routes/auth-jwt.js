@@ -90,33 +90,59 @@ const parseJsonField = (value) => {
 };
 
 const buildUserResponse = (user) => {
-  const safeUser = user && typeof user.toJSON === 'function' ? user.toJSON() : user;
-  const roles = ensureRoleArray(safeUser.roles, safeUser.role || 'user');
-  let activeRole = safeUser.activeRole ? String(safeUser.activeRole).trim().toLowerCase() : null;
-  if (!activeRole && roles.length) {
-    activeRole = roles[0];
+  try {
+    const safeUser = user && typeof user.toJSON === 'function' ? user.toJSON() : user;
+    const roles = ensureRoleArray(safeUser.roles, safeUser.role || 'user');
+    let activeRole = safeUser.activeRole ? String(safeUser.activeRole).trim().toLowerCase() : null;
+    if (!activeRole && roles.length) {
+      activeRole = roles[0];
+    }
+
+    let vendorData = null;
+    let buyerData = null;
+    let kycStatus = null;
+    
+    try {
+      vendorData = parseJsonField(safeUser.vendorData);
+    } catch (e) {
+      console.warn('Error parsing vendorData:', e.message);
+      vendorData = null;
+    }
+    
+    try {
+      buyerData = parseJsonField(safeUser.buyerData);
+    } catch (e) {
+      console.warn('Error parsing buyerData:', e.message);
+      buyerData = null;
+    }
+    
+    try {
+      kycStatus = safeUser.kycStatus || vendorData?.kycStatus || null;
+    } catch (e) {
+      console.warn('Error getting kycStatus:', e.message);
+      kycStatus = null;
+    }
+
+    return {
+      id: safeUser.id,
+      email: safeUser.email,
+      firstName: safeUser.firstName,
+      lastName: safeUser.lastName,
+      phone: safeUser.phone,
+      role: safeUser.role,
+      roles,
+      activeRole: activeRole || safeUser.role || 'user',
+      avatar: safeUser.avatar,
+      isVerified: safeUser.isVerified,
+      isActive: safeUser.isActive,
+      vendorData,
+      buyerData,
+      kycStatus
+    };
+  } catch (err) {
+    console.error('buildUserResponse error:', err);
+    throw new Error('Failed to build user response: ' + (err.message || String(err)));
   }
-
-  const vendorData = parseJsonField(safeUser.vendorData);
-  const buyerData = parseJsonField(safeUser.buyerData);
-  const kycStatus = safeUser.kycStatus || vendorData?.kycStatus || null;
-
-  return {
-    id: safeUser.id,
-    email: safeUser.email,
-    firstName: safeUser.firstName,
-    lastName: safeUser.lastName,
-    phone: safeUser.phone,
-    role: safeUser.role,
-    roles,
-    activeRole: activeRole || safeUser.role || 'user',
-    avatar: safeUser.avatar,
-    isVerified: safeUser.isVerified,
-    isActive: safeUser.isActive,
-    vendorData,
-    buyerData,
-    kycStatus
-  };
 };
 
 // Generate JWT Token
@@ -707,12 +733,22 @@ router.post('/login', [
       console.warn('Failed to update lastLogin (non-fatal):', updateErr.message);
     }
 
+    let userResponse;
+    try {
+      userResponse = buildUserResponse(user);
+      appendDebug('buildUserResponse:success');
+    } catch (buildErr) {
+      appendDebug('buildUserResponse:error ' + (buildErr && buildErr.message ? buildErr.message : JSON.stringify(buildErr || {})));
+      console.error('Error building user response:', buildErr);
+      throw buildErr;
+    }
+
     res.json({
       success: true,
       message: 'Login successful',
       accessToken,
       refreshToken,
-      user: buildUserResponse(user)
+      user: userResponse
     });
   } catch (error) {
     appendDebug('login:error ' + (error && error.message ? error.message : JSON.stringify(error || {})));
@@ -724,7 +760,7 @@ router.post('/login', [
     }
 
     const errMsg = (error && error.message) ? error.message : (typeof error === 'string' ? error : JSON.stringify(error || {}));
-    const payload = { success: false, message: 'Login failed', error: errMsg };
+    const payload = { success: false, message: 'Server error during login. ' + errMsg, error: errMsg };
     if (process.env.NODE_ENV !== 'production' && error && error.stack) payload.stack = error.stack;
     res.status(500).json(payload);
   }
