@@ -15,9 +15,10 @@ const Messages = () => {
     const fetchConversations = async () => {
       setLoading(true);
       try {
-        const resp = await apiClient.get('/chat/conversations');
+        const resp = await apiClient.get('/chats/conversations');
         const payload = resp.data || {};
         const data = Array.isArray(payload?.data) ? payload.data : [];
+        console.log('[Messages] Conversations loaded:', data);
         setConversations(data);
       } catch (err) {
         console.error('Failed to load conversations', err);
