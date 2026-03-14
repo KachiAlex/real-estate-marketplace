@@ -68,8 +68,7 @@ router.post('/start', authenticateToken, async (req, res) => {
             role: 'vendor',
             roles: ['vendor'],
             isVerified: true,
-            isActive: true,
-            status: 'active'
+            isActive: true
           });
           logger.info('✓ Mock vendor created on-demand');
         } catch (userErr) {

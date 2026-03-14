@@ -24,24 +24,29 @@ async function seedMockProperties(db) {
       const vendorExists = await db.User.findByPk(MOCK_VENDOR_ID);
       if (!vendorExists) {
         logger.info(`Creating mock vendor user (${MOCK_VENDOR_ID})...`);
-        await db.User.create({
-          id: MOCK_VENDOR_ID,
-          firstName: 'Mock',
-          lastName: 'Vendor',
-          email: 'mock.vendor@propertyark.com',
-          password: '$2a$10$abcdefghijklmnopqrstuvwxyz', // Dummy bcrypt hash
-          role: 'vendor',
-          roles: ['vendor'],
-          isVerified: true,
-          isActive: true
-        }).catch(err => {
+        try {
+          await db.User.create({
+            id: MOCK_VENDOR_ID,
+            firstName: 'Mock',
+            lastName: 'Vendor',
+            email: 'mock.vendor@propertyark.com',
+            password: '$2a$10$abcdefghijklmnopqrstuvwxyz', // Dummy bcrypt hash
+            role: 'vendor',
+            roles: ['vendor'],
+            isVerified: true,
+            isActive: true
+            // NOTE: Do NOT include 'status' field - it causes column not found errors in some database setups
+          });
+          logger.info('✓ Mock vendor created');
+        } catch (err) {
           if (err.name === 'SequelizeUniqueConstraintError') {
             logger.info('Mock vendor already exists');
+          } else if (err.message && err.message.includes('unique')) {
+            logger.info('Mock vendor already exists (unique constraint)');
           } else {
-            throw err;
+            logger.warn('Could not create mock vendor:', err.message);
           }
-        });
-        logger.info('✓ Mock vendor created');
+        }
       } else {
         logger.info('✓ Mock vendor already exists');
       }
