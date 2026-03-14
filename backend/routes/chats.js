@@ -7,24 +7,6 @@ const { v4: uuidv4 } = require('uuid');
 
 const logger = createLogger('ChatsRoutes');
 
-// Try to relax FK constraint on startup for mock data compatibility
-let constraintRelaxed = false;
-async function relaxForeignKeyConstraint() {
-  if (constraintRelaxed) return;
-  
-  try {
-    // PostgreSQL: Drop the FK constraint if it exists
-    await db.sequelize.query(
-      `ALTER TABLE conversations DROP CONSTRAINT IF EXISTS conversations_propertyId_fkey`
-    );
-    logger.info('✓ Dropped conversations_propertyId_fkey constraint for mock data compatibility');
-    constraintRelaxed = true;
-  } catch (error) {
-    logger.warn('Could not drop FK constraint (it may not exist):', error.message);
-    constraintRelaxed = true; // Don't retry
-  }
-}
-
 /**
  * @route   POST /api/chats/start
  * @desc    Start a new chat between buyer and vendor for a property
