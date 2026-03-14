@@ -23,6 +23,9 @@ const PropertyDetail = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState('');
+  const [showContactVendorModal, setShowContactVendorModal] = useState(false);
+  const [contactVendorMessage, setContactVendorMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
@@ -391,30 +394,45 @@ const PropertyDetail = () => {
       return;
     }
 
-    // Create inquiry
-    createInquiry(property, 'message', `I'm interested in ${property.title}. Please contact me via in-app message.`);
-    
-    // Start an in-app chat via authenticated backend endpoint
+    // Open the contact vendor modal
+    setContactVendorMessage('');
+    setShowContactVendorModal(true);
+  };
+
+  const handleSendContactMessage = async () => {
+    if (!contactVendorMessage.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    setSendingMessage(true);
     try {
+      // Create inquiry
+      createInquiry(property, 'message', `I'm interested in ${property.title}. Message: ${contactVendorMessage}`);
+      
+      // Start an in-app chat via authenticated backend endpoint
       const payload = {
         buyerId: user.id,
         vendorId: property.vendorId || property.owner?.id || property.vendor?.id || '',
         propertyId: property.id,
         starterId: user.id,
-        initialMessage: `Hi, I'm interested in ${property.title}. Could you please provide more information?`
+        initialMessage: contactVendorMessage
       };
 
       const res = await apiClient.post('/chats/start', payload);
       
       if (res.data?.chatId) {
-        navigate('/messages', { state: { chatId: res.data.chatId } });
-        toast.success('Opening in-app messages...');
+        toast.success('Message sent! Check the Messages tab to continue the conversation.');
+        setShowContactVendorModal(false);
+        setContactVendorMessage('');
       } else {
-        throw new Error(res.data?.error || 'Failed to start chat');
+        throw new Error(res.data?.error || 'Failed to send message');
       }
     } catch (err) {
-      console.error('Error starting in-app chat:', err);
-      toast.error('Failed to open chat. Please try again.');
+      console.error('Error sending contact message:', err);
+      toast.error(err.response?.data?.error || 'Failed to send message. Please try again.');
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -930,6 +948,68 @@ const PropertyDetail = () => {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Send Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showContactVendorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Message Vendor</h3>
+              <button onClick={() => setShowContactVendorModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Send a message to the vendor about <strong>{property?.title}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
+                <textarea
+                  value={contactVendorMessage}
+                  onChange={(e) => setContactVendorMessage(e.target.value)}
+                  rows={4}
+                  disabled={sendingMessage}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  placeholder="Hi, I'm interested in this property. Could you please provide more information?"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowContactVendorModal(false)}
+                  disabled={sendingMessage}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendContactMessage}
+                  disabled={sendingMessage}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 flex items-center justify-center gap-2"
+                >
+                  {sendingMessage ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    'Send Message'
+                  )}
                 </button>
               </div>
             </div>
