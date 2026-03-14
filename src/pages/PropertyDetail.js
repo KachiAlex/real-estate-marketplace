@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useAuthGuard } from '../hooks/useAuthGuard';
 import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft } from 'react-icons/fa';
 import apiClient from '../services/apiClient';
 import { createInspectionRequest } from '../services/inspectionService';
@@ -15,7 +16,8 @@ const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { properties, loading, error, toggleFavorite, fetchProperties } = useProperty();
-  const { user, setAuthRedirect } = useAuth();
+  const { user } = useAuth();
+  const checkAuthAndRedirect = useAuthGuard();
   const [property, setProperty] = useState(null);
 
   const [activeImage, setActiveImage] = useState(0);
@@ -213,9 +215,7 @@ const PropertyDetail = () => {
   };
 
   const handleToggleFavorite = async () => {
-    if (!user || !user.id) {
-      toast.error('Please login to add favorites');
-      // User can continue viewing the property without being forced to login
+    if (!checkAuthAndRedirect('add favorites')) {
       return;
     }
     
@@ -382,10 +382,7 @@ const PropertyDetail = () => {
   };
 
   const handleContactOwner = async () => {
-    console.log('Contact Owner clicked, property:', property, 'user:', user);
-    
-    if (!user) {
-      toast.error('Please login to contact property vendor');
+    if (!checkAuthAndRedirect('contact the vendor')) {
       return;
     }
 
@@ -434,9 +431,7 @@ const PropertyDetail = () => {
   };
 
   const handleScheduleViewing = () => {
-    if (!user) {
-      toast.error('Please login to schedule a viewing');
-      // User can continue viewing the property without being forced to login
+    if (!checkAuthAndRedirect('schedule a viewing')) {
       return;
     }
     // Open scheduling modal to pick date/time
@@ -495,9 +490,7 @@ const PropertyDetail = () => {
   };
 
   const handleCallVendor = () => {
-    if (!user) {
-      toast.error('Please login to call property vendor');
-      // User can continue viewing the property without being forced to login
+    if (!checkAuthAndRedirect('call the vendor')) {
       return;
     }
 
