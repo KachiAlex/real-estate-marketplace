@@ -66,17 +66,72 @@ const listUsers = async ({
   const orderArr = [[sort, order === 'asc' ? 'ASC' : 'DESC']];
   const offset = (Number(page) - 1) * Number(limit);
 
-  const { rows, count } = await UserModel.findAndCountAll({ where, order: orderArr, offset, limit: Number(limit) });
+  try {
+    const { rows, count } = await UserModel.findAndCountAll({ where, order: orderArr, offset, limit: Number(limit) });
 
-  return {
-    users: rows.map(convertTimestamps),
-    pagination: {
-      currentPage: Number(page),
-      totalPages: Math.ceil(count / Number(limit)) || 1,
-      totalItems: count,
-      itemsPerPage: Number(limit)
+    return {
+      users: rows.map(convertTimestamps),
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(count / Number(limit)) || 1,
+        totalItems: count,
+        itemsPerPage: Number(limit)
+      }
+    };
+  } catch (dbErr) {
+    // Handle missing columns - fallback to raw query
+    console.warn('listUsers: UserModel.findAndCountAll failed, using raw query fallback:', dbErr.message);
+    try {
+      // Build WHERE clause
+      const whereConditions = [];
+      const replacements = {};
+      
+      if (role) {
+        whereConditions.push(`role = :role`);
+        replacements.role = role;
+      }
+      if (isVerified !== undefined) {
+        whereConditions.push(`"isVerified" = :isVerified`);
+        replacements.isVerified = isVerified;
+      }
+      if (search) {
+        whereConditions.push(`("firstName" ILIKE :search OR "lastName" ILIKE :search OR email ILIKE :search)`);
+        replacements.search = `%${search}%`;
+      }
+
+      const whereClause = whereConditions.length ? 'WHERE ' + whereConditions.join(' AND ') : '';
+      
+      // Get count
+      const [[{ count: countResult }]] = await UserModel.sequelize.query(
+        `SELECT COUNT(*) FROM "users" ${whereClause}`,
+        { replacements }
+      );
+      const count = Number(countResult || 0);
+
+      // Get data
+      const [rows] = await UserModel.sequelize.query(
+        `SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive", "provider", "createdAt", "updatedAt"
+         FROM "users" 
+         ${whereClause}
+         ORDER BY "${sort}" ${order === 'asc' ? 'ASC' : 'DESC'}
+         LIMIT :limit OFFSET :offset`,
+        { replacements: { ...replacements, limit: Number(limit), offset } }
+      );
+
+      return {
+        users: rows.map(convertTimestamps),
+        pagination: {
+          currentPage: Number(page),
+          totalPages: Math.ceil(count / Number(limit)) || 1,
+          totalItems: count,
+          itemsPerPage: Number(limit)
+        }
+      };
+    } catch (rawErr) {
+      console.error('listUsers: Raw query fallback also failed:', rawErr.message);
+      throw dbErr;
     }
-  };
+  }
 };
 
 const getUserStats = async () => {
@@ -96,8 +151,30 @@ const deleteUser = async (userId) => {
 const findByEmail = async (email) => {
   try {
     if (!email || typeof email !== 'string') return null;
-    const user = await UserModel.findOne({ where: { email: email.toLowerCase().trim() } });
-    return user ? convertTimestamps(user) : null;
+    
+    try {
+      const user = await UserModel.findOne({ where: { email: email.toLowerCase().trim() } });
+      return user ? convertTimestamps(user) : null;
+    } catch (dbErr) {
+      // Handle missing columns in the database (schema mismatch)
+      // Fallback to a raw query with only columns that exist
+      console.warn('findByEmail: User.findOne failed, attempting raw query fallback:', dbErr.message);
+      try {
+        const [rows] = await UserModel.sequelize.query(
+          `SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive", "provider", "createdAt", "updatedAt"
+           FROM "users" WHERE email = :email LIMIT 1`,
+          { replacements: { email: email.toLowerCase().trim() } }
+        );
+        
+        if (rows && rows[0]) {
+          return convertTimestamps(rows[0]);
+        }
+        return null;
+      } catch (rawErr) {
+        console.error('findByEmail: Raw query fallback also failed:', rawErr.message);
+        throw dbErr; // throw the original error
+      }
+    }
   } catch (error) {
     console.error('Error finding user by email:', error);
     throw error;
@@ -107,9 +184,29 @@ const findByEmail = async (email) => {
 // Find user by ID
 const findById = async (userId) => {
   try {
-    const user = await UserModel.findByPk(userId);
-    if (!user) return null;
-    return convertTimestamps(user);
+    try {
+      const user = await UserModel.findByPk(userId);
+      if (!user) return null;
+      return convertTimestamps(user);
+    } catch (dbErr) {
+      // Handle missing columns in the database (schema mismatch)
+      console.warn('findById: User.findByPk failed, attempting raw query fallback:', dbErr.message);
+      try {
+        const [rows] = await UserModel.sequelize.query(
+          `SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive", "provider", "createdAt", "updatedAt"
+           FROM "users" WHERE id = :userId LIMIT 1`,
+          { replacements: { userId } }
+        );
+        
+        if (rows && rows[0]) {
+          return convertTimestamps(rows[0]);
+        }
+        return null;
+      } catch (rawErr) {
+        console.error('findById: Raw query fallback also failed:', rawErr.message);
+        throw dbErr; // throw the original error
+      }
+    }
   } catch (error) {
     console.error('Error finding user by ID:', error);
     throw error;
@@ -156,16 +253,51 @@ const createUser = async (userData) => {
 // Update user
 const updateUser = async (userId, updates) => {
   try {
-    const user = await UserModel.findByPk(userId);
-    if (!user) return null;
-
     if (updates.password) updates.password = await hashPassword(updates.password);
 
-    await user.update(updates);
-    const updated = await UserModel.findByPk(userId);
-    const result = convertTimestamps(updated);
-    delete result.password;
-    return result;
+    try {
+      const user = await UserModel.findByPk(userId);
+      if (!user) return null;
+      await user.update(updates);
+      const updated = await UserModel.findByPk(userId);
+      const result = convertTimestamps(updated);
+      delete result.password;
+      return result;
+    } catch (dbErr) {
+      // Handle missing columns - use raw query fallback
+      console.warn('updateUser: UserModel.findByPk failed, using raw update:', dbErr.message);
+      
+      // Build safe update fields
+      const safeFields = ['email', 'firstName', 'lastName', 'phone', 'role', 'roles', 'activeRole', 'avatar', 'isVerified', 'isActive', 'provider', 'password', 'lastLogin'];
+      const setClause = [];
+      const replacements = { userId };
+      
+      Object.keys(updates).forEach((key, idx) => {
+        if (safeFields.includes(key)) {
+          const paramName = `val_${idx}`;
+          setClause.push(`"${key}" = :${paramName}`);
+          replacements[paramName] = updates[key];
+        }
+      });
+      
+      if (setClause.length === 0) return null;
+      
+      await UserModel.sequelize.query(
+        `UPDATE "users" SET ${setClause.join(', ')} WHERE id = :userId`,
+        { replacements }
+      );
+      
+      // Fetch updated user
+      const [rows] = await UserModel.sequelize.query(
+        `SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive", "provider", "createdAt", "updatedAt"
+         FROM "users" WHERE id = :userId LIMIT 1`,
+        { replacements: { userId } }
+      );
+      
+      const result = rows && rows[0] ? convertTimestamps(rows[0]) : null;
+      if (result) delete result.password;
+      return result;
+    }
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -175,11 +307,26 @@ const updateUser = async (userId, updates) => {
 // Find user by reset token
 const findByResetToken = async (tokenHash) => {
   try {
-    const user = await UserModel.findOne({ where: { resetPasswordToken: tokenHash } });
-    if (!user) return null;
-    const u = convertTimestamps(user);
-    if (!u.resetPasswordExpires || new Date(u.resetPasswordExpires).getTime() <= Date.now()) return null;
-    return u;
+    try {
+      const user = await UserModel.findOne({ where: { resetPasswordToken: tokenHash } });
+      if (!user) return null;
+      const u = convertTimestamps(user);
+      if (!u.resetPasswordExpires || new Date(u.resetPasswordExpires).getTime() <= Date.now()) return null;
+      return u;
+    } catch (dbErr) {
+      // Fallback to raw query
+      console.warn('findByResetToken: UserModel.findOne failed, using raw query:', dbErr.message);
+      const [rows] = await UserModel.sequelize.query(
+        `SELECT id, email, password, "firstName", "lastName", phone, role, roles, "activeRole", avatar, "isVerified", "isActive", "provider", "resetPasswordToken", "resetPasswordExpires", "createdAt", "updatedAt"
+         FROM "users" WHERE "resetPasswordToken" = :tokenHash LIMIT 1`,
+        { replacements: { tokenHash } }
+      );
+      
+      if (!rows || !rows[0]) return null;
+      const u = convertTimestamps(rows[0]);
+      if (!u.resetPasswordExpires || new Date(u.resetPasswordExpires).getTime() <= Date.now()) return null;
+      return u;
+    }
   } catch (error) {
     console.error('Error finding user by reset token:', error);
     throw error;
