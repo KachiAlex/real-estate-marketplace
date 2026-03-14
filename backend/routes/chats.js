@@ -81,7 +81,7 @@ router.post('/start', authenticateToken, async (req, res) => {
         const [results] = await db.sequelize.query(
           `SELECT id, "propertyId", "participant1Id", "participant2Id", "lastMessageId", "lastMessageAt", "createdAt", "updatedAt"
            FROM conversations
-           WHERE "propertyId" = :propertyId AND "participant1Id" = :participant1Id AND "participant2Id" = :participant2Id
+           WHERE "propertyId"::TEXT = :propertyId AND "participant1Id"::TEXT = :participant1Id AND "participant2Id"::TEXT = :participant2Id
            LIMIT 1`,
           { replacements: { propertyId, participant1Id, participant2Id } }
         );
@@ -197,7 +197,7 @@ router.post('/start', authenticateToken, async (req, res) => {
       } else {
         // Raw update for fallback
         await db.sequelize.query(
-          `UPDATE conversations SET "lastMessageId" = :messageId, "lastMessageAt" = :now WHERE id = :conversationId`,
+          `UPDATE conversations SET "lastMessageId" = :messageId, "lastMessageAt" = :now WHERE id::TEXT = :conversationId`,
           {
             replacements: {
               messageId: message.id,
