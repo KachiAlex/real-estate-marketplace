@@ -426,7 +426,8 @@ class SubscriptionService {
         include: [
           {
             model: User,
-            as: 'vendor'
+            as: 'vendor',
+            attributes: ['id', 'email', 'firstName', 'lastName', 'isActive']
           }
         ]
       });
