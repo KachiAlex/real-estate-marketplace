@@ -529,6 +529,14 @@ const EnhancedFileUpload = ({
               <div key={file.id || index} className="relative group">
                 {renderPreview(file, index)}
                 
+                {/* Local/Temporary Badge */}
+                {file.isLocal && !file.url?.startsWith('http') && (
+                  <div className="absolute top-1 right-1 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <FaExclamationTriangle className="text-xs" />
+                    Temporary
+                  </div>
+                )}
+                
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
@@ -564,6 +572,16 @@ const EnhancedFileUpload = ({
               </div>
             ))}
           </div>
+
+          {/* Warning for temporary files */}
+          {files.some(f => f.isLocal && !f.url?.startsWith('http')) && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-2">
+              <FaExclamationTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-yellow-800">
+                Some images are temporarily stored locally and may not persist after page reload. Make sure to have a stable connection to allow automatic upload to complete.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

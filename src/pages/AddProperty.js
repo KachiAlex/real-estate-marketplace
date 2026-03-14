@@ -474,6 +474,27 @@ const AddProperty = () => {
       return;
     }
 
+    // CRITICAL: Filter out blob URLs - they won't persist after page reload
+    const persistentImages = (formData.images || []).filter(img => {
+      // Keep only images with HTTP/HTTPS URLs or uploaded images
+      if (!img.url) return false;
+      const isHttpUrl = img.url.startsWith('http://') || img.url.startsWith('https://');
+      if (!isHttpUrl) {
+        console.warn('Filtering out non-persistent image URL:', img.url);
+        return false;
+      }
+      return true;
+    });
+
+    // If we're filtering out images, warn the user
+    if (persistentImages.length < (formData.images || []).length) {
+      toast.error(
+        `${(formData.images || []).length - persistentImages.length} image(s) were not uploaded properly and will not be saved. Please re-upload images.`,
+        { duration: 4000 }
+      );
+      return;
+    }
+
     // If it's an investment listing, open modal first to capture details
     if (formData.status === 'for-investment' && !investmentPayload) {
       setShowInvestmentModal(true);
@@ -486,6 +507,7 @@ const AddProperty = () => {
     try {
       const propertyData = {
         ...formData,
+        images: persistentImages, // Use filtered persistent images
         price: parseFloat(formData.price),
         vendorId: user?.id || user?.uid,
         vendorName: user?.displayName || user?.firstName + ' ' + user?.lastName || user?.email,
@@ -501,7 +523,6 @@ const AddProperty = () => {
           sqft: parseInt(formData.details.sqft),
           yearBuilt: formData.details.yearBuilt ? parseInt(formData.details.yearBuilt) : null
         },
-        images: (formData.images && formData.images.length > 0) ? formData.images : [],
         videos: [],
         documentation: [],
         // attach investment details if provided
