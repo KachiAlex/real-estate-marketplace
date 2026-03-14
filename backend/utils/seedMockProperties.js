@@ -69,8 +69,7 @@ async function seedMockProperties(db) {
 
     // Bulk create mock properties
     await db.Property.bulkCreate(mockProperties, { 
-      ignoreDuplicates: true,
-      updateOnDuplicate: ['title', 'description', 'details', 'price'] // Update if ID exists but data differs
+      ignoreDuplicates: true
     });
 
     logger.info(`✓ Successfully seeded ${mockProperties.length} mock properties`);
