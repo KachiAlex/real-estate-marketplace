@@ -16,6 +16,19 @@ const logger = createLogger('ChatsRoutes');
  */
 router.post('/start', authenticateToken, async (req, res) => {
   try {
+    // Verify models are available
+    if (!db || !db.Conversation || !db.Message) {
+      logger.error('Database models not initialized', { 
+        hasDb: !!db, 
+        hasConversation: !!db?.Conversation, 
+        hasMessage: !!db?.Message 
+      });
+      return res.status(500).json({
+        success: false,
+        error: 'Database models not available. Please try again.'
+      });
+    }
+
     const { buyerId, vendorId, propertyId, starterId, initialMessage } = req.body;
 
     // Validate required fields
@@ -52,7 +65,20 @@ router.post('/start', authenticateToken, async (req, res) => {
     } catch (convErr) {
       logger.warn('Conversation.findOne failed, attempting raw query:', convErr.message);
       try {
-        const [results] = await db.Conversation.sequelize.query(
+        // Check if table exists first
+        const [tableExists] = await db.sequelize.query(
+          `SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'conversations')`
+        );
+        
+        if (!tableExists || !tableExists[0] || !tableExists[0].exists) {
+          logger.error('Conversations table does not exist');
+          return res.status(500).json({
+            success: false,
+            error: 'Conversations table not found in database'
+          });
+        }
+
+        const [results] = await db.sequelize.query(
           `SELECT id, "propertyId", "participant1Id", "participant2Id", "lastMessageId", "lastMessageAt", "createdAt", "updatedAt"
            FROM conversations
            WHERE "propertyId" = :propertyId AND "participant1Id" = :participant1Id AND "participant2Id" = :participant2Id
@@ -62,7 +88,10 @@ router.post('/start', authenticateToken, async (req, res) => {
         conversation = results && results[0] ? results[0] : null;
       } catch (rawErr) {
         logger.error('Conversation raw query failed:', rawErr.message);
-        throw convErr;
+        return res.status(500).json({
+          success: false,
+          error: `Cannot access conversations: ${rawErr.message}`
+        });
       }
     }
 
@@ -78,10 +107,33 @@ router.post('/start', authenticateToken, async (req, res) => {
         logger.info('Created new conversation', { conversationId: conversation.id });
       } catch (createErr) {
         logger.error('Failed to create conversation:', createErr.message);
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to create conversation'
-        });
+        try {
+          const msgId = uuidv4();
+          const convId = uuidv4();
+          await db.sequelize.query(
+            `INSERT INTO conversations (id, "propertyId", "participant1Id", "participant2Id", "lastMessageAt", "createdAt", "updatedAt")
+             VALUES (:id, :propertyId, :participant1Id, :participant2Id, :lastMessageAt, :createdAt, :updatedAt)`,
+            {
+              replacements: {
+                id: convId,
+                propertyId,
+                participant1Id,
+                participant2Id,
+                lastMessageAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }
+            }
+          );
+          conversation = { id: convId };
+          logger.info('Created conversation via raw insert', { conversationId: convId });
+        } catch (rawCreateErr) {
+          logger.error('Failed to create conversation via raw insert:', rawCreateErr.message);
+          return res.status(500).json({
+            success: false,
+            error: `Cannot create conversation: ${rawCreateErr.message}`
+          });
+        }
       }
     }
 
@@ -101,7 +153,7 @@ router.post('/start', authenticateToken, async (req, res) => {
       logger.warn('Message.create failed, attempting raw insert:', msgErr.message);
       try {
         const msgId = uuidv4();
-        await db.Message.sequelize.query(
+        await db.sequelize.query(
           `INSERT INTO messages (id, "senderId", "recipientId", "propertyId", subject, content, "isRead", "createdAt", "updatedAt")
            VALUES (:id, :senderId, :recipientId, :propertyId, :subject, :content, :isRead, :createdAt, :updatedAt)`,
           {
@@ -121,7 +173,10 @@ router.post('/start', authenticateToken, async (req, res) => {
         message = { id: msgId };
       } catch (rawErr) {
         logger.error('Message raw insert failed:', rawErr.message);
-        throw msgErr;
+        return res.status(500).json({
+          success: false,
+          error: `Cannot create message: ${rawErr.message}`
+        });
       }
     }
 
@@ -141,7 +196,7 @@ router.post('/start', authenticateToken, async (req, res) => {
         });
       } else {
         // Raw update for fallback
-        await db.Conversation.sequelize.query(
+        await db.sequelize.query(
           `UPDATE conversations SET "lastMessageId" = :messageId, "lastMessageAt" = :now WHERE id = :conversationId`,
           {
             replacements: {
@@ -170,6 +225,7 @@ router.post('/start', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error starting chat', { error: error.message, stack: error.stack });
+    console.error('Chat error details:', error);
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to start chat'
