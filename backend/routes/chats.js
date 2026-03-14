@@ -34,15 +34,13 @@ async function relaxForeignKeyConstraint() {
  */
 router.post('/start', authenticateToken, async (req, res) => {
   try {
-    // Initialize: relax FK constraint on first use
-    await relaxForeignKeyConstraint();
-    
     // Verify models are available
-    if (!db || !db.Conversation || !db.Message) {
+    if (!db || !db.Conversation || !db.Message || !db.User) {
       logger.error('Database models not initialized', { 
         hasDb: !!db, 
         hasConversation: !!db?.Conversation, 
-        hasMessage: !!db?.Message 
+        hasMessage: !!db?.Message,
+        hasUser: !!db?.User
       });
       return res.status(500).json({
         success: false,
@@ -70,6 +68,63 @@ router.post('/start', authenticateToken, async (req, res) => {
 
     logger.info('Starting chat', { buyerId, vendorId, propertyId, starterId });
 
+    // Ensure both participants exist in the database (create if missing)
+    const MOCK_VENDOR_ID = '550e8400-e29b-41d4-a716-446655440001';
+    
+    // Check if vendor exists, create if it's the mock vendor ID
+    if (vendorId === MOCK_VENDOR_ID) {
+      const vendorExists = await db.User.findByPk(vendorId);
+      if (!vendorExists) {
+        logger.info('Creating mock vendor user on-demand...');
+        try {
+          await db.User.create({
+            id: vendorId,
+            firstName: 'Mock',
+            lastName: 'Vendor',
+            email: 'mock.vendor@propertyark.com',
+            password: '$2a$10$abcdefghijklmnopqrstuvwxyz',
+            role: 'vendor',
+            roles: ['vendor'],
+            isVerified: true,
+            isActive: true,
+            status: 'active'
+          });
+          logger.info('✓ Mock vendor created on-demand');
+        } catch (userErr) {
+          if (!userErr.message.includes('unique')) {
+            logger.warn('Could not create mock vendor:', userErr.message);
+          }
+        }
+      }
+    }
+
+    // Verify buyer exists
+    const buyerExists = await db.User.findByPk(buyerId);
+    if (!buyerExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Buyer user not found'
+      });
+    }
+
+    // Verify vendor exists
+    const vendorExists = await db.User.findByPk(vendorId);
+    if (!vendorExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Vendor user not found'
+      });
+    }
+
+    // Verify property exists
+    const propertyExists = await db.Property.findByPk(propertyId);
+    if (!propertyExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Property not found'
+      });
+    }
+
     // Ensure participant IDs are sorted for consistent conversation lookup
     const [participant1Id, participant2Id] = [buyerId, vendorId].sort();
 
@@ -83,109 +138,22 @@ router.post('/start', authenticateToken, async (req, res) => {
           participant2Id: participant2Id
         }
       });
-    } catch (convErr) {
-      logger.warn('Conversation.findOne failed, attempting raw query:', convErr.message);
-      try {
-        // Check if table exists first
-        const [tableExists] = await db.sequelize.query(
-          `SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'conversations')`
-        );
-        
-        if (!tableExists || !tableExists[0] || !tableExists[0].exists) {
-          logger.error('Conversations table does not exist');
-          return res.status(500).json({
-            success: false,
-            error: 'Conversations table not found in database'
-          });
-        }
 
-        const [results] = await db.sequelize.query(
-          `SELECT id, "propertyId", "participant1Id", "participant2Id", "lastMessageId", "lastMessageAt", "createdAt", "updatedAt"
-           FROM conversations
-           WHERE "propertyId" = :propertyId AND "participant1Id" = :participant1Id AND "participant2Id" = :participant2Id
-           LIMIT 1`,
-          { replacements: { propertyId, participant1Id, participant2Id } }
-        );
-        conversation = results && results[0] ? results[0] : null;
-      } catch (rawErr) {
-        logger.error('Conversation raw query failed:', rawErr.message);
-        return res.status(500).json({
-          success: false,
-          error: `Cannot access conversations: ${rawErr.message}`
-        });
-      }
-    }
-
-    if (!conversation) {
-      try {
-        const convData = {
+      if (!conversation) {
+        conversation = await db.Conversation.create({
           propertyId: propertyId,
           participant1Id,
           participant2Id,
           lastMessageAt: new Date()
-        };
-        conversation = await db.Conversation.create(convData);
+        });
         logger.info('Created new conversation', { conversationId: conversation.id });
-      } catch (createErr) {
-        logger.error('Failed to create conversation:', createErr.message);
-        try {
-          const convId = uuidv4();
-          // Try raw insert with FK constraint temporarily disabled for mock data compatibility
-          await db.sequelize.query('SET CONSTRAINTS ALL DEFERRED');
-          await db.sequelize.query(
-            `INSERT INTO conversations (id, "propertyId", "participant1Id", "participant2Id", "lastMessageAt", "createdAt", "updatedAt")
-             VALUES (:id, :propertyId, :participant1Id, :participant2Id, :lastMessageAt, :createdAt, :updatedAt)`,
-            {
-              replacements: {
-                id: convId,
-                propertyId: propertyId,
-                participant1Id,
-                participant2Id,
-                lastMessageAt: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date()
-              }
-            }
-          );
-          conversation = { id: convId };
-          logger.info('Created conversation via raw insert', { conversationId: convId });
-        } catch (rawCreateErr) {
-          logger.error('Failed to create conversation via raw insert (FK constraint issue):', rawCreateErr.message);
-          try {
-            // Last resort: disable the constraint, insert, and re-enable it
-            const convId = uuidv4();
-            await db.sequelize.query(
-              `ALTER TABLE conversations DISABLE TRIGGER ALL`
-            );
-            await db.sequelize.query(
-              `INSERT INTO conversations (id, "propertyId", "participant1Id", "participant2Id", "lastMessageAt", "createdAt", "updatedAt")
-               VALUES (:id, :propertyId, :participant1Id, :participant2Id, :lastMessageAt, :createdAt, :updatedAt)`,
-              {
-                replacements: {
-                  id: convId,
-                  propertyId: propertyId,
-                  participant1Id,
-                  participant2Id,
-                  lastMessageAt: new Date(),
-                  createdAt: new Date(),
-                  updatedAt: new Date()
-                }
-              }
-            );
-            await db.sequelize.query(
-              `ALTER TABLE conversations ENABLE TRIGGER ALL`
-            );
-            conversation = { id: convId };
-            logger.info('Created conversation via raw insert with triggers disabled', { conversationId: convId });
-          } catch (triggerErr) {
-            logger.error('Failed to create conversation even with triggers disabled:', triggerErr.message);
-            return res.status(500).json({
-              success: false,
-              error: `Cannot create conversation: ${triggerErr.message}`
-            });
-          }
-        }
       }
+    } catch (convErr) {
+      logger.error('Failed to create conversation:', convErr.message);
+      return res.status(500).json({
+        success: false,
+        error: `Cannot create conversation: ${convErr.message}`
+      });
     }
 
     // Create the initial message
