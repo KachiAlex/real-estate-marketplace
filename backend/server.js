@@ -59,14 +59,32 @@ console.log('🚀 Starting server...');
 console.log(`📌 Port: ${PORT}`);
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
+// Database readiness tracking
+let dbReady = false;
+let dbReadyPromises = []; // Track pending requests waiting for DB
+
+const setDbReady = () => {
+  dbReady = true;
+  dbReadyPromises.forEach(resolve => resolve());
+  dbReadyPromises = [];
+};
+
+const waitForDb = () => {
+  if (dbReady) return Promise.resolve();
+  return new Promise(resolve => dbReadyPromises.push(resolve));
+};
+
 // Initialize PostgreSQL (if available)
 setImmediate(async () => {
   const dbInit = await initializeDatabase();
   if (dbInit.isConnected) {
     console.log('✅ PostgreSQL initialized and connected');
+    setDbReady();
   } else {
     console.log('ℹ️ PostgreSQL not available:', dbInit.error);
     console.log('💡 To enable PostgreSQL, install: npm install sequelize pg pg-hstore');
+    // Still mark as ready to avoid blocking requests forever
+    setImmediate(() => setDbReady());
   }
 });
 
@@ -268,6 +286,21 @@ app.use((req, res, next) => {
     console.log('🔵 [PRE-ROUTE] Path:', req.path);
     console.log('🔵 [PRE-ROUTE] Original URL:', req.originalUrl);
     console.log('🔵 [PRE-ROUTE] URL:', req.url);
+  }
+  next();
+});
+
+// Database readiness middleware for sensitive routes (auth, protected endpoints)
+app.use(/^\/api\/(auth|users|properties|admin|escrow|payments)/, async (req, res, next) => {
+  if (!dbReady) {
+    console.warn(`⏳ [DB-WAIT] Waiting for database readiness on ${req.method} ${req.path}`);
+    try {
+      await waitForDb();
+      console.log(`✅ [DB-READY] Database ready, proceeding with ${req.method} ${req.path}`);
+    } catch (error) {
+      console.error(`❌ [DB-ERROR] Error waiting for database:`, error.message);
+      return res.status(503).json({ success: false, message: 'Database initialization in progress, please try again' });
+    }
   }
   next();
 });
