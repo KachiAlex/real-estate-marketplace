@@ -113,7 +113,7 @@ class SubscriptionScheduler {
           autoRenew: true
         },
         include: [
-          { model: User, as: 'vendor' },
+          { model: User, as: 'vendor', attributes: ['id', 'email', 'firstName', 'lastName', 'isActive'] },
           { model: SubscriptionPlan, as: 'planDetails' }
         ]
       });
@@ -141,7 +141,11 @@ class SubscriptionScheduler {
           }
         },
         include: [
-          { model: User, as: 'vendor' },
+          { 
+            model: User, 
+            as: 'vendor',
+            attributes: ['id', 'email', 'firstName', 'lastName', 'isActive']
+          },
           { model: SubscriptionPlan, as: 'planDetails' }
         ]
       });
@@ -152,7 +156,8 @@ class SubscriptionScheduler {
       
       console.log(`Processed ${activeSubscriptions.length} auto-renewals`);
     } catch (error) {
-      console.error('Error processing auto-renewals:', error);
+      console.error('Error processing auto-renewals:', error.message || error);
+      // Non-fatal error - log and continue
     }
   }
 
@@ -214,7 +219,11 @@ class SubscriptionScheduler {
           }
         },
         include: [
-          { model: User, as: 'vendor' }
+          { 
+            model: User, 
+            as: 'vendor',
+            attributes: ['id', 'email', 'firstName', 'lastName', 'isActive']
+          }
         ]
       });
 
@@ -224,7 +233,8 @@ class SubscriptionScheduler {
       
       console.log(`Suspended ${overdueSubscriptions.length} overdue accounts`);
     } catch (error) {
-      console.error('Error suspending overdue accounts:', error);
+      console.error('Error suspending overdue accounts:', error.message || error);
+      // Non-fatal error - log and continue
     }
   }
 
