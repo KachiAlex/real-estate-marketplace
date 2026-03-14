@@ -26,6 +26,16 @@ export default function DashboardSwitch() {
   const availableDashboards = getAvailableDashboards(user);
   const currentPath = location.pathname;
 
+  console.log('🔍 DEBUG DashboardSwitch:', {
+    hasUser: !!user,
+    userEmail: user?.email,
+    userRoles: user?.roles,
+    userRole: user?.role,
+    primaryRole,
+    availableDashboards: availableDashboards.length,
+    shouldRender: availableDashboards && availableDashboards.length > 1
+  });
+
   useEffect(() => {
     if (!user || !switchRole) return;
     const preferredRole = getRoutePreferredRole(currentPath);

@@ -101,7 +101,19 @@ export const canSwitchToRole = (user, targetRole) => {
  */
 export const getAvailableDashboards = (user) => {
   const roles = getCanonicalRoles(user);
-  if (!roles.length) return [];
+  console.log('🔍 DEBUG getAvailableDashboards:', {
+    hasUser: !!user,
+    userEmail: user?.email,
+    userRoles: user?.roles,
+    userRole: user?.role,
+    canonicalRoles: roles,
+    rolesLength: roles.length
+  });
+  
+  if (!roles.length) {
+    console.warn('⚠️ getAvailableDashboards: No roles available');
+    return [];
+  }
 
   const dashboards = [];
 
