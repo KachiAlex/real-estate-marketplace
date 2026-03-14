@@ -325,12 +325,6 @@ const persistAuthResult = useCallback((data) => {
     try {
       const resp = await tryFetchAuth('/auth/jwt/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
-      console.log('LOGIN RESPONSE', data); // DEBUG LOG
-      try { console.log('storage before set:', {
-        accessToken: storage.get('accessToken'),
-        refreshToken: storage.get('refreshToken'),
-        currentUser: storage.get('currentUser')
-      }); } catch (e) { /* ignore */ }
       if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
       const u = normalizeUser(data.user);
       const tokenVal = data.accessToken || data.token || null;

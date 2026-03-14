@@ -115,7 +115,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
   };
 
   const handlePaymentSuccess = async (paymentData) => {
-    console.log('PropertyVerification: Payment successful', paymentData);
+
     setPaymentComplete(true);
     setSuccessMessage('✅ Payment completed successfully! Please review your details and submit the verification request.');
     setPaymentData(paymentData); // Store payment data for submission
@@ -137,15 +137,8 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
     
 
     try {
-      // DEBUG: Check token before sending
       const token = await getAuthToken();
-      console.log('DEBUG: Verification submission', {
-        hasToken: !!token,
-        tokenLength: token?.length,
-        userEmail: user?.email,
-        userId: user?.uid
-      });
-
+      
       // Backend expects verificationPaymentId, not paymentReference
       const applicationData = {
         propertyId: property?.id,
@@ -169,7 +162,6 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('PropertyVerification: Application submitted successfully', result);
         
         // Update property status in local state to reflect verification requested
         if (property?.id) {
