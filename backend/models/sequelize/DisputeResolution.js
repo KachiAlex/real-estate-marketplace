@@ -23,11 +23,8 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT
     },
     status: {
-      type: DataTypes.ENUM('open', 'in-progress', 'resolved', 'closed'),
+      type: DataTypes.ENUM('open', 'in_review', 'resolved', 'escalated', 'closed'),
       defaultValue: 'open'
-    },
-    resolution: {
-      type: DataTypes.TEXT
     },
     documents: {
       type: DataTypes.JSON,
