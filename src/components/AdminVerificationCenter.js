@@ -329,61 +329,9 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     </div>
   );
 };
+};
 
-export default AdminVerificationCenter;  useEffect(() => {
-    // Only fetch when we have admin access and haven't fetched yet
-    if (hasAdminAccess !== null && hasAdminAccess && !hasFetchedRef.current) {
-      hasFetchedRef.current = true;
-      fetchApplications();
-    } else if (hasAdminAccess === false) {
-      // Set mock data immediately if no admin access
-      setApplications(MOCK_APPLICATIONS);
-      setApplicationsError('Admin authentication required. Showing mock applications.');
-      setLoadingApplications(false);
-    }
-  }, [hasAdminAccess]);
-
-  const stats = useMemo(() => {
-    const pending = applications.filter((app) => app.status === 'pending').length;
-    const approved = applications.filter((app) => app.status === 'approved').length;
-    const rejected = applications.filter((app) => app.status === 'rejected').length;
-    const revenue = applications
-      .filter((app) => app.status === 'approved')
-      .reduce((sum, app) => sum + (app.verificationFee || verificationFee), 0);
-    return {
-      total: applications.length,
-      pending,
-      approved,
-      rejected,
-      revenue
-    };
-  }, [applications, verificationFee]);
-
-  const handleSaveSettings = async () => {
-    try {
-      setSavingSettings(true);
-      const response = await requestWithAdminAuth('/admin/settings', {
-        method: 'PUT',
-        body: JSON.stringify({
-          verificationFee: parseInt(verificationFee, 10) || 0,
-          verificationBadgeColor: badgeColor
-        })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to save settings');
-      }
-      toast.success('Verification settings updated');
-      onConfigChange?.({
-        verificationFee: parseInt(verificationFee, 10) || 0,
-        verificationBadgeColor: badgeColor
-      });
-    } catch (error) {
-      toast.error(error?.message || 'Unable to save settings');
-    } finally {
-      setSavingSettings(false);
-    }
-  };
+export default AdminVerificationCenter;
 
   const handleDecision = async (application, status) => {
     try {
