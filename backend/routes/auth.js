@@ -4,9 +4,26 @@ const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const userService = require('../services/userService');
 const { protect } = require('../middleware/auth');
+const { verifyToken } = require('../middleware/authJwt');
 const emailService = require('../services/emailService');
+const { User } = require('../config/sequelizeDb');
+const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
 
 const router = express.Router();
+
+// Generate JWT Token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key-change-in-production', {
+    expiresIn: '30d'
+  });
+};
+
+// Generate Refresh Token
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production', {
+    expiresIn: '90d'
+  });
+};
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -673,6 +690,89 @@ router.post('/sync-password', [
       success: false,
       message: 'Server error during password sync'
     });
+  }
+});
+
+// Helper function to build user response
+const buildUserResponse = (user) => {
+  const roles = normalizeRoles(user.roles || user.role || []);
+  const activeRole = user.activeRole || (roles.length ? roles[0] : 'user');
+  
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    role: user.role,
+    roles,
+    activeRole,
+    avatar: user.avatar,
+    isVerified: user.isVerified,
+    isActive: user.isActive
+  };
+};
+
+// @desc    Logout (client-side: delete tokens from localStorage)
+// @route   POST /api/auth/logout
+// @access  Private
+router.post('/logout', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
+
+// @desc    Switch user role
+// @route   POST /api/auth/switch-role
+// @access  Private (requires valid JWT)
+router.post('/switch-role', verifyToken, async (req, res) => {
+  try {
+    let { role } = req.body;
+    if (typeof role === 'string') {
+      role = role.trim().toLowerCase();
+    }
+    
+    const allowed = ['user', 'buyer', 'vendor', 'admin', 'mortgage_bank', 'investor', 'agent'];
+    if (!role || !allowed.includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+
+    // Get user from database
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Ensure roles is an array and normalized
+    const existingRoles = normalizeRoles(user.roles || user.role || []);
+    const mergedRoles = normalizeRoles([...existingRoles, role]);
+    const nextActiveRole = chooseActiveRole(user.activeRole, role, mergedRoles);
+
+    // Update user role, roles and persist activeRole
+    await user.update({ 
+      role: nextActiveRole, 
+      roles: mergedRoles, 
+      activeRole: nextActiveRole 
+    });
+
+    // Reload user to reflect DB changes
+    const updated = await User.findByPk(req.userId);
+
+    // Generate new tokens
+    const accessToken = generateToken(updated.id);
+    const refreshToken = generateRefreshToken(updated.id);
+
+    res.json({
+      success: true,
+      message: 'Role switched successfully',
+      accessToken,
+      refreshToken,
+      user: buildUserResponse(updated)
+    });
+  } catch (error) {
+    console.error('Switch role error:', error);
+    res.status(500).json({ success: false, message: 'Role switch failed', error: error.message });
   }
 });
 

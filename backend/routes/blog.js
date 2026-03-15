@@ -434,6 +434,12 @@ router.post('/:slug/comments', [
 // @access  Public
 router.get('/categories', async (req, res) => {
   try {
+    if (!blogService || !blogService.getCategories) {
+      return res.status(500).json({
+        success: false,
+        message: 'Blog service not properly initialized'
+      });
+    }
     const categories = await blogService.getCategories();
 
     const categoryNames = {

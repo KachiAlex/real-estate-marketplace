@@ -447,6 +447,7 @@ try {
 try {
   const chatsRouter = require('./routes/chats');
   app.use('/api/chats', chatsRouter);
+  app.use('/api/chat', chatsRouter);  // Alias for frontend compatibility
   infoLogger('Chats routes loaded successfully');
 } catch (error) {
   errorLogger('Failed to load chats routes:', error);

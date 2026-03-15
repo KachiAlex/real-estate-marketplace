@@ -30,7 +30,7 @@ router.get('/',
   sanitizeInput,
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
+    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
     query('status').optional().isIn(['initiated', 'pending', 'active', 'completed', 'cancelled', 'disputed', 'refunded']).withMessage('Invalid status'),
     query('type').optional().isIn(['buyer', 'seller', 'admin']).withMessage('Invalid type')
   ]),

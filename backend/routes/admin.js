@@ -174,32 +174,8 @@ router.put('/profile', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-// @desc    Get all disputes for admin
-// @route   GET /api/admin/disputes
-// @access  Private (Admin only)
-router.get('/disputes', async (req, res) => {
-  try {
-    const disputes = await require('../services/disputeService').getAllDisputes();
-    res.json({ success: true, data: disputes });
-  } catch (error) {
-    console.error('Admin get disputes error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// @desc    Update dispute status/resolution
-// @route   PATCH /api/admin/disputes/:id
-// @access  Private (Admin only)
-router.patch('/disputes/:id', async (req, res) => {
-  try {
-    const { status, resolutionNotes } = req.body;
-    const updated = await require('../services/disputeService').updateDisputeStatus(req.params.id, status, resolutionNotes, req.user?.id);
-    res.json({ success: true, data: updated });
-  } catch (error) {
-    console.error('Admin update dispute error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+// DUPLICATE ROUTES REMOVED - See protected routes below with proper auth middleware
+// The unprotected endpoints were causing conflicts with the protected versions
 // @desc    Get escrow transaction volumes grouped by date
 // @route   GET /api/admin/escrow/volumes
 // @access  Private (Admin only)
