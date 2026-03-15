@@ -1593,8 +1593,8 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-4">
+            <div className="grid gap-6">
+              <div className="space-y-4">
                 {filteredBlogPosts.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-gray-500">
                     No blog posts match the selected filters.
@@ -1672,71 +1672,6 @@ const AdminDashboard = () => {
                     ))}
                   </>
                 )}
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Create Post</h3>
-                  <p className="text-sm text-gray-500 mt-1">Draft a quick update and publish later.</p>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={draftPost.title}
-                      onChange={(e) => handleDraftChange('title', e.target.value)}
-                      placeholder="Post title"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <input
-                      type="text"
-                      value={draftPost.category}
-                      onChange={(e) => handleDraftChange('category', e.target.value)}
-                      placeholder="e.g. Market Trends"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select
-                      value={draftPost.status}
-                      onChange={(e) => handleDraftChange('status', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                      <option value="scheduled">Scheduled</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                    <textarea
-                      rows={5}
-                      value={draftPost.content}
-                      onChange={(e) => handleDraftChange('content', e.target.value)}
-                      placeholder="Share insights, data, or announcements..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleCreateBlogPost}
-                      className="flex-1 px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue/90"
-                    >
-                      Save Draft
-                    </button>
-                    <button
-                      onClick={resetDraftPost}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -2816,6 +2751,98 @@ const AdminDashboard = () => {
                   {escrowActionLoading ? 'Processing...' : 'Confirm Action'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Blog Editor Modal */}
+      {isBlogModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {editingBlogId ? 'Edit Post' : 'Compose New Post'}
+              </h2>
+              <button
+                onClick={closeBlogModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <input
+                  type="text"
+                  value={blogEditor.title}
+                  onChange={(e) => handleBlogEditorChange('title', e.target.value)}
+                  placeholder="Post title"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select
+                  value={blogEditor.category}
+                  onChange={(e) => handleBlogEditorChange('category', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                >
+                  <option value="Market Trends">Market Trends</option>
+                  <option value="Investment Tips">Investment Tips</option>
+                  <option value="Company News">Company News</option>
+                  <option value="Guide">Guide</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={blogEditor.status}
+                  onChange={(e) => handleBlogEditorChange('status', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="scheduled">Scheduled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Excerpt</label>
+                <textarea
+                  rows={2}
+                  value={blogEditor.excerpt}
+                  onChange={(e) => handleBlogEditorChange('excerpt', e.target.value)}
+                  placeholder="Brief summary of the post"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                <textarea
+                  rows={6}
+                  value={blogEditor.content}
+                  onChange={(e) => handleBlogEditorChange('content', e.target.value)}
+                  placeholder="Share insights, data, or announcements..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+              </div>
+            </div>
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={closeBlogModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBlogSubmit}
+                disabled={blogSaving}
+                className="px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {blogSaving ? 'Saving...' : 'Save Post'}
+              </button>
             </div>
           </div>
         </div>
