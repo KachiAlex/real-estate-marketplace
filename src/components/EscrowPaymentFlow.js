@@ -332,14 +332,17 @@ const EscrowPaymentFlow = ({
 
   // Socket.IO Integration for Real-Time Payment & Escrow Updates
   useEffect(() => {
-    if (!user?.accessToken) {
+    // Try multiple token sources for robustness
+    const token = user?.accessToken || user?.token || (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null);
+    
+    if (!token) {
       console.log('[Socket] No auth token available, skipping Socket.IO connection');
       return;
     }
 
-    console.log('[Socket] Connecting to Socket.IO with user:', user.id);
+    console.log('[Socket] Connecting to Socket.IO with user:', user?.id);
     try {
-      connectSocket(user.accessToken);
+      connectSocket(token);
     } catch (error) {
       console.warn('[Socket] Failed to connect:', error);
     }

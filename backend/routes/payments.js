@@ -95,15 +95,31 @@ router.post('/initialize',
   protect,
   sanitizeInput,
   validate([
-    body('amount').isNumeric().isFloat({ min: 100 }).withMessage('Amount must be at least â‚¦100'),
+    body('amount')
+      .custom((value) => {
+        const num = parseFloat(value);
+        if (isNaN(num) || num <= 0) {
+          throw new Error('Amount must be a valid positive number');
+        }
+        // Allow both kobo (100+) and naira amounts (100+)
+        if (num < 100) {
+          throw new Error('Amount must be at least 100');
+        }
+        return true;
+      }),
     body('paymentMethod').isIn(['flutterwave', 'paystack', 'stripe', 'bank_transfer']).withMessage('Invalid payment method'),
     body('paymentType')
       .isIn(['property_purchase', 'investment', 'escrow', 'subscription', 'commission', 'vendor_listing', 'property_verification'])
       .withMessage('Invalid payment type'),
-    body('relatedEntity.type')
-      .isIn(['property', 'investment', 'escrow', 'subscription', 'verification'])
-      .withMessage('Invalid related entity type'),
-    body('relatedEntity.id').notEmpty().withMessage('Related entity ID is required'),
+    body('relatedEntity').custom((value) => {
+      if (!value || typeof value !== 'object') {
+        throw new Error('Related entity is required');
+      }
+      if (!value.type || !value.id) {
+        throw new Error('Related entity must have type and id');
+      }
+      return true;
+    }),
     body('description').trim().isLength({ min: 5, max: 500 }).withMessage('Description must be between 5 and 500 characters'),
     body('currency').optional().isIn(['NGN', 'USD', 'EUR', 'GBP']).withMessage('Invalid currency')
   ]),
@@ -142,29 +158,6 @@ router.post('/initialize',
       }
 
       const totalFees = platformFee + processingFee;
-
-      // Generate unique references
-      const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-      const reference = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-
-      const paymentData = {
-        userId: req.user._id,
-        transactionId,
-        reference,
-        amount,
-        currency,
-        paymentMethod,
-        paymentProvider: paymentMethod,
-        paymentType,
-        relatedEntity,
-        description,
-        fees: {
-          platformFee,
-          processingFee,
-          totalFees
-        },
-        status: 'pending'
-      };
 
       try {
         const result = await paymentService.initializePayment({
