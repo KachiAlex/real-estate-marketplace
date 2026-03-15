@@ -216,29 +216,6 @@ const MyInquiries = () => {
 
 export default MyInquiries;
 
-  // Log component mount
-  useEffect(() => {
-    console.log('🔥 MyInquiries component MOUNTED');
-    return () => console.log('🔥 MyInquiries component UNMOUNTED');
-  }, []);
-
-  const handlePurchaseProperty = (property) => {
-    if (!user) {
-      toast.error('Please login to purchase properties');
-      navigate('/');
-      return;
-    }
-    
-    // Navigate to escrow process for purchase
-    navigate(`/escrow/create?propertyId=${property.id}&type=purchase`);
-    toast.success('Redirecting to secure purchase process...');
-  };
-
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [viewingMessage, setViewingMessage] = useState('');
 
   const handleScheduleViewing = (property) => {
     if (!user) {
