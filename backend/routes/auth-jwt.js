@@ -696,8 +696,15 @@ router.post('/login', [
         const usersPath = path.resolve(__dirname, '..', 'data', 'local_users.json');
         if (fs.existsSync(usersPath)) {
           const list = JSON.parse(fs.readFileSync(usersPath, 'utf8') || '[]');
-          const found = list.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());\n          if (found) {
-            // Ensure roles is an array for local users too\n            if (typeof found.roles === 'string') {\n              try { found.roles = JSON.parse(found.roles); } catch (e) { found.roles = [found.role || 'user']; }\n            } else if (!Array.isArray(found.roles)) {\n              found.roles = [found.role || 'user'];\n            }\n            user = found;
+          const found = list.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
+          if (found) {
+            // Ensure roles is an array for local users too
+            if (typeof found.roles === 'string') {
+              try { found.roles = JSON.parse(found.roles); } catch (e) { found.roles = [found.role || 'user']; }
+            } else if (!Array.isArray(found.roles)) {
+              found.roles = [found.role || 'user'];
+            }
+            user = found;
           }
         }
       } catch (localErr) {
