@@ -1347,81 +1347,52 @@ const AdminDashboard = () => {
         {activeTab === 'properties' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">Property Statistics</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 aspect-square flex flex-col justify-center items-center">
+              <div className="flex flex-col items-center text-center">
+                <div className="p-3 rounded-full bg-blue-100 text-blue-600 mb-3">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Properties</p>
-                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.total}</p>
-                </div>
+                <p className="text-sm font-medium text-gray-600">Total Properties</p>
+                <p className="text-3xl font-semibold text-gray-900 mt-2">{propertyAnalytics.total}</p>
               </div>
             </div>
 
-            {/* Vendor Subscription Fee Card */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6 flex flex-col justify-between">
-              <div className="flex items-center mb-2">
-                <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 10c-4.41 0-8-1.79-8-4V6c0-2.21 3.59-4 8-4s8 1.79 8 4v8c0 2.21-3.59 4-8 4z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Vendor Subscription Fee</p>
-                  <p className="text-2xl font-semibold text-gray-900">
-                    ₦{adminSettings?.vendorSubscriptionFee?.toLocaleString() || '50,000'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Current fee for vendor onboarding</p>
-                  {adminSettings?.updatedAt && (
-                    <p className="text-xs text-gray-400 mt-1">Last updated: {new Date(adminSettings.updatedAt).toLocaleDateString()}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 aspect-square flex flex-col justify-center items-center">
+              <div className="flex flex-col items-center text-center">
+                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mb-3">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.pending}</p>
-                </div>
+                <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+                <p className="text-3xl font-semibold text-gray-900 mt-2">{propertyAnalytics.pending}</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-green-100 text-green-600">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 aspect-square flex flex-col justify-center items-center">
+              <div className="flex flex-col items-center text-center">
+                <div className="p-3 rounded-full bg-green-100 text-green-600 mb-3">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
-                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.approved}</p>
-                </div>
+                <p className="text-sm font-medium text-gray-600">Approved for Listing</p>
+                <p className="text-3xl font-semibold text-gray-900 mt-2">{propertyAnalytics.approved}</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-red-100 text-red-600">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 aspect-square flex flex-col justify-center items-center">
+              <div className="flex flex-col items-center text-center">
+                <div className="p-3 rounded-full bg-red-100 text-red-600 mb-3">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Rejected</p>
-                  <p className="text-2xl font-semibold text-gray-900">{propertyAnalytics.rejected}</p>
-                </div>
+                <p className="text-sm font-medium text-gray-600">Rejected</p>
+                <p className="text-3xl font-semibold text-gray-900 mt-2">{propertyAnalytics.rejected}</p>
               </div>
             </div>
             </div>
