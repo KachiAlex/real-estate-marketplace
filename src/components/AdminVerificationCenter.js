@@ -329,72 +329,8 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
     </div>
   );
 };
-};
 
 export default AdminVerificationCenter;
-
-  const handleDecision = async (application, status) => {
-    try {
-      const notes = window.prompt(`Add notes for ${status} decision (optional):`, '') || '';
-      const selectedColor = decisionColors[application.id] || badgeColor;
-      const response = await requestWithAdminAuth(`/verification/applications/${application.id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status,
-          adminNotes: notes,
-          badgeColor: status === 'approved' ? selectedColor : undefined
-        })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update application');
-      }
-      toast.success(`Application ${status}`);
-      setApplications((prev) => prev.map((item) => (item.id === application.id ? data.data : item)));
-    } catch (error) {
-      toast.error(error?.message || 'Unable to update application');
-    }
-  };
-
-  const renderStatusBadge = (status) => {
-    const config = statusConfig[status] || statusConfig.pending;
-    const Icon = config.Icon;
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon className="h-3.5 w-3.5" />
-        {config.label}
-      </span>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-5 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">Total Applications</p>
-              <p className="text-3xl font-semibold mt-2">{stats.total}</p>
-            </div>
-            <FaShieldAlt className="text-3xl" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 text-white rounded-2xl p-5 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm">Pending Review</p>
-              <p className="text-3xl font-semibold mt-2">{stats.pending}</p>
-            </div>
-            <FaClock className="text-3xl" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl p-5 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">Approved</p>
-              <p className="text-3xl font-semibold mt-2">{stats.approved}</p>
-            </div>
-            <FaCheckCircle className="text-3xl" />
           </div>
         </div>
         <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl p-5 shadow-lg">
