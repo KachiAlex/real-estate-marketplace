@@ -6,7 +6,7 @@ import { FaSearch, FaQuestionCircle, FaPhone, FaEnvelope, FaClock, FaFileAlt, Fa
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import apiClient from '../services/apiClient';
-import CreateTicketModal from '../components/support/CreateTicketModal';
+// Support tickets removed — contact via support email
 
 const HelpSupport = () => {
   const { user } = useAuth();
@@ -391,37 +391,7 @@ const HelpSupport = () => {
     )
   );
 
-  // Tickets state and loader
-  const [tickets, setTickets] = useState([]);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
-  const [ticketsError, setTicketsError] = useState(null);
-
-  const loadTickets = async () => {
-    if (!user || !user.uid) return;
-    setTicketsLoading(true);
-    setTicketsError(null);
-    try {
-      const resp = await apiClient.get('/support/inquiries');
-      const data = resp.data || {};
-      if (!data?.success) {
-        throw new Error(data?.message || 'Failed to load tickets');
-      }
-      setTickets(data.data || []);
-    } catch (err) {
-      console.error('Failed to load tickets:', err);
-      setTicketsError(err.message || 'Failed to load tickets');
-    } finally {
-      setTicketsLoading(false);
-    }
-  };
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    if (activeResource === 'support') {
-      loadTickets();
-    }
-  }, [activeResource, user]);
+  // Support tickets removed; users should email support@propertyark.com
 
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
@@ -659,46 +629,10 @@ const HelpSupport = () => {
           {/* Live chat removed — use Support Tickets via the contact form below */}
           {activeResource === 'support' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">My Support Tickets</h2>
-
-              <div className="border border-gray-200 rounded-lg p-4 mb-6">
-                {ticketsLoading ? (
-                  <p>Loading tickets...</p>
-                ) : ticketsError ? (
-                  <p className="text-red-500">{ticketsError}</p>
-                ) : tickets.length === 0 ? (
-                  <p className="text-gray-600">You have no support tickets. Use the button below to submit one.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {tickets.map(t => (
-                      <div key={t.id} className="border p-3 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{t.category} — {t.status}</h3>
-                            <p className="text-sm text-gray-600">{t.userEmail} • {new Date(t.createdAt).toLocaleString()}</p>
-                          </div>
-                          <div className="text-sm text-gray-500">{t.isRead ? 'Read' : 'New'}</div>
-                        </div>
-                        <p className="mt-2 text-gray-800 whitespace-pre-wrap">{t.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      toast.error('Please log in to create a support ticket');
-                      navigate('/auth/login');
-                      return;
-                    }
-                    setShowCreateModal(true);
-                  }}
-                  className="btn-primary"
-                >
-                  Create Support Ticket
-                </button>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Support</h2>
+              <div className="border border-gray-200 rounded-lg p-6 mb-4">
+                <p className="text-gray-700 mb-2">We no longer support in-app support tickets. Please email our support team and include your account email, a short description of the issue, and any relevant attachments or screenshots.</p>
+                <p className="font-medium text-brand-blue"><a href="mailto:support@propertyark.com">support@propertyark.com</a></p>
               </div>
             </div>
           )}
@@ -831,10 +765,7 @@ const HelpSupport = () => {
         </div>
 
       </div>
-      {showCreateModal && (
-        <CreateTicketModal onClose={() => setShowCreateModal(false)} onSuccess={() => loadTickets()} />
-
-      )}
+      {/* Support ticket modal removed. Contact via email: support@propertyark.com */}
     </div>
   );
 }
