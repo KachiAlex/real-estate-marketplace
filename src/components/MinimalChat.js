@@ -101,7 +101,6 @@ export default function MinimalChat({ userId, peerId }) {
       const errorMsg = err.message || 'Failed to send message';
       toast.error(errorMsg);
     }
-    */
   };
 
   return (
