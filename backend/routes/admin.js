@@ -952,49 +952,66 @@ router.get('/disputes', protect, authorize('admin'), [
       limit: parseInt(limit)
     });
 
-    // Enhance disputes with SLA status
-    const now = new Date();
-    const enhancedDisputes = disputes.rows.map(dispute => {
-      const disputeData = dispute.toJSON ? dispute.toJSON() : dispute;
-      
-      // Calculate SLA status
-      const firstResponseDeadline = new Date(disputeData.firstResponseDeadline);
-      const resolutionDeadline = new Date(disputeData.resolutionDeadline);
-      
-      let slaStatus = 'on-track';
-      let urgencyLevel = 'normal';
-      
-      if (disputeData.status === 'open') {
-        const hoursUntilFirstResponse = (firstResponseDeadline - now) / (1000 * 60 * 60);
-        if (hoursUntilFirstResponse < 0) {
-          slaStatus = 'overdue';
-          urgencyLevel = 'critical';
-        } else if (hoursUntilFirstResponse < 2) {
-          slaStatus = 'at-risk';
-          urgencyLevel = 'high';
+    // Enhance disputes with SLA status (defensive: if enhancement fails, return raw disputes)
+    let enhancedDisputes;
+    try {
+      const now = new Date();
+      enhancedDisputes = disputes.rows.map(dispute => {
+        const disputeData = dispute.toJSON ? dispute.toJSON() : dispute;
+
+        // Safely parse dates (fallback to null if invalid)
+        const firstResponseDeadline = disputeData.firstResponseDeadline ? new Date(disputeData.firstResponseDeadline) : null;
+        const resolutionDeadline = disputeData.resolutionDeadline ? new Date(disputeData.resolutionDeadline) : null;
+
+        let slaStatus = 'on-track';
+        let urgencyLevel = 'normal';
+
+        if (disputeData.status === 'open' && firstResponseDeadline instanceof Date && !isNaN(firstResponseDeadline)) {
+          const hoursUntilFirstResponse = (firstResponseDeadline - now) / (1000 * 60 * 60);
+          if (hoursUntilFirstResponse < 0) {
+            slaStatus = 'overdue';
+            urgencyLevel = 'critical';
+          } else if (hoursUntilFirstResponse < 2) {
+            slaStatus = 'at-risk';
+            urgencyLevel = 'high';
+          }
+        } else if (disputeData.status === 'in_review' && resolutionDeadline instanceof Date && !isNaN(resolutionDeadline)) {
+          const hoursUntilResolution = (resolutionDeadline - now) / (1000 * 60 * 60);
+          if (hoursUntilResolution < 0) {
+            slaStatus = 'overdue';
+            urgencyLevel = 'critical';
+          } else if (hoursUntilResolution < 6) {
+            slaStatus = 'at-risk';
+            urgencyLevel = 'high';
+          }
         }
-      } else if (disputeData.status === 'in_review') {
-        const hoursUntilResolution = (resolutionDeadline - now) / (1000 * 60 * 60);
-        if (hoursUntilResolution < 0) {
-          slaStatus = 'overdue';
-          urgencyLevel = 'critical';
-        } else if (hoursUntilResolution < 6) {
-          slaStatus = 'at-risk';
-          urgencyLevel = 'high';
-        }
-      }
-      
-      return {
-        ...disputeData,
-        slaStatus,
-        urgencyLevel,
-        hoursUntilDeadline: Math.round(
-          (disputeData.status === 'open' 
-            ? (firstResponseDeadline - now) 
-            : (resolutionDeadline - now)) / (1000 * 60 * 60)
-        )
-      };
-    });
+
+        const hoursUntilDeadline = (() => {
+          try {
+            if (disputeData.status === 'open' && firstResponseDeadline instanceof Date && !isNaN(firstResponseDeadline)) {
+              return Math.round((firstResponseDeadline - now) / (1000 * 60 * 60));
+            }
+            if (resolutionDeadline instanceof Date && !isNaN(resolutionDeadline)) {
+              return Math.round((resolutionDeadline - now) / (1000 * 60 * 60));
+            }
+            return null;
+          } catch (e) {
+            return null;
+          }
+        })();
+
+        return {
+          ...disputeData,
+          slaStatus,
+          urgencyLevel,
+          hoursUntilDeadline
+        };
+      });
+    } catch (enhanceErr) {
+      // Log the error and fall back to returning raw disputes to avoid 500
+      console.error('Failed to enhance disputes with SLA status:', enhanceErr);
+      enhancedDisputes = disputes.rows.map(r => (r.toJSON ? r.toJSON() : r));
+    }
 
     // Sort by requested field
     if (sortBy === 'firstResponseDeadline') {
