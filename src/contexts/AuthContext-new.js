@@ -448,7 +448,7 @@ const persistAuthResult = useCallback((data) => {
     setLoading(true);
     try {
       if (accessToken) {
-        try { await tryFetchAuth('/auth/jwt/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` } }); } catch (e) { /* ignore */ }
+        try { await fetch(getApiUrl('/auth/jwt/logout'), { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` } }); } catch (e) { /* ignore */ }
       }
       localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('currentUser');
       setAccessToken(null); setRefreshToken(null); setCurrentUser(null);
@@ -508,7 +508,7 @@ const persistAuthResult = useCallback((data) => {
         setCurrentUser(updated);
         return updated;
       }
-      let resp = await tryFetchAuth('/api/auth/jwt/switch-role', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
+      let resp = await fetch(getApiUrl('/auth/jwt/switch-role'), { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
       let data = resp ? await resp.json().catch(() => ({})) : {};
 
       if (!resp || resp.status === 404) {
