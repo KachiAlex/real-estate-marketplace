@@ -73,7 +73,7 @@ const getBlogs = async (filters = {}, sortBy = 'publishedAt', sortOrder = 'desc'
 
   if (filters.status) andClauses.push({ status: filters.status });
   if (filters.category) andClauses.push({ category: filters.category });
-  if (filters.featured !== undefined) andClauses.push({ featured: filters.featured });
+  // NOTE: featured column doesn't exist in DB, skipping filter
   if (filters.authorId) andClauses.push({ authorId: filters.authorId });
   if (filters.ids && Array.isArray(filters.ids)) andClauses.push({ id: { [Op.in]: filters.ids } });
   if (filters.tags) {
@@ -104,28 +104,45 @@ const getBlogs = async (filters = {}, sortBy = 'publishedAt', sortOrder = 'desc'
     order = [[trendingLiteral, sortOrder === 'asc' ? 'ASC' : 'DESC']];
   }
 
-  const { rows, count } = await Blog.findAndCountAll({ where, order, offset, limit: Number(limit) });
+  const { rows, count } = await Blog.findAndCountAll({ 
+    where, 
+    order, 
+    offset, 
+    limit: Number(limit),
+    attributes: { exclude: ['featured'] }
+  });
   return { blogs: rows.map((r) => convertTimestamps(r)), total: count, hasMore: offset + Number(limit) < count };
 };
 
 // Get blog by slug
 const getBlogBySlug = async (slug) => {
-  const blog = await Blog.findOne({ where: { slug, status: 'published' } });
+  const blog = await Blog.findOne({ 
+    where: { slug, status: 'published' },
+    attributes: { exclude: ['featured'] }
+  });
   if (!blog) return null;
   const b = blog.toJSON();
   if (b.publishedAt && new Date(b.publishedAt) > new Date()) return null;
   return b;
 };
 
-// Get featured blogs
+// Get featured blogs (NOTE: featured column doesn't exist in DB, returning published blogs instead)
 const getFeaturedBlogs = async (limit = 5) => {
-  const rows = await Blog.findAll({ where: { status: 'published', featured: true }, order: [['publishedAt', 'DESC']], limit: Number(limit) });
+  const rows = await Blog.findAll({ 
+    where: { status: 'published' }, 
+    attributes: { exclude: ['featured'] },
+    order: [['publishedAt', 'DESC']], 
+    limit: Number(limit) 
+  });
   return rows.map(r => r.toJSON());
 };
 
 // Get related blogs
 const getRelatedBlogs = async (currentBlog, limit = 4) => {
-  const all = await Blog.findAll({ where: { status: 'published' } });
+  const all = await Blog.findAll({ 
+    where: { status: 'published' },
+    attributes: { exclude: ['featured'] }
+  });
   const blogs = all.map(b => b.toJSON());
   const related = blogs
     .filter(blog => {
@@ -183,7 +200,9 @@ const getPopularTags = async (limit = 20) => {
 };
 
 const getBlogById = async (id) => {
-  const blog = await Blog.findByPk(id);
+  const blog = await Blog.findByPk(id, {
+    attributes: { exclude: ['featured'] }
+  });
   return convertTimestamps(blog);
 };
 
@@ -212,7 +231,6 @@ const createBlog = async (payload = {}) => {
     category: payload.category,
     tags,
     featuredImage,
-    featured: Boolean(payload.featured),
     status,
     allowComments: payload.allowComments !== undefined ? payload.allowComments : true,
     publishedAt,
@@ -223,7 +241,9 @@ const createBlog = async (payload = {}) => {
 };
 
 const updateBlog = async (id, payload = {}) => {
-  const blog = await Blog.findByPk(id);
+  const blog = await Blog.findByPk(id, {
+    attributes: { exclude: ['featured'] }
+  });
   if (!blog) {
     throw new Error('Blog not found');
   }
@@ -252,10 +272,7 @@ const updateBlog = async (id, payload = {}) => {
     blog.category = payload.category;
   }
 
-  if (payload.featured !== undefined) {
-    blog.featured = Boolean(payload.featured);
-  }
-
+  // NOTE: featured column doesn't exist in DB, skipping
   if (payload.tags !== undefined) {
     blog.tags = normalizeTags(payload.tags);
   }
