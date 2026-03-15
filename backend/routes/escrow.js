@@ -31,8 +31,9 @@ router.get('/',
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('status').optional().isIn(['initiated', 'pending', 'active', 'completed', 'cancelled', 'disputed', 'refunded']).withMessage('Invalid status'),
-    query('type').optional().isIn(['buyer', 'seller', 'admin']).withMessage('Invalid type')
+    query('status').optional().isIn(['initiated', 'pending', 'active', 'completed', 'cancelled', 'disputed', 'refunded', 'funded']).withMessage('Invalid status'),
+    query('type').optional().isIn(['buyer', 'seller', 'admin']).withMessage('Invalid type'),
+    query('search').optional().trim().isLength({ max: 100 }).withMessage('Search query too long')
   ]),
   async (req, res) => {
     try {
@@ -41,7 +42,8 @@ router.get('/',
         status: req.query.status,
         type: req.query.type,
         page: req.query.page,
-        limit: req.query.limit
+        limit: req.query.limit,
+        search: req.query.search
       });
 
       res.json({

@@ -258,6 +258,7 @@ const AdminDashboard = () => {
   const [escrowActionNotes, setEscrowActionNotes] = useState('');
   const [escrowActionLoading, setEscrowActionLoading] = useState(false);
   const [escrowStatusFilter, setEscrowStatusFilter] = useState('all');
+  const [escrowSearch, setEscrowSearch] = useState('');
   const [failedPayments, setFailedPayments] = useState([]);
   const [showFailedPayments, setShowFailedPayments] = useState(false);
   const [pagination, setPagination] = useState({
@@ -745,7 +746,7 @@ const AdminDashboard = () => {
   useEffect(() => {
   }, [loadingUsers]);
 
-  const fetchEscrowTransactions = useCallback(async ({ page, limit, status, ...params } = {}) => {
+  const fetchEscrowTransactions = useCallback(async ({ page, limit, status, search, ...params } = {}) => {
     if (!user || user.role !== 'admin') return;
     setEscrowLoading(true);
     setEscrowError('');
@@ -753,6 +754,7 @@ const AdminDashboard = () => {
       const requestedPage = page || pagination.currentPage || 1;
       const requestedLimit = limit || pagination.itemsPerPage || 20;
       const statusFilter = status || escrowStatusFilter;
+      const searchQuery = search !== undefined ? search : escrowSearch;
 
       const response = await apiClient.get('/escrow', {
         params: {
@@ -760,6 +762,7 @@ const AdminDashboard = () => {
           limit: requestedLimit,
           page: requestedPage,
           ...(statusFilter !== 'all' && { status: statusFilter }),
+          ...(searchQuery?.trim() && { search: searchQuery.trim() }),
           ...params
         }
       });
@@ -795,7 +798,7 @@ const AdminDashboard = () => {
     } finally {
       setEscrowLoading(false);
     }
-  }, [user, pagination.currentPage, pagination.itemsPerPage, escrowStatusFilter]);
+  }, [user, pagination.currentPage, pagination.itemsPerPage, escrowStatusFilter, escrowSearch]);
 
   const fetchAdminDisputes = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
@@ -2020,38 +2023,57 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
-                <div className="flex gap-2 flex-wrap">
-                  <select
-                    value={escrowStatusFilter}
-                    onChange={(e) => handleEscrowStatusFilterChange(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 bg-white"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="funded">Funded</option>
-                    <option value="completed">Completed</option>
-                    <option value="failed">Failed</option>
-                    <option value="disputed">Disputed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                  {failedPayments.length > 0 && (
-                    <button
-                      onClick={() => setShowFailedPayments(!showFailedPayments)}
-                      className="inline-flex items-center rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              <div className="px-6 py-4 border-b border-gray-200 space-y-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <h2 className="text-lg font-medium text-gray-900">Escrow Transactions</h2>
+                  <div className="flex gap-2 flex-wrap">
+                    <select
+                      value={escrowStatusFilter}
+                      onChange={(e) => handleEscrowStatusFilterChange(e.target.value)}
+                      className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 bg-white"
                     >
-                      Failed Payments ({failedPayments.length})
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="funded">Funded</option>
+                      <option value="completed">Completed</option>
+                      <option value="failed">Failed</option>
+                      <option value="disputed">Disputed</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                    {failedPayments.length > 0 && (
+                      <button
+                        onClick={() => setShowFailedPayments(!showFailedPayments)}
+                        className="inline-flex items-center rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                      >
+                        Failed Payments ({failedPayments.length})
+                      </button>
+                    )}
+                    <button
+                      onClick={() => fetchEscrowTransactions({ page: pagination.currentPage })}
+                      disabled={escrowLoading}
+                      className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Refresh
                     </button>
-                  )}
-                  <button
-                    onClick={() => fetchEscrowTransactions({ page: pagination.currentPage })}
-                    disabled={escrowLoading}
-                    className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Refresh
-                  </button>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search by buyer, seller, property, or ID..."
+                    value={escrowSearch}
+                    onChange={(e) => {
+                      setEscrowSearch(e.target.value);
+                      // Reset to page 1 when searching
+                      if (e.target.value.trim()) {
+                        fetchEscrowTransactions({ page: 1, search: e.target.value });
+                      } else {
+                        fetchEscrowTransactions({ page: 1, search: '' });
+                      }
+                    }}
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
               {escrowLoading && (
@@ -2119,7 +2141,10 @@ const AdminDashboard = () => {
                     </table>
                   </div>
                   {/* Desktop pagination controls */}
-                  <div className="px-6 py-3 border-t border-gray-100 hidden lg:flex items-center justify-between">
+                  <div className="px-6 py-4 border-t border-gray-100 hidden lg:flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Showing {escrows.length > 0 ? (pagination.currentPage - 1) * pagination.itemsPerPage + 1 : 0} to {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of {pagination.totalItems} transactions
+                    </div>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -2130,7 +2155,7 @@ const AdminDashboard = () => {
                         Previous
                       </button>
 
-                      <span className="text-sm text-gray-700">Page {pagination.currentPage} of {pagination.totalPages}</span>
+                      <span className="text-sm text-gray-700 px-2">Page {pagination.currentPage} of {pagination.totalPages}</span>
 
                       <button
                         type="button"

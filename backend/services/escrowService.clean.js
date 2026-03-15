@@ -5,7 +5,7 @@ const propertyService = require('./propertyService');
 const notificationService = require('./notificationService');
 
 class EscrowService {
-  async listTransactions({ user, status, type, page = 1, limit = 20 } = {}) {
+  async listTransactions({ user, status, type, page = 1, limit = 20, search } = {}) {
     const where = {};
     const userId = user?.id || user;
 
@@ -17,10 +17,46 @@ class EscrowService {
     }
 
     const offset = (Math.max(Number(page), 1) - 1) * Number(limit);
-    const { rows, count } = await EscrowModel.findAndCountAll({ where, order: [['createdAt', 'DESC']], offset, limit: Number(limit) });
+    
+    // Include buyer, seller, and property details
+    const { rows, count } = await EscrowModel.findAndCountAll({
+      where,
+      include: [
+        {
+          model: db.User,
+          as: 'buyer',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+        },
+        {
+          model: db.User,
+          as: 'seller',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+        },
+        {
+          model: db.Property,
+          as: 'property',
+          attributes: ['id', 'title', 'location', 'price']
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      offset,
+      limit: Number(limit),
+      subQuery: false
+    });
+
+    // Format response with buyer/seller names
+    const transactions = rows.map(r => {
+      const tx = r.toJSON();
+      return {
+        ...tx,
+        buyerName: tx.buyer ? `${tx.buyer.firstName} ${tx.buyer.lastName}` : null,
+        sellerName: tx.seller ? `${tx.seller.firstName} ${tx.seller.lastName}` : null,
+        propertyTitle: tx.property?.title
+      };
+    });
 
     return {
-      transactions: rows.map(r => r.toJSON()),
+      transactions,
       pagination: {
         currentPage: Number(page),
         itemsPerPage: Number(limit),
