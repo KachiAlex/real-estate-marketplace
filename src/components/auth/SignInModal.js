@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const SignInModal = ({ onClose }) => {
-  const { login, loading } = useAuth(); // signInWithGoogle removed
+  const { login, signInWithGoogle, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,22 +41,22 @@ const SignInModal = ({ onClose }) => {
 
 };
 
-// const handleGoogleSignIn = async () => {
-//   try {
-//     setError('');
-//     const user = await signInWithGoogle();
-//     const redirect = sessionStorage.getItem('authRedirect');
-//     if (redirect) {
-//       sessionStorage.removeItem('authRedirect');
-//       navigate(redirect, { replace: true });
-//     } else {
-//       navigate(getPostLoginRoute(user), { replace: true });
-//     }
-//     if (onClose) onClose();
-//   } catch (googleError) {
-//     setError(googleError.message || 'Unable to sign in with Google right now.');
-//   }
-// };
+const handleGoogleSignIn = async () => {
+  try {
+    setError('');
+    const user = await signInWithGoogle();
+    const redirect = sessionStorage.getItem('authRedirect');
+    if (redirect) {
+      sessionStorage.removeItem('authRedirect');
+      navigate(redirect, { replace: true });
+    } else {
+      navigate(getPostLoginRoute(user), { replace: true });
+    }
+    if (onClose) onClose();
+  } catch (googleError) {
+    setError(googleError.message || 'Unable to sign in with Google right now.');
+  }
+};
 
 return (
 

@@ -12,7 +12,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '363622331516-csuhmvdqv5cff2js8pe9oatd6259v6tb.apps.googleusercontent.com';
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // @desc    Google OAuth login/signup

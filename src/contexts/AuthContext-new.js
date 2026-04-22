@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 
-const DEFAULT_GOOGLE_CLIENT_ID = '989525174178-b3vermtr2nv5gq88umuu1nerfe39190s.apps.googleusercontent.com';
+const DEFAULT_GOOGLE_CLIENT_ID = '363622331516-csuhmvdqv5cff2js8pe9oatd6259v6tb.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_POPUP_TIMEOUT = 70000; // 70 seconds

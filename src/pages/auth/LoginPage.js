@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
-// import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const LoginPage = () => {
-  const { login, loading } = useAuth(); // signInWithGoogle removed
+  const { login, signInWithGoogle, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,21 +36,21 @@ const LoginPage = () => {
     }
   };
 
-  // const handleGoogleSignIn = async () => {
-  //   try {
-  //     setError('');
-  //     const user = await signInWithGoogle();
-  //     const redirect = sessionStorage.getItem('authRedirect');
-  //     if (redirect) {
-  //       sessionStorage.removeItem('authRedirect');
-  //       navigate(redirect, { replace: true });
-  //     } else {
-  //       navigate(getPostLoginRoute(user), { replace: true });
-  //     }
-  //   } catch (googleError) {
-  //     setError(googleError.message || 'Unexpected error while signing in with Google.');
-  //   }
-  // };
+  const handleGoogleSignIn = async () => {
+    try {
+      setError('');
+      const user = await signInWithGoogle();
+      const redirect = sessionStorage.getItem('authRedirect');
+      if (redirect) {
+        sessionStorage.removeItem('authRedirect');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate(getPostLoginRoute(user), { replace: true });
+      }
+    } catch (googleError) {
+      setError(googleError.message || 'Unexpected error while signing in with Google.');
+    }
+  };
 
   return (
     <AuthLayout
@@ -98,13 +98,13 @@ const LoginPage = () => {
           {loading ? 'Signing in�' : 'Sign in'}
         </button>
 
-        {/* <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+        <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
           <span className="h-px flex-1 bg-white/10" />
           <span>or</span>
           <span className="h-px flex-1 bg-white/10" />
         </div>
 
-        <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} /> */}
+        <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
 
         <div className="flex flex-wrap items-center justify-between text-sm text-slate-200">
           <Link to="/auth/forgot-password" className="text-amber-300 hover:text-amber-200">
