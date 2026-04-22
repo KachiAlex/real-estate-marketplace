@@ -465,6 +465,12 @@ export const AuthProvider = ({ children }) => {
       const nonce = createNonce();
       const redirectUri = `${origin}/auth/google/callback`;
       const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
+      
+      // Save the current redirect in sessionStorage for the callback
+      if (getAuthRedirect?.()) {
+        sessionStorage.setItem('authRedirect', getAuthRedirect());
+      }
+      
       const params = new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         redirect_uri: redirectUri,
@@ -475,38 +481,19 @@ export const AuthProvider = ({ children }) => {
         state,
         nonce
       });
-      const popup = openCenteredPopup(`${GOOGLE_AUTH_URL}?${params.toString()}`);
-      if (!popup) {
-        throw new Error('Pop-up blocked. Please enable pop-ups to continue with Google sign-in.');
-      }
-
-      const oauthResult = await waitForGoogleResult(state, popup);
-      const idToken = oauthResult?.idToken || oauthResult?.id_token;
-      if (!idToken) {
-        throw new Error('Google did not return a valid ID token.');
-      }
-
-      const resp = await tryFetchAuth('/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
-      });
-      const data = resp ? await resp.json().catch(() => ({})) : {};
-      if (!resp || !resp.ok) {
-        throw new Error(data.message || 'Google sign-in failed');
-      }
-
-      const user = persistAuthResult(data);
-      toast.success('Signed in with Google');
-      return user;
+      
+      // Redirect to Google OAuth (full page redirect instead of popup)
+      window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+      
+      // This will never execute since we're redirecting
+      return null;
     } catch (error) {
       console.error('signInWithGoogle error', error);
       toast.error(error.message || 'Google sign-in failed');
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
-  }, [getAuthRedirect, persistAuthResult]);
+  }, [getAuthRedirect]);
 
   const logout = useCallback(async () => {
     setLoading(true);
