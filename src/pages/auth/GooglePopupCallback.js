@@ -35,18 +35,12 @@ const GooglePopupCallback = () => {
       console.warn('GooglePopupCallback: failed to notify opener', e);
     }
 
-    setTimeout(() => {
-      window.close();
-    }, 600);
+    // Prevent any navigation by clearing the document and closing immediately
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">Completing sign-in…</div>';
+    window.close();
   }, []);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="p-6 bg-white rounded-lg shadow">
-        <p className="text-sm text-gray-700">Completing sign-in…</p>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export default GooglePopupCallback;

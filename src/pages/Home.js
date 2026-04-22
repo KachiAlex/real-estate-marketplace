@@ -1236,12 +1236,12 @@ const Home = () => {
                           to={`/property/${property.propertyId || property.id}`}
                           className="flex-1 p-4 cursor-pointer flex flex-col"
                         >
-                          <h3 className="font-semibold text-gray-900 mb-1 text-base sm:text-lg">{property.title}</h3>
+                          <h3 className="font-semibold text-gray-900 mb-1 text-base sm:text-lg break-words overflow-wrap-anywhere">{property.title}</h3>
                           <div className="flex items-start text-gray-600 text-sm mb-2 gap-1">
-                            <FaMapMarkerAlt className="mt-0.5" />
-                            <span className="truncate">{property.location}</span>
+                            <FaMapMarkerAlt className="mt-0.5 flex-shrink-0" />
+                            <span className="break-words overflow-wrap-anywhere">{property.location}</span>
                           </div>
-                          <p className="text-gray-600 text-sm mb-3 truncate">
+                          <p className="text-gray-600 text-sm mb-3 break-words overflow-wrap-anywhere">
                             {property.description}
                           </p>
                           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
