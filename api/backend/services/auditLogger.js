@@ -20,7 +20,10 @@ class AuditLogger {
         fs.mkdirSync(this.auditDir, { recursive: true });
       }
     } catch (error) {
-      console.error('Failed to create audit logs directory:', error.message);
+      // In serverless environments, we may not have write access to the filesystem
+      // Disable audit logging gracefully in this case
+      console.warn('Failed to create audit logs directory (audit logging disabled):', error.message);
+      this.auditDir = null; // Disable file-based logging
     }
   }
 
@@ -133,6 +136,18 @@ class AuditLogger {
    */
   writeAuditLog(entry) {
     try {
+      // Skip file-based logging if auditDir is null (serverless environment)
+      if (!this.auditDir) {
+        // Still log to console in production for log aggregation
+        if (process.env.NODE_ENV === 'production') {
+          console.log(JSON.stringify({
+            level: 'AUDIT',
+            ...entry
+          }));
+        }
+        return;
+      }
+
       // Create daily log file for easy rotation and analysis
       const date = new Date(entry.timestamp);
       const dateString = date.toISOString().split('T')[0];

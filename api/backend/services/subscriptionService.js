@@ -1,6 +1,9 @@
 const { Subscription, SubscriptionPlan, SubscriptionPayment, User } = require('../config/sequelizeDb');
 const notificationService = require('./notificationService');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+
+// Generate UUID v4 using crypto module
+const uuidv4 = () => crypto.randomUUID();
 
 class SubscriptionService {
   static buildDefaultPlan() {

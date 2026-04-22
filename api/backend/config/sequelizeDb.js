@@ -5,8 +5,8 @@ const path = require('path');
 // sequelize but not pg, so we explicitly resolve and cache it here.
 if (process.env.VERCEL) {
   try {
-    // Walk up: api/backend/config -> api/backend -> api/node_modules
-    const parentNodeModules = path.resolve(__dirname, '..', '..', 'node_modules');
+    // Walk up: api/backend/config -> api/backend -> api -> node_modules
+    const parentNodeModules = path.resolve(__dirname, '..', '..', '..', 'node_modules');
     const pgResolved = require.resolve('pg', { paths: [parentNodeModules] });
     // Register under the bare 'pg' key so Sequelize's require('pg') finds it
     const Module = require('module');

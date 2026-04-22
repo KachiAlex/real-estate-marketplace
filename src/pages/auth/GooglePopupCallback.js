@@ -23,21 +23,40 @@ const GooglePopupCallback = () => {
       const decodedState = decodeState(state);
       const targetOrigin = decodedState?.parentOrigin || window.location.origin;
 
+      console.log('GooglePopupCallback: Extracted tokens', { hasIdToken: !!idToken, hasAccessToken: !!accessToken, state, targetOrigin });
+      console.log('GooglePopupCallback: Has window.opener', !!window.opener);
+
       if (window.opener && (idToken || accessToken)) {
-        window.opener.postMessage({
+        const message = {
           type: 'google_oauth_result',
           idToken,
           accessToken,
           state
-        }, targetOrigin);
+        };
+        console.log('GooglePopupCallback: Sending message to opener', message);
+        window.opener.postMessage(message, targetOrigin);
+        console.log('GooglePopupCallback: Message sent successfully');
+
+        // Give the message time to be delivered before closing
+        setTimeout(() => {
+          console.log('GooglePopupCallback: Closing popup');
+          window.close();
+        }, 100);
+      } else {
+        console.error('GooglePopupCallback: Missing window.opener or tokens', { hasOpener: !!window.opener, hasIdToken: !!idToken, hasAccessToken: !!accessToken });
+        setTimeout(() => {
+          window.close();
+        }, 100);
       }
     } catch (e) {
-      console.warn('GooglePopupCallback: failed to notify opener', e);
+      console.error('GooglePopupCallback: failed to notify opener', e);
+      setTimeout(() => {
+        window.close();
+      }, 100);
     }
 
-    // Prevent any navigation by clearing the document and closing immediately
+    // Prevent any navigation by clearing the document
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">Completing sign-in…</div>';
-    window.close();
   }, []);
 
   return null;
