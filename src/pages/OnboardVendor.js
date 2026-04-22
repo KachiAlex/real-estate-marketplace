@@ -1,0 +1,206 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useVendor } from '../contexts/VendorContext';
+
+const steps = [
+  'Business Info',
+  'KYC Documents',
+  'Review & Submit'
+];
+
+export default function OnboardVendor() {
+  const [step, setStep] = useState(0);
+
+  React.useEffect(() => {
+    console.log('OnboardVendor mounted - step:', step);
+  }, [step]);
+  const [form, setForm] = useState({
+    businessName: '',
+    businessType: '',
+    licenseNumber: '',
+    contactEmail: '',
+    contactPhone: '',
+    kycDocs: [],
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { currentUser, accessToken } = useAuth();
+  const { updateVendorProfile, uploadAgentDocument } = useVendor();
+
+  // Determine if onboarding already exists (user roles OR local onboarded fallback)
+  let _localOnboarded = false;
+  try { _localOnboarded = Boolean(JSON.parse(localStorage.getItem('onboardedVendor'))); } catch (e) { _localOnboarded = false; }
+  const alreadyOnboarded = Boolean((currentUser && (currentUser.roles?.includes('vendor') || currentUser.activeRole === 'vendor')) || _localOnboarded);
+
+  // Redirect / prevent re-onboarding if user is already vendor or local onboard exists
+  React.useEffect(() => {
+    try {
+      if (alreadyOnboarded) {
+        setError('You are already registered as a vendor. Redirecting to dashboard...');
+        setTimeout(() => navigate('/vendor/dashboard'), 1000);
+        return;
+      }
+    } catch (e) {
+      // ignore JSON parse errors
+    }
+  }, [alreadyOnboarded, navigate]);
+
+  const handleNext = () => setStep((s) => Math.min(s + 1, steps.length - 1));
+  const handleBack = () => setStep((s) => Math.max(s - 1, 0));
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    setForm({ ...form, kycDocs: Array.from(e.target.files) });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      // If the user is not authenticated, persist the onboarding data and
+      // redirect to login so we can perform the authoritative backend update
+      // after the user signs in. We intentionally do not persist File objects
+      // to localStorage (they can't be serialized); KYC docs will need to be
+      // re-uploaded after login, but the vendor role will be assigned once
+      // the profile data is synced.
+      if (!currentUser || !accessToken) {
+        const anon = {
+          id: `vendor-anon-${Date.now()}`,
+          businessName: form.businessName,
+          businessType: form.businessType,
+          licenseNumber: form.licenseNumber,
+          contactInfo: { email: form.contactEmail, phone: form.contactPhone },
+          kycDocs: [],
+          kycStatus: 'pending'
+        };
+        try { localStorage.setItem('onboardedVendor', JSON.stringify(anon)); } catch (e) { /* ignore */ }
+        try { const toast = (await import('react-hot-toast')).default; toast('Saved onboarding details — please sign in to complete registration', { icon: 'ℹ️' }); } catch (e) {}
+        // Redirect to login; after successful login VendorProvider will auto-sync
+        navigate('/auth/login');
+        setSubmitting(false);
+        return;
+      }
+      // 1. Upload KYC documents to backend
+      let kycDocUrls = [];
+      if (form.kycDocs && form.kycDocs.length > 0) {
+        const uploadResult = await uploadAgentDocument(form.kycDocs);
+        console.log('OnboardVendor: uploadResult=', uploadResult);
+        if (!uploadResult.success) {
+          setError(uploadResult.error || 'Failed to upload KYC documents');
+          setSubmitting(false);
+          return;
+        }
+        kycDocUrls = uploadResult.data || [];
+      }
+      // 2. Submit vendor profile with KYC doc URLs
+      const updateResult = await updateVendorProfile({
+        businessName: form.businessName,
+        businessType: form.businessType,
+        licenseNumber: form.licenseNumber,
+        contactInfo: {
+          email: form.contactEmail,
+          phone: form.contactPhone,
+        },
+        kycDocs: kycDocUrls,
+        kycStatus: 'pending',
+      });
+      console.log('OnboardVendor: updateResult=', updateResult);
+      if (!updateResult || !updateResult.success) {
+        // Provide clearer failure reason to the user
+        const reason = updateResult?.error || 'Failed to update vendor profile';
+        setError(reason);
+        // Also show a persistent toast with the failure reason
+        try { const toast = (await import('react-hot-toast')).default; toast.error(reason); } catch (e) {}
+        setSubmitting(false);
+        return;
+      }
+
+      // If onboarding succeeded but was saved locally (fallback), inform the user why
+      if (updateResult.fallback || updateResult.savedLocally || updateResult.fallback === 'local-storage' || updateResult.fallback === 'saved-locally-due-to-401') {
+        try { const toast = (await import('react-hot-toast')).default; toast('Vendor onboarding saved locally — will sync when service is restored.', { icon: '⚠️' }); } catch (e) {}
+      }
+
+      navigate('/vendor/dashboard');
+    } catch (err) {
+      setError('Failed to onboard. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-6">Vendor Onboarding</h1>
+      <div className="mb-4 flex space-x-2">
+        {steps.map((label, idx) => (
+          <div key={label} className={`px-3 py-1 rounded-full text-sm ${step === idx ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>{label}</div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {step === 0 && (
+          <>
+            <div>
+              <label className="block mb-1 font-medium">Business Name</label>
+              <input name="businessName" value={form.businessName} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Business Type</label>
+              <input name="businessType" value={form.businessType} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">License Number</label>
+              <input name="licenseNumber" value={form.licenseNumber} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Contact Email</label>
+              <input name="contactEmail" value={form.contactEmail} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Contact Phone</label>
+              <input name="contactPhone" value={form.contactPhone} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+          </>
+        )}
+        {step === 1 && (
+          <div>
+            <label className="block mb-1 font-medium">Upload KYC Documents</label>
+            <input type="file" multiple onChange={handleFileChange} className="w-full" required />
+          </div>
+        )}
+        {step === 2 && (
+          <div>
+            <h2 className="font-semibold mb-2">Review</h2>
+            <ul className="mb-2 text-sm">
+              <li><b>Business Name:</b> {form.businessName}</li>
+              <li><b>Business Type:</b> {form.businessType}</li>
+              <li><b>License Number:</b> {form.licenseNumber}</li>
+              <li><b>Contact Email:</b> {form.contactEmail}</li>
+              <li><b>Contact Phone:</b> {form.contactPhone}</li>
+              <li><b>KYC Docs:</b> {form.kycDocs.length} file(s) selected</li>
+            </ul>
+          </div>
+        )}
+        {error && <div className="text-red-600 text-sm">{error}</div>}
+        <div className="flex space-x-2">
+          {step > 0 && <button type="button" onClick={handleBack} className="px-4 py-2 rounded bg-gray-200">Back</button>}
+          {step < steps.length - 1 && <button type="button" onClick={handleNext} className="px-4 py-2 rounded bg-blue-600 text-white">Next</button>}
+          {step === steps.length - 1 && (
+            <button
+              type="submit"
+              className={`px-4 py-2 rounded ${alreadyOnboarded ? 'bg-gray-300 text-gray-700' : 'bg-green-600 text-white'}`}
+              disabled={submitting || alreadyOnboarded}
+            >
+              {alreadyOnboarded ? 'Already onboarded' : (submitting ? 'Submitting...' : 'Register as Vendor')}
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}

@@ -1,0 +1,61 @@
+[build]
+  publish = "build"
+  command = "npm install --legacy-peer-deps && CI=false npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
+  DISABLE_ESLINT_PLUGIN = "true"
+  ESLINT_NO_DEV_ERRORS = "true"
+  GENERATE_SOURCEMAP = "false"
+  CI = "false"
+  NODE_ENV = "development"
+
+[[redirects]]
+  from = "/login"
+  to = "/auth/login"
+  status = 301
+
+[[redirects]]
+  from = "/register"
+  to = "/auth/register"
+  status = 301
+
+[[redirects]]
+  from = "/forgot-password"
+  to = "/auth/forgot-password"
+  status = 301
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  command = "CI=false npm run build"
+
+[context.production.environment]
+  REACT_APP_API_URL = "https://real-estate-marketplace-1-k8jp.onrender.com"
+
+[context.deploy-preview]
+  command = "CI=false npm run build"
+
+[context.branch-deploy]
+  command = "CI=false npm run build"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[context.production.environment]
+  NODE_ENV = "production"
+  CI = "false"

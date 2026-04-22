@@ -1,0 +1,29 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/components/auth/__tests__/Si ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/components/auth/__tests__/SignInModal.test.js
+
+PASS src/components/auth/__tests__/SignInModal.test.js (120.439 s)
+  SignInModal email/password flow
+    ΓêÜ renders the sign-in form and no Google button (1133 ms)
+    ΓêÜ navigates to saved redirect and closes modal after sign-in (424 ms)
+    ΓêÜ falls back to getPostLoginRoute when redirect is missing (292 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        157.262 s
+Ran all test suites matching 
+/src\\components\\auth\\__tests__\\SignInModal.test.js/i.

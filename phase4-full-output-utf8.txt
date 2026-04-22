@@ -1,0 +1,60 @@
+﻿  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+

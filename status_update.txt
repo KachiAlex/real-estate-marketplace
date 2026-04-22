@@ -1,0 +1,1 @@
+Auth fix shipped; frontend rebuild + Hosting deploy still pending. Ready to help verify admin tab once the new build is live.

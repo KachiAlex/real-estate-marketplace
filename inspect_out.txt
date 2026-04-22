@@ -1,0 +1,14 @@
+Using DATABASE_URL for Sequelize: postgresql://propertyark_user:*****@dpg-d61qns24d50c7380u57g-a.oregon-postgres.render.com/propertyark
+Sequelize DB SSL config -> require: true rejectUnauthorized: false
+Executing (default): SELECT 1+1 AS result
+Executing (default): SELECT 1+1 AS result
+✅ PostgreSQL connected via Sequelize
+Executing (default): SELECT "id", "email", "password", "firstName", "lastName", "phone", "avatar", "role", "roles", "activeRole", "provider", "isVerified", "isActive", "kycStatus", "userCode", "vendorCode", "gender", "occupation", "company", "address", "bankDetails", "vendorCategory", "vendorData", "suspendedAt", "suspendedBy", "activatedAt", "activatedBy", "verificationToken", "verificationExpires", "resetPasswordToken", "resetPasswordExpires", "verificationNotes", "verifiedBy", "verifiedAt", "preferences", "favorites", "mortgageBankProfile", "lastLogin", "lastSeen", "createdAt", "updatedAt" FROM "users" AS "User" WHERE "User"."email" = 'onyedika.akoma@gmail.com';
+--- onyedika.akoma@gmail.com ---
+id: 987c178c-ee99-4310-a77e-4aac44bc9c68
+email: onyedika.akoma@gmail.com
+role: vendor
+roles: [ 'vendor', 'user' ]
+passwordHashPresent: true
+passwordHashPreview: $2a$10$D...len(60)
+vendorData: {"onboardingComplete":true,"updatedAt":"2026-02-20T03:14:52.650Z"}

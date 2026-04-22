@@ -1,0 +1,54 @@
+{
+  "name": "PropertyArk - Real Estate Marketplace",
+  "short_name": "PropertyArk",
+  "description": "A comprehensive real estate marketplace platform with property sales, rentals, and investment features",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+    "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Browse Properties",
+      "short_name": "Browse",
+      "description": "Browse available properties",
+      "url": "/properties",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

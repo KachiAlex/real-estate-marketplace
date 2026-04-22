@@ -1,0 +1,32 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/components/layout/__tests__/ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/components/layout/__tests__/Header.test.js
+
+PASS src/components/layout/__tests__/Header.test.js (33.018 s)
+  Header
+    ΓêÜ should render header component (283 ms)
+    ΓêÜ should display user menu when user is logged in (37 ms)
+    ΓêÜ should toggle user menu on click (64 ms)
+    ΓêÜ should show minimal header on dashboard routes (31 ms)
+    ΓêÜ should show full header on non-dashboard routes (44 ms)
+    ΓêÜ should handle logout (37 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        62.445 s
+Ran all test suites matching 
+/src\\components\\layout\\__tests__\\Header.test.js/i.

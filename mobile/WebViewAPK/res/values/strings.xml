@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PropertyArk</string>
+    <string name="loading">Loading PropertyArk...</string>
+    <string name="error_connection">Connection error. Please check your internet.</string>
+    <string name="error_load">Failed to load PropertyArk. Please try again.</string>
+</resources>

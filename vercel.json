@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run frontend:build",
+  "outputDirectory": "build",
+  "installCommand": "npm install --legacy-peer-deps --include=dev",
+  "framework": "create-react-app",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/[...].js?path=$1"
+    }
+  ],
+  "functions": {
+    "api/[...].js": {
+      "includeFiles": "api/backend/**"
+    }
+  }
+}

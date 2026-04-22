@@ -1,0 +1,9 @@
+﻿npm : 'chat' is not recognized as an internal or external command,
+At line:1 char:1
++ npm run test:phase4 -- --testPathPattern="analytics|chat" --verbose 2 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ('chat' is not r...ternal command, 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+operable program or batch file.

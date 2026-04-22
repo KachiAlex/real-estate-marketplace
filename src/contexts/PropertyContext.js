@@ -1,0 +1,439 @@
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import frontendMockProperties from '../data/mockProperties';
+import { useAuth } from './AuthContext';
+import apiClient from '../services/apiClient';
+
+const resolveImageUrl = (image) => {
+  if (!image && image !== 0) return null;
+  if (typeof image === 'string') return image;
+  if (typeof image === 'object') {
+    return image.url || image.secure_url || image.src || image.path || null;
+  }
+  return null;
+};
+
+const buildMetadataSnapshot = (property, propertyId) => {
+  const base = property || {};
+  const coverFallback = resolveImageUrl(base.coverImage) || resolveImageUrl(base.featuredImage) || resolveImageUrl(base.image);
+  const normalizedImages = Array.isArray(base.images)
+    ? base.images.map(resolveImageUrl).filter(Boolean)
+    : (coverFallback ? [coverFallback] : []);
+  const primaryImage = normalizedImages[0] || coverFallback;
+
+  return {
+    id: base.id || base.propertyId || propertyId,
+    title: base.title || 'Property',
+    description: base.description || '',
+    location: base.location || base.address || {
+      city: base.city,
+      state: base.state,
+      address: base.address
+    },
+    city: base.city,
+    state: base.state,
+    price: base.price || 0,
+    bedrooms: base.bedrooms || base.details?.bedrooms || 0,
+    bathrooms: base.bathrooms || base.details?.bathrooms || 0,
+    area: base.area || base.details?.sqft || base.sqft || 0,
+    images: normalizedImages,
+    coverImage: primaryImage,
+    featuredImage: resolveImageUrl(base.featuredImage) || primaryImage,
+    image: primaryImage,
+    thumbnail: primaryImage,
+    status: base.status,
+    type: base.type,
+    agent: base.agent || base.owner || {
+      name: base.vendorName,
+      phone: base.vendorPhone,
+      email: base.vendorEmail
+    },
+    vendorName: base.vendorName,
+    vendorEmail: base.vendorEmail,
+    vendorPhone: base.vendorPhone,
+    dateAdded: base.createdAt || base.dateAdded || new Date().toISOString()
+  };
+};
+
+export const PropertyContext = createContext();
+
+export const useProperty = () => {
+  const context = useContext(PropertyContext);
+  if (!context) {
+    throw new Error('useProperty must be used within a PropertyProvider');
+  }
+  return context;
+};
+
+export function PropertyProvider({ children }) {
+  const { currentUser } = useAuth();
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+
+  // Add property creation logic
+  const createProperty = async (propertyData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Transform frontend data to match backend expectations
+      const backendPayload = {
+        title: propertyData.title,
+        description: propertyData.description,
+        price: parseFloat(propertyData.price),
+        type: propertyData.type, // backend will map this (house, apartment, etc.)
+        status: propertyData.status || 'for-sale', // backend will map this
+        location: {
+          address: propertyData.location?.address || '',
+          city: propertyData.location?.city || '',
+          state: propertyData.location?.state || '',
+          zipCode: propertyData.location?.zipCode || ''
+        },
+        details: {
+          bedrooms: parseInt(propertyData.details?.bedrooms) || 0,
+          bathrooms: parseInt(propertyData.details?.bathrooms) || 0,
+          sqft: parseFloat(propertyData.details?.sqft) || 0
+        },
+        images: propertyData.images || [],
+        videos: propertyData.videos || [],
+        documentation: propertyData.documentation || []
+      };
+
+      // Call backend API to create property (apiClient is axios, returns response.data directly)
+      const response = await apiClient.post('/properties', backendPayload);
+      
+      const data = response.data;
+      const newProperty = data.data || data.property || data;
+      
+      setProperties(prev => [newProperty, ...prev]);
+      setLoading(false);
+      return { success: true, id: newProperty.id, ...data };
+    } catch (e) {
+      const errorMsg = e.response?.data?.message || e.message || 'Failed to create property';
+      setError(errorMsg);
+      setLoading(false);
+      return { success: false, message: errorMsg };
+    }
+  };
+
+  const updateProperty = async (propertyId, propertyData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Transform frontend data to match backend expectations
+      const backendPayload = {
+        title: propertyData.title,
+        description: propertyData.description,
+        price: parseFloat(propertyData.price),
+        type: propertyData.type,
+        status: propertyData.status || 'for-sale',
+        location: {
+          address: propertyData.location?.address || '',
+          city: propertyData.location?.city || '',
+          state: propertyData.location?.state || '',
+          zipCode: propertyData.location?.zipCode || ''
+        },
+        details: {
+          bedrooms: parseInt(propertyData.details?.bedrooms) || 0,
+          bathrooms: parseInt(propertyData.details?.bathrooms) || 0,
+          sqft: parseFloat(propertyData.details?.sqft) || 0
+        },
+        images: propertyData.images || [],
+        videos: propertyData.videos || [],
+        documentation: propertyData.documentation || []
+      };
+
+      // Call backend API to update property
+      const response = await apiClient.put(`/properties/${propertyId}`, backendPayload);
+      
+      const data = response.data;
+      const updatedProperty = data.data || data.property || data;
+      
+      setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p));
+      setLoading(false);
+      return { success: true, id: updatedProperty.id, ...data };
+    } catch (e) {
+      const errorMsg = e.response?.data?.message || e.message || 'Failed to update property';
+      setError(errorMsg);
+      setLoading(false);
+      return { success: false, message: errorMsg };
+    }
+  };
+
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Load mock properties first
+      if (Array.isArray(frontendMockProperties) && frontendMockProperties.length > 0) {
+        setProperties(frontendMockProperties);
+      }
+      
+      // Try to fetch from backend API
+      try {
+        const response = await apiClient.get('/properties');
+        const data = response.data;
+        const apiProperties = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        
+        if (apiProperties.length > 0) {
+          // Merge API properties with mock properties (API takes precedence)
+          const merged = new Map();
+          
+          // Add mock properties first
+          frontendMockProperties.forEach(prop => {
+            merged.set(prop.id || prop.propertyId, prop);
+          });
+          
+          // Override with API properties
+          apiProperties.forEach(prop => {
+            merged.set(prop.id || prop.propertyId, prop);
+          });
+          
+          setProperties(Array.from(merged.values()));
+        }
+      } catch (apiError) {
+        console.warn('PropertyContext: API fetch failed, using mock properties only:', apiError?.message);
+        // Keep mock properties if API fails
+      }
+      
+      setLoading(false);
+    } catch (e) {
+      console.error('PropertyContext: fetchProperties error:', e);
+      setError('Failed to fetch properties');
+      setLoading(false);
+    }
+  }, []);
+
+  const matchPropertyId = useCallback((property, targetId) => {
+    if (!property || !targetId) return false;
+    const raw = String(targetId).trim().toLowerCase();
+    if (!raw) return false;
+
+    const variants = new Set();
+    const addVariant = (value) => {
+      if (!value && value !== 0) return;
+      const str = String(value).trim().toLowerCase();
+      if (!str) return;
+      variants.add(str);
+      if (str.startsWith('prop_')) variants.add(str.replace(/^prop_/, ''));
+      else variants.add(`prop_${str}`);
+    };
+
+    addVariant(property.id);
+    addVariant(property.propertyId);
+    addVariant(property.slug);
+    addVariant(property.numericId);
+
+    // Support numeric ids that may be embedded in strings like "prop_123"
+    if (typeof property.id === 'string' && property.id.match(/prop_\d+/)) {
+      addVariant(property.id.replace('prop_', ''));
+    }
+
+    return variants.has(raw);
+  }, []);
+
+  const findLocalProperty = useCallback((propertyId) => {
+    if (!propertyId) return null;
+    const allSources = [Array.isArray(properties) ? properties : [], Array.isArray(frontendMockProperties) ? frontendMockProperties : []];
+
+    for (const source of allSources) {
+      const found = source.find((prop) => matchPropertyId(prop, propertyId));
+      if (found) return found;
+    }
+    return null;
+  }, [properties, matchPropertyId]);
+
+  const fetchProperty = useCallback(async (propertyId) => {
+    if (!propertyId) return null;
+    const localMatch = findLocalProperty(propertyId);
+    if (localMatch) return localMatch;
+
+    try {
+      const response = await apiClient.get(`/properties/${propertyId}`);
+      const data = response.data;
+      if (!data) return null;
+      const propertyData = data.data || data.property || data;
+      if (!propertyData) return null;
+
+      setProperties((prev) => {
+        if (prev.some((prop) => matchPropertyId(prop, propertyData.id || propertyId))) {
+          return prev;
+        }
+        return [propertyData, ...prev];
+      });
+
+      return propertyData;
+    } catch (err) {
+      console.warn('PropertyContext: fetchProperty failed', err?.response?.data || err.message);
+      return null;
+    }
+  }, [findLocalProperty, matchPropertyId]);
+
+  const fetchAdminProperties = useCallback(async (status = '', verificationStatus = '') => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = {};
+      if (status) params.status = status;
+      if (verificationStatus) params.verificationStatus = verificationStatus;
+
+      const response = await apiClient.get('/admin/properties', { params });
+      const payload = response?.data || {};
+      const list = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.properties)
+          ? payload.properties
+          : [];
+
+      setProperties(list);
+
+      return {
+        success: true,
+        data: list,
+        stats: payload.stats || null,
+        pagination: payload.pagination || null
+      };
+    } catch (err) {
+      const message = err?.response?.data?.message || err.message || 'Failed to fetch admin properties';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyProperty = useCallback(async (propertyId, status, notes = '') => {
+    if (!propertyId) return false;
+    const incomingStatus = String(status || '').trim().toLowerCase();
+    let verificationStatus = incomingStatus;
+
+    if (['approved', 'approve', 'verify', 'verified'].includes(incomingStatus)) {
+      verificationStatus = 'verified';
+    } else if (['rejected', 'reject', 'declined'].includes(incomingStatus)) {
+      verificationStatus = 'rejected';
+    }
+
+    if (!['verified', 'rejected'].includes(verificationStatus)) {
+      console.warn('PropertyContext: Invalid verification status', status);
+      return false;
+    }
+
+    try {
+      const response = await apiClient.put(`/admin/properties/${propertyId}/verify`, {
+        verificationStatus,
+        verificationNotes: notes
+      });
+
+      const updated = response?.data?.data || response?.data?.property;
+
+      if (updated) {
+        setProperties((prev) => {
+          if (!Array.isArray(prev) || !prev.length) return prev;
+          return prev.map((prop) => (matchPropertyId(prop, propertyId) ? { ...prop, ...updated } : prop));
+        });
+      }
+
+      return true;
+    } catch (err) {
+      const message = err?.response?.data?.message || err.message || 'Failed to update verification status';
+      setError(message);
+      return false;
+    }
+  }, [matchPropertyId]);
+
+  const toggleFavorite = useCallback(async (propertyId, propertyData = null) => {
+    if (!currentUser || !currentUser.id) {
+      return { success: false, requiresAuth: true };
+    }
+
+    const propertyIdStr = String(propertyId || '').trim();
+    if (!propertyIdStr) {
+      return { success: false, error: 'Invalid property id' };
+    }
+
+    const favoritesKey = `favorites_${currentUser.id}`;
+    const metadataKey = `favorites_metadata_${currentUser.id}`;
+
+    let favoritesSet = new Set();
+    try {
+      const stored = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
+      favoritesSet = new Set((stored || []).map((id) => String(id)));
+    } catch (err) {
+      console.warn('PropertyContext: failed to parse favorites from localStorage', err);
+    }
+
+    const wasFavorite = favoritesSet.has(propertyIdStr);
+    if (wasFavorite) {
+      favoritesSet.delete(propertyIdStr);
+    } else {
+      favoritesSet.add(propertyIdStr);
+    }
+
+    try {
+      localStorage.setItem(favoritesKey, JSON.stringify(Array.from(favoritesSet)));
+    } catch (err) {
+      console.warn('PropertyContext: failed to persist favorites', err);
+    }
+
+    try {
+      const metadata = JSON.parse(localStorage.getItem(metadataKey) || '{}') || {};
+      if (!wasFavorite) {
+        const sourceProperty = propertyData || findLocalProperty(propertyIdStr) || { id: propertyIdStr };
+        metadata[propertyIdStr] = buildMetadataSnapshot(sourceProperty, propertyIdStr);
+      } else {
+        delete metadata[propertyIdStr];
+      }
+      localStorage.setItem(metadataKey, JSON.stringify(metadata));
+    } catch (err) {
+      console.warn('PropertyContext: failed to persist favorites metadata', err);
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+        detail: { propertyId: propertyIdStr, favorited: !wasFavorite }
+      }));
+    } catch (err) {
+      console.debug('PropertyContext: favoritesUpdated event failed', err);
+    }
+
+    let apiError = null;
+    try {
+      const response = await apiClient.post(`/properties/${propertyIdStr}/favorite`);
+      if (!response?.data?.success) {
+        apiError = response?.data?.message || 'Favorite toggle failed on server';
+      }
+    } catch (err) {
+      console.warn('PropertyContext: toggleFavorite API failed', err?.response?.data || err.message || err);
+      apiError = err?.response?.data?.message || err.message;
+    }
+
+    return {
+      success: true,
+      favorited: !wasFavorite,
+      fallback: Boolean(apiError),
+      error: apiError || null
+    };
+  }, [currentUser, findLocalProperty]);
+
+  const value = {
+    properties,
+    loading,
+    error,
+    fetchProperties,
+    createProperty,
+    updateProperty,
+    fetchProperty,
+    fetchAdminProperties,
+    verifyProperty,
+    getPropertyById: findLocalProperty,
+    toggleFavorite,
+  };
+
+  return (
+    <PropertyContext.Provider value={value}>
+      {children}
+    </PropertyContext.Provider>
+  );
+}
+
+export default PropertyProvider;

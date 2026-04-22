@@ -1,0 +1,44 @@
+﻿node : PASS backend/__tests__/disputeService.test.js (35.963 s)
+At line:1 char:1
++ node .\node_modules\jest\bin\jest.js backend/__tests__/disputeService ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS backend/__...t.js (35.963 s) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  ΓùÅ Console
+
+    console.log
+      ≡ƒôº Email service initialized with JSON transport (development/testing 
+mock).
+
+      at EmailService.log [as initializeTransporter] 
+(backend/services/emailService.js:50:17)
+
+PASS backend/__tests__/paymentService.test.js
+  ΓùÅ Console
+
+    console.log
+      ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (backend/services/paystackService.js:9:13)
+
+    console.log
+      ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (backend/services/paystackService.js:10:13)
+
+    console.log
+      ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (backend/services/paystackService.js:11:13)
+
+PASS backend/__tests__/investmentService.test.js
+
+Test Suites: 3 passed, 3 total
+Tests:       32 passed, 32 total
+Snapshots:   0 total
+Time:        48.194 s, estimated 94 s
+Ran all test suites matching /backend\\__tests__\\disputeService.test.js|backen
+d\\__tests__\\paymentService.test.js|backend\\__tests__\\investmentService.test
+.js/i.

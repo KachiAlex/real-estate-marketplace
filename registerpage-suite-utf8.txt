@@ -1,0 +1,30 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/pages/__tests__/RegisterPage ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/pages/__tests__/RegisterPage.test.js
+
+PASS src/pages/__tests__/RegisterPage.test.js (50.836 s)
+  RegisterPage email/password flow
+    ΓêÜ shows create account button and no Google sign-up button (919 ms)
+    ΓêÜ redirects to stored authRedirect after successful registration (218 ms)
+    ΓêÜ falls back to dashboard when no redirect exists (214 ms)
+    ΓêÜ does not call onClose after successful registration in modal mode (87 
+ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        103.525 s
+Ran all test suites matching /src\\pages\\__tests__\\RegisterPage.test.js/i.

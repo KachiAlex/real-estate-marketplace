@@ -1,0 +1,1353 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useProperty } from '../contexts/PropertyContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useVendor } from '../contexts/VendorContext';
+import PropertyImageUpload from '../components/PropertyImageUpload';
+import PropertyVideoUpload from '../components/PropertyVideoUpload';
+import PropertyDocumentUpload from '../components/PropertyDocumentUpload';
+import InvestmentDetailsModal from '../components/InvestmentDetailsModal';
+import AgentPropertyListing from '../components/AgentPropertyListing';
+import GoogleMapsAutocomplete from '../components/GoogleMapsAutocomplete';
+import AddressMemory from '../components/AddressMemory';
+import { FaHome, FaMapMarkerAlt, FaRulerCombined, FaDollarSign, FaBuilding, FaPlus, FaTimes, FaCheck, FaUpload, FaMapPin, FaBus, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
+import MemoryInput from '../components/MemoryInput';
+import { useAutoSave } from '../hooks/useAutoSave';
+import toast from 'react-hot-toast';
+import VerificationRequestModal from '../components/VerificationRequestModal';
+
+const AddProperty = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id: propertyId } = useParams();
+  const { createProperty, updateProperty, fetchProperty } = useProperty();
+  const { user } = useAuth();
+  const { isAgent, isPropertyOwner, checkDocumentStatus, uploadAgentDocument } = useVendor();
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const getDefaultLocation = () => ({
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    coordinates: {
+      latitude: '',
+      longitude: ''
+    },
+    nearestBusStop: {
+      name: '',
+      distance: '',
+      coordinates: {
+        latitude: '',
+        longitude: ''
+      }
+    },
+    googleMapsUrl: ''
+  });
+
+  const getDefaultDetails = () => ({
+    bedrooms: '',
+    bathrooms: '',
+    sqft: '',
+    yearBuilt: '',
+    lotSize: '',
+    parking: '',
+    heating: '',
+    cooling: ''
+  });
+
+  const normalizeLocation = (location = {}) => {
+    const coords = location.coordinates || {};
+    const nearest = location.nearestBusStop || {};
+    return {
+      address: location.address || '',
+      city: location.city || '',
+      state: location.state || '',
+      zipCode: location.zipCode || '',
+      coordinates: {
+        latitude: coords.latitude ?? location.latitude ?? '',
+        longitude: coords.longitude ?? location.longitude ?? ''
+      },
+      nearestBusStop: {
+        name: nearest.name || '',
+        distance: nearest.distance || '',
+        coordinates: {
+          latitude: nearest.coordinates?.latitude ?? '',
+          longitude: nearest.coordinates?.longitude ?? ''
+        }
+      },
+      googleMapsUrl: location.googleMapsUrl || ''
+    };
+  };
+
+  const normalizeDetails = (details = {}) => ({
+    bedrooms: details.bedrooms ?? '',
+    bathrooms: details.bathrooms ?? '',
+    sqft: details.sqft ?? details.squareFeet ?? '',
+    yearBuilt: details.yearBuilt ?? '',
+    lotSize: details.lotSize ?? '',
+    parking: details.parking ?? '',
+    heating: details.heating ?? '',
+    cooling: details.cooling ?? ''
+  });
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    type: '',
+    status: '', // for-sale, for-rent, for-lease
+    location: getDefaultLocation(),
+    details: getDefaultDetails(),
+    amenities: [],
+    images: [],
+    videos: [],
+    documentation: [],
+    mortgageDetails: {} // Added for mortgage status
+  });
+  
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [amenityInput, setAmenityInput] = useState('');
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [investmentPayload, setInvestmentPayload] = useState(null);
+  const [isListingAsAgent, setIsListingAsAgent] = useState(false);
+  const [attestationLetter, setAttestationLetter] = useState(null);
+  const [documentStatus, setDocumentStatus] = useState(null);
+  const [mortgageDetails, setMortgageDetails] = useState({
+    mortgageProvider: '',
+    minDownPaymentPercent: '',
+    tenorMonths: '',
+    interestRate: '',
+    monthlyIncomeRequirement: ''
+  });
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+
+  const verificationProperty = useMemo(() => {
+    if (!isEditing || !propertyId) return null;
+
+    const propertyUrl = typeof window !== 'undefined' ? `${window.location.origin}/property/${propertyId}` : '';
+
+    return {
+      id: propertyId,
+      title: formData.title || 'Untitled Property',
+      url: propertyUrl,
+      location: formData.location || {}
+    };
+  }, [isEditing, propertyId, formData.title, formData.location]);
+
+  const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'];
+  const propertyStatuses = ['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment'];
+  const commonAmenities = ['Parking', 'Garden', 'Balcony', 'Pool', 'Gym', 'Security', 'Air Conditioning', 'Heating', 'Hardwood Floors', 'Fireplace', 'Walk-in Closet', 'Patio', 'High-Speed Internet'];
+
+  // Auto-save configuration
+  const storageKey = `addPropertyForm_${user?.id || 'guest'}`;
+  const { clearSavedData } = useAutoSave(storageKey, {}, 2000);
+
+  // Load property data when editing
+  useEffect(() => {
+    const loadPropertyForEditing = async () => {
+      if (propertyId) {
+        setIsEditing(true);
+        try {
+          // Try to get property from location state first
+          const propertyFromState = location.state?.property;
+          if (propertyFromState) {
+            setFormData(prev => ({
+              ...prev,
+              ...propertyFromState,
+              location: normalizeLocation(propertyFromState.location),
+              details: normalizeDetails(propertyFromState.details)
+            }));
+            return;
+          }
+          
+          // Otherwise fetch from backend
+          const property = await fetchProperty(propertyId);
+          if (property) {
+            setFormData(prev => ({
+              ...prev,
+              ...property,
+              location: normalizeLocation(property.location),
+              details: normalizeDetails(property.details)
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading property for editing:', error);
+          toast.error('Failed to load property');
+        }
+      }
+    };
+
+    loadPropertyForEditing();
+  }, [propertyId, location.state?.property, fetchProperty]);
+
+  // Load saved form data on mount (if not editing a property)
+  useEffect(() => {
+    // Don't load saved data if editing
+    if (isEditing || propertyId) {
+      return;
+    }
+    
+    // Load auto-saved data
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only load if we have meaningful data (at least title or address)
+        if (parsed.title || parsed.location?.address) {
+          setFormData(prev => ({
+            ...prev,
+            ...parsed,
+            // Preserve empty arrays for files (don't restore them)
+            images: prev.images,
+            videos: prev.videos,
+            documentation: prev.documentation
+          }));
+          toast.success('Draft restored from previous session', { duration: 3000 });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved form data:', error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  // Auto-save form data (excludes large files like images) whenever formData changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const dataToSave = {
+        ...formData,
+        // Exclude large arrays/files from auto-save
+        images: [],
+        videos: [],
+        documentation: []
+      };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error('Error auto-saving form data:', error);
+      }
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, storageKey]);
+
+  // Check document status on component mount
+  useEffect(() => {
+    if (isAgent) {
+      const status = checkDocumentStatus();
+      setDocumentStatus(status);
+    }
+  }, [isAgent, checkDocumentStatus]);
+
+  const handleAttestationUpload = async (file) => {
+    try {
+      const result = await uploadAgentDocument({
+        type: 'attestation_letter',
+        file: file,
+        propertyId: null, // Will be set when property is created
+        description: 'Letter of attestation for property listing'
+      });
+      
+      if (result.success) {
+        // Refresh document status
+        const status = checkDocumentStatus();
+        setDocumentStatus(status);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error uploading attestation letter:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const handleOpenVerificationModal = () => {
+    if (!propertyId) {
+      toast.error('Please save this property before requesting verification.');
+      return;
+    }
+
+    setVerificationModalOpen(true);
+  };
+
+  const handleVerificationSuccess = () => {
+    toast.success('Verification request submitted.');
+    setVerificationModalOpen(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      if (parent === 'location' && child === 'address') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            address: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'city') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            city: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'state') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            state: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'zipCode') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            zipCode: value
+          }
+        }));
+      } else if (parent === 'location' && child === 'googleMapsUrl') {
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            googleMapsUrl: value
+          }
+        }));
+      } else if (name.includes('coordinates.')) {
+        const coordType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: {
+              ...prev.location.coordinates,
+              [coordType]: parseFloat(value) || ''
+            }
+          }
+        }));
+      } else if (name.includes('busStop.')) {
+        const busStopType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            nearestBusStop: {
+              ...prev.location.nearestBusStop,
+              [busStopType]: value
+            }
+          }
+        }));
+      } else if (name.includes('busStopCoordinates.')) {
+        const coordType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            nearestBusStop: {
+              ...prev.location.nearestBusStop,
+              coordinates: {
+                ...prev.location.nearestBusStop.coordinates,
+                [coordType]: parseFloat(value) || ''
+              }
+            }
+          }
+        }));
+      } else if (name.includes('details.')) {
+        const detailType = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            [detailType]: value
+          }
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleAddressSelect = (placeData) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        address: placeData.address,
+        city: placeData.city,
+        state: placeData.state,
+        zipCode: placeData.zipCode,
+        coordinates: placeData.coordinates,
+        googleMapsUrl: placeData.googleMapsUrl
+      }
+    }));
+  };
+
+  const handleAmenityAdd = () => {
+    if (amenityInput.trim() && !formData.amenities.includes(amenityInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        amenities: [...prev.amenities, amenityInput.trim()]
+      }));
+      setAmenityInput('');
+    }
+  };
+
+  const handleAmenityRemove = (amenity) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.filter(a => a !== amenity)
+    }));
+  };
+
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.title) newErrors.title = 'Title is required';
+    if (!formData.description) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length < 5) {
+      newErrors.description = 'Description must be at least 5 characters';
+    } else if (formData.description.length > 2000) {
+      newErrors.description = 'Description must not exceed 2000 characters';
+    }
+    if (!formData.price) newErrors.price = 'Price is required';
+    if (!formData.type) newErrors.type = 'Property type is required';
+    if (!formData.status) newErrors.status = 'Property status is required';
+    if (!formData.location.address) newErrors['location.address'] = 'Address is required';
+    if (!formData.location.city) newErrors['location.city'] = 'City is required';
+    if (!formData.location.state) newErrors['location.state'] = 'State is required';
+    if (!formData.details.bedrooms) newErrors['details.bedrooms'] = 'Number of bedrooms is required';
+    if (!formData.details.bathrooms) newErrors['details.bathrooms'] = 'Number of bathrooms is required';
+    if (!formData.details.sqft) newErrors['details.sqft'] = 'Square footage is required';
+    const hasCoords = Boolean(formData.location.coordinates.latitude) && Boolean(formData.location.coordinates.longitude);
+    if (!formData.location.googleMapsUrl && !hasCoords) {
+      newErrors['location.googleMapsUrl'] = 'Provide Google Maps link or both latitude and longitude';
+    }
+    
+    // Additional validation for agents
+    if (isListingAsAgent && isAgent) {
+      if (!documentStatus?.hasAttestationLetter) {
+        newErrors.attestationLetter = 'Attestation letter is required for agents';
+      } else if (documentStatus.attestationStatus !== 'verified') {
+        newErrors.attestationLetter = 'Attestation letter must be verified by admin before listing properties';
+      }
+    }
+
+    // Mortgage-specific validation
+    if (formData.status === 'for-mortgage') {
+      if (!mortgageDetails.mortgageProvider) newErrors.mortgageProvider = 'Mortgage provider is required';
+      if (!mortgageDetails.minDownPaymentPercent) newErrors.minDownPaymentPercent = 'Minimum down payment is required';
+      if (!mortgageDetails.tenorMonths) newErrors.tenorMonths = 'Tenor (months) is required';
+      if (!mortgageDetails.interestRate) newErrors.interestRate = 'Interest rate is required';
+      if (!mortgageDetails.monthlyIncomeRequirement) newErrors.monthlyIncomeRequirement = 'Monthly income requirement is required';
+    }
+    
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // CRITICAL: Filter out blob URLs - they won't persist after page reload
+    const persistentImages = (formData.images || []).filter(img => {
+      // Keep only images with HTTP/HTTPS URLs or uploaded images
+      if (!img.url) return false;
+      const isHttpUrl = img.url.startsWith('http://') || img.url.startsWith('https://');
+      if (!isHttpUrl) {
+        console.warn('Filtering out non-persistent image URL:', img.url);
+        return false;
+      }
+      return true;
+    });
+
+    // If we're filtering out images, warn the user
+    if (persistentImages.length < (formData.images || []).length) {
+      toast.error(
+        `${(formData.images || []).length - persistentImages.length} image(s) were not uploaded properly and will not be saved. Please re-upload images.`,
+        { duration: 4000 }
+      );
+      return;
+    }
+
+    // If it's an investment listing, open modal first to capture details
+    if (formData.status === 'for-investment' && !investmentPayload) {
+      setShowInvestmentModal(true);
+      return;
+    }
+
+    setLoading(true);
+    setProgressPercent(10);
+    setProgressMessage(isEditing ? 'Updating property...' : 'Validating and creating property...');
+    try {
+      const propertyData = {
+        ...formData,
+        images: persistentImages, // Use filtered persistent images
+        price: parseFloat(formData.price),
+        vendorId: user?.id || user?.uid,
+        vendorName: user?.displayName || user?.firstName + ' ' + user?.lastName || user?.email,
+        isAgentListing: isListingAsAgent,
+        agentId: isListingAsAgent ? (user?.id || user?.uid) : null,
+        createdAt: new Date(),
+        listingType: formData.status,
+        moderationStatus: isListingAsAgent ? 'pending_verification' : 'pending', // Agent listings need extra verification
+        details: {
+          ...formData.details,
+          bedrooms: parseInt(formData.details.bedrooms),
+          bathrooms: parseInt(formData.details.bathrooms),
+          sqft: parseInt(formData.details.sqft),
+          yearBuilt: formData.details.yearBuilt ? parseInt(formData.details.yearBuilt) : null
+        },
+        videos: [],
+        documentation: [],
+        // attach investment details if provided
+        ...(investmentPayload ? {
+          investment: investmentPayload.investment,
+          investmentDocuments: investmentPayload.investmentDocuments
+        } : {}),
+        mortgageDetails: formData.status === 'for-mortgage' ? {
+          mortgageProvider: mortgageDetails.mortgageProvider,
+          minDownPaymentPercent: Number(mortgageDetails.minDownPaymentPercent),
+          tenorMonths: Number(mortgageDetails.tenorMonths),
+          interestRate: Number(mortgageDetails.interestRate),
+          monthlyIncomeRequirement: Number(mortgageDetails.monthlyIncomeRequirement)
+        } : undefined
+      };
+      
+      const result = isEditing ? await updateProperty(propertyId, propertyData) : await createProperty(propertyData);
+      if (result.success) {
+        const newId = result.id;
+        toast.success('Property created successfully!');
+        setProgressPercent(100);
+        setProgressMessage('Done');
+
+        // Persist lightweight record for Vendor Dashboard "My Properties" list
+        try {
+          const vendorKey = user ? `vendor_properties_${user.id || user.uid}` : null;
+          if (vendorKey) {
+            const stored = JSON.parse(localStorage.getItem(vendorKey) || '[]');
+            const created = {
+              id: newId,
+              title: propertyData.title,
+              price: Number(propertyData.price) || 0,
+              location: propertyData.location?.address || propertyData.location?.city || propertyData.location?.googleMapsUrl || 'Location not specified',
+              bedrooms: Number(propertyData.details?.bedrooms) || 0,
+              bathrooms: Number(propertyData.details?.bathrooms) || 0,
+              area: Number(propertyData.details?.sqft) || 0,
+              image: (propertyData.images && propertyData.images[0]?.url) || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+              status: 'pending',
+              views: 0,
+              inquiries: 0,
+              favorites: 0,
+              dateListed: new Date().toISOString(),
+              lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem(vendorKey, JSON.stringify([created, ...stored]));
+          }
+        } catch (_) {}
+
+        // Clear auto-saved data after successful submission
+        clearSavedData();
+        
+        // Navigate to Vendor "My Properties" so the new listing is visible immediately
+        if (location.pathname.includes('/vendor/')) {
+          navigate('/vendor/properties');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setErrors({ general: result.message });
+        toast.error(result.message || 'Failed to create property');
+      }
+    } catch (error) {
+      setErrors({ general: error.message });
+    } finally {
+      setLoading(false);
+      setTimeout(() => { setProgressPercent(0); setProgressMessage(''); }, 500);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-8 md:py-12">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <FaHome className="text-white text-3xl" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Add New Property</h1>
+          <p className="text-xl text-gray-600">List your property with comprehensive details</p>
+        </div>
+
+        {isEditing && (
+          <div className="flex justify-end mb-6">
+            <button
+              type="button"
+              onClick={handleOpenVerificationModal}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors"
+            >
+              <FaCheck className="text-sm" />
+              Apply for Verification
+            </button>
+          </div>
+        )}
+
+        {/* Form Container */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-xl">
+                <p className="font-medium">{errors.general}</p>
+              </div>
+            )}
+
+            {/* Agent/Owner Selection */}
+            <AgentPropertyListing
+              isAgent={isAgent}
+              isPropertyOwner={isPropertyOwner}
+              isListingAsAgent={isListingAsAgent}
+              setIsListingAsAgent={setIsListingAsAgent}
+              attestationLetter={attestationLetter}
+              setAttestationLetter={setAttestationLetter}
+              documentStatus={documentStatus}
+              onAttestationUpload={handleAttestationUpload}
+              errors={errors}
+            />
+
+            {/* Basic Information */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <FaBuilding className="text-white text-lg" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Basic Information</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Property Title</label>
+                  <div className="relative">
+                    <MemoryInput
+                      name="title"
+                      fieldKey="title"
+                      value={formData.title}
+                      onChange={(val) => setFormData((p) => ({ ...p, title: val }))}
+                      placeholder="e.g., Beautiful 3-bedroom house"
+                      className="pl-12"
+                    />
+                    <FaHome className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
+                  </div>
+                  {errors.title && <p className="mt-2 text-sm text-red-600">{errors.title}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Property Type</label>
+                  <div className="relative">
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
+                        errors.type ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                    >
+                      <option value="">Select type</option>
+                      {propertyTypes.map(type => (
+                        <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                      ))}
+                    </select>
+                    <FaBuilding className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
+                  </div>
+                  {errors.type && <p className="mt-2 text-sm text-red-600">{errors.type}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Property Status</label>
+                  <div className="relative">
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ${
+                        errors.status ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                    >
+                      <option value="">Select status</option>
+                      {propertyStatuses.map(status => (
+                        <option key={status} value={status}>
+                          {status === 'for-sale' ? 'For Sale' : 
+                           status === 'for-rent' ? 'For Rent' : 
+                           status === 'for-lease' ? 'For Lease' :
+                           status === 'for-mortgage' ? 'For Mortgage' : 'For Investment'}
+                        </option>
+                      ))}
+                    </select>
+                    <FaCheck className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
+                  </div>
+                  {errors.status && <p className="mt-2 text-sm text-red-600">{errors.status}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Price (₦)</label>
+                  <div className="relative">
+                    <MemoryInput
+                      name="price"
+                      type="number"
+                      fieldKey="price"
+                      value={formData.price}
+                      onChange={(val) => setFormData((p) => ({ ...p, price: val }))}
+                      placeholder="50000000"
+                      className="pl-12"
+                    />
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg font-bold">₦</span>
+                  </div>
+                  {errors.price && <p className="mt-2 text-sm text-red-600">{errors.price}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Description
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    ({formData.description.length}/2000 characters)
+                  </span>
+                </label>
+                <MemoryInput
+                  name="description"
+                  fieldKey="description"
+                  value={formData.description}
+                  onChange={(val) => setFormData((p) => ({ ...p, description: val }))}
+                  multiline
+                  rows={4}
+                  placeholder="Describe your property..."
+                />
+                {errors.description && <p className="mt-2 text-sm text-red-600">{errors.description}</p>}
+              </div>
+            </div>
+
+            {/* Location Information */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
+                  <FaMapMarkerAlt className="text-white text-lg" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Location Information</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Address</label>
+                  <GoogleMapsAutocomplete
+                      value={formData.location.address}
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: {
+                          ...prev.location,
+                          address: value
+                        }
+                      }));
+                    }}
+                    onPlaceSelect={handleAddressSelect}
+                    placeholder="Start typing your address..."
+                    error={!!errors['location.address']}
+                  />
+                  {errors['location.address'] && <p className="mt-2 text-sm text-red-600">{errors['location.address']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">City</label>
+                  <AddressMemory
+                    value={formData.location.city}
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, city: value }
+                      }));
+                    }}
+                    placeholder="Enter city..."
+                    fieldType="city"
+                    error={!!errors['location.city']}
+                  />
+                  {errors['location.city'] && <p className="mt-2 text-sm text-red-600">{errors['location.city']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">State</label>
+                  <AddressMemory
+                    value={formData.location.state}
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, state: value }
+                      }));
+                    }}
+                    placeholder="Enter state..."
+                    fieldType="state"
+                    error={!!errors['location.state']}
+                  />
+                  {errors['location.state'] && <p className="mt-2 text-sm text-red-600">{errors['location.state']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">ZIP Code</label>
+                  <AddressMemory
+                    value={formData.location.zipCode}
+                    onChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, zipCode: value }
+                      }));
+                    }}
+                    placeholder="Enter ZIP code..."
+                    fieldType="zipCode"
+                    error={!!errors['location.zipCode']}
+                  />
+                  {errors['location.zipCode'] && <p className="mt-2 text-sm text-red-600">{errors['location.zipCode']}</p>}
+                </div>
+              </div>
+
+              {/* Geo Coordinates */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                  <FaMapPin className="mr-2 text-blue-600" />
+                  Geographic Coordinates
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Latitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="coordinates.latitude"
+                      value={formData.location.coordinates.latitude}
+                      onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, coordinates: { ...p.location.coordinates, latitude: val } } }))}
+                      placeholder="40.7128"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Longitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="coordinates.longitude"
+                      value={formData.location.coordinates.longitude}
+                      onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, coordinates: { ...p.location.coordinates, longitude: val } } }))}
+                      placeholder="-74.0060"
+                    />
+                  </div>
+                </div>
+                
+                {/* Google Maps Link */}
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h5 className="text-sm font-semibold text-blue-800 mb-2">Google Maps Link</h5>
+                      {formData.location.googleMapsUrl ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-green-600 font-medium">✓ Auto-populated from address selection</p>
+                          <MemoryInput
+                            fieldKey="location.googleMapsUrl"
+                            value={formData.location.googleMapsUrl}
+                            onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, googleMapsUrl: val } }))}
+                            placeholder="https://www.google.com/maps/..."
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">Select an address above to auto-populate this field</p>
+                      <MemoryInput
+                        fieldKey="location.googleMapsUrl"
+                        value={formData.location.googleMapsUrl}
+                        onChange={(val) => setFormData((p) => ({ ...p, location: { ...p.location, googleMapsUrl: val } }))}
+                        placeholder="https://www.google.com/maps/..."
+                      />
+                    </div>
+                      )}
+                  </div>
+                  </div>
+                  {errors['location.googleMapsUrl'] && <p className="mt-2 text-sm text-red-600">{errors['location.googleMapsUrl']}</p>}
+                  {(formData.location.googleMapsUrl || (formData.location.coordinates.latitude && formData.location.coordinates.longitude)) && (
+                    <div className="mt-4 rounded-lg overflow-hidden border border-blue-200 bg-white">
+                      <iframe
+                        title="Property location preview"
+                        src={formData.location.googleMapsUrl
+                          ? `https://www.google.com/maps?q=${encodeURIComponent(formData.location.googleMapsUrl)}&output=embed`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(formData.location.coordinates.latitude + ',' + formData.location.coordinates.longitude)}&output=embed`}
+                        width="100%"
+                        height="300"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Nearest Bus Stop */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                  <FaBus className="mr-2 text-green-600" />
+                  Nearest Bus Stop
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Name</label>
+                    <AddressMemory
+                      value={formData.location.nearestBusStop.name}
+                      onChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          location: { 
+                            ...prev.location, 
+                            nearestBusStop: { ...prev.location.nearestBusStop, name: value }
+                          }
+                        }));
+                      }}
+                      placeholder="Enter bus stop name..."
+                      fieldType="busStop"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Distance</label>
+                    <MemoryInput
+                      fieldKey="busStop.distance"
+                      value={formData.location.nearestBusStop.distance}
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: { ...p.location, nearestBusStop: { ...p.location.nearestBusStop, distance: val } }
+                      }))}
+                      placeholder="0.2 miles"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Latitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="busStopCoordinates.latitude"
+                      value={formData.location.nearestBusStop.coordinates.latitude}
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: {
+                          ...p.location,
+                          nearestBusStop: {
+                            ...p.location.nearestBusStop,
+                            coordinates: {
+                              ...p.location.nearestBusStop.coordinates,
+                              latitude: val
+                            }
+                          }
+                        }
+                      }))}
+                      placeholder="40.7132"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Bus Stop Longitude (optional)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="busStopCoordinates.longitude"
+                      value={formData.location.nearestBusStop.coordinates.longitude}
+                      onChange={(val) => setFormData((p) => ({
+                        ...p,
+                        location: {
+                          ...p.location,
+                          nearestBusStop: {
+                            ...p.location.nearestBusStop,
+                            coordinates: {
+                              ...p.location.nearestBusStop.coordinates,
+                              longitude: val
+                            }
+                          }
+                        }
+                      }))}
+                      placeholder="-74.0059"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                  <FaRulerCombined className="text-white text-lg" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Property Details</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Bedrooms</label>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="bedrooms"
+                    value={formData.details.bedrooms}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, bedrooms: val } }))}
+                    placeholder="3"
+                  />
+                  {errors['details.bedrooms'] && <p className="mt-2 text-sm text-red-600">{errors['details.bedrooms']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Bathrooms</label>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="bathrooms"
+                    value={formData.details.bathrooms}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, bathrooms: val } }))}
+                    placeholder="2"
+                  />
+                  {errors['details.bathrooms'] && <p className="mt-2 text-sm text-red-600">{errors['details.bathrooms']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Square Feet</label>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="sqft"
+                    value={formData.details.sqft}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, sqft: val } }))}
+                    placeholder="2000"
+                  />
+                  {errors['details.sqft'] && <p className="mt-2 text-sm text-red-600">{errors['details.sqft']}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Year Built</label>
+                  <MemoryInput
+                    type="number"
+                    fieldKey="yearBuilt"
+                    value={formData.details.yearBuilt}
+                    onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, yearBuilt: val } }))}
+                    placeholder="2015"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Lot Size</label>
+                    <MemoryInput
+                      fieldKey="details.lotSize"
+                      value={formData.details.lotSize}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, lotSize: val } }))}
+                      placeholder="0.25 acres"
+                    />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Parking</label>
+                    <MemoryInput
+                      fieldKey="details.parking"
+                      value={formData.details.parking}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, parking: val } }))}
+                      placeholder="2-car garage"
+                    />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Heating</label>
+                    <MemoryInput
+                      fieldKey="details.heating"
+                      value={formData.details.heating}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, heating: val } }))}
+                      placeholder="Central"
+                    />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Cooling</label>
+                    <MemoryInput
+                      fieldKey="details.cooling"
+                      value={formData.details.cooling}
+                      onChange={(val) => setFormData((p) => ({ ...p, details: { ...p.details, cooling: val } }))}
+                      placeholder="Central AC"
+                    />
+                </div>
+              </div>
+            </div>
+
+            {/* Media Upload */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                  <FaUpload className="text-white text-lg" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Media & Documents</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Image Upload */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                    <FaImage className="mr-2 text-blue-600" />
+                    Property Images
+                  </h4>
+                  <PropertyImageUpload
+                    propertyId={formData.id || 'temp'}
+                    onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                    initialImages={formData.images || []}
+                    maxImages={10}
+                  />
+                </div>
+
+                {/* Video Upload */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                    <FaVideo className="mr-2 text-red-600" />
+                    Property Videos
+                  </h4>
+                  <PropertyVideoUpload
+                    propertyId={formData.id || 'temp'}
+                    onVideosChange={(videos) => setFormData(prev => ({ ...prev, videos }))}
+                    initialVideos={formData.videos || []}
+                    maxVideos={5}
+                  />
+                </div>
+
+                {/* Document Upload */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-700 flex items-center">
+                    <FaFileAlt className="mr-2 text-green-600" />
+                    Documents
+                  </h4>
+                  <PropertyDocumentUpload
+                    propertyId={formData.id || 'temp'}
+                    onDocumentsChange={(documents) => setFormData(prev => ({ ...prev, documentation: documents }))}
+                    initialDocuments={formData.documentation || []}
+                    maxDocuments={10}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Amenities */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                  <FaCheck className="text-white text-lg" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Amenities</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={amenityInput}
+                      onChange={(e) => setAmenityInput(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      placeholder="Add custom amenity"
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAmenityAdd())}
+                    />
+                    <FaPlus className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAmenityAdd}
+                    className="px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg"
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {commonAmenities.map(amenity => (
+                    <button
+                      key={amenity}
+                      type="button"
+                      onClick={() => {
+                        if (!formData.amenities.includes(amenity)) {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: [...prev.amenities, amenity]
+                          }));
+                        }
+                      }}
+                      className={`px-4 py-3 text-sm rounded-xl border-2 transition-all duration-300 ${
+                        formData.amenities.includes(amenity)
+                          ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-md'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      {amenity}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {formData.amenities.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-lg font-semibold text-gray-700">Selected Amenities:</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {formData.amenities.map((amenity, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-4 py-2 rounded-xl text-sm bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200 shadow-sm"
+                      >
+                        {amenity}
+                        <button
+                          type="button"
+                          onClick={() => handleAmenityRemove(amenity)}
+                          className="ml-3 text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <FaTimes className="text-sm" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mortgage Details (conditional) */}
+            {formData.status === 'for-mortgage' && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
+                    <FaDollarSign className="text-white text-lg" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">Mortgage Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Mortgage Provider</label>
+                    <MemoryInput
+                      fieldKey="mortgageDetails.mortgageProvider"
+                      value={mortgageDetails.mortgageProvider}
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, mortgageProvider: val }))}
+                      placeholder="Bank of America"
+                    />
+                    {errors.mortgageProvider && <p className="mt-2 text-sm text-red-600">{errors.mortgageProvider}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Minimum Down Payment (%)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgageDetails.minDownPaymentPercent"
+                      value={mortgageDetails.minDownPaymentPercent}
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, minDownPaymentPercent: val }))}
+                      placeholder="20"
+                    />
+                    {errors.minDownPaymentPercent && <p className="mt-2 text-sm text-red-600">{errors.minDownPaymentPercent}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Tenor (Months)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgageDetails.tenorMonths"
+                      value={mortgageDetails.tenorMonths}
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, tenorMonths: val }))}
+                      placeholder="300"
+                    />
+                    {errors.tenorMonths && <p className="mt-2 text-sm text-red-600">{errors.tenorMonths}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Interest Rate (%)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgageDetails.interestRate"
+                      value={mortgageDetails.interestRate}
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, interestRate: val }))}
+                      placeholder="3.5"
+                    />
+                    {errors.interestRate && <p className="mt-2 text-sm text-red-600">{errors.interestRate}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Monthly Income Requirement (₦)</label>
+                    <MemoryInput
+                      type="number"
+                      fieldKey="mortgageDetails.monthlyIncomeRequirement"
+                      value={mortgageDetails.monthlyIncomeRequirement}
+                      onChange={(val) => setMortgageDetails((p) => ({ ...p, monthlyIncomeRequirement: val }))}
+                      placeholder="300000"
+                    />
+                    {errors.monthlyIncomeRequirement && <p className="mt-2 text-sm text-red-600">{errors.monthlyIncomeRequirement}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Submit Buttons */}
+            <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6">
+              {loading && (
+                <div className="flex-1">
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                    <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
+                  </div>
+                  <p className="text-xs text-gray-500">{progressMessage}</p>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="px-8 py-4 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-300 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-1 shadow-lg font-semibold"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Adding Property...
+                  </div>
+                ) : (
+                  'Submit Property'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {showInvestmentModal && (
+        <InvestmentDetailsModal
+          isOpen={showInvestmentModal}
+          onClose={() => { setShowInvestmentModal(false); setInvestmentPayload(null); }}
+          onSubmit={(payload) => { setInvestmentPayload(payload); setShowInvestmentModal(false); setTimeout(() => { const fakeEvent = { preventDefault: () => {} }; handleSubmit(fakeEvent); }, 0); }}
+        />
+      )}
+
+      {verificationProperty && (
+        <VerificationRequestModal
+          property={verificationProperty}
+          isOpen={verificationModalOpen}
+          onClose={() => setVerificationModalOpen(false)}
+          onSuccess={handleVerificationSuccess}
+        />
+      )}
+    </div>
+  );
+};
+
+export default AddProperty; 

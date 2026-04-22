@@ -1,0 +1,29 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/contexts/__tests__/PropertyC ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/contexts/__tests__/PropertyContext.test.js
+
+PASS src/contexts/__tests__/PropertyContext.test.js (25.496 s)
+  PropertyContext
+    ΓêÜ should provide property context (172 ms)
+    ΓêÜ should provide properties list (29 ms)
+    ΓêÜ should provide toggleFavorite function (38 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        49.132 s
+Ran all test suites matching 
+/src\\contexts\\__tests__\\PropertyContext.test.js/i.

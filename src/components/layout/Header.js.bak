@@ -1,0 +1,16 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
+import { FaHome, FaBars, FaTimes, FaSearch, FaUser, FaShieldAlt } from 'react-icons/fa';
+import GlobalSearch from '../GlobalSearch';
+import { useGlobalSearch } from '../../hooks/useGlobalSearch';
+import AdminProfileModal from '../AdminProfileModalNew';
+import toast from 'react-hot-toast';
+import LocalModeBanner from '../LocalModeBanner';
+import BecomeVendorModal from '../BecomeVendorModal.js';
+import DashboardSwitch from '../DashboardSwitch';
+
+// Backup of Header.js prior to simplification
+
+...existing code...

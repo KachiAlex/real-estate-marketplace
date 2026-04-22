@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-04-12T06:22:52.890Z",
+  "tables": {
+    "properties": {
+      "structure": {
+        "id": "UUID PRIMARY KEY",
+        "title": "VARCHAR(255)",
+        "description": "TEXT",
+        "price": "DECIMAL(15,2)",
+        "type": "VARCHAR(50)",
+        "status": "VARCHAR(50)",
+        "location": "TEXT",
+        "city": "VARCHAR(100)",
+        "state": "VARCHAR(100)",
+        "ownerId": "UUID",
+        "createdAt": "TIMESTAMP",
+        "updatedAt": "TIMESTAMP"
+      },
+      "data": []
+    },
+    "users": {
+      "structure": {
+        "id": "UUID PRIMARY KEY",
+        "firstName": "VARCHAR(100)",
+        "lastName": "VARCHAR(100)",
+        "email": "VARCHAR(255) UNIQUE",
+        "password": "VARCHAR(255)",
+        "role": "VARCHAR(50)",
+        "isActive": "BOOLEAN",
+        "isVerified": "BOOLEAN",
+        "createdAt": "TIMESTAMP",
+        "updatedAt": "TIMESTAMP"
+      },
+      "data": []
+    }
+  },
+  "instructions": [
+    "1. Start your backend server: npm start",
+    "2. Export properties: curl http://localhost:5001/api/properties > properties.json",
+    "3. Export users: curl http://localhost:5001/api/users > users.json",
+    "4. Import to Neon: pql \"NEON_DATABASE_URL\" < import-script.sql"
+  ]
+}
