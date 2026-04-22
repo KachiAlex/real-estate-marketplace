@@ -97,4 +97,4 @@ const GoogleCallback = () => {
   );
 };
 
-export default GooglePopupCallback;
+export default GoogleCallback;
