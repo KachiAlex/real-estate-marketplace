@@ -157,11 +157,11 @@ code {
   }
 
   .property-title {
-    @apply font-semibold text-gray-900 mb-2 text-lg break-words break-all;
+    @apply font-semibold text-gray-900 mb-2 text-lg break-words;
   }
 
   .property-location {
-    @apply text-gray-600 text-sm mb-4 flex items-center break-words break-all;
+    @apply text-gray-600 text-sm mb-4 flex items-center break-words;
   }
 
   .property-features {

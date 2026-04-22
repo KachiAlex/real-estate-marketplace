@@ -1132,8 +1132,8 @@ const Dashboard = () => {
                   <div className="text-2xl font-bold text-gray-900 mb-1">
                     ₦{property.price?.toLocaleString()}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1 break-words break-all">{property.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3 break-words break-all">
+                  <h3 className="font-semibold text-gray-900 mb-1 break-normal">{property.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3 break-normal">
                     {(() => {
                       if (typeof property.location === 'string') {
                         return property.location;
