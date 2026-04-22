@@ -467,6 +467,7 @@ export const AuthProvider = ({ children }) => {
       const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
 
       console.log('Google OAuth: Starting redirect flow', { origin, redirectUri, GOOGLE_CLIENT_ID });
+      console.log('Google OAuth: IMPORTANT - Ensure this redirect URI is configured in Google Cloud Console:', redirectUri);
 
       // Save the current redirect in sessionStorage for the callback
       if (getAuthRedirect?.()) {
@@ -476,11 +477,12 @@ export const AuthProvider = ({ children }) => {
       const params = new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         redirect_uri: redirectUri,
-        response_type: 'code',
+        response_type: 'token id_token',
         scope: 'openid email profile',
         include_granted_scopes: 'true',
         prompt: 'select_account',
-        state
+        state,
+        nonce
       });
 
       const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;

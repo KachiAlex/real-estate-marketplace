@@ -23,26 +23,26 @@ const GoogleCallback = () => {
         const hash = window.location.hash || '';
         const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
         const searchParams = new URLSearchParams(window.location.search || '');
-        const code = searchParams.get('code') || hashParams.get('code') || null;
-        const state = searchParams.get('state') || hashParams.get('state') || null;
+        const idToken = hashParams.get('id_token') || searchParams.get('id_token') || null;
+        const state = hashParams.get('state') || searchParams.get('state') || null;
         const decodedState = decodeState(state);
 
-        console.log('GoogleCallback: Extracted params', { hasCode: !!code, state, decodedState });
+        console.log('GoogleCallback: Extracted tokens', { hasIdToken: !!idToken, state, decodedState });
 
-        if (!code) {
-          console.error('GoogleCallback: No authorization code found in URL');
+        if (!idToken) {
+          console.error('GoogleCallback: No ID token found in URL');
           console.error('GoogleCallback: All URL params', Object.fromEntries(hashParams));
           console.error('GoogleCallback: All search params', Object.fromEntries(searchParams));
-          window.location.href = '/auth/login?error=no_code';
+          window.location.href = '/auth/login?error=no_token';
           return;
         }
 
-        console.log('GoogleCallback: Sending authorization code to backend');
-        // Send authorization code to backend (backend will exchange it for tokens)
+        console.log('GoogleCallback: Sending ID token to backend');
+        // Send ID token to backend
         const resp = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ idToken })
         });
 
         const data = await resp.json();
