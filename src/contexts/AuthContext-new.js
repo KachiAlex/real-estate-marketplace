@@ -465,26 +465,30 @@ export const AuthProvider = ({ children }) => {
       const nonce = createNonce();
       const redirectUri = `${origin}/auth/google/callback`;
       const state = encodeStatePayload({ parentOrigin: origin, redirect: getAuthRedirect?.() || null, nonce, ts: Date.now() });
-      
+
+      console.log('Google OAuth: Starting redirect flow', { origin, redirectUri, GOOGLE_CLIENT_ID });
+
       // Save the current redirect in sessionStorage for the callback
       if (getAuthRedirect?.()) {
         sessionStorage.setItem('authRedirect', getAuthRedirect());
       }
-      
+
       const params = new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         redirect_uri: redirectUri,
-        response_type: 'token id_token',
+        response_type: 'code',
         scope: 'openid email profile',
         include_granted_scopes: 'true',
         prompt: 'select_account',
-        state,
-        nonce
+        state
       });
-      
+
+      const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+      console.log('Google OAuth: Redirecting to', authUrl);
+
       // Redirect to Google OAuth (full page redirect instead of popup)
-      window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;
-      
+      window.location.href = authUrl;
+
       // This will never execute since we're redirecting
       return null;
     } catch (error) {

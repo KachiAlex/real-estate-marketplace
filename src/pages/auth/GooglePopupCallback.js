@@ -14,31 +14,40 @@ const decodeState = (encoded) => {
 const GoogleCallback = () => {
   useEffect(() => {
     const processGoogleAuth = async () => {
+      console.log('GoogleCallback: Component mounted');
+      console.log('GoogleCallback: Current URL', window.location.href);
+      console.log('GoogleCallback: Hash', window.location.hash);
+      console.log('GoogleCallback: Search', window.location.search);
+
       try {
         const hash = window.location.hash || '';
         const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
         const searchParams = new URLSearchParams(window.location.search || '');
-        const idToken = hashParams.get('id_token') || searchParams.get('id_token') || null;
-        const state = hashParams.get('state') || searchParams.get('state') || null;
+        const code = searchParams.get('code') || hashParams.get('code') || null;
+        const state = searchParams.get('state') || hashParams.get('state') || null;
         const decodedState = decodeState(state);
 
-        console.log('GoogleCallback: Extracted tokens', { hasIdToken: !!idToken, state, decodedState });
+        console.log('GoogleCallback: Extracted params', { hasCode: !!code, state, decodedState });
 
-        if (!idToken) {
-          console.error('GoogleCallback: No ID token found');
-          window.location.href = '/auth/login?error=no_token';
+        if (!code) {
+          console.error('GoogleCallback: No authorization code found in URL');
+          console.error('GoogleCallback: All URL params', Object.fromEntries(hashParams));
+          console.error('GoogleCallback: All search params', Object.fromEntries(searchParams));
+          window.location.href = '/auth/login?error=no_code';
           return;
         }
 
-        // Send token to backend
+        console.log('GoogleCallback: Sending authorization code to backend');
+        // Send authorization code to backend (backend will exchange it for tokens)
         const resp = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken })
+          body: JSON.stringify({ code })
         });
 
         const data = await resp.json();
-        
+        console.log('GoogleCallback: Backend response', { ok: resp.ok, data });
+
         if (!resp.ok) {
           console.error('GoogleCallback: Backend error', data);
           window.location.href = '/auth/login?error=auth_failed';
@@ -52,9 +61,11 @@ const GoogleCallback = () => {
 
         // Get redirect from state or sessionStorage
         const redirect = decodedState?.redirect || sessionStorage.getItem('authRedirect');
-        
+
         // Clear redirect from sessionStorage
         sessionStorage.removeItem('authRedirect');
+
+        console.log('GoogleCallback: Redirecting to', redirect || 'default dashboard');
 
         // Redirect to appropriate page
         if (redirect) {

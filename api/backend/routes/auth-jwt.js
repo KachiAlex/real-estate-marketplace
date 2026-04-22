@@ -66,7 +66,8 @@ const validatePasswordStrength = (password) => {
 // determine whether SSL was expected (mimics sequelizeDb resolvedRequireSSL)
 const LOCAL_DB_REQUIRE_SSL = (process.env.DB_REQUIRE_SSL === 'true') || process.env.NODE_ENV === 'production';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '363622331516-csuhmvdqv5cff2js8pe9oatd6259v6tb.apps.googleusercontent.com';
-const googleOAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
+const googleOAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) : null;
 
 const deriveNamesFromGooglePayload = (payload = {}) => {
   let firstName = payload.given_name;
@@ -628,90 +629,166 @@ router.post('/google', async (req, res) => {
       return res.status(503).json({ success: false, message: 'Google OAuth is not configured on the server' });
     }
 
-    const { idToken } = req.body || {};
-    if (!idToken) {
-      return res.status(400).json({ success: false, message: 'Google ID token missing' });
-    }
+    const { code, idToken } = req.body || {};
 
-    let payload;
-    try {
-      const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
-      payload = ticket.getPayload();
-    } catch (verifyErr) {
-      console.error('Google token verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
-      return res.status(401).json({ success: false, message: 'Invalid Google token' });
-    }
-
-    const email = payload && payload.email ? payload.email.toLowerCase() : null;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Google account lacks a verified email' });
-    }
-
-    const { firstName, lastName } = deriveNamesFromGooglePayload(payload);
-    const avatar = payload && payload.picture ? payload.picture : null;
-    const emailVerified = payload && payload.email_verified !== false;
-    const now = new Date();
-
-    let user;
-    try {
-      user = await User.findOne({ where: { email } });
-    } catch (lookupErr) {
-      console.error('Google sign-in lookup failed:', lookupErr);
-      return res.status(500).json({ success: false, message: 'Failed to check user record', error: lookupErr.message });
-    }
-
-    if (!user) {
+    // Handle authorization code flow (preferred)
+    if (code) {
       try {
-        user = await User.create({
-          email,
-          firstName,
-          lastName,
-          password: null,
-          role: 'user',
-          roles: ['user'],
-          activeRole: 'user',
-          provider: 'google',
-          avatar,
-          isVerified: emailVerified,
-          isActive: true,
-          lastLogin: now
-        });
-      } catch (createErr) {
-        console.error('Google user creation failed:', createErr);
-        return res.status(500).json({ success: false, message: 'Unable to create account from Google profile', error: createErr.message });
-      }
-    } else {
-      const updates = {};
-      if ((!user.firstName || user.firstName === 'Google') && firstName) updates.firstName = firstName;
-      if ((!user.lastName || user.lastName === 'User') && lastName) updates.lastName = lastName;
-      if (avatar && avatar !== user.avatar) updates.avatar = avatar;
-      if (!user.provider || user.provider === 'email') updates.provider = 'google';
-      if (!Array.isArray(user.roles) || !user.roles.length) updates.roles = ['user'];
-      if (!user.activeRole) updates.activeRole = 'user';
-      if (!user.isVerified && emailVerified) updates.isVerified = true;
-      updates.lastLogin = now;
-      try {
-        await user.update(updates);
-        if (typeof user.reload === 'function') {
-          await user.reload();
-        } else {
-          user = await User.findByPk(user.id) || user;
+        // Exchange authorization code for tokens
+        const { tokens } = await googleOAuthClient.getToken(code);
+        const idTokenFromCode = tokens.id_token;
+
+        if (!idTokenFromCode) {
+          return res.status(400).json({ success: false, message: 'Failed to obtain ID token from authorization code' });
         }
-      } catch (updateErr) {
-        console.warn('Google sign-in update failed:', updateErr && updateErr.message ? updateErr.message : updateErr);
+
+        const ticket = await googleOAuthClient.verifyIdToken({ idToken: idTokenFromCode, audience: GOOGLE_CLIENT_ID });
+        const payload = ticket.getPayload();
+
+        const email = payload && payload.email ? payload.email.toLowerCase() : null;
+        if (!email) {
+          return res.status(400).json({ success: false, message: 'Google account lacks a verified email' });
+        }
+
+        const { firstName, lastName } = deriveNamesFromGooglePayload(payload);
+        const avatar = payload && payload.picture ? payload.picture : null;
+        const emailVerified = payload && payload.email_verified !== false;
+
+        let user;
+        try {
+          user = await User.findOne({ where: { email } });
+        } catch (lookupErr) {
+          console.error('Google sign-in lookup failed:', lookupErr);
+          return res.status(500).json({ success: false, message: 'Failed to check user record', error: lookupErr.message });
+        }
+
+        if (!user) {
+          try {
+            user = await User.create({
+              email,
+              firstName,
+              lastName,
+              password: null,
+              avatar,
+              isVerified: emailVerified,
+              role: 'user',
+              roles: ['user']
+            });
+          } catch (createErr) {
+            console.error('Google sign-in user creation failed:', createErr);
+            return res.status(500).json({ success: false, message: 'Failed to create user record', error: createErr.message });
+          }
+        }
+
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        return res.json({
+          success: true,
+          message: 'Google sign-in successful',
+          accessToken,
+          refreshToken,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatar: user.avatar,
+            role: user.role,
+            roles: user.roles,
+            isVerified: user.isVerified
+          }
+        });
+      } catch (codeErr) {
+        console.error('Google authorization code exchange failed:', codeErr);
+        return res.status(401).json({ success: false, message: 'Invalid authorization code' });
       }
     }
 
-    const accessToken = generateToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    // Handle implicit flow (legacy, for backward compatibility)
+    if (idToken) {
+      let payload;
+      try {
+        const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+        payload = ticket.getPayload();
+      } catch (verifyErr) {
+        console.error('Google token verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
+        return res.status(401).json({ success: false, message: 'Invalid Google token' });
+      }
 
-    return res.json({
-      success: true,
-      message: 'Google sign-in successful',
-      accessToken,
-      refreshToken,
-      user: buildUserResponse(user)
-    });
+      const email = payload && payload.email ? payload.email.toLowerCase() : null;
+      if (!email) {
+        return res.status(400).json({ success: false, message: 'Google account lacks a verified email' });
+      }
+
+      const { firstName, lastName } = deriveNamesFromGooglePayload(payload);
+      const avatar = payload && payload.picture ? payload.picture : null;
+      const emailVerified = payload && payload.email_verified !== false;
+      const now = new Date();
+
+      let user;
+      try {
+        user = await User.findOne({ where: { email } });
+      } catch (lookupErr) {
+        console.error('Google sign-in lookup failed:', lookupErr);
+        return res.status(500).json({ success: false, message: 'Failed to check user record', error: lookupErr.message });
+      }
+
+      if (!user) {
+        try {
+          user = await User.create({
+            email,
+            firstName,
+            lastName,
+            password: null,
+            role: 'user',
+            roles: ['user'],
+            activeRole: 'user',
+            provider: 'google',
+            avatar,
+            isVerified: emailVerified,
+            isActive: true,
+            lastLogin: now
+          });
+        } catch (createErr) {
+          console.error('Google user creation failed:', createErr);
+          return res.status(500).json({ success: false, message: 'Unable to create account from Google profile', error: createErr.message });
+        }
+      } else {
+        const updates = {};
+        if ((!user.firstName || user.firstName === 'Google') && firstName) updates.firstName = firstName;
+        if ((!user.lastName || user.lastName === 'User') && lastName) updates.lastName = lastName;
+        if (avatar && avatar !== user.avatar) updates.avatar = avatar;
+        if (!user.provider || user.provider === 'email') updates.provider = 'google';
+        if (!Array.isArray(user.roles) || !user.roles.length) updates.roles = ['user'];
+        if (!user.activeRole) updates.activeRole = 'user';
+        if (!user.isVerified && emailVerified) updates.isVerified = true;
+        updates.lastLogin = now;
+        try {
+          await user.update(updates);
+          if (typeof user.reload === 'function') {
+            await user.reload();
+          } else {
+            user = await User.findByPk(user.id) || user;
+          }
+        } catch (updateErr) {
+          console.warn('Google sign-in update failed:', updateErr && updateErr.message ? updateErr.message : updateErr);
+        }
+      }
+
+      const accessToken = generateToken(user.id);
+      const refreshToken = generateRefreshToken(user.id);
+
+      return res.json({
+        success: true,
+        message: 'Google sign-in successful',
+        accessToken,
+        refreshToken,
+        user: buildUserResponse(user)
+      });
+    }
+
+    return res.status(400).json({ success: false, message: 'Missing authorization code or ID token' });
   } catch (error) {
     console.error('Google sign-in error:', error);
     return res.status(500).json({ success: false, message: 'Google sign-in failed', error: error.message });
