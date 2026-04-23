@@ -395,14 +395,10 @@ const BillingPayments = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow mb-6 overflow-x-auto">
+        <div className="border-b border-gray-200 min-w-max">
           <div className="relative">
-            {/* Scroll indicator gradient */}
-            <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
-            
-            <nav className="flex space-x-6 sm:space-x-8 px-6 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
@@ -412,7 +408,7 @@ const BillingPayments = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors ${
+                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors min-w-max ${
                   activeTab === tab.key
                     ? 'border-brand-blue text-brand-blue'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -502,7 +498,7 @@ const BillingPayments = () => {
               <div className="space-y-4 overflow-x-auto">
                 <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 min-w-max">
                   {paymentMethods.map((method) => (
-                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[300px]">
+                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[320px] sm:min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
@@ -560,8 +556,8 @@ const BillingPayments = () => {
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div className="space-y-6 overflow-x-auto">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 min-w-max">
                 <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
                 <div className="flex space-x-2 overflow-x-auto pb-1">
                   <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
