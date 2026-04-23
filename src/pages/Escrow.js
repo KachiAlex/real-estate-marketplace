@@ -184,6 +184,7 @@ const Escrow = () => {
                     .reduce((sum, t) => sum + (t.totalAmount || 0), 0)
                     .toLocaleString()}
                 </p>
+              </div>
             </div>
           </div>
         </div>
