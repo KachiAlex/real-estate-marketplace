@@ -11,23 +11,23 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
   // }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-1">
           <button
-            className="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
+            className="bg-brand-blue text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-semibold flex-shrink-0"
             onClick={onAddProperty}
           >
             + Add Property
           </button>
         </div>
-        <p className="text-sm text-gray-500 max-w-xl">
+        <p className="text-xs sm:text-sm text-gray-500 max-w-xl">
           Build trust faster—showcase high-quality listings and keep your portfolio up to date to boost buyer confidence.
         </p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         <SummaryCard label="Active Listings" value={stats?.activeListings} loading={loading} meta={stats?.totalProperties ? `${stats.totalProperties} total` : ''} />
         <SummaryCard label="Pending Listings" value={stats?.pendingListings} loading={loading} meta={stats?.pendingListings ? `${stats.pendingListings} awaiting review` : ''} />
         <SummaryCard label="Sold Properties" value={stats?.soldProperties} loading={loading} meta={stats?.soldProperties ? `${stats.soldProperties} sold` : ''} />
@@ -37,18 +37,18 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
       </div>
 
       {/* Trends Section (placeholder) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <TrendCard title="Views" data={stats?.viewsTrend} loading={loading} />
         <TrendCard title="Inquiries" data={stats?.inquiriesTrend} loading={loading} />
         <TrendCard title="Revenue" data={stats?.revenueTrend} loading={loading} />
       </div>
 
       {/* Recent Activity Feed */}
-      <div className="bg-white rounded shadow p-4">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-semibold text-lg">Recent Activity</h3>
+      <div className="bg-white rounded shadow p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-2">
+          <h3 className="font-semibold text-base sm:text-lg">Recent Activity</h3>
           <button
-            className="bg-brand-blue text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-brand-blue text-white px-3 sm:px-4 py-2 rounded hover:bg-blue-700 text-xs sm:text-sm flex-shrink-0"
             onClick={onAddProperty}
           >
             + Add Property
@@ -71,13 +71,13 @@ export default function VendorOverview({ stats, loading, onAddProperty }) {
 const SummaryCard = React.memo(function SummaryCard({ label, value, loading, prefix, meta }) {
   const display = loading ? '...' : (prefix || '') + (value ?? 0);
   return (
-    <div className="bg-brand-blue text-white cursor-default hover:bg-blue-700 transition-colors p-4 rounded shadow flex flex-col justify-between min-h-[100px]">
+    <div className="bg-brand-blue text-white cursor-default hover:bg-blue-700 transition-colors p-3 sm:p-4 rounded shadow flex flex-col justify-between min-h-[100px]">
       <div className="flex flex-col items-start">
-        <div className="text-2xl font-bold">
+        <div className="text-xl sm:text-2xl font-bold break-words">
           {display}
         </div>
-        <div className="text-blue-100 text-sm mt-1">{label}</div>
-        {meta ? <div className="text-blue-200 text-xs mt-2">{meta}</div> : null}
+        <div className="text-blue-100 text-xs sm:text-sm mt-1">{label}</div>
+        {meta ? <div className="text-blue-200 text-xs mt-2 break-words">{meta}</div> : null}
       </div>
     </div>
   );
@@ -87,13 +87,13 @@ const VendorChart = React.lazy(() => import('./VendorChart'));
 
 const TrendCard = React.memo(function TrendCard({ title, data, loading }) {
   return (
-    <div className="bg-white rounded shadow p-4">
-      <div className="font-semibold mb-2">{title} Trend</div>
+    <div className="bg-white rounded shadow p-3 sm:p-4">
+      <div className="font-semibold text-sm sm:text-base mb-2">{title} Trend</div>
       {loading ? (
-        <div className="h-36 bg-gray-100 animate-pulse rounded" />
+        <div className="h-32 sm:h-36 bg-gray-100 animate-pulse rounded" />
       ) : (
-        <div className="h-36">
-          <Suspense fallback={<div className="h-36 bg-gray-50 flex items-center justify-center text-gray-300">Loading chart...</div>}>
+        <div className="h-32 sm:h-36">
+          <Suspense fallback={<div className="h-32 sm:h-36 bg-gray-50 flex items-center justify-center text-gray-300 text-xs sm:text-sm">Loading chart...</div>}>
             <VendorChart data={data} title={title} />
           </Suspense>
         </div>

@@ -257,78 +257,78 @@ const SubscriptionDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Subscription Management</h2>
-            <p className="text-gray-600">Manage your vendor subscription and billing</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Subscription Management</h2>
+            <p className="text-xs sm:text-sm text-gray-600">Manage your vendor subscription and billing</p>
           </div>
           <button
             onClick={handleSubscribeNow}
             disabled={loading}
-            className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-white transition-colors ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+            className={`inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg text-white transition-colors text-xs sm:text-sm flex-shrink-0 ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
-            <FaCreditCard className="mr-2" />
+            <FaCreditCard className="mr-1 sm:mr-2 text-xs sm:text-sm" />
             Subscribe Now
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center">
-            <FaExclamationTriangle className="text-red-500 mr-2" />
-            <span className="text-red-700">{error}</span>
+            <FaExclamationTriangle className="text-red-500 mr-2 text-xs sm:text-sm" />
+            <span className="text-red-700 text-xs sm:text-sm">{error}</span>
           </div>
         </div>
       )}
 
       {/* Subscription Status Card */}
       {subscriptionStatus && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Current Status</h3>
-            <div className={`flex items-center px-3 py-1 rounded-full border ${getStatusColor(subscriptionStatus.status)}`}>
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Current Status</h3>
+            <div className={`flex items-center px-2 sm:px-3 py-1 rounded-full border flex-shrink-0 ${getStatusColor(subscriptionStatus.status)}`}>
               {getStatusIcon(subscriptionStatus.status)}
-              <span className="ml-2 text-sm font-medium capitalize">{subscriptionStatus.status}</span>
+              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium capitalize">{subscriptionStatus.status}</span>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Status Message:</span>
-              <span className="font-medium">{subscriptionStatus.message}</span>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+              <span className="text-gray-600 text-xs sm:text-sm">Status Message:</span>
+              <span className="font-medium text-xs sm:text-sm break-words">{subscriptionStatus.message}</span>
             </div>
 
             {subscriptionStatus.trialDaysRemaining > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Trial Days Remaining:</span>
-                <span className="font-medium">{subscriptionStatus.trialDaysRemaining} days</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                <span className="text-gray-600 text-xs sm:text-sm">Trial Days Remaining:</span>
+                <span className="font-medium text-xs sm:text-sm">{subscriptionStatus.trialDaysRemaining} days</span>
               </div>
             )}
 
             {subscription && (
               <>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Plan:</span>
-                  <span className="font-medium">{subscription.plan}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                  <span className="text-gray-600 text-xs sm:text-sm">Plan:</span>
+                  <span className="font-medium text-xs sm:text-sm break-words">{subscription.plan}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Amount:</span>
-                  <span className="font-medium">{formatCurrency(subscription.amount)}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                  <span className="text-gray-600 text-xs sm:text-sm">Amount:</span>
+                  <span className="font-medium text-xs sm:text-sm">{formatCurrency(subscription.amount)}</span>
                 </div>
                 {subscription.trialEndDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Trial Ends:</span>
-                    <span className="font-medium">{formatDate(subscription.trialEndDate)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <span className="text-gray-600 text-xs sm:text-sm">Trial Ends:</span>
+                    <span className="font-medium text-xs sm:text-sm">{formatDate(subscription.trialEndDate)}</span>
                   </div>
                 )}
                 {subscription.nextPaymentDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Next Payment:</span>
-                    <span className="font-medium">{formatDate(subscription.nextPaymentDate)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                    <span className="text-gray-600 text-xs sm:text-sm">Next Payment:</span>
+                    <span className="font-medium text-xs sm:text-sm">{formatDate(subscription.nextPaymentDate)}</span>
                   </div>
                 )}
               </>
@@ -336,13 +336,13 @@ const SubscriptionDashboard = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex space-x-4">
+          <div className="mt-4 sm:mt-6 flex gap-2 sm:gap-4 overflow-x-auto pb-1">
             {subscription && subscription.status === 'active' && (
               <button
                 onClick={handleCancelSubscription}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                className="bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-xs sm:text-sm flex-shrink-0"
               >
-                <FaTimesCircle className="inline mr-2" />
+                <FaTimesCircle className="inline mr-1 sm:mr-2 text-xs sm:text-sm" />
                 Cancel Subscription
               </button>
             )}
@@ -352,26 +352,26 @@ const SubscriptionDashboard = () => {
 
       {/* Countdown / Renewal Card */}
       {countdown && (
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-blue-100">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-blue-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
             <div>
-              <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">{countdown.label}</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{countdown.display}</p>
+              <p className="text-xs sm:text-sm uppercase tracking-wide text-blue-500 font-semibold">{countdown.label}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 break-words">{countdown.display}</p>
               {countdown.nextDate && (
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
                   Next cycle date: <span className="font-medium">{formatDate(countdown.nextDate)}</span>
                 </p>
               )}
             </div>
-            <div className="flex flex-col items-start md:items-end gap-2">
-              <p className="text-sm text-gray-600">
+            <div className="flex flex-col items-start sm:items-end gap-2">
+              <p className="text-xs sm:text-sm text-gray-600">
                 Keep your listings live by renewing before the timer hits zero.
               </p>
               <button
                 onClick={handleRenewCurrentPlan}
-                className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm flex-shrink-0"
               >
-                <FaCreditCard className="mr-2" />
+                <FaCreditCard className="mr-1 sm:mr-2 text-xs sm:text-sm" />
                 {subscriptionStatus?.status === 'trial' ? 'Activate plan' : 'Renew subscription'}
               </button>
             </div>
@@ -381,22 +381,22 @@ const SubscriptionDashboard = () => {
 
       {/* Available Plans */}
       {plans.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Plans</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Available Plans</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {plans.map((plan) => (
-              <div key={plan.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="mb-4">
-                  <h4 className="font-semibold text-gray-900">{plan.name}</h4>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">
+              <div key={plan.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow min-w-[280px]">
+                <div className="mb-3 sm:mb-4">
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base break-words">{plan.name}</h4>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600 mt-2 break-words">
                     {formatCurrency(plan.amount)}
-                    <span className="text-sm text-gray-500 font-normal">/{plan.billingCycle}</span>
+                    <span className="text-xs sm:text-sm text-gray-500 font-normal">/{plan.billingCycle}</span>
                   </p>
                 </div>
 
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-3 sm:mb-4">
                   {plan.features && Object.entries(plan.features).map(([key, value]) => (
-                    <div key={key} className="flex items-center text-sm">
+                    <div key={key} className="flex items-center text-xs sm:text-sm">
                       {value ? (
                         <FaCheckCircle className="text-green-500 mr-2" />
                       ) : (
@@ -413,30 +413,30 @@ const SubscriptionDashboard = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Default Plan</h3>
-              <p className="text-sm text-gray-500">Admin has not configured custom plans yet. The default vendor plan is available below.</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Default Plan</h3>
+              <p className="text-xs sm:text-sm text-gray-500">Admin has not configured custom plans yet. The default vendor plan is available below.</p>
             </div>
-            <span className="text-sm font-medium text-gray-600">₦{defaultPlan.amount?.toLocaleString()} / month</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-600">₦{defaultPlan.amount?.toLocaleString()} / month</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="font-semibold text-gray-800 mb-1">What's included</p>
-              <ul className="list-disc list-inside space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold text-gray-800 mb-1 text-xs sm:text-sm">What's included</p>
+              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
                 <li>Property listings</li>
                 <li>Escrow & support</li>
                 <li>Basic analytics</li>
               </ul>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="font-semibold text-gray-800 mb-1">Billing</p>
-              <p>₦{defaultPlan.amount?.toLocaleString()} every {defaultPlan.billingCycle}</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold text-gray-800 mb-1 text-xs sm:text-sm">Billing</p>
+              <p className="text-xs sm:text-sm">₦{defaultPlan.amount?.toLocaleString()} every {defaultPlan.billingCycle}</p>
               <p className="text-xs text-gray-500 mt-1">Price can be updated by admin anytime.</p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="font-semibold text-gray-800">Ready to activate?</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold text-gray-800 text-xs sm:text-sm">Ready to activate?</p>
               <p className="text-xs text-gray-500 mt-2">Click "Subscribe Now" in the header to get started.</p>
             </div>
           </div>
@@ -445,13 +445,13 @@ const SubscriptionDashboard = () => {
 
       {/* Payment History */}
       {payments.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment History</h3>
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Payment History</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

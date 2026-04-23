@@ -107,13 +107,13 @@ export default function VendorDashboard() {
     <div className="container mx-auto py-6 md:py-8 px-4">
       <DashboardSwitch />
       <h2 className="text-2xl font-bold text-brand-blue mb-4">Vendor Dashboard</h2>
-      <div className="bg-white rounded shadow p-6 mb-6">
-        <div className="flex flex-wrap gap-3">
+      <div className="bg-white rounded shadow p-4 sm:p-6 mb-6">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-1">
           {vendorTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-brand-blue text-white border-brand-blue'
                   : 'text-gray-600 border-gray-200 hover:border-brand-blue hover:text-brand-blue'
