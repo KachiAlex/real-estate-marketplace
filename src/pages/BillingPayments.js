@@ -338,56 +338,56 @@ const BillingPayments = () => {
       </div>
 
       {/* Billing Summary Cards */}
-      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
-        <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 min-w-max">
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaMoneyBillWave className="text-green-600 text-xl" />
+      <div className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaMoneyBillWave className="text-green-600 text-lg sm:text-xl" />
               </div>
               <div className="flex-1 min-w-0 break-words">
-                <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.totalSpent.toLocaleString()}</p>
-                <p className="text-sm text-green-600">+12.5% this month</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Spent</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.totalSpent.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-green-600">+12.5% this month</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-yellow-100 rounded-lg flex-shrink-0">
-                <FaClock className="text-yellow-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
+                <FaClock className="text-yellow-600 text-lg sm:text-xl" />
               </div>
               <div className="flex-1 min-w-0 break-words">
-                <p className="text-sm font-medium text-gray-600">Pending Payments</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.pendingPayments.toLocaleString()}</p>
-                <p className="text-sm text-yellow-600">2 transactions</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Payments</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.pendingPayments.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-yellow-600">2 transactions</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaShieldAlt className="text-blue-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaShieldAlt className="text-blue-600 text-lg sm:text-xl" />
               </div>
               <div className="flex-1 min-w-0 break-words">
-                <p className="text-sm font-medium text-gray-600">Escrow Balance</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.escrowBalance.toLocaleString()}</p>
-                <p className="text-sm text-blue-600">3 active escrows</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Escrow Balance</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.escrowBalance.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-blue-600">3 active escrows</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg flex-shrink-0">
-                <FaReceipt className="text-purple-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-lg flex-shrink-0">
+                <FaReceipt className="text-purple-600 text-lg sm:text-xl" />
               </div>
               <div className="flex-1 min-w-0 break-words">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug break-words">{billingSummary.completedTransactions}</p>
-                <p className="text-sm text-purple-600">transactions</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{billingSummary.completedTransactions}</p>
+                <p className="text-xs sm:text-sm text-purple-600">transactions</p>
               </div>
             </div>
           </div>
@@ -397,7 +397,7 @@ const BillingPayments = () => {
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto">
             {[
               { key: 'overview', label: 'Overview' },
               { key: 'payments', label: 'Payment Methods' },
@@ -407,7 +407,7 @@ const BillingPayments = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === tab.key
                     ? 'border-brand-blue text-brand-blue'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -424,54 +424,54 @@ const BillingPayments = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900">Payment Overview</h3>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-900 mb-4">Recent Transactions</h4>
-                  <div className="space-y-3">
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                  <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4">Recent Transactions</h4>
+                  <div className="space-y-2 sm:space-y-3">
                     {allTransactions.slice(0, 3).map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{transaction.description || transaction.propertyTitle}</p>
-                          <p className="text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
+                      <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white rounded-lg gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm break-words">{transaction.description || transaction.propertyTitle}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">₦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
+                        <div className="text-right sm:text-left">
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">₦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
+                          <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
                         </div>
                       </div>
                     ))}
                     {allTransactions.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-6 sm:py-8 text-gray-500">
                         <p>No recent transactions found.</p>
-                        <p className="text-sm">Complete a property purchase to see transactions here.</p>
+                        <p className="text-xs sm:text-sm">Complete a property purchase to see transactions here.</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-900 mb-4">Escrow Status</h4>
-                  <div className="space-y-3">
+                <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                  <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4">Escrow Status</h4>
+                  <div className="space-y-2 sm:space-y-3">
                     {allTransactions.filter(t => t.escrowId && (t.status === 'pending' || t.status === 'in-progress')).slice(0, 2).map((escrow) => (
-                      <div key={escrow.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{escrow.propertyTitle || escrow.description}</p>
-                          <p className="text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
+                      <div key={escrow.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white rounded-lg gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm break-words">{escrow.propertyTitle || escrow.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">₦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(escrow.status)}`}>
+                        <div className="text-right sm:text-left">
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">₦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
+                          <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(escrow.status)}`}>
                             {escrow.status}
                           </span>
                         </div>
                       </div>
                     ))}
                     {allTransactions.filter(t => t.escrowId && (t.status === 'pending' || t.status === 'in-progress')).length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-6 sm:py-8 text-gray-500">
                         <p>No active escrow transactions.</p>
-                        <p className="text-sm">Your completed escrow transactions will appear in transaction history.</p>
+                        <p className="text-xs sm:text-sm">Your completed escrow transactions will appear in transaction history.</p>
                       </div>
                     )}
                   </div>
@@ -493,40 +493,40 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 {paymentMethods.map((method) => (
-                  <div key={method.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
+                  <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                       <div className="flex items-center space-x-3">
-                        <div className="p-3 bg-gray-100 rounded-lg">
-                          <method.icon className="text-gray-600 text-xl" />
+                        <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                          <method.icon className="text-gray-600 text-lg sm:text-xl" />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{method.type}</h4>
-                          <p className="text-sm text-gray-600">{method.provider}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{method.type}</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">{method.provider}</p>
                         </div>
                       </div>
                       {method.isDefault && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full inline-block">
                           Default
                         </span>
                       )}
                     </div>
                     
                     <div className="space-y-2 mb-4">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Card Number</span>
                         <span className="font-medium">**** **** **** {method.last4}</span>
                       </div>
                       {method.expiry && (
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Expires</span>
                           <span className="font-medium">{method.expiry}</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <button className="btn-outline text-sm flex-1">Edit</button>
                       {!method.isDefault && (
                         <button className="btn-outline text-sm flex-1">Remove</button>
@@ -567,23 +567,79 @@ const BillingPayments = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile-optimized transaction cards */}
+              <div className="space-y-4 sm:hidden">
+                {allTransactions.filter(transaction => 
+                  filterStatus === 'all' || transaction.status === filterStatus
+                ).map((transaction) => (
+                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 text-sm break-words">{transaction.description}</p>
+                        <p className="text-xs text-gray-500">ID: {transaction.id}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
+                        {transaction.status}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Amount</span>
+                        <span className="font-medium text-gray-900">₦{transaction.amount.toLocaleString()}</span>
+                      </div>
+                      {transaction.fees > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Fees</span>
+                          <span className="text-gray-500">₦{transaction.fees.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Date</span>
+                        <span className="text-gray-900">{transaction.date}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewTransaction(transaction)}
+                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                        title="View Transaction"
+                      >
+                        <FaEye className="mr-1" />
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadReceipt(transaction)}
+                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                        title="Download Receipt"
+                      >
+                        <FaDownload className="mr-1" />
+                        Receipt
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Transaction
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amount
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -593,27 +649,27 @@ const BillingPayments = () => {
                       filterStatus === 'all' || transaction.status === filterStatus
                     ).map((transaction) => (
                       <tr key={transaction.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
                             <div className="text-sm text-gray-500">ID: {transaction.id}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">₦{transaction.amount.toLocaleString()}</div>
                           {transaction.fees > 0 && (
                             <div className="text-sm text-gray-500">Fees: ₦{transaction.fees.toLocaleString()}</div>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {transaction.date}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button 
                             onClick={() => handleViewTransaction(transaction)}
                             className="text-brand-blue hover:text-brand-orange mr-3"
@@ -647,35 +703,35 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {allTransactions.filter(transaction => 
                   filterStatus === 'all' || transaction.status === filterStatus
                 ).map((transaction) => (
-                  <div key={transaction.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-gray-100 rounded-lg">
-                        <FaFileInvoice className="text-gray-600 text-xl" />
+                  <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                        <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
+                      <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
                         {transaction.status}
                       </span>
                     </div>
                     
-                    <h4 className="font-semibold text-gray-900 mb-2">{transaction.description}</h4>
-                    <p className="text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                    <p className="text-lg font-bold text-gray-900 mb-4">₦{transaction.amount.toLocaleString()}</p>
+                    <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
+                    <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">₦{transaction.amount.toLocaleString()}</p>
                     
                     <div className="flex space-x-2">
                       <button 
                         onClick={() => handleViewReceipt(transaction)}
-                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
                       >
                         <FaEye className="mr-1" />
                         View
                       </button>
                       <button 
                         onClick={() => handleDownloadReceipt(transaction)}
-                        className="btn-outline text-sm flex-1 flex items-center justify-center"
+                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
                       >
                         <FaDownload className="mr-1" />
                         Receipt
