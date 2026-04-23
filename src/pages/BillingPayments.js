@@ -488,58 +488,60 @@ const BillingPayments = () => {
 
           {activeTab === 'payments' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-semibold text-gray-900">Payment Methods</h3>
                 <button 
                   onClick={handleAddPaymentMethod}
-                  className="btn-primary flex items-center space-x-2"
+                  className="btn-primary flex items-center space-x-2 flex-shrink-0"
                 >
                   <FaPlus />
                   <span>Add Payment Method</span>
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {paymentMethods.map((method) => (
-                  <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
-                          <method.icon className="text-gray-600 text-lg sm:text-xl" />
+              <div className="space-y-4 overflow-x-auto">
+                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 min-w-max">
+                  {paymentMethods.map((method) => (
+                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[300px]">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                            <method.icon className="text-gray-600 text-lg sm:text-xl" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{method.type}</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">{method.provider}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{method.type}</h4>
-                          <p className="text-xs sm:text-sm text-gray-600">{method.provider}</p>
-                        </div>
+                        {method.isDefault && (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full inline-block">
+                            Default
+                          </span>
+                        )}
                       </div>
-                      {method.isDefault && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full inline-block">
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Card Number</span>
-                        <span className="font-medium">**** **** **** {method.last4}</span>
-                      </div>
-                      {method.expiry && (
+                      
+                      <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Expires</span>
-                          <span className="font-medium">{method.expiry}</span>
+                          <span className="text-gray-600">Card Number</span>
+                          <span className="font-medium">**** **** **** {method.last4}</span>
                         </div>
-                      )}
+                        {method.expiry && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Expires</span>
+                            <span className="font-medium">{method.expiry}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <button className="btn-outline text-sm flex-1">Edit</button>
+                        {!method.isDefault && (
+                          <button className="btn-outline text-sm flex-1">Remove</button>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <button className="btn-outline text-sm flex-1">Edit</button>
-                      {!method.isDefault && (
-                        <button className="btn-outline text-sm flex-1">Remove</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -559,14 +561,14 @@ const BillingPayments = () => {
 
           {activeTab === 'history' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
-                <div className="flex space-x-3">
-                  <button className="btn-outline flex items-center space-x-2">
+                <div className="flex space-x-2 overflow-x-auto pb-1">
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
                     <FaDownload />
                     <span>Export</span>
                   </button>
-                  <button className="btn-outline flex items-center space-x-2">
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
                     <FaFilter />
                     <span>Filter</span>
                   </button>
@@ -701,50 +703,52 @@ const BillingPayments = () => {
 
           {activeTab === 'invoices' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-semibold text-gray-900">Invoices & Receipts</h3>
-                <button className="btn-outline flex items-center space-x-2">
+                <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
                   <FaDownload />
                   <span>Download All</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {allTransactions.filter(transaction => 
-                  filterStatus === 'all' || transaction.status === filterStatus
-                ).map((transaction) => (
-                  <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
-                        <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-w-max">
+                  {allTransactions.filter(transaction => 
+                    filterStatus === 'all' || transaction.status === filterStatus
+                  ).map((transaction) => (
+                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[280px]">
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                          <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
+                          {transaction.status}
+                        </span>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
-                        {transaction.status}
-                      </span>
+                      
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">₦{transaction.amount.toLocaleString()}</p>
+                      
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleViewReceipt(transaction)}
+                          className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
+                        >
+                          <FaEye className="mr-1" />
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleDownloadReceipt(transaction)}
+                          className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
+                        >
+                          <FaDownload className="mr-1" />
+                          Receipt
+                        </button>
+                      </div>
                     </div>
-                    
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">₦{transaction.amount.toLocaleString()}</p>
-                    
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleViewReceipt(transaction)}
-                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
-                      >
-                        <FaEye className="mr-1" />
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleDownloadReceipt(transaction)}
-                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
-                      >
-                        <FaDownload className="mr-1" />
-                        Receipt
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
