@@ -179,7 +179,8 @@ let csrfToken = null;
  */
 export const fetchCsrfToken = async () => {
   try {
-    const response = await axios.get('/api/csrf-token');
+    const { getApiUrl } = require('../utils/apiConfig');
+    const response = await axios.get(getApiUrl('/csrf-token'));
     if (response.data && response.data.token) {
       csrfToken = response.data.token;
       return response.data.token;
