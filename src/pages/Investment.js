@@ -1408,56 +1408,56 @@ const Investment = () => {
       </div>
 
       {/* Investment Summary Cards */}
-      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
-        <div className="flex md:grid md:grid-cols-4 gap-6 min-w-max">
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaChartLine className="text-brand-blue text-xl" />
+      <div className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaChartLine className="text-brand-blue text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total invested</p>
-                <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalInvested.toLocaleString()}</p>
-                <p className="text-sm text-green-600">+12.5% from last month</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaArrowUp className="text-green-600 text-xl" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalEarnings.toLocaleString()}</p>
-                <p className="text-sm text-green-600">+8.3% growth rate</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total invested</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{investmentData.totalInvested.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-green-600">+12.5% from last month</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
-                <FaUsers className="text-brand-orange text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaArrowUp className="text-green-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active investments</p>
-                <p className="text-2xl font-bold text-gray-900">{investmentData.activeInvestments}</p>
-                <p className="text-sm text-green-600">+2 new this quarter</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Earnings</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{investmentData.totalEarnings.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-green-600">+8.3% growth rate</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-lg flex-shrink-0">
-                <FaCalendar className="text-purple-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaUsers className="text-brand-orange text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Projected Returns</p>
-                <p className="text-2xl font-bold text-gray-900">₦{investmentData.projectedReturns.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">projected by Q3 2025</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active investments</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{investmentData.activeInvestments}</p>
+                <p className="text-xs sm:text-sm text-green-600">+2 new this quarter</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-lg flex-shrink-0">
+                <FaCalendar className="text-purple-600 text-lg sm:text-xl" />
+              </div>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Projected Returns</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{investmentData.projectedReturns.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-gray-600">projected by Q3 2025</p>
               </div>
             </div>
           </div>
@@ -1465,13 +1465,13 @@ const Investment = () => {
       </div>
 
       {/* Project Filters */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex flex-wrap gap-3">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {['All Projects', 'Land', 'Development', '% Highest ROI', 'Price: Low to High'].map((filter) => (
             <button
               key={filter}
               onClick={() => setFilterType(filter.toLowerCase().replace(' ', '').replace(':', ''))}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
                 filterType === filter.toLowerCase().replace(' ', '').replace(':', '') || 
                 (filter === 'All Projects' && filterType === 'all')
                   ? 'bg-brand-blue text-white'
@@ -1485,7 +1485,7 @@ const Investment = () => {
       </div>
 
       {/* Project Listings */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
         {filteredProjects.map((project) => (
           <div key={project.id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="relative">
@@ -1510,30 +1510,30 @@ const Investment = () => {
               </div>
             </div>
             
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.name}</h3>
+            <div className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 break-words">{project.name}</h3>
               <div className="flex items-center text-gray-600 mb-2">
-                <FaMapMarkerAlt className="mr-1 text-sm" />
-                <span className="text-sm">{project.location}</span>
+                <FaMapMarkerAlt className="mr-1 text-xs sm:text-sm flex-shrink-0" />
+                <span className="text-xs sm:text-sm break-words">{project.location}</span>
               </div>
-              <p className="text-gray-600 text-sm mb-4">{project.description}</p>
+              <p className="text-gray-600 text-xs sm:text-sm mb-4 line-clamp-2">{project.description}</p>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500">Min Investment</p>
-                  <p className="font-semibold">₦{project.minInvestment.toLocaleString()}</p>
+                  <p className="font-semibold text-sm sm:text-base">₦{project.minInvestment.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Expected ROI</p>
-                  <p className="font-semibold text-green-600">{project.expectedROI}% p.a</p>
+                  <p className="font-semibold text-sm sm:text-base text-green-600">{project.expectedROI}% p.a</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Lock Period</p>
-                  <p className="font-semibold">{project.lockPeriod} months</p>
+                  <p className="font-semibold text-sm sm:text-base">{project.lockPeriod} months</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Investors</p>
-                  <p className="font-semibold">{project.investors}</p>
+                  <p className="font-semibold text-sm sm:text-base">{project.investors}</p>
                 </div>
               </div>
               
@@ -1543,8 +1543,8 @@ const Investment = () => {
                   <span>Construction</span>
                   <span>Completion</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className={`h-2 rounded-full ${
+                <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+                  <div className={`h-1.5 sm:h-2 rounded-full ${
                     project.progress === 'Start' ? 'w-1/3 bg-yellow-500' :
                     project.progress === 'Construction' ? 'w-2/3 bg-blue-500' :
                     'w-full bg-green-500'
@@ -1554,9 +1554,9 @@ const Investment = () => {
               
               <button
                 onClick={() => handleInvestNow(project)}
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
               >
-                <FaDollarSign className="text-sm" />
+                <FaDollarSign className="text-xs sm:text-sm" />
                 <span>Invest Now</span>
               </button>
             </div>

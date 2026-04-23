@@ -457,56 +457,56 @@ const SavedProperties = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="overflow-x-auto -mx-6 px-6 mb-4 md:mx-0 md:px-0">
-        <div className="flex md:grid md:grid-cols-4 gap-4 min-w-max">
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaHeart className="text-brand-blue text-xl" />
+      <div className="mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaHeart className="text-brand-blue text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Saved</p>
-                <p className="text-2xl font-bold text-gray-900">{savedProperties.length}</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Saved</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{savedProperties.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaEye className="text-green-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaEye className="text-green-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Available</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Available</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {savedProperties.filter(p => p.status === 'available').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-red-100 rounded-lg flex-shrink-0">
-                <FaTrash className="text-red-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-red-100 rounded-lg flex-shrink-0">
+                <FaTrash className="text-red-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Sold/Rented</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Sold/Rented</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {savedProperties.filter(p => p.status === 'sold' || p.status === 'rented').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
-                <FaMapMarkerAlt className="text-brand-orange text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaMapMarkerAlt className="text-brand-orange text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Locations</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Locations</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {new Set(savedProperties.map(p => {
                   if (typeof p.location === 'string') {
                     const parts = p.location.split(',');
@@ -522,15 +522,15 @@ const SavedProperties = () => {
       </div>
 
       {/* Filters and Sort */}
-      <div className="bg-white rounded-lg shadow p-6 mb-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex items-center space-x-2">
-              <FaFilter className="text-gray-500" />
+              <FaFilter className="text-gray-500 text-sm" />
               <select
                 value={filterBy}
                 onChange={handleFilterChange}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
               >
                 <option value="all">All Properties</option>
                 <option value="available">Available</option>
@@ -540,11 +540,11 @@ const SavedProperties = () => {
             </div>
             
             <div className="flex items-center space-x-2">
-              <FaSort className="text-gray-500" />
+              <FaSort className="text-gray-500 text-sm" />
               <select
                 value={sortBy}
                 onChange={handleSortChange}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
               >
                 <option value="dateAdded">Date Added</option>
                 <option value="priceHigh">Price: High to Low</option>
@@ -554,7 +554,7 @@ const SavedProperties = () => {
             </div>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600">
             Showing {filteredAndSortedProperties.length} of {savedProperties.length} properties
           </div>
         </div>
@@ -562,10 +562,10 @@ const SavedProperties = () => {
 
       {/* Properties Grid */}
       {filteredAndSortedProperties.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <FaHeart className="text-gray-300 text-6xl mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Saved Properties</h3>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+          <FaHeart className="text-gray-300 text-4xl sm:text-6xl mx-auto mb-4" />
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Saved Properties</h3>
+          <p className="text-gray-600 text-sm sm:text-base mb-6">
             {filterBy === 'all' 
               ? "You haven't saved any properties yet. Start browsing to save your favorites!"
               : `No ${filterBy} properties found in your saved list.`
@@ -573,13 +573,13 @@ const SavedProperties = () => {
           </p>
           <Link 
             to="/properties" 
-            className="btn-primary inline-flex items-center"
+            className="btn-primary inline-flex items-center text-sm sm:text-base"
           >
             Browse Properties
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredAndSortedProperties.map((property) => (
             <div key={property.id} className="property-card">
               <div className="relative">
@@ -657,8 +657,8 @@ const SavedProperties = () => {
                 </div>
               </Link>
 
-              <div className="mt-4 pt-4 border-t border-gray-200 px-4 pb-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+              <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 px-4 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-600 mb-3 gap-1 sm:gap-0">
                     <span>Added: {new Date(property.dateAdded).toLocaleDateString()}</span>
                     <span>Agent: {property.agent.name}</span>
                   </div>
@@ -706,13 +706,13 @@ const SavedProperties = () => {
                     )}
                     
                     {/* Secondary actions */}
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/property/${property.id}`);
                         }}
-                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center cursor-pointer"
+                        className="flex-1 bg-gray-100 text-gray-700 py-2 sm:py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center cursor-pointer text-xs sm:text-sm"
                       >
                         View Details
                       </div>
@@ -721,9 +721,9 @@ const SavedProperties = () => {
                           e.stopPropagation();
                           handleScheduleViewing(property);
                         }}
-                        className="flex-1 bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors flex items-center justify-center"
+                        className="flex-1 bg-orange-100 text-orange-700 py-2 sm:py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors flex items-center justify-center text-xs sm:text-sm"
                       >
-                        <FaCalendar className="mr-1" />
+                        <FaCalendar className="mr-1 text-xs sm:text-sm" />
                         Schedule Viewing
                       </button>
                       <button 
@@ -731,9 +731,9 @@ const SavedProperties = () => {
                           e.stopPropagation();
                           handleContactAgent(property);
                         }}
-                        className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
+                        className="flex-1 bg-blue-100 text-blue-700 py-2 sm:py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center text-xs sm:text-sm"
                       >
-                        <FaPhone className="mr-1" />
+                        <FaPhone className="mr-1 text-xs sm:text-sm" />
                         Contact Agent
                       </button>
                     </div>

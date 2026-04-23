@@ -345,56 +345,56 @@ const PropertyAlerts = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
-        <div className="flex md:grid md:grid-cols-4 gap-6 min-w-max">
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaBell className="text-brand-blue text-xl" />
+      <div className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaBell className="text-brand-blue text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Alerts</p>
-                <p className="text-2xl font-bold text-gray-900">{alerts.length}</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Alerts</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{alerts.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaToggleOn className="text-green-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaToggleOn className="text-green-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Alerts</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active Alerts</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {alerts.filter(a => a.isActive).length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
-                <FaBell className="text-brand-orange text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaBell className="text-brand-orange text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Matches</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Matches</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {alerts.reduce((sum, alert) => sum + alert.matches, 0)}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-gray-100 rounded-lg flex-shrink-0">
-                <FaToggleOff className="text-gray-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                <FaToggleOff className="text-gray-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Inactive Alerts</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Inactive Alerts</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {alerts.filter(a => !a.isActive).length}
                 </p>
               </div>

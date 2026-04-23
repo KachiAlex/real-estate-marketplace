@@ -129,56 +129,56 @@ const Escrow = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
-        <div className="flex md:grid md:grid-cols-4 gap-6 min-w-max">
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaShieldAlt className="text-blue-600 text-xl" />
+      <div className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaShieldAlt className="text-blue-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">{userTransactions.length}</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Transactions</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{userTransactions.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg flex-shrink-0">
-                <FaClock className="text-yellow-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
+                <FaClock className="text-yellow-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {userTransactions.filter(t => t.status === 'pending' || t.status === 'funded').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaCheckCircle className="text-green-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   {userTransactions.filter(t => t.status === 'completed').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaLock className="text-blue-600 text-xl" />
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaLock className="text-blue-600 text-lg sm:text-xl" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Funds in Escrow</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Funds in Escrow</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">
                   ₦{userTransactions
                     .filter(t => t.status === 'funded')
                     .reduce((sum, t) => sum + (t.totalAmount || 0), 0)
@@ -213,13 +213,13 @@ const Escrow = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Your Transactions</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Your Transactions</h2>
         <button
           onClick={handleStartNewPurchase}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
         >
-          <FaPlus className="mr-2" />
+          <FaPlus className="mr-2 text-sm" />
           Start New Purchase
         </button>
       </div>
@@ -227,37 +227,37 @@ const Escrow = () => {
       {/* Transactions List */}
       <div className="bg-white rounded-lg shadow">
         {userTransactions.length === 0 ? (
-          <div className="p-12 text-center">
-            <FaShieldAlt className="text-gray-400 text-4xl mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Escrow Transactions Yet</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="p-8 sm:p-12 text-center">
+            <FaShieldAlt className="text-gray-400 text-3xl sm:text-4xl mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No Escrow Transactions Yet</h3>
+            <p className="text-gray-600 text-sm sm:text-base mb-6">
               Start your first secure property purchase with escrow protection
             </p>
             <button
               onClick={handleStartNewPurchase}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center mx-auto"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center mx-auto text-sm sm:text-base"
             >
-              <FaPlus className="mr-2" />
+              <FaPlus className="mr-2 text-sm" />
               Browse Properties
             </button>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {userTransactions.map((transaction) => (
-              <div key={transaction.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+              <div key={transaction.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
                         {transaction.propertyTitle}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(transaction.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center flex-shrink-0 ${getStatusColor(transaction.status)}`}>
                         {getStatusIcon(transaction.status)}
                         <span className="ml-1">{getStatusLabel(transaction.status)}</span>
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       <div>
                         <span className="font-medium">Amount:</span> ₦{transaction.totalAmount?.toLocaleString()}
                       </div>
@@ -270,33 +270,33 @@ const Escrow = () => {
                     </div>
                     
                     {transaction.status === 'funded' && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
-                        <FaLock className="inline mr-1" />
+                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs sm:text-sm text-blue-800">
+                        <FaLock className="inline mr-1 text-xs sm:text-sm" />
                         <strong>Funds Secured:</strong> ₦{transaction.amount?.toLocaleString()} held in escrow awaiting your approval
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     {transaction.status === 'funded' ? (
                       <button
                         onClick={() => handleApproveTransaction(transaction)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center text-xs sm:text-sm"
                       >
-                        <FaUserCheck className="mr-1" />
+                        <FaUserCheck className="mr-1 text-xs sm:text-sm" />
                         Approve & Release Funds
                       </button>
                     ) : transaction.status === 'completed' ? (
-                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center">
-                        <FaCheckCircle className="mr-1" />
+                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center text-xs sm:text-sm">
+                        <FaCheckCircle className="mr-1 text-xs sm:text-sm" />
                         Funds Released
                       </div>
                     ) : (
                       <button
                         onClick={() => handleViewTransaction(transaction.id)}
-                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center text-xs sm:text-sm"
                       >
-                        <FaEye className="mr-1" />
+                        <FaEye className="mr-1 text-xs sm:text-sm" />
                         View Details
                       </button>
                     )}
