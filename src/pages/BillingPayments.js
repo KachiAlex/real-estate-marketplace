@@ -397,17 +397,22 @@ const BillingPayments = () => {
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto">
-            {[
-              { key: 'overview', label: 'Overview' },
-              { key: 'payments', label: 'Payment Methods' },
-              { key: 'history', label: 'Transaction History' },
-              { key: 'invoices', label: 'Invoices & Receipts' }
+          <div className="relative">
+            {/* Scroll indicator gradient */}
+            <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+            
+            <nav className="flex space-x-6 sm:space-x-8 px-6 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+              {[
+                { key: 'overview', label: 'Overview' },
+                { key: 'payments', label: 'Payment Methods' },
+                { key: 'history', label: 'Transaction History' },
+                { key: 'invoices', label: 'Invoices & Receipts' }
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors ${
                   activeTab === tab.key
                     ? 'border-brand-blue text-brand-blue'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -416,7 +421,8 @@ const BillingPayments = () => {
                 {tab.label}
               </button>
             ))}
-          </nav>
+            </nav>
+          </div>
         </div>
 
         <div className="p-6">
