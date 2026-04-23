@@ -36,10 +36,7 @@ import RegisterModal from '../components/auth/RegisterModal';
 import SEO from '../components/SEO';
 import BlogCard from '../components/BlogCard';
 import { getPublishedBlogPosts } from '../data/blogPosts';
-import frontendMockProperties from '../data/mockProperties';
 import { formatCurrency } from '../utils/currency';
-
-const mockProperties = Array.isArray(frontendMockProperties) ? frontendMockProperties : [];
 
 const formatFilterCurrencyValue = (value) => {
   const amount = Number(value) || 0;
@@ -126,25 +123,9 @@ const Home = () => {
   
   // Filtering - only applies when user clicks "Apply Filters"
   const filteredProperties = useMemo(() => {
-    // Merge properties from context with mock properties
-    // Properties from context (Firestore + localStorage) take precedence
-    const allPropertiesMap = new Map();
-    
-    // First add mock properties
-    if (Array.isArray(frontendMockProperties)) {
-      frontendMockProperties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    
-    // Then add/override with properties from context
-    if (Array.isArray(properties)) {
-      properties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    
-    let filtered = Array.from(allPropertiesMap.values());
+    // Use properties from context only
+    if (!Array.isArray(properties)) return [];
+    let filtered = properties;
     
     // Apply search query (from applied filters)
     if (appliedSearchQuery && appliedSearchQuery.trim()) {
@@ -325,21 +306,7 @@ const Home = () => {
   // Get unique vendors from all properties (merged from context and mock)
   const uniqueVendors = useMemo(() => {
     const vendorMap = new Map();
-    
-    // Merge properties from context with mock properties
-    const allPropertiesMap = new Map();
-    if (Array.isArray(mockProperties)) {
-      mockProperties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    if (Array.isArray(properties)) {
-      properties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    
-    const allProperties = Array.from(allPropertiesMap.values());
+    const allProperties = Array.isArray(properties) ? properties : [];
     
     allProperties.forEach(property => {
       const vendorName = property?.vendorName || property?.agent?.name || 
@@ -363,21 +330,7 @@ const Home = () => {
   // Get unique property types from all properties (deduplicated)
   const uniquePropertyTypes = useMemo(() => {
     const typeSet = new Set();
-    
-    // Merge properties from context with mock properties
-    const allPropertiesMap = new Map();
-    if (Array.isArray(mockProperties)) {
-      mockProperties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    if (Array.isArray(properties)) {
-      properties.forEach(prop => {
-        allPropertiesMap.set(prop.id, prop);
-      });
-    }
-    
-    const allProperties = Array.from(allPropertiesMap.values());
+    const allProperties = Array.isArray(properties) ? properties : [];
     
     // Extract unique types from properties and capitalize them
     allProperties.forEach(property => {
@@ -900,11 +853,10 @@ const Home = () => {
     try {
       let propertyToSave = property;
       if (!propertyToSave) {
-        propertyToSave = mockProperties.find(p => (p.id || p.propertyId) === propertyId) ||
-          properties.find(p => {
-            const propId = p.id || p.propertyId || p._id;
-            return propId === propertyId || String(propId) === String(propertyId);
-          });
+        propertyToSave = properties.find(p => {
+          const propId = p.id || p.propertyId || p._id;
+          return propId === propertyId || String(propId) === String(propertyId);
+        });
       }
 
       const propertyIdStr = String(propertyId);

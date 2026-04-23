@@ -477,88 +477,6 @@ const Dashboard = () => {
     }
   }, [location.pathname, user, loadFavorites, refreshDashboardStats]);
 
-  // Mock data for recent properties (fallback if no properties loaded)
-  const mockProperties = [
-    {
-      id: 1,
-      title: "Luxury Apartment in Victoria Island",
-      price: 75000000,
-      location: "Victoria Island, Lagos",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 210,
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
-      tag: "New Listing",
-      tagColor: "bg-green-500",
-      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
-    },
-    {
-      id: 2,
-      title: "Modern Family House in Lekki",
-      price: 120000000,
-      location: "Lekki Phase 1, Lagos",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 350,
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
-      tag: "Featured",
-      tagColor: "bg-brand-orange",
-      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
-    },
-    {
-      id: 3,
-      title: "Penthouse with Ocean View in Ikoyi",
-      price: 95000000,
-      location: "Ikoyi, Lagos",
-      bedrooms: 2,
-      bathrooms: 2,
-      area: 180,
-      image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-      tag: null,
-      tagColor: "",
-      owner: { id: 'mock_vendor', name: 'Vendor Example', email: 'vendor@example.com' }
-    }
-  ];
-
-  const recommendedProperties = [
-    {
-      id: 4,
-      title: "Elegant Townhouse in Maitama",
-      price: 85000000,
-      location: "Maitama, Abuja",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 210,
-      image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-      tag: "Hot Deal",
-      tagColor: "bg-red-500"
-    },
-    {
-      id: 5,
-      title: "Garden View Apartment in Ikeja GRA",
-      price: 55000000,
-      location: "Ikeja GRA, Lagos",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 350,
-      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
-      tag: "Exclusive",
-      tagColor: "bg-blue-500"
-    },
-    {
-      id: 6,
-      title: "Beachfront Villa in Banana Island",
-      price: 180000000,
-      location: "Banana Island, Lagos",
-      bedrooms: 2,
-      bathrooms: 2,
-      area: 180,
-      image: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=400&h=300&fit=crop",
-      tag: "Premium",
-      tagColor: "bg-purple-500"
-    }
-  ];
-
   return (
     <div className="p-6">
       {/* Main Content Area */}
@@ -895,7 +813,7 @@ const Dashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {mockProperties.map((property) => (
+            {Array.isArray(properties) && properties.slice(0, 6).map((property) => (
               <div key={property.id} className="property-card">
                 <div className="relative">
                   <img
@@ -1041,7 +959,7 @@ const Dashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(recentProperties.length > 0 ? recentProperties : mockProperties).map((property) => (
+            {recentProperties.length > 0 && recentProperties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <div 

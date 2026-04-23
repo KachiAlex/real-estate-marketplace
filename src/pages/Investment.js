@@ -1408,55 +1408,57 @@ const Investment = () => {
       </div>
 
       {/* Investment Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FaChartLine className="text-brand-blue text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total invested</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalInvested.toLocaleString()}</p>
-              <p className="text-sm text-green-600">+12.5% from last month</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <FaArrowUp className="text-green-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalEarnings.toLocaleString()}</p>
-              <p className="text-sm text-green-600">+8.3% growth rate</p>
+      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
+        <div className="flex md:grid md:grid-cols-4 gap-6 min-w-max">
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaChartLine className="text-brand-blue text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total invested</p>
+                <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalInvested.toLocaleString()}</p>
+                <p className="text-sm text-green-600">+12.5% from last month</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <FaUsers className="text-brand-orange text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active investments</p>
-              <p className="text-2xl font-bold text-gray-900">{investmentData.activeInvestments}</p>
-              <p className="text-sm text-green-600">+2 new this quarter</p>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaArrowUp className="text-green-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
+                <p className="text-2xl font-bold text-gray-900">₦{investmentData.totalEarnings.toLocaleString()}</p>
+                <p className="text-sm text-green-600">+8.3% growth rate</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <FaCalendar className="text-purple-600 text-xl" />
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaUsers className="text-brand-orange text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Active investments</p>
+                <p className="text-2xl font-bold text-gray-900">{investmentData.activeInvestments}</p>
+                <p className="text-sm text-green-600">+2 new this quarter</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Projected Returns</p>
-              <p className="text-2xl font-bold text-gray-900">₦{investmentData.projectedReturns.toLocaleString()}</p>
-              <p className="text-sm text-gray-600">projected by Q3 2025</p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-lg flex-shrink-0">
+                <FaCalendar className="text-purple-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Projected Returns</p>
+                <p className="text-2xl font-bold text-gray-900">₦{investmentData.projectedReturns.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">projected by Q3 2025</p>
+              </div>
             </div>
           </div>
         </div>

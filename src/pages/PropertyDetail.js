@@ -10,7 +10,6 @@ import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PropertyPurchaseButton from '../components/PropertyPurchaseButton';
 import PhoneDialerModal from '../components/PhoneDialerModal';
-import frontendMockProperties from '../data/mockProperties';
 import { formatCurrency } from '../utils/currency';
 
 const PropertyDetail = () => {
@@ -120,22 +119,8 @@ const PropertyDetail = () => {
   }, []);
 
   const mergedProperties = useMemo(() => {
-    const map = new Map();
-    if (Array.isArray(frontendMockProperties)) {
-      frontendMockProperties.forEach((prop) => {
-        if (prop && (prop.id || prop.propertyId)) {
-          map.set(prop.id || prop.propertyId, prop);
-        }
-      });
-    }
-    if (Array.isArray(properties)) {
-      properties.forEach((prop) => {
-        if (prop && (prop.id || prop.propertyId)) {
-          map.set(prop.id || prop.propertyId, prop);
-        }
-      });
-    }
-    return Array.from(map.values());
+    if (!Array.isArray(properties)) return [];
+    return properties;
   }, [properties]);
 
   useEffect(() => {

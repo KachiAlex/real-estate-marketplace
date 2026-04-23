@@ -345,57 +345,59 @@ const PropertyAlerts = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FaBell className="text-brand-blue text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Alerts</p>
-              <p className="text-2xl font-bold text-gray-900">{alerts.length}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <FaToggleOn className="text-green-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Alerts</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {alerts.filter(a => a.isActive).length}
-              </p>
+      <div className="overflow-x-auto -mx-6 px-6 mb-8 md:mx-0 md:px-0">
+        <div className="flex md:grid md:grid-cols-4 gap-6 min-w-max">
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaBell className="text-brand-blue text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">{alerts.length}</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <FaBell className="text-brand-orange text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Matches</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {alerts.reduce((sum, alert) => sum + alert.matches, 0)}
-              </p>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaToggleOn className="text-green-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Active Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {alerts.filter(a => a.isActive).length}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <FaToggleOff className="text-gray-600 text-xl" />
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaBell className="text-brand-orange text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Matches</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {alerts.reduce((sum, alert) => sum + alert.matches, 0)}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Inactive Alerts</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {alerts.filter(a => !a.isActive).length}
-              </p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                <FaToggleOff className="text-gray-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Inactive Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {alerts.filter(a => !a.isActive).length}
+                </p>
+              </div>
             </div>
           </div>
         </div>

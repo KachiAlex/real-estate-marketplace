@@ -111,8 +111,8 @@ export default function MinimalChat({ userId, peerId, chatId }) {
   };
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: 16, maxWidth: 400 }}>
-      <div style={{ minHeight: 200, marginBottom: 8 }}>
+    <div style={{ border: '1px solid #ccc', padding: 16, maxWidth: 400, display: 'flex', flexDirection: 'column', height: 400 }}>
+      <div style={{ flex: 1, overflowY: 'auto', marginBottom: 8, minHeight: 0 }}>
         {messages.map((msg) => (
           <div key={msg.id} style={{ margin: '4px 0', textAlign: msg.from === userId ? 'right' : 'left' }}>
             <span>{msg.text}</span>
@@ -122,14 +122,16 @@ export default function MinimalChat({ userId, peerId, chatId }) {
           </div>
         ))}
       </div>
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-        placeholder="Type a message..."
-        style={{ width: '80%' }}
-      />
-      <button onClick={sendMessage} style={{ width: '18%', marginLeft: 4 }}>Send</button>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type a message..."
+          style={{ flex: 1 }}
+        />
+        <button onClick={sendMessage}>Send</button>
+      </div>
     </div>
   );
 }

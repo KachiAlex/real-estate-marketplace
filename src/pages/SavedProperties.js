@@ -457,56 +457,57 @@ const SavedProperties = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FaHeart className="text-brand-blue text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Saved</p>
-              <p className="text-2xl font-bold text-gray-900">{savedProperties.length}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <FaEye className="text-green-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Available</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {savedProperties.filter(p => p.status === 'available').length}
-              </p>
+      <div className="overflow-x-auto -mx-6 px-6 mb-4 md:mx-0 md:px-0">
+        <div className="flex md:grid md:grid-cols-4 gap-4 min-w-max">
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaHeart className="text-brand-blue text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Saved</p>
+                <p className="text-2xl font-bold text-gray-900">{savedProperties.length}</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <FaTrash className="text-red-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Sold/Rented</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {savedProperties.filter(p => p.status === 'sold' || p.status === 'rented').length}
-              </p>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaEye className="text-green-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Available</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {savedProperties.filter(p => p.status === 'available').length}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <FaMapMarkerAlt className="text-brand-orange text-xl" />
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-red-100 rounded-lg flex-shrink-0">
+                <FaTrash className="text-red-600 text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Sold/Rented</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {savedProperties.filter(p => p.status === 'sold' || p.status === 'rented').length}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Locations</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {new Set(savedProperties.map(p => {
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6 min-w-[280px]">
+            <div className="flex items-center">
+              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <FaMapMarkerAlt className="text-brand-orange text-xl" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Locations</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(savedProperties.map(p => {
                   if (typeof p.location === 'string') {
                     const parts = p.location.split(',');
                     return parts[parts.length > 1 ? 1 : 0]?.trim() || p.location;

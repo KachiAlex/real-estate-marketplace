@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import frontendMockProperties from '../data/mockProperties';
 import { useAuth } from './AuthContext';
 import apiClient from '../services/apiClient';
 
@@ -164,41 +163,15 @@ export function PropertyProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Load mock properties first
-      if (Array.isArray(frontendMockProperties) && frontendMockProperties.length > 0) {
-        setProperties(frontendMockProperties);
-      }
-      
-      // Try to fetch from backend API
-      try {
-        const response = await apiClient.get('/properties');
-        const data = response.data;
-        const apiProperties = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-        
-        if (apiProperties.length > 0) {
-          // Merge API properties with mock properties (API takes precedence)
-          const merged = new Map();
-          
-          // Add mock properties first
-          frontendMockProperties.forEach(prop => {
-            merged.set(prop.id || prop.propertyId, prop);
-          });
-          
-          // Override with API properties
-          apiProperties.forEach(prop => {
-            merged.set(prop.id || prop.propertyId, prop);
-          });
-          
-          setProperties(Array.from(merged.values()));
-        }
-      } catch (apiError) {
-        console.warn('PropertyContext: API fetch failed, using mock properties only:', apiError?.message);
-        // Keep mock properties if API fails
-      }
-      
+      // Fetch from backend API
+      const response = await apiClient.get('/properties');
+      const data = response.data;
+      const apiProperties = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+
+      setProperties(apiProperties);
       setLoading(false);
-    } catch (e) {
-      console.error('PropertyContext: fetchProperties error:', e);
+    } catch (apiError) {
+      console.error('PropertyContext: API fetch failed:', apiError?.message);
       setError('Failed to fetch properties');
       setLoading(false);
     }
@@ -234,7 +207,7 @@ export function PropertyProvider({ children }) {
 
   const findLocalProperty = useCallback((propertyId) => {
     if (!propertyId) return null;
-    const allSources = [Array.isArray(properties) ? properties : [], Array.isArray(frontendMockProperties) ? frontendMockProperties : []];
+    const allSources = [Array.isArray(properties) ? properties : []];
 
     for (const source of allSources) {
       const found = source.find((prop) => matchPropertyId(prop, propertyId));
