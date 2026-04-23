@@ -1571,11 +1571,11 @@ const Investment = () => {
         </div>
         
         <div className="p-6">
-          <div className="flex space-x-8 mb-6">
+          <div className="flex space-x-4 sm:space-x-8 mb-6 overflow-x-auto pb-1">
             {['Overview', 'Active investments', 'Returns History', 'Available for Liquidation'].map((tab) => (
               <button
                 key={tab}
-                className={`pb-2 border-b-2 font-medium text-sm ${
+                className={`pb-2 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${
                   tab === 'Overview'
                     ? 'border-brand-blue text-brand-blue'
                     : 'border-transparent text-gray-500 hover:text-gray-700'

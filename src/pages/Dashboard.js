@@ -827,7 +827,7 @@ const Dashboard = () => {
                       {property.tag}
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 flex space-x-2">
+                  <div className="absolute top-2 right-2 flex space-x-2 overflow-x-auto pb-1">
                     <button
                       onClick={async () => {
                         const url = `${window.location.origin}/property/${property.id}`;
@@ -978,7 +978,7 @@ const Dashboard = () => {
                       {property.tag}
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 flex space-x-2 z-10">
+                  <div className="absolute top-2 right-2 flex space-x-2 z-10 overflow-x-auto pb-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1212,7 +1212,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
+            <div className="flex space-x-2 sm:space-x-3 mt-6 overflow-x-auto pb-1">
               <button
                 onClick={() => {
                   setShowScheduleModal(false);
@@ -1221,13 +1221,13 @@ const Dashboard = () => {
                   setSelectedTime('');
                   setViewingMessage('');
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmScheduleViewing}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
               >
                 Request Viewing
               </button>

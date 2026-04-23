@@ -605,10 +605,10 @@ const PropertyAlerts = () => {
             </label>
           </div>
 
-          <div className="mt-6 flex space-x-4">
+          <div className="mt-6 flex space-x-2 sm:space-x-4 overflow-x-auto pb-1">
             <button
               onClick={editingAlert ? handleUpdateAlert : handleCreateAlert}
-              className="btn-primary"
+              className="btn-primary flex-shrink-0"
             >
               {editingAlert ? 'Update Alert' : 'Create Alert'}
             </button>
@@ -700,17 +700,17 @@ const PropertyAlerts = () => {
                     </div>
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 overflow-x-auto pb-1">
                     <button
                       onClick={() => handleEditAlert(alert)}
-                      className="btn-outline py-2 px-4"
+                      className="btn-outline py-2 px-4 flex-shrink-0"
                     >
                       <FaEdit className="inline mr-1" />
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteAlert(alert.id)}
-                      className="btn-outline py-2 px-4 text-red-600 border-red-300 hover:bg-red-50"
+                      className="btn-outline py-2 px-4 text-red-600 border-red-300 hover:bg-red-50 flex-shrink-0"
                     >
                       <FaTrash className="inline mr-1" />
                       Delete

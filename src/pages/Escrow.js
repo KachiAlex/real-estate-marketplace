@@ -351,17 +351,17 @@ const Escrow = () => {
                 </ul>
               </div>
               
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-1">
                 <button
                   onClick={handleCancelApproval}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmApproval}
                   disabled={approvalLoading}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center flex-shrink-0"
                 >
                   {approvalLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
