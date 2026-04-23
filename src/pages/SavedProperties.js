@@ -515,6 +515,7 @@ const SavedProperties = () => {
                   return p.location || 'Unknown';
                 })).size}
               </p>
+              </div>
             </div>
           </div>
         </div>
