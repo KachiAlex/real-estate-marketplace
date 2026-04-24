@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import EscrowDashboard from '../components/EscrowDashboard';
@@ -339,7 +339,7 @@ const BillingPayments = () => {
 
       {/* Billing Summary Cards */}
       <div className="mb-8">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className="overflow-x-auto pb-2">
         <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6" style={{ minWidth: 'max-content' }}>
           <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
             <div className="flex items-start gap-3 sm:gap-4">
@@ -348,7 +348,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.totalSpent.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.totalSpent.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-green-600">+12.5% this month</p>
               </div>
             </div>
@@ -361,7 +361,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Payments</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.pendingPayments.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.pendingPayments.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-yellow-600">2 transactions</p>
               </div>
             </div>
@@ -374,7 +374,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Escrow Balance</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">₦{billingSummary.escrowBalance.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.escrowBalance.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-blue-600">3 active escrows</p>
               </div>
             </div>
@@ -441,7 +441,7 @@ const BillingPayments = () => {
                           <p className="text-xs sm:text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right sm:text-left">
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">₦{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">?{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
@@ -467,7 +467,7 @@ const BillingPayments = () => {
                           <p className="text-xs sm:text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
                         </div>
                         <div className="text-right sm:text-left">
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">₦{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">?{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(escrow.status)}`}>
                             {escrow.status}
                           </span>
@@ -499,7 +499,7 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto scrollbar-hide">
+              <div className="overflow-x-auto pb-2">
                 <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-4" style={{ minWidth: 'max-content' }}>
                   {paymentMethods.map((method) => (
                     <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '280px' }}>
@@ -576,7 +576,7 @@ const BillingPayments = () => {
               </div>
 
               {/* Mobile transaction cards - horizontal scroll */}
-              <div className="overflow-x-auto scrollbar-hide sm:hidden">
+              <div className="overflow-x-auto pb-2 sm:hidden">
                 <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
                 {allTransactions.filter(transaction => 
                   filterStatus === 'all' || transaction.status === filterStatus
@@ -595,12 +595,12 @@ const BillingPayments = () => {
                     <div className="space-y-2 mb-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Amount</span>
-                        <span className="font-medium text-gray-900">₦{transaction.amount.toLocaleString()}</span>
+                        <span className="font-medium text-gray-900">?{transaction.amount.toLocaleString()}</span>
                       </div>
                       {transaction.fees > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Fees</span>
-                          <span className="text-gray-500">₦{transaction.fees.toLocaleString()}</span>
+                          <span className="text-gray-500">?{transaction.fees.toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
@@ -666,9 +666,9 @@ const BillingPayments = () => {
                           </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">₦{transaction.amount.toLocaleString()}</div>
+                          <div className="text-sm text-gray-900">?{transaction.amount.toLocaleString()}</div>
                           {transaction.fees > 0 && (
-                            <div className="text-sm text-gray-500">Fees: ₦{transaction.fees.toLocaleString()}</div>
+                            <div className="text-sm text-gray-500">Fees: ?{transaction.fees.toLocaleString()}</div>
                           )}
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -713,7 +713,7 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto scrollbar-hide">
+              <div className="overflow-x-auto pb-2">
                 <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6" style={{ minWidth: 'max-content' }}>
                   {allTransactions.filter(transaction => 
                     filterStatus === 'all' || transaction.status === filterStatus
@@ -730,7 +730,7 @@ const BillingPayments = () => {
                       
                       <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
                       <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">₦{transaction.amount.toLocaleString()}</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">?{transaction.amount.toLocaleString()}</p>
                       
                       <div className="flex space-x-2">
                         <button 
@@ -780,16 +780,16 @@ const BillingPayments = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Amount to Pay</span>
-                  <span className="text-lg font-bold text-gray-900">₦450,000</span>
+                  <span className="text-lg font-bold text-gray-900">?450,000</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-gray-600">Processing Fee</span>
-                  <span className="text-gray-900">₦11,250</span>
+                  <span className="text-gray-900">?11,250</span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-gray-900">Total</span>
-                    <span className="text-lg font-bold text-brand-blue">₦461,250</span>
+                    <span className="text-lg font-bold text-brand-blue">?461,250</span>
                   </div>
                 </div>
               </div>
