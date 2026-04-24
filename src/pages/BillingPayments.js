@@ -328,9 +328,9 @@ const BillingPayments = () => {
   });
 
   return (
-    <div className="p-6 overflow-x-scroll" style={{ overflowX: 'auto' }}>
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8" style={{ minWidth: 'max-content' }}>
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
         <p className="text-gray-600">
           Manage your payments, escrow transactions, and billing information
@@ -497,10 +497,10 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="space-y-4 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
-                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4" style={{ minWidth: 'max-content' }}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {paymentMethods.map((method) => (
-                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '320px' }}>
+                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 w-full">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
@@ -558,15 +558,15 @@ const BillingPayments = () => {
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-6 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ minWidth: 'max-content' }}>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
-                <div className="flex space-x-2 overflow-x-scroll pb-1" style={{ overflowX: 'scroll', minWidth: 'max-content' }}>
-                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0" style={{ minWidth: '100px' }}>
+                <div className="flex space-x-2">
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
                     <FaDownload />
                     <span>Export</span>
                   </button>
-                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0" style={{ minWidth: '100px' }}>
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
                     <FaFilter />
                     <span>Filter</span>
                   </button>
