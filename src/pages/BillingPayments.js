@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import EscrowDashboard from '../components/EscrowDashboard';
@@ -348,7 +348,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.totalSpent.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.totalSpent.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-green-600">+12.5% this month</p>
               </div>
             </div>
@@ -361,7 +361,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Payments</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.pendingPayments.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.pendingPayments.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-yellow-600">2 transactions</p>
               </div>
             </div>
@@ -374,7 +374,7 @@ const BillingPayments = () => {
               </div>
               <div className="flex-1 min-w-0 break-words">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Escrow Balance</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">?{billingSummary.escrowBalance.toLocaleString()}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.escrowBalance.toLocaleString()}</p>
                 <p className="text-xs sm:text-sm text-blue-600">3 active escrows</p>
               </div>
             </div>
@@ -441,7 +441,7 @@ const BillingPayments = () => {
                           <p className="text-xs sm:text-sm text-gray-600">{new Date(transaction.date).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right sm:text-left">
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">?{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">&#8358;{(transaction.totalAmount || transaction.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(transaction.status)}`}>
                             {transaction.status}
                           </span>
@@ -467,7 +467,7 @@ const BillingPayments = () => {
                           <p className="text-xs sm:text-sm text-gray-600">ID: {escrow.escrowId || escrow.id}</p>
                         </div>
                         <div className="text-right sm:text-left">
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">?{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base">&#8358;{(escrow.totalAmount || escrow.amount).toLocaleString()}</p>
                           <span className={`px-2 py-1 text-xs rounded-full inline-block ${getStatusColor(escrow.status)}`}>
                             {escrow.status}
                           </span>
@@ -595,12 +595,12 @@ const BillingPayments = () => {
                     <div className="space-y-2 mb-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Amount</span>
-                        <span className="font-medium text-gray-900">?{transaction.amount.toLocaleString()}</span>
+                        <span className="font-medium text-gray-900">&#8358;{transaction.amount.toLocaleString()}</span>
                       </div>
                       {transaction.fees > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Fees</span>
-                          <span className="text-gray-500">?{transaction.fees.toLocaleString()}</span>
+                          <span className="text-gray-500">&#8358;{transaction.fees.toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
@@ -666,9 +666,9 @@ const BillingPayments = () => {
                           </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">?{transaction.amount.toLocaleString()}</div>
+                          <div className="text-sm text-gray-900">&#8358;{transaction.amount.toLocaleString()}</div>
                           {transaction.fees > 0 && (
-                            <div className="text-sm text-gray-500">Fees: ?{transaction.fees.toLocaleString()}</div>
+                            <div className="text-sm text-gray-500">Fees: &#8358;{transaction.fees.toLocaleString()}</div>
                           )}
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -730,7 +730,7 @@ const BillingPayments = () => {
                       
                       <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
                       <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">?{transaction.amount.toLocaleString()}</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">&#8358;{transaction.amount.toLocaleString()}</p>
                       
                       <div className="flex space-x-2">
                         <button 
