@@ -4,6 +4,7 @@
   "description": "A comprehensive real estate marketplace platform with property sales, rentals, and investment features - Deployed: 2026-04-14T06:50:00Z - FIXED SERVERLESS FUNCTIONS AND JS BUNDLE",
   "private": true,
   "main": "backend/server.js",
+  "proxy": "http://localhost:5001",
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
