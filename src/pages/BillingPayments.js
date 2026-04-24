@@ -339,8 +339,9 @@ const BillingPayments = () => {
 
       {/* Billing Summary Cards */}
       <div className="mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6" style={{ minWidth: 'max-content' }}>
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
                 <FaMoneyBillWave className="text-green-600 text-lg sm:text-xl" />
@@ -353,7 +354,7 @@ const BillingPayments = () => {
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
                 <FaClock className="text-yellow-600 text-lg sm:text-xl" />
@@ -366,7 +367,7 @@ const BillingPayments = () => {
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
                 <FaShieldAlt className="text-blue-600 text-lg sm:text-xl" />
@@ -379,7 +380,7 @@ const BillingPayments = () => {
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="p-2 sm:p-3 bg-purple-100 rounded-lg flex-shrink-0">
                 <FaReceipt className="text-purple-600 text-lg sm:text-xl" />
@@ -391,6 +392,7 @@ const BillingPayments = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -497,10 +499,10 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-4" style={{ minWidth: 'max-content' }}>
                   {paymentMethods.map((method) => (
-                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 w-full">
+                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '280px' }}>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
@@ -573,12 +575,13 @@ const BillingPayments = () => {
                 </div>
               </div>
 
-              {/* Mobile-optimized transaction cards */}
-              <div className="space-y-4 sm:hidden">
+              {/* Mobile transaction cards - horizontal scroll */}
+              <div className="overflow-x-auto scrollbar-hide sm:hidden">
+                <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
                 {allTransactions.filter(transaction => 
                   filterStatus === 'all' || transaction.status === filterStatus
                 ).map((transaction) => (
-                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4" style={{ minWidth: '280px' }}>
                     <div className="flex justify-between items-start mb-3">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-gray-900 text-sm break-words">{transaction.description}</p>
@@ -626,6 +629,7 @@ const BillingPayments = () => {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
               
               {/* Desktop table */}
@@ -709,12 +713,12 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-scroll" style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" style={{ minWidth: 'max-content' }}>
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6" style={{ minWidth: 'max-content' }}>
                   {allTransactions.filter(transaction => 
                     filterStatus === 'all' || transaction.status === filterStatus
                   ).map((transaction) => (
-                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '300px' }}>
+                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '280px' }}>
                       <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
                           <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
