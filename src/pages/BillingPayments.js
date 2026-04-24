@@ -339,60 +339,60 @@ const BillingPayments = () => {
 
       {/* Billing Summary Cards */}
       <div className="mb-8">
-        <div className="overflow-x-auto pb-2">
-        <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6" style={{ minWidth: 'max-content' }}>
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <FaMoneyBillWave className="text-green-600 text-lg sm:text-xl" />
+        <div className="overflow-x-auto pb-3" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex flex-row gap-4" style={{ minWidth: 'max-content' }}>
+            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                  <FaMoneyBillWave className="text-green-600 text-lg" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Total Spent</p>
+                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.totalSpent.toLocaleString()}</p>
+                  <p className="text-xs text-green-600">+12.5% this month</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0 break-words">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.totalSpent.toLocaleString()}</p>
-                <p className="text-xs sm:text-sm text-green-600">+12.5% this month</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                  <FaClock className="text-yellow-600 text-lg" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Pending Payments</p>
+                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.pendingPayments.toLocaleString()}</p>
+                  <p className="text-xs text-yellow-600">2 transactions</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <FaShieldAlt className="text-blue-600 text-lg" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Escrow Balance</p>
+                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.escrowBalance.toLocaleString()}</p>
+                  <p className="text-xs text-blue-600">3 active escrows</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <FaReceipt className="text-purple-600 text-lg" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Completed</p>
+                  <p className="text-lg font-bold text-gray-900">{billingSummary.completedTransactions}</p>
+                  <p className="text-xs text-purple-600">transactions</p>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
-                <FaClock className="text-yellow-600 text-lg sm:text-xl" />
-              </div>
-              <div className="flex-1 min-w-0 break-words">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Payments</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.pendingPayments.toLocaleString()}</p>
-                <p className="text-xs sm:text-sm text-yellow-600">2 transactions</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <FaShieldAlt className="text-blue-600 text-lg sm:text-xl" />
-              </div>
-              <div className="flex-1 min-w-0 break-words">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Escrow Balance</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">&#8358;{billingSummary.escrowBalance.toLocaleString()}</p>
-                <p className="text-xs sm:text-sm text-blue-600">3 active escrows</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6" style={{ minWidth: '220px' }}>
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-purple-100 rounded-lg flex-shrink-0">
-                <FaReceipt className="text-purple-600 text-lg sm:text-xl" />
-              </div>
-              <div className="flex-1 min-w-0 break-words">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-snug break-words">{billingSummary.completedTransactions}</p>
-                <p className="text-xs sm:text-sm text-purple-600">transactions</p>
-              </div>
-            </div>
-          </div>
-        </div>
         </div>
       </div>
 
