@@ -328,9 +328,9 @@ const BillingPayments = () => {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-6 overflow-x-scroll" style={{ overflowX: 'auto' }}>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8" style={{ minWidth: 'max-content' }}>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
         <p className="text-gray-600">
           Manage your payments, escrow transactions, and billing information
@@ -395,10 +395,10 @@ const BillingPayments = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6 overflow-x-auto">
-        <div className="border-b border-gray-200 min-w-max">
+      <div className="bg-white rounded-lg shadow mb-6 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
+        <div className="border-b border-gray-200" style={{ minWidth: 'max-content' }}>
           <div className="relative">
-            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
+            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-scroll pb-1" style={{ overflowX: 'scroll', minWidth: 'max-content' }}>
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
@@ -408,11 +408,8 @@ const BillingPayments = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors min-w-max ${
-                  activeTab === tab.key
-                    ? 'border-brand-blue text-brand-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors`}
+                style={{ minWidth: '120px' }}
               >
                 {tab.label}
               </button>
@@ -495,10 +492,10 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="space-y-4 overflow-x-auto">
-                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 min-w-max">
+              <div className="space-y-4 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
+                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4" style={{ minWidth: 'max-content' }}>
                   {paymentMethods.map((method) => (
-                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[320px] sm:min-w-0">
+                    <div key={method.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '320px' }}>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
@@ -556,15 +553,15 @@ const BillingPayments = () => {
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-6 overflow-x-auto">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 min-w-max">
+            <div className="space-y-6 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ minWidth: 'max-content' }}>
                 <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
-                <div className="flex space-x-2 overflow-x-auto pb-1">
-                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
+                <div className="flex space-x-2 overflow-x-scroll pb-1" style={{ overflowX: 'scroll', minWidth: 'max-content' }}>
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0" style={{ minWidth: '100px' }}>
                     <FaDownload />
                     <span>Export</span>
                   </button>
-                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0">
+                  <button className="btn-outline flex items-center space-x-2 flex-shrink-0" style={{ minWidth: '100px' }}>
                     <FaFilter />
                     <span>Filter</span>
                   </button>
@@ -707,12 +704,12 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-w-max">
+              <div className="overflow-x-scroll" style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" style={{ minWidth: 'max-content' }}>
                   {allTransactions.filter(transaction => 
                     filterStatus === 'all' || transaction.status === filterStatus
                   ).map((transaction) => (
-                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 min-w-[280px]">
+                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '300px' }}>
                       <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
                           <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
