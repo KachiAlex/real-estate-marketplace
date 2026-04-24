@@ -734,7 +734,8 @@ const Mortgage = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Mortgage Summary - Eligible Properties</h2>
           
           {/* Tabs */}
-          <div className="flex space-x-4 sm:space-x-6 mb-4 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+          <div className="relative mb-4">
+            <div className="flex space-x-4 sm:space-x-6 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
             {(() => {
               // Calculate counts for each tab
               const tabCounts = {
@@ -769,6 +770,9 @@ const Mortgage = () => {
                 </button>
               ));
             })()}
+            </div>
+            {/* Right-edge fade hint for scrollable tabs */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-white to-transparent" />
           </div>
 
           {/* Filter Bar */}

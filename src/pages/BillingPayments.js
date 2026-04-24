@@ -395,26 +395,31 @@ const BillingPayments = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6 overflow-x-scroll" style={{ overflowX: 'scroll' }}>
-        <div className="border-b border-gray-200" style={{ minWidth: 'max-content' }}>
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="border-b border-gray-200">
           <div className="relative">
-            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-scroll pb-1" style={{ overflowX: 'scroll', minWidth: 'max-content' }}>
+            <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto pb-1 scrollbar-hide">
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
                 { key: 'history', label: 'Transaction History' },
                 { key: 'invoices', label: 'Invoices & Receipts' }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors`}
-                style={{ minWidth: '120px' }}
-              >
-                {tab.label}
-              </button>
-            ))}
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
+                    activeTab === tab.key
+                      ? 'border-brand-blue text-brand-blue'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </nav>
+            {/* Right-edge fade hint for scrollable tabs */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent" />
           </div>
         </div>
 

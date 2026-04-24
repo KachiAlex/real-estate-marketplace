@@ -826,24 +826,28 @@ const Investment = () => {
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {[ 'Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs', ...(user?.role === 'vendor' ? ['Inspection Requests'] : [])].map((tab) => {
-                const tabKey = tab.toLowerCase().replace(/\s+/g, '');
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tabKey)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === tabKey
-                        ? 'border-brand-blue text-brand-blue'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                );
-              })}
-            </nav>
+            <div className="relative">
+              <nav className="flex space-x-8 px-6 overflow-x-auto scrollbar-hide">
+                {[ 'Investment Details', 'Documents', 'Project Updates', 'Developer Info', 'FAQs', ...(user?.role === 'vendor' ? ['Inspection Requests'] : [])].map((tab) => {
+                  const tabKey = tab.toLowerCase().replace(/\s+/g, '');
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tabKey)}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${
+                        activeTab === tabKey
+                          ? 'border-brand-blue text-brand-blue'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  );
+                })}
+              </nav>
+              {/* Right-edge fade hint for scrollable tabs */}
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent" />
+            </div>
           </div>
 
           <div className="p-6">

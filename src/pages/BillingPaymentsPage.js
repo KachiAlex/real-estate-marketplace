@@ -133,10 +133,10 @@ const BillingPaymentsPage = () => {
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-md mb-8">
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide relative">
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+              className={`flex-shrink-0 px-6 py-4 font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'history'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
@@ -146,7 +146,7 @@ const BillingPaymentsPage = () => {
             </button>
             <button
               onClick={() => setActiveTab('methods')}
-              className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+              className={`flex-shrink-0 px-6 py-4 font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'methods'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
@@ -154,6 +154,8 @@ const BillingPaymentsPage = () => {
             >
               Payment Methods
             </button>
+            {/* Right-edge fade hint for scrollable tabs */}
+            <div className="pointer-events-none sticky right-0 w-10 bg-gradient-to-l from-white to-transparent flex-shrink-0" />
           </div>
 
           {/* Tab Content */}
