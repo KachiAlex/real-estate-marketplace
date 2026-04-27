@@ -35,6 +35,7 @@ const loadPaystackScript = () => {
     const script = document.createElement('script');
     script.src = PAYSTACK_INLINE_URL;
     script.async = true;
+    script.crossOrigin = 'anonymous';
     script.onload = () => {
       if (window.PaystackPop) {
         resolve(window.PaystackPop);

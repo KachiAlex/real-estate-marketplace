@@ -32,6 +32,7 @@ const ensurePaystackSdk = () => {
     const script = document.createElement('script');
     script.src = PAYSTACK_INLINE_URL;
     script.async = true;
+    script.crossOrigin = 'anonymous';
     script.onload = () => {
       return window.PaystackPop ? resolve(window.PaystackPop) : reject(new Error('Paystack SDK loaded without PaystackPop.'));
     };
