@@ -400,10 +400,25 @@ const BillingPayments = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6 overflow-x-scroll" style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}>
-        <div className="border-b border-gray-200" style={{ minWidth: '100vw' }}>
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="border-b border-gray-200">
           <div className="relative">
-            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 pb-1" style={{ minWidth: 'max-content' }}>
+            {/* Mobile dropdown for tabs */}
+            <div className="sm:hidden px-4 py-3">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="overview">Overview</option>
+                <option value="payments">Payment Methods</option>
+                <option value="history">Transaction History</option>
+                <option value="invoices">Invoices & Receipts</option>
+              </select>
+            </div>
+
+            {/* Desktop horizontal tabs */}
+            <nav className="hidden sm:flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
@@ -418,14 +433,11 @@ const BillingPayments = () => {
                       ? 'border-brand-blue text-brand-blue'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
-                  style={{ minWidth: '150px' }}
                 >
                   {tab.label}
                 </button>
               ))}
             </nav>
-            {/* Right-edge fade hint for scrollable tabs */}
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent" />
           </div>
         </div>
 
