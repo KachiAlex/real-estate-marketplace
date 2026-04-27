@@ -7,7 +7,6 @@ import { FaCreditCard, FaShieldAlt, FaClock, FaCheck, FaTimes, FaDownload, FaEye
 import toast from 'react-hot-toast';
 
 const BillingPayments = () => {
-  console.log('🔵 BILLING PAYMENTS PAGE LOADED - DEBUG');
   const { user } = useAuth();
   const { escrowTransactions, createEscrowTransaction, releaseEscrowFunds } = useEscrow();
   const [activeTab, setActiveTab] = useState('overview');
