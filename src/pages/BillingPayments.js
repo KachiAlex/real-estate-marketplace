@@ -339,57 +339,55 @@ const BillingPayments = () => {
 
       {/* Billing Summary Cards */}
       <div className="mb-8">
-        <div className="overflow-x-auto pb-3" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="flex flex-row gap-4" style={{ minWidth: 'max-content' }}>
-            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <FaMoneyBillWave className="text-green-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Total Spent</p>
-                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.totalSpent.toLocaleString()}</p>
-                  <p className="text-xs text-green-600">+12.5% this month</p>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <FaMoneyBillWave className="text-green-600 text-lg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-600">Total Spent</p>
+                <p className="text-lg font-bold text-gray-900 break-words">&#8358;{billingSummary.totalSpent.toLocaleString()}</p>
+                <p className="text-xs text-green-600">+12.5% this month</p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
-                  <FaClock className="text-yellow-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Pending Payments</p>
-                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.pendingPayments.toLocaleString()}</p>
-                  <p className="text-xs text-yellow-600">2 transactions</p>
-                </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                <FaClock className="text-yellow-600 text-lg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-600">Pending Payments</p>
+                <p className="text-lg font-bold text-gray-900 break-words">&#8358;{billingSummary.pendingPayments.toLocaleString()}</p>
+                <p className="text-xs text-yellow-600">2 transactions</p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <FaShieldAlt className="text-blue-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Escrow Balance</p>
-                  <p className="text-lg font-bold text-gray-900">&#8358;{billingSummary.escrowBalance.toLocaleString()}</p>
-                  <p className="text-xs text-blue-600">3 active escrows</p>
-                </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaShieldAlt className="text-blue-600 text-lg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-600">Escrow Balance</p>
+                <p className="text-lg font-bold text-gray-900 break-words">&#8358;{billingSummary.escrowBalance.toLocaleString()}</p>
+                <p className="text-xs text-blue-600">3 active escrows</p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-lg shadow p-4" style={{ minWidth: '200px', width: '200px' }}>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <FaReceipt className="text-purple-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Completed</p>
-                  <p className="text-lg font-bold text-gray-900">{billingSummary.completedTransactions}</p>
-                  <p className="text-xs text-purple-600">transactions</p>
-                </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                <FaReceipt className="text-purple-600 text-lg" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-600">Completed</p>
+                <p className="text-lg font-bold text-gray-900">{billingSummary.completedTransactions}</p>
+                <p className="text-xs text-purple-600">transactions</p>
               </div>
             </div>
           </div>
@@ -400,7 +398,7 @@ const BillingPayments = () => {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="border-b border-gray-200">
           <div className="relative">
-            <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto pb-1 scrollbar-hide">
+            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
@@ -410,7 +408,7 @@ const BillingPayments = () => {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
+                  className={`py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm sm:text-base whitespace-nowrap flex-shrink-0 transition-colors ${
                     activeTab === tab.key
                       ? 'border-brand-blue text-brand-blue'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
