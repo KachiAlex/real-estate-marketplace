@@ -242,7 +242,7 @@ code {
 
   .container-wrap {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
     width: 100%;
   }
 }
