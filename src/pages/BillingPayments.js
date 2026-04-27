@@ -330,10 +330,6 @@ const BillingPayments = () => {
 
   return (
     <div className="p-4 sm:p-6" style={{ overflowX: 'visible' }}>
-      {/* DEBUG HEADER */}
-      <div className="bg-red-500 text-white p-4 mb-4 font-bold text-center">
-        🔴 DEBUG: BillingPayments Page - Grid Layout Applied
-      </div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
