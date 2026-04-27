@@ -400,10 +400,10 @@ const BillingPayments = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow mb-6 overflow-x-scroll" style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}>
+        <div className="border-b border-gray-200" style={{ minWidth: '100vw' }}>
           <div className="relative">
-            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
+            <nav className="flex space-x-4 sm:space-x-6 sm:space-x-8 px-4 sm:px-6 pb-1" style={{ minWidth: 'max-content' }}>
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'payments', label: 'Payment Methods' },
@@ -418,6 +418,7 @@ const BillingPayments = () => {
                       ? 'border-brand-blue text-brand-blue'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
+                  style={{ minWidth: '150px' }}
                 >
                   {tab.label}
                 </button>
