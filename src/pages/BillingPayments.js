@@ -7,6 +7,7 @@ import { FaCreditCard, FaShieldAlt, FaClock, FaCheck, FaTimes, FaDownload, FaEye
 import toast from 'react-hot-toast';
 
 const BillingPayments = () => {
+  console.log('🔵 BILLING PAYMENTS PAGE LOADED - DEBUG');
   const { user } = useAuth();
   const { escrowTransactions, createEscrowTransaction, releaseEscrowFunds } = useEscrow();
   const [activeTab, setActiveTab] = useState('overview');
@@ -329,6 +330,10 @@ const BillingPayments = () => {
 
   return (
     <div className="p-4 sm:p-6" style={{ overflowX: 'visible' }}>
+      {/* DEBUG HEADER */}
+      <div className="bg-red-500 text-white p-4 mb-4 font-bold text-center">
+        🔴 DEBUG: BillingPayments Page - Grid Layout Applied
+      </div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
