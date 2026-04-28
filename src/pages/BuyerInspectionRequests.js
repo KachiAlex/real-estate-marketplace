@@ -66,18 +66,6 @@ const BuyerInspectionRequests = () => {
     a.href = url; a.download = `inspection-${r.id}.ics`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const openGoogleCalendar = (r) => {
-    const { title, start, end, details, location } = buildCalendar(r);
-    if (!start || !end) { return; }
-    const fmt = (d) => `${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}T${String(d.getUTCHours()).padStart(2,'0')}${String(d.getUTCMinutes()).padStart(2,'0')}00Z`;
-    const text = encodeURIComponent(title);
-    const dates = `${fmt(start)}/${fmt(end)}`;
-    const detailsEnc = encodeURIComponent(details);
-    const locationEnc = encodeURIComponent(location);
-    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${detailsEnc}&location=${locationEnc}`;
-    window.open(url, '_blank');
-  };
-
   // Load requests from localStorage (primary source for now)
   const loadRequestsFromLocalStorage = () => {
     if (!user?.id) return [];
@@ -365,7 +353,6 @@ const BuyerInspectionRequests = () => {
                 )}
                 {r.status === 'accepted' && (
                   <>
-                    <button onClick={() => openGoogleCalendar(r)} className="px-3 py-1 bg-gray-800 text-white rounded">Google Calendar</button>
                     <button onClick={() => downloadICS(r)} className="px-3 py-1 border rounded">Download .ics</button>
                   </>
                 )}

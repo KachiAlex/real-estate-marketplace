@@ -29,7 +29,7 @@ const createApiClient = ({ baseUrl, storage, refreshFn, onBeforeRequest, axios: 
   const resolvedBase = getApiBaseUrl(baseUrl);
 
   const instance = axiosToUse.create({
-    baseURL: '/api',
+    baseURL: `${resolvedBase}/api`,
     withCredentials: true,
     timeout: 30_000
   });
@@ -122,9 +122,10 @@ const createApiClient = ({ baseUrl, storage, refreshFn, onBeforeRequest, axios: 
 };
 
 const createRefreshFunction = (baseUrl) => {
+  const resolvedBase = getApiBaseUrl(baseUrl);
   const endpoints = [
-    '/api/auth/jwt/refresh',
-    '/api/auth/refresh'
+    `${resolvedBase}/api/auth/jwt/refresh`,
+    `${resolvedBase}/api/auth/refresh`
   ];
 
   return async (refreshToken) => {

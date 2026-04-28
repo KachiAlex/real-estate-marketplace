@@ -18,7 +18,17 @@ const cors = require('cors');
 // This ensures the centralized .env (which contains DB credentials, JWT secrets, etc.)
 // is always sourced regardless of the working directory used by npm scripts.
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const dotenv = require('dotenv');
+
+// Prefer the backend-specific env file when present because this repo stores
+// the production database credentials there. Fall back to the root .env so
+// local overrides still work when developers use that file directly.
+const backendEnvPath = path.resolve(__dirname, '..', '.env.backend');
+const rootEnvPath = path.resolve(__dirname, '..', '.env');
+
+if (!dotenv.config({ path: backendEnvPath }).parsed) {
+  dotenv.config({ path: rootEnvPath });
+}
 
 // Import configurations
 const { securityConfig } = require('./config/security');

@@ -836,13 +836,13 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
                     if (!iframeContent) {
                       // Iframe blocked by CSP, fallback to new window
                       console.warn('PropertyVerification: Iframe blocked by CSP, opening in new window');
-                      window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                      openCheckoutPopup(checkoutUrl);
                       setShowCheckoutModal(false);
                     }
                   } catch (error) {
                     // CSP blocked access, open in new window
                     console.warn('PropertyVerification: CSP blocked iframe, opening in new window');
-                    window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    openCheckoutPopup(checkoutUrl);
                     setShowCheckoutModal(false);
                   }
                 }}
@@ -850,7 +850,7 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
                   // Iframe failed to load, try mock payment
                   console.warn('PropertyVerification: Iframe load error, trying mock payment');
                   const mockUrl = `https://real-estate-marketplace-37544.web.app/mock-payment.html?amount=${pendingPayment?.amount || 50000}&tx_ref=${pendingPayment?.txRef || 'test'}`;
-                  window.open(mockUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                  openCheckoutPopup(mockUrl);
                   setShowCheckoutModal(false);
                 }}
               />
@@ -864,10 +864,10 @@ const PropertyVerification = ({ property, onClose, onSuccess }) => {
                   onClick={() => {
                     // Try the original URL first, then fallback to mock payment
                     if (checkoutUrl.includes('mock-payment')) {
-                      window.open(checkoutUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                      openCheckoutPopup(checkoutUrl);
                     } else {
                       const mockUrl = `https://real-estate-marketplace-37544.web.app/mock-payment.html?amount=${pendingPayment?.amount || 50000}&tx_ref=${pendingPayment?.txRef || 'test'}`;
-                      window.open(mockUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                      openCheckoutPopup(mockUrl);
                     }
                     setShowCheckoutModal(false);
                   }}

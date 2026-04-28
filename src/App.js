@@ -1,7 +1,6 @@
 import VendorPropertiesContainer from './components/vendor/VendorPropertiesContainer';
 import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './contexts/AuthContext-new';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
@@ -31,7 +30,6 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import SignInModal from './components/auth/SignInModal';
 import RegisterModal from './components/auth/RegisterModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
-import GoogleCallback from './pages/auth/GooglePopupCallback';
 
 // Lazy imports (wrapped with retryImport to mitigate transient chunk load failures)
 const Dashboard = lazy(() => retryImport(() => import('./pages/Dashboard')));
@@ -103,7 +101,6 @@ const AuthRoutes = () => (
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-    <Route path="/auth/google/callback" element={<GoogleCallback />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
   </Routes>
 );
@@ -417,67 +414,65 @@ function AppContent() {
   };
 
   return (
-    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ''}>
-      <TourProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <VendorProvider>
-              <PropertyProvider>
-                <InvestmentProvider>
-                  <EscrowProvider>
-                    <MortgageProvider>
-                      <SidebarProvider>
-                      {isAuthRoute && !isAuthModalRoute ? (
-                        <div className="flex min-h-screen w-full justify-center">
-                          <Suspense fallback={
-                            <div className="flex items-center justify-center w-full h-screen">
-                              <LoadingSpinner size="lg" />
-                            </div>
-                          }>
-                            <AuthRoutes />
-                          </Suspense>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-                          {!shouldHideHeader && <Header />}
-                          <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${!shouldHideHeader && !isAuthModalRoute ? 'pt-16' : ''}`}>
-                            <ErrorBoundary>
-                              <Suspense fallback={
-                                <div className="flex items-center justify-center w-full h-screen">
-                                  <LoadingSpinner size="lg" />
-                                </div>
-                              }>
-                                <MainRoutes locationOverride={isAuthModalRoute ? (previousLocationRef.current || DEFAULT_BACKGROUND_LOCATION) : location} />
-                              </Suspense>
-                            </ErrorBoundary>
+    <TourProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <VendorProvider>
+            <PropertyProvider>
+              <InvestmentProvider>
+                <EscrowProvider>
+                  <MortgageProvider>
+                    <SidebarProvider>
+                    {isAuthRoute && !isAuthModalRoute ? (
+                      <div className="flex min-h-screen w-full justify-center">
+                        <Suspense fallback={
+                          <div className="flex items-center justify-center w-full h-screen">
+                            <LoadingSpinner size="lg" />
                           </div>
-                          {/* Show Sign-in modal when route is /auth/login */}
-                          {location.pathname === '/auth/login' && (
-                            <SignInModal onClose={handleAuthModalClose} />
-                          )}
-                          {/* Show Register modal when route is /auth/register */}
-                          {location.pathname === '/auth/register' && (
-                            <RegisterModal onClose={handleAuthModalClose} />
-                          )}
-                          {/* Show Forgot Password modal when route is /auth/forgot-password */}
-                          {location.pathname === '/auth/forgot-password' && (
-                            <ForgotPasswordModal onClose={handleAuthModalClose} />
-                          )}
-                          {!shouldHideHeader && (
-                            <AITourGuide />
-                          )}
+                        }>
+                          <AuthRoutes />
+                        </Suspense>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
+                        {!shouldHideHeader && <Header />}
+                        <div className={`flex flex-grow w-full max-w-full overflow-x-hidden ${!shouldHideHeader && !isAuthModalRoute ? 'pt-16' : ''}`}>
+                          <ErrorBoundary>
+                            <Suspense fallback={
+                              <div className="flex items-center justify-center w-full h-screen">
+                                <LoadingSpinner size="lg" />
+                              </div>
+                            }>
+                              <MainRoutes locationOverride={isAuthModalRoute ? (previousLocationRef.current || DEFAULT_BACKGROUND_LOCATION) : location} />
+                            </Suspense>
+                          </ErrorBoundary>
                         </div>
-                      )}
-                    </SidebarProvider>
-                  </MortgageProvider>
-                </EscrowProvider>
-              </InvestmentProvider>
-            </PropertyProvider>
-          </VendorProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </TourProvider>
-    </GoogleOAuthProvider>
+                        {/* Show Sign-in modal when route is /auth/login */}
+                        {location.pathname === '/auth/login' && (
+                          <SignInModal onClose={handleAuthModalClose} />
+                        )}
+                        {/* Show Register modal when route is /auth/register */}
+                        {location.pathname === '/auth/register' && (
+                          <RegisterModal onClose={handleAuthModalClose} />
+                        )}
+                        {/* Show Forgot Password modal when route is /auth/forgot-password */}
+                        {location.pathname === '/auth/forgot-password' && (
+                          <ForgotPasswordModal onClose={handleAuthModalClose} />
+                        )}
+                        {!shouldHideHeader && (
+                          <AITourGuide />
+                        )}
+                      </div>
+                    )}
+                  </SidebarProvider>
+                </MortgageProvider>
+              </EscrowProvider>
+            </InvestmentProvider>
+          </PropertyProvider>
+        </VendorProvider>
+      </NotificationProvider>
+    </AuthProvider>
+  </TourProvider>
   );
 }
 

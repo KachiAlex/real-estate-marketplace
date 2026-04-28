@@ -87,6 +87,26 @@ const PaymentCallback = () => {
     return headers;
   };
 
+  const notifyPaymentHost = (messagePayload) => {
+    if (typeof window === 'undefined') return;
+
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage(messagePayload, '*');
+      } catch (error) {
+        console.warn('PaymentCallback: unable to notify opener', error);
+      }
+    }
+
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage(messagePayload, '*');
+      } catch (error) {
+        console.warn('PaymentCallback: unable to notify parent', error);
+      }
+    }
+  };
+
   const verifyPayment = async (entry, paymentStatus, storedEntries) => {
     const headers = await buildHeaders();
 
@@ -140,20 +160,20 @@ const PaymentCallback = () => {
         }
       };
 
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(messagePayload, '*');
-      }
-
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(messagePayload, '*');
-      }
+      notifyPaymentHost(messagePayload);
 
       setStatus('success');
       setMessage('Payment verified successfully');
       setDetails('You can now return to the verification request modal to finish submission.');
 
       setTimeout(() => {
-        window.close();
+        try {
+          if (typeof window !== 'undefined' && typeof window.close === 'function') {
+            window.close();
+          }
+        } catch (closeError) {
+          console.warn('PaymentCallback: unable to close window', closeError);
+        }
         if (entry.propertyId) {
           navigate(`/property/${entry.propertyId}?verification=completed`, { replace: true });
         }
@@ -173,13 +193,7 @@ const PaymentCallback = () => {
         }
       };
 
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(messagePayload, '*');
-      }
-
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(messagePayload, '*');
-      }
+      notifyPaymentHost(messagePayload);
     }
   };
 

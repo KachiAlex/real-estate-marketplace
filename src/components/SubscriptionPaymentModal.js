@@ -11,6 +11,29 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
   const [paymentUrl, setPaymentUrl] = useState('');
   const [reference, setReference] = useState('');
 
+  const openPaymentPopup = (url) => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+      const popup = window.open(
+        url,
+        'paystack-payment',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+
+      if (!popup) {
+        setError('Payment popup was blocked. Please allow popups or open the payment in your browser.');
+        return null;
+      }
+
+      return popup;
+    } catch (popupError) {
+      console.error('Payment popup failed to open:', popupError);
+      setError('Payment popup could not be opened in this environment.');
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       initializePayment();
@@ -62,26 +85,22 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
 
   const handlePayNow = () => {
     if (paymentUrl) {
-      // Open Paystack in new window
-      const popup = window.open(
-        paymentUrl,
-        'paystack-payment',
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-      );
+      const popup = openPaymentPopup(paymentUrl);
 
-      // Poll for payment completion
+      if (!popup) {
+        return;
+      }
+
       const checkPayment = setInterval(() => {
-        if (popup.closed) {
+        if (!popup || popup.closed) {
           clearInterval(checkPayment);
-          // Verify payment status
           verifyPayment();
         }
       }, 1000);
 
-      // Fallback: check after 30 minutes
       setTimeout(() => {
         clearInterval(checkPayment);
-        if (!popup.closed) {
+        if (popup && !popup.closed) {
           popup.close();
         }
       }, 30 * 60 * 1000);

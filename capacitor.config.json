@@ -1,0 +1,8 @@
+{
+  "appId": "com.propertyark.app",
+  "appName": "PropertyArk",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  }
+}

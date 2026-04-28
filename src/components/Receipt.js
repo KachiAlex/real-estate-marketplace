@@ -30,8 +30,22 @@ const Receipt = ({ transaction, onClose }) => {
   };
 
   const downloadReceipt = () => {
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
+    if (typeof window === 'undefined') return;
+
+    let printWindow = null;
+    try {
+      printWindow = window.open('', '_blank');
+    } catch (error) {
+      console.error('Receipt popup failed to open:', error);
+      alert('Receipt preview could not be opened in this environment.');
+      return;
+    }
+
+    if (!printWindow) {
+      alert('Receipt popup was blocked. Please allow popups or use a desktop browser.');
+      return;
+    }
+
     const receiptHTML = `
       <!DOCTYPE html>
       <html>
@@ -288,13 +302,23 @@ const Receipt = ({ transaction, onClose }) => {
       </html>
     `;
 
-    printWindow.document.write(receiptHTML);
-    printWindow.document.close();
+    try {
+      printWindow.document.write(receiptHTML);
+      printWindow.document.close();
+    } catch (error) {
+      console.error('Receipt rendering failed:', error);
+      alert('Receipt preview could not be rendered.');
+      return;
+    }
     
     // Wait for content to load then print
     printWindow.onload = () => {
       setTimeout(() => {
-        printWindow.print();
+        try {
+          printWindow.print();
+        } catch (printError) {
+          console.error('Receipt print failed:', printError);
+        }
       }, 500);
     };
   };
