@@ -8,7 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 public class MainActivity extends BridgeActivity {
-    private static final long SPLASH_DURATION_MS = 5000L;
+    private static final long SPLASH_DURATION_MS = 3000L;
     private volatile boolean keepSplashOnScreen = true;
 
     @Override
