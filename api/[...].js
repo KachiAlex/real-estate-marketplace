@@ -18,6 +18,30 @@ try {
 }
 
 module.exports = (req, res) => {
+  // Add CORS headers for serverless function
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://real-estate-marketplace-delta.vercel.app',
+    'https://real-estate-marketplace-37544.web.app',
+    'https://real-estate-marketplace-37544.firebaseapp.com',
+    'https://propertyark.com',
+    'https://www.propertyark.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-CSRF-Token, X-Debug-Request-Id');
+  }
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const parsed = parseUrl(req.url, true);
   const originalUrl = req.originalUrl || req.url;
 
@@ -29,7 +53,8 @@ module.exports = (req, res) => {
       queryPath: parsed.query?.path,
       'x-now-route-matches': req.headers['x-now-route-matches'],
       'x-vercel-proxied-path': req.headers['x-vercel-proxied-path'],
-      'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for']
+      'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'],
+      origin: origin
     };
     console.log('[Serverless][PathDebug]', debugHeaders);
   }
