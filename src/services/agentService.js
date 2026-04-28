@@ -37,59 +37,9 @@ const getAgentsFromUsers = () => {
       }
     }
     
-    // Get agents from mockUsers (for development/testing)
-    // In production, this would come from a database
-    const mockUsers = [
-      {
-        id: 'agent_001',
-        firstName: 'Emeka',
-        lastName: 'Okafor',
-        email: 'emeka.okafor@lagosagents.com',
-        phone: '+234 801 234 5678',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        vendorData: {
-          businessName: 'Lagos Real Estate Agency',
-          businessType: 'Real Estate Agent',
-          vendorCategory: 'agent',
-          agentLocation: 'Lagos',
-          experience: '5+ years',
-          phone: '+234 801 234 5678'
-        }
-      },
-      {
-        id: 'agent_002',
-        firstName: 'Fatima',
-        lastName: 'Ibrahim',
-        email: 'fatima.ibrahim@abujaagents.com',
-        phone: '+234 802 345 6789',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        vendorData: {
-          businessName: 'Abuja Properties Ltd',
-          businessType: 'Real Estate Agent',
-          vendorCategory: 'agent',
-          agentLocation: 'Abuja',
-          experience: '8+ years',
-          phone: '+234 802 345 6789'
-        }
-      },
-      {
-        id: 'agent_003',
-        firstName: 'Chidi',
-        lastName: 'Nwankwo',
-        email: 'chidi.nwankwo@riversagents.com',
-        phone: '+234 803 456 7890',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        vendorData: {
-          businessName: 'Rivers State Realty',
-          businessType: 'Real Estate Agent',
-          vendorCategory: 'agent',
-          agentLocation: 'Rivers',
-          experience: '10+ years',
-          phone: '+234 803 456 7890'
-        }
-      }
-    ];
-    
+    // Mock users - REMOVED to prevent users from seeing mock data
+    const mockUsers = [];
+
     // Add mock agents that aren't already in allUsers
     mockUsers.forEach(mockAgent => {
       if (!allUsers.find(u => u.id === mockAgent.id || u.email === mockAgent.email)) {

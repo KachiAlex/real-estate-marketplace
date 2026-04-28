@@ -25,52 +25,10 @@ const addDoc = async () => ({ id: `stub_${Date.now()}`, ref: {} });
 
 const VendorContext = createContext();
 
-// Mock vendor data
-const mockVendorProfile = {
-  id: 'vendor-1',
-  businessName: 'Luxury Properties Nigeria',
-  businessType: 'Real Estate Agency',
-  licenseNumber: 'REA-2024-001',
-  isAgent: true,
-  isPropertyOwner: true,
-  experience: '5+ years',
-  specializations: ['Luxury Homes', 'Commercial Properties', 'Investment Properties'],
-  contactInfo: {
-    phone: '+234-XXX-XXXX',
-    email: 'info@luxuryproperties.ng',
-    address: 'Victoria Island, Lagos'
-  },
-  rating: 4.8,
-  totalProperties: 45,
-  totalSales: 1200000000,
-  joinedDate: '2020-01-15T00:00:00Z',
-  status: 'verified',
-  subscription: {
-    active: true,
-    lastPaid: new Date().toISOString(),
-    nextDue: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-    fee: 50000
-  }
-};
+// Mock vendor data - REMOVED to prevent users from seeing mock data
+const mockVendorProfile = {};
 
-const mockAgentDocuments = [
-  {
-    id: 'doc-1',
-    type: 'attestation_letter',
-    name: 'Real Estate License',
-    status: 'verified',
-    uploadedAt: '2024-01-01T00:00:00Z',
-    url: 'https://example.com/license.pdf'
-  },
-  {
-    id: 'doc-2',
-    type: 'identity_verification',
-    name: 'Government ID',
-    status: 'verified',
-    uploadedAt: '2024-01-02T00:00:00Z',
-    url: 'https://example.com/id.pdf'
-  }
-];
+const mockAgentDocuments = [];
 
 export const useVendor = () => {
   const context = useContext(VendorContext);

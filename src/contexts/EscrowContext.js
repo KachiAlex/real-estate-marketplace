@@ -4,39 +4,8 @@ import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { getAuthToken } from '../utils/authToken';
 
-// Mock escrow transactions
-const mockEscrowTransactions = [
-  {
-    id: '1',
-    propertyId: '1',
-    propertyTitle: 'Beautiful Family Home',
-    buyerId: '1',
-    buyerName: 'John Doe',
-    buyerEmail: 'john@example.com',
-    sellerId: '2',
-    sellerName: 'John Smith',
-    sellerEmail: 'john.smith@example.com',
-    amount: 185000000, // ₦185,000,000
-    currency: 'NGN',
-    status: 'pending',
-    type: 'sale',
-    paymentMethod: 'card',
-    createdAt: '2024-01-20T10:00:00Z',
-    expectedCompletion: '2024-02-20T10:00:00Z',
-    documents: [
-      { name: 'Purchase Agreement', status: 'uploaded' },
-      { name: 'Property Inspection Report', status: 'pending' },
-      { name: 'Title Search', status: 'completed' }
-    ],
-    milestones: [
-      { name: 'Initial Payment', status: 'pending', date: null, amount: 18500000 },
-      { name: 'Property Inspection', status: 'pending', date: null, amount: 0 },
-      { name: 'Final Payment', status: 'pending', date: null, amount: 166500000 }
-    ],
-    escrowFee: 925000, // 0.5% of transaction amount
-    totalAmount: 185925000
-  }
-];
+// Mock escrow transactions - REMOVED to prevent users from seeing mock data
+const mockEscrowTransactions = [];
 
 const EscrowContext = createContext();
 

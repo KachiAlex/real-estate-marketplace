@@ -155,81 +155,8 @@ const buildPayloadFromEditor = (editorState, authorId) => {
   return payload;
 };
 
-const MOCK_USERS = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+2348012345678',
-    role: 'buyer',
-    status: 'active',
-    isVerified: true,
-    createdAt: '2024-01-15',
-    lastLogin: '2024-02-02'
-  },
-  {
-    id: '2',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane@example.com',
-    phone: '+2348098765432',
-    role: 'vendor',
-    status: 'active',
-    isVerified: true,
-    createdAt: '2024-01-16',
-    lastLogin: '2024-02-04'
-  },
-  {
-    id: '3',
-    firstName: 'Michael',
-    lastName: 'Brown',
-    email: 'michael@example.com',
-    phone: '+2348076543210',
-    role: 'buyer',
-    status: 'active',
-    isVerified: false,
-    createdAt: '2024-01-17',
-    lastLogin: '2024-02-01'
-  },
-  {
-    id: '4',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah@example.com',
-    phone: '+2348065432198',
-    role: 'vendor',
-    status: 'suspended',
-    isVerified: true,
-    isActive: false,
-    suspendedAt: '2024-01-25',
-    createdAt: '2024-01-18'
-  },
-  {
-    id: '5',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@propertyark.com',
-    phone: '+2348055555555',
-    role: 'admin',
-    status: 'active',
-    isVerified: true,
-    createdAt: '2024-01-01',
-    lastLogin: '2024-02-05'
-  },
-  {
-    id: '6',
-    firstName: 'Onyedikachi',
-    lastName: 'Akoma',
-    email: 'onyedika.akoma@gmail.com',
-    phone: '+2348044444444',
-    role: 'buyer',
-    status: 'active',
-    isVerified: true,
-    createdAt: '2024-01-20',
-    lastLogin: '2024-02-03'
-  }
-];
+// Mock users - REMOVED to prevent users from seeing mock data
+const MOCK_USERS = [];
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();

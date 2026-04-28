@@ -26,27 +26,8 @@ const BillingPayments = () => {
     bankName: ''
   });
 
-  // Mock payment methods
-  const paymentMethods = [
-    {
-      id: 'card',
-      type: 'Credit/Debit Card',
-      icon: FaCreditCard,
-      last4: '4242',
-      expiry: '12/25',
-      isDefault: true,
-      provider: 'Visa'
-    },
-    {
-      id: 'bank',
-      type: 'Bank Transfer',
-      icon: FaMoneyBillWave,
-      last4: '1234',
-      expiry: null,
-      isDefault: false,
-      provider: 'First Bank'
-    }
-  ];
+  // Mock payment methods - REMOVED to prevent users from seeing mock data
+  const paymentMethods = [];
 
   // Calculate real billing summary from transactions
   const getBillingSummary = () => {
@@ -83,82 +64,11 @@ const BillingPayments = () => {
 
   const billingSummary = getBillingSummary();
 
-  // Mock transaction history
-  const transactionHistory = [
-    {
-      id: 'TXN-001',
-      type: 'Property Purchase',
-      amount: 15000000,
-      status: 'completed',
-      date: '2024-01-15',
-      description: 'Luxury Apartment in Ikoyi',
-      paymentMethod: 'Card',
-      escrowId: 'ESC-001',
-      fees: 37500
-    },
-    {
-      id: 'TXN-002',
-      type: 'Investment',
-      amount: 500000,
-      status: 'pending',
-      date: '2024-01-20',
-      description: 'Azure Heights Complex Investment',
-      paymentMethod: 'Bank Transfer',
-      escrowId: 'ESC-002',
-      fees: 5000
-    },
-    {
-      id: 'TXN-003',
-      type: 'Escrow Release',
-      amount: 15000000,
-      status: 'completed',
-      date: '2024-01-10',
-      description: 'Property Transfer Completed',
-      paymentMethod: 'Escrow',
-      escrowId: 'ESC-001',
-      fees: 0
-    }
-  ];
+  // Mock transaction history - REMOVED to prevent users from seeing mock data
+  const transactionHistory = [];
 
-  // Mock escrow transactions
-  const mockEscrowTransactions = [
-    {
-      id: 'ESC-001',
-      propertyTitle: 'Luxury Apartment in Ikoyi',
-      buyer: 'John Doe',
-      seller: 'Lagos Properties Ltd',
-      amount: 15000000,
-      status: 'completed',
-      createdAt: '2024-01-01',
-      completedAt: '2024-01-10',
-      fees: 75000,
-      description: 'Property purchase with full verification'
-    },
-    {
-      id: 'ESC-002',
-      propertyTitle: 'Azure Heights Complex Investment',
-      buyer: 'John Doe',
-      seller: 'Azure Development Co.',
-      amount: 500000,
-      status: 'pending',
-      createdAt: '2024-01-20',
-      completedAt: null,
-      fees: 2500,
-      description: 'Investment in development project'
-    },
-    {
-      id: 'ESC-003',
-      propertyTitle: 'Villa in Victoria Island',
-      buyer: 'John Doe',
-      seller: 'Premium Estates',
-      amount: 25000000,
-      status: 'in-progress',
-      createdAt: '2024-01-25',
-      completedAt: null,
-      fees: 125000,
-      description: 'Property purchase under verification'
-    }
-  ];
+  // Mock escrow transactions - REMOVED to prevent users from seeing mock data
+  const mockEscrowTransactions = [];
 
   // Load all transactions (escrow + mock) on component mount
   useEffect(() => {

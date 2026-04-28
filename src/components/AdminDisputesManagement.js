@@ -24,20 +24,20 @@ const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', o
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState(null);
 
-  // Enhanced mock disputes data with more details
+  // Enhanced disputes data - REMOVED mock fallbacks to prevent users from seeing mock data
   const enhancedDisputes = disputes.map(dispute => ({
     ...dispute,
-    propertyTitle: dispute.propertyTitle || 'Luxury Villa in Lekki',
-    buyerName: dispute.buyerName || 'John Doe',
-    buyerEmail: dispute.buyerEmail || 'buyer@example.com',
-    sellerName: dispute.sellerName || 'Jane Smith',
-    sellerEmail: dispute.sellerEmail || 'seller@example.com',
-    reason: dispute.reason || 'property_condition',
-    description: dispute.description || 'Property condition does not match the description provided.',
-    amount: dispute.amount || 5000000,
+    propertyTitle: dispute.propertyTitle || '',
+    buyerName: dispute.buyerName || '',
+    buyerEmail: dispute.buyerEmail || '',
+    sellerName: dispute.sellerName || '',
+    sellerEmail: dispute.sellerEmail || '',
+    reason: dispute.reason || '',
+    description: dispute.description || '',
+    amount: dispute.amount || 0,
     createdAt: dispute.createdAt || new Date().toISOString(),
     evidence: dispute.evidence || [],
-    priority: dispute.priority || 'high'
+    priority: dispute.priority || ''
   }));
 
   const filteredDisputes = enhancedDisputes.filter(dispute => {
