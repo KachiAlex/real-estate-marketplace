@@ -34,24 +34,13 @@ const createLocalFallback = (file, pathHint) => {
 class StorageService {
   async uploadFile(file, path, metadata = {}) {
     try {
-      // Convert file to base64 for transmission
-      const reader = new FileReader();
-      const base64Promise = new Promise((resolve, reject) => {
-        reader.onload = () => {
-          const base64String = reader.result.split(',')[1];
-          resolve(base64String);
-        };
-        reader.onerror = reject;
-      });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('uploadType', 'generic');
+      formData.append('metadata', JSON.stringify({ path, ...metadata }));
 
-      const base64 = await base64Promise;
-
-      const response = await apiClient.post('/upload', {
-        file: base64,
-        fileName: file.name,
-        mimeType: file.type,
-        uploadType: 'generic',
-        metadata: { path, ...metadata }
+      const response = await apiClient.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       const result = response.data;
@@ -69,7 +58,6 @@ class StorageService {
       };
     } catch (error) {
       console.error('Error uploading file:', error);
-      // Fall back to local object URL so the UX can proceed even when backend upload fails
       if (file) {
         return createLocalFallback(file, path);
       }

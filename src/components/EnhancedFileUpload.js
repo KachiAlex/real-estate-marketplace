@@ -141,8 +141,9 @@ const EnhancedFileUpload = ({
           throw new Error(uploadResult.error || 'Upload failed');
         }
       } catch (error) {
+        clearInterval(progressInterval);
         console.error('File upload error:', error);
-        
+
         // Update progress to error
         setUploadingFiles(prev => {
           const newMap = new Map(prev);
@@ -165,12 +166,26 @@ const EnhancedFileUpload = ({
   }, [user, disabled, files, maxFiles, type, finalAllowedTypes, finalMaxSize, propertyId, onFilesChange]);
 
   const uploadFileWithProgress = async (file, propertyId, userId, fileId) => {
+    // Start progress simulation
+    const progressInterval = setInterval(() => {
+      setUploadingFiles(prev => {
+        const current = prev.get(fileId);
+        if (!current || current.status === 'completed' || current.status === 'error') {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        const nextProgress = Math.min((current.progress || 0) + Math.random() * 15 + 5, 90);
+        const newMap = new Map(prev);
+        newMap.set(fileId, { ...current, progress: nextProgress });
+        return newMap;
+      });
+    }, 300);
+
     try {
-      // Use storageService to upload the file
       const result = await storageService.uploadFile(file, userId);
-      
+      clearInterval(progressInterval);
+
       if (result.success) {
-        // Simulate progress updates for UX
         setUploadingFiles(prev => {
           const newMap = new Map(prev);
           newMap.set(fileId, { ...newMap.get(fileId), progress: 100 });

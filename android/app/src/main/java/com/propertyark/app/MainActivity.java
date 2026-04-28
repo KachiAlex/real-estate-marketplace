@@ -7,6 +7,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+import android.view.ViewGroup;
+import android.view.Gravity;
+import android.graphics.Color;
 
 public class MainActivity extends BridgeActivity {
     private static final long SPLASH_DURATION_MS = 3000L;
@@ -17,10 +22,33 @@ public class MainActivity extends BridgeActivity {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> keepSplashOnScreen);
 
-        new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplashOnScreen = false, SPLASH_DURATION_MS);
-
         WebView.setWebContentsDebuggingEnabled(true);
 
         super.onCreate(savedInstanceState);
+
+        // Add a simple indeterminate progress bar below the splash logo
+        FrameLayout rootLayout = (FrameLayout) findViewById(android.R.id.content);
+        if (rootLayout != null) {
+            ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            progressBar.setIndeterminate(true);
+            progressBar.getIndeterminateDrawable().setColorFilter(
+                Color.parseColor("#F59E0B"), android.graphics.PorterDuff.Mode.SRC_IN
+            );
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                8
+            );
+            params.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+            params.bottomMargin = 180;
+            progressBar.setLayoutParams(params);
+            rootLayout.addView(progressBar);
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                keepSplashOnScreen = false;
+                rootLayout.removeView(progressBar);
+            }, SPLASH_DURATION_MS);
+        } else {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplashOnScreen = false, SPLASH_DURATION_MS);
+        }
     }
 }

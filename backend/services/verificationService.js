@@ -99,15 +99,10 @@ const ensureVerificationPayment = async ({ paymentId, applicantId, requiredAmoun
 const normalizeApplication = (row) => {
   if (!row) return null;
   const json = typeof row.toJSON === 'function' ? row.toJSON() : row;
-  
-  // Extract first image from images array
-  let thumbnail = null;
-  if (json.property?.images && Array.isArray(json.property.images) && json.property.images.length > 0) {
-    thumbnail = json.property.images[0];
-  } else if (json.property?.featuredImage) {
-    thumbnail = json.property.featuredImage;
-  }
-  
+
+  // Property model does not have images/featuredImage columns — keep arrays empty
+  const thumbnail = null;
+
   return {
     id: json.id,
     status: json.status,
@@ -116,9 +111,9 @@ const normalizeApplication = (row) => {
     propertyName: json.property?.title || json.propertyName,
     propertyLocation: json.property?.location || json.propertyLocation,
     propertyUrl: json.propertyUrl,
-    propertyImages: json.property?.images || [],
+    propertyImages: [],
     propertyThumbnail: thumbnail,
-    isVerified: json.property?.isVerified || false,
+    isVerified: false,
     notes: json.notes,
     documents: json.documents || [],
     createdAt: json.createdAt,
@@ -226,7 +221,7 @@ const listApplications = async ({ status = 'all', applicantId } = {}) => {
     where,
     include: [
       { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
-      { model: Property, as: 'property', attributes: ['id', 'title', 'location', 'images', 'featuredImage'] }
+      { model: Property, as: 'property', attributes: ['id', 'title', 'location'] }
     ],
     order: [['createdAt', 'DESC']]
   });
@@ -272,7 +267,7 @@ const updateApplicationStatus = async ({ id, status, adminNotes = '', badgeColor
   const updated = await VerificationApplication.findByPk(id, {
     include: [
       { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] },
-      { model: Property, as: 'property', attributes: ['id', 'title', 'location', 'images', 'featuredImage', 'isVerified'] }
+      { model: Property, as: 'property', attributes: ['id', 'title', 'location'] }
     ]
   });
 
