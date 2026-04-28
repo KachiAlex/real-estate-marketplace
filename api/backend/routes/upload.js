@@ -29,20 +29,29 @@ const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermi
 
 const router = express.Router();
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../uploads/temp');
-fs.mkdir(uploadDir, { recursive: true }).catch(console.error);
+// Detect if running in serverless environment (Vercel)
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.FUNCTIONS_WORKER_RUNTIME;
 
-// Configure multer for disk storage (temp files)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
+// Configure multer storage based on environment
+const storage = isServerless
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, '../uploads/temp');
+        fs.mkdir(uploadDir, { recursive: true }).catch(console.error);
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+      }
+    });
+
+// Ensure upload directory exists for non-serverless environments
+if (!isServerless) {
+  const uploadDir = path.join(__dirname, '../uploads/temp');
+  fs.mkdir(uploadDir, { recursive: true }).catch(console.error);
+}
 
 // File filter function
 const fileFilter = (allowedTypes) => {
@@ -89,6 +98,7 @@ router.post(
           const result = await uploadMultipleFiles(req.files, 'documents', { folder: 'vendor/kyc' });
           lastUploadResult = result && result.data ? result.data : result;
           const uploaded = (result && result.data && result.data.uploaded) || [];
+
           // If Cloudinary returned failures or no uploaded items, log details for debugging
           try {
             const totalUploaded = result && result.data && typeof result.data.totalUploaded === 'number' ? result.data.totalUploaded : (uploaded && uploaded.length) || 0;
@@ -105,10 +115,10 @@ router.post(
           } catch (logErr) {
             console.error('Failed to log cloud upload diagnostics:', logErr && logErr.message ? logErr.message : logErr);
           }
+
           // Ensure original filenames are preserved in response (uploadMultipleFiles returns data without originalname)
           const uploadedWithNames = uploaded.map((u, i) => ({ name: req.files[i] && req.files[i].originalname, ...u }));
 
-          // don't expose internal diagnostics in production responses
           // If the request included an authenticated user, attach uploaded docs to their vendorData
           if (req.user && req.user.id) {
             try {
@@ -140,12 +150,27 @@ router.post(
       }
 
       // Fallback: return local temp file references (kept for dev/offline flows)
-      const uploaded = req.files.map(file => ({
-        url: `/uploads/${file.filename}`,
-        name: file.originalname,
-        publicId: file.filename,
-        resourceType: 'local'
-      }));
+      // In serverless (memory storage), we can't provide file URLs, so return metadata only
+      const uploaded = req.files.map(file => {
+        if (isServerless) {
+          // Memory storage: return file metadata without URL
+          return {
+            name: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            resourceType: 'memory',
+            message: 'File uploaded but not persisted (serverless environment)'
+          };
+        } else {
+          // Disk storage: return file URL
+          return {
+            url: `/uploads/${file.filename}`,
+            name: file.originalname,
+            publicId: file.filename,
+            resourceType: 'local'
+          };
+        }
+      });
 
       // If authenticated, attach local temp references to vendorData so frontend can see them
       if (req.user && req.user.id) {
@@ -176,9 +201,12 @@ router.post(
       });
     } catch (error) {
       errorLogger(error, req, { context: 'Vendor KYC upload' });
-      if (req.files) {
+      // Clean up files only if using disk storage
+      if (!isServerless && req.files) {
         req.files.forEach(file => {
-          fs.unlink(file.path).catch(() => {});
+          if (file.path) {
+            fs.unlink(file.path).catch(() => {});
+          }
         });
       }
       const responseBody = {

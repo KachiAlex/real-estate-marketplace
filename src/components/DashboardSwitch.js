@@ -43,7 +43,7 @@ export default function DashboardSwitch() {
     const preferredRole = getRoutePreferredRole(currentPath);
     if (!preferredRole) return;
     const normalizedActive = user?.activeRole ? String(user.activeRole).toLowerCase() : null;
-    
+
     // 🔧 FIX: If user just manually switched to this role within last 2 seconds, SKIP auto-sync
     const timeSinceManualSwitch = Date.now() - lastManualSwitchRef.current.timestamp;
     if (lastManualSwitchRef.current.role === preferredRole && timeSinceManualSwitch < 2000) {
@@ -55,7 +55,13 @@ export default function DashboardSwitch() {
       lastAutoSyncRef.current = null;
       return;
     }
-    if (!canSwitchToRole(user, preferredRole)) return;
+
+    // 🔧 FIX: Check if user can actually switch to the preferred role before attempting
+    if (!canSwitchToRole(user, preferredRole)) {
+      console.log('⏸️ DashboardSwitch: Skipping auto-sync - user cannot switch to', preferredRole);
+      return;
+    }
+
     const syncKey = `${preferredRole}:${currentPath}`;
     if (lastAutoSyncRef.current === syncKey) return;
 
