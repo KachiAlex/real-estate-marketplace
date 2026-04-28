@@ -6,6 +6,7 @@ import androidx.core.splashscreen.SplashScreen;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.WebView;
 
 public class MainActivity extends BridgeActivity {
     private static final long SPLASH_DURATION_MS = 3000L;
@@ -17,6 +18,8 @@ public class MainActivity extends BridgeActivity {
         splashScreen.setKeepOnScreenCondition(() -> keepSplashOnScreen);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplashOnScreen = false, SPLASH_DURATION_MS);
+
+        WebView.setWebContentsDebuggingEnabled(true);
 
         super.onCreate(savedInstanceState);
     }

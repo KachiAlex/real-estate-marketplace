@@ -544,6 +544,7 @@ export const AuthProvider = ({ children }) => {
         email: maskEmail(email),
         loginUrl
       });
+      toast('Sending login request...', { icon: '📡', duration: 4000 });
 
       const resp = await tryFetchAuth(
         '/auth/jwt/login',
@@ -568,7 +569,9 @@ export const AuthProvider = ({ children }) => {
         responseKeys: data ? Object.keys(data) : []
       });
       if (!resp || !resp.ok) {
-        const error = new Error(data.message || (resp ? `Login failed (HTTP ${resp.status})` : 'Login failed (no response)'));
+        const msg = data.message || (resp ? `Login failed (HTTP ${resp.status})` : 'Login failed (no response)');
+        toast.error(`Server error: ${msg}`, { duration: 5000 });
+        const error = new Error(msg);
         error.status = resp?.status ?? null;
         error.responseData = data;
         error.requestId = requestId;
@@ -603,7 +606,12 @@ export const AuthProvider = ({ children }) => {
         requestId: e?.requestId || null,
         responseData: e?.responseData || null
       });
-      toast.error(e.message || 'Login failed');
+      const errMsg = e && e.message ? e.message : 'Login failed';
+      toast.error(errMsg, { duration: 6000 });
+      // Also show a native alert for critical "no response" errors so user sees it even if toast container fails
+      if (errMsg.includes('no response') && typeof window !== 'undefined' && window.alert) {
+        window.alert(`Login failed: ${errMsg}\n\nPlease check your internet connection.`);
+      }
       throw e;
     } finally { setLoading(false); }
   }, []);
