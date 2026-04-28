@@ -7,6 +7,7 @@ const isLocalhost = (value) => {
 };
 
 const resolveDefaultBaseUrl = () => {
+  // Backend is on Vercel in the same project, use same origin
   if (typeof window !== 'undefined' && window.location?.origin) {
     const host = window.location.hostname || '';
     if (!isLocalhost(host)) {
@@ -23,6 +24,15 @@ const normalizeBaseUrl = (base) => {
   let normalized = String(base).trim();
   if (normalized.endsWith('/')) normalized = normalized.slice(0, -1);
   if (normalized.endsWith('/api')) normalized = normalized.slice(0, -4);
+
+  // If configured to use Render, override to use same origin for Vercel
+  if (normalized.includes('onrender.com') && typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if (host && !isLocalhost(host)) {
+      console.warn('⚠️ API URL configured for Render, but backend is on Vercel. Using same origin instead.');
+      return resolveDefaultBaseUrl();
+    }
+  }
 
   if (isLocalhost(normalized) && typeof window !== 'undefined') {
     const host = window.location?.hostname || '';
