@@ -289,6 +289,80 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const xhrFetch = (url, options = {}) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(options.method || 'GET', url, true);
+      if (options.headers) {
+        Object.entries(options.headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+      }
+      xhr.onload = () => {
+        resolve({
+          ok: xhr.status >= 200 && xhr.status < 300,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: new Headers(),
+          json: async () => {
+            try { return JSON.parse(xhr.responseText); } catch { return {}; }
+          },
+          text: async () => xhr.responseText,
+          _source: 'xhr'
+        });
+      };
+      xhr.onerror = () => reject(new Error(`XHR network error: ${url}`));
+      xhr.ontimeout = () => reject(new Error(`XHR timeout: ${url}`));
+      xhr.onabort = () => reject(new Error(`XHR aborted: ${url}`));
+      xhr.send(options.body || null);
+    });
+  };
+
+  const nativeHttpRequest = async (url, options = {}) => {
+    try {
+      if (typeof window === 'undefined' || !window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.Http) {
+        throw new Error('CapacitorHttp plugin not available');
+      }
+      const headers = options.headers || {};
+      const response = await window.Capacitor.Plugins.Http.request({
+        method: options.method || 'GET',
+        url,
+        headers,
+        data: options.body || undefined,
+        connectTimeout: 15000,
+        readTimeout: 15000
+      });
+      return {
+        ok: response.status >= 200 && response.status < 300,
+        status: response.status,
+        statusText: '',
+        headers: new Headers(response.headers || {}),
+        json: async () => {
+          try { return JSON.parse(response.data); } catch { return {}; }
+        },
+        text: async () => (typeof response.data === 'string' ? response.data : JSON.stringify(response.data)),
+        _source: 'nativeHttp'
+      };
+    } catch (e) {
+      logFetchError('nativeHttp request failed', e);
+      throw e;
+    }
+  };
+
+  const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return resp;
+    } catch (e) {
+      clearTimeout(id);
+      if (e.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`);
+      }
+      throw e;
+    }
+  };
+
   const tryFetchAuth = async (path, options = {}, debugMeta = {}) => {
       const requestId = debugMeta.requestId || options.headers?.['X-Debug-Request-Id'] || options.headers?.['x-debug-request-id'] || null;
       const alt = path.replace('/auth/jwt', '/auth');
@@ -303,38 +377,103 @@ export const AuthProvider = ({ children }) => {
         method: options.method || 'GET',
         origin: typeof window !== 'undefined' ? window.location?.origin : 'no-window',
         hostname: typeof window !== 'undefined' ? window.location?.hostname : 'no-window',
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'no-navigator'
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'no-navigator',
+        hasCapacitorHttp: !!(typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Http)
       });
 
+      // Try 1: fetch with timeout
       try {
-        const resAlt = await fetch(altUrl, options);
+        const resAlt = await fetchWithTimeout(altUrl, options, 15000);
         console.log('🔍 [AUTH DEBUG] fetch alt attempt', {
           requestId,
           altUrl,
           status: resAlt?.status ?? null,
           ok: !!resAlt?.ok,
-          headers: resAlt?.headers ? Array.from(resAlt.headers.entries()) : null
+          source: 'fetch'
         });
         if (resAlt && resAlt.status !== 404) return resAlt;
       } catch (e) {
         logFetchError(`fetch alt failed ${altUrl}`, e);
       }
 
+      // Try 2: fetch primary with timeout
       try {
-        const res = await fetch(primaryUrl, options);
+        const res = await fetchWithTimeout(primaryUrl, options, 15000);
         console.log('🔍 [AUTH DEBUG] fetch primary attempt', {
           requestId,
           primaryUrl,
           status: res?.status ?? null,
           ok: !!res?.ok,
-          headers: res?.headers ? Array.from(res.headers.entries()) : null
+          source: 'fetch'
         });
         if (res && res.status !== 404) return res;
       } catch (e) {
         logFetchError(`fetch primary failed ${primaryUrl}`, e);
       }
 
-      console.warn('🔍 [AUTH DEBUG] fetch exhausted', { requestId, path, altUrl, primaryUrl });
+      // Try 3: XMLHttpRequest fallback
+      try {
+        console.log('🔍 [AUTH DEBUG] trying XHR fallback', { requestId, altUrl });
+        const resAltXhr = await xhrFetch(altUrl, options);
+        console.log('🔍 [AUTH DEBUG] XHR alt attempt', {
+          requestId,
+          altUrl,
+          status: resAltXhr?.status ?? null,
+          ok: !!resAltXhr?.ok,
+          source: 'xhr'
+        });
+        if (resAltXhr && resAltXhr.status !== 404) return resAltXhr;
+      } catch (e) {
+        logFetchError(`XHR alt failed ${altUrl}`, e);
+      }
+
+      try {
+        console.log('🔍 [AUTH DEBUG] trying XHR fallback primary', { requestId, primaryUrl });
+        const resXhr = await xhrFetch(primaryUrl, options);
+        console.log('🔍 [AUTH DEBUG] XHR primary attempt', {
+          requestId,
+          primaryUrl,
+          status: resXhr?.status ?? null,
+          ok: !!resXhr?.ok,
+          source: 'xhr'
+        });
+        if (resXhr && resXhr.status !== 404) return resXhr;
+      } catch (e) {
+        logFetchError(`XHR primary failed ${primaryUrl}`, e);
+      }
+
+      // Try 4: Native CapacitorHttp fallback
+      try {
+        console.log('🔍 [AUTH DEBUG] trying native HTTP fallback', { requestId, altUrl });
+        const resAltNative = await nativeHttpRequest(altUrl, options);
+        console.log('🔍 [AUTH DEBUG] native alt attempt', {
+          requestId,
+          altUrl,
+          status: resAltNative?.status ?? null,
+          ok: !!resAltNative?.ok,
+          source: 'native'
+        });
+        if (resAltNative && resAltNative.status !== 404) return resAltNative;
+      } catch (e) {
+        logFetchError(`native alt failed ${altUrl}`, e);
+      }
+
+      try {
+        console.log('🔍 [AUTH DEBUG] trying native HTTP fallback primary', { requestId, primaryUrl });
+        const resNative = await nativeHttpRequest(primaryUrl, options);
+        console.log('🔍 [AUTH DEBUG] native primary attempt', {
+          requestId,
+          primaryUrl,
+          status: resNative?.status ?? null,
+          ok: !!resNative?.ok,
+          source: 'native'
+        });
+        if (resNative && resNative.status !== 404) return resNative;
+      } catch (e) {
+        logFetchError(`native primary failed ${primaryUrl}`, e);
+      }
+
+      console.warn('🔍 [AUTH DEBUG] ALL transports exhausted', { requestId, path, altUrl, primaryUrl });
       return null;
   };
 
