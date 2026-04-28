@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaWhatsapp, FaTelegram } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaWhatsapp, FaTelegram, FaInstagram } from 'react-icons/fa';
 
 const Contact = () => {
   const [form, setForm] = useState({ 
@@ -53,17 +53,23 @@ const Contact = () => {
   ];
 
   const socialContacts = [
+    // {
+    //   icon: FaWhatsapp,
+    //   name: 'WhatsApp',
+    //   contact: '+234 800 123 4567',
+    //   description: 'Quick assistance via WhatsApp'
+    // },
+    // {
+    //   icon: FaTelegram,
+    //   name: 'Telegram',
+    //   contact: '@PropertyArkSupport',
+    //   description: 'Get help through Telegram'
+    // },
     {
-      icon: FaWhatsapp,
-      name: 'WhatsApp',
-      contact: '+234 800 123 4567',
-      description: 'Quick assistance via WhatsApp'
-    },
-    {
-      icon: FaTelegram,
-      name: 'Telegram',
-      contact: '@PropertyArkSupport',
-      description: 'Get help through Telegram'
+      icon: FaInstagram,
+      name: 'Instagram',
+      contact: 'https://www.instagram.com/propertyark_?igsh=MTM4MzlzdGQ5eW8yMQ%3D%3D&utm_source=qr',
+      description: 'Follow us on Instagram'
     }
   ];
 

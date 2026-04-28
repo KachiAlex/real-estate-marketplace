@@ -66,9 +66,9 @@ const SEO = ({
       "addressCountry": "NG"
     },
     "sameAs": [
-      "https://facebook.com/realestatemarketplace",
-      "https://twitter.com/realestatemarketplace",
-      "https://instagram.com/realestatemarketplace"
+      // "https://facebook.com/realestatemarketplace",
+      // "https://twitter.com/realestatemarketplace",
+      "https://www.instagram.com/propertyark_?igsh=MTM4MzlzdGQ5eW8yMQ%3D%3D&utm_source=qr"
     ]
   };
 
