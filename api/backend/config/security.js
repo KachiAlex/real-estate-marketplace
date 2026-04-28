@@ -105,7 +105,7 @@ const securityConfig = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-Debug-Request-Id'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
     maxAge: 600, // 10 minutes
     optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204

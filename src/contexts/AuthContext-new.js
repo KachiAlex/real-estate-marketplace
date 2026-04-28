@@ -102,6 +102,25 @@ const normalizeUser = (u) => {
   };
 };
 
+const createAuthDebugId = () => {
+  try {
+    if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  return `auth-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+};
+
+const maskEmail = (value) => {
+  if (!value || typeof value !== 'string') return value || '';
+  const [local, domain] = value.split('@');
+  if (!domain) return `${value.slice(0, 2)}***`;
+  return `${local.slice(0, 2)}***@${domain}`;
+};
+
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -239,24 +258,54 @@ export const AuthProvider = ({ children }) => {
     return updateUserState(normalizedUser);
   }, [updateAccessToken, updateRefreshToken, updateUserState]);
 
-  const tryFetchAuth = async (path, options = {}) => {
+  const tryFetchAuth = async (path, options = {}, debugMeta = {}) => {
       // Prefer the canonical /auth/* endpoints first to avoid noisy 404s,
       // but fall back to /auth/jwt/* for environments that still expose them.
+      const requestId = debugMeta.requestId || options.headers?.['X-Debug-Request-Id'] || options.headers?.['x-debug-request-id'] || null;
       try {
         const alt = path.replace('/auth/jwt', '/auth');
         const resAlt = await fetch(getApiUrl(alt), options);
+        console.log('🔍 [AUTH DEBUG] fetch attempt', {
+          requestId,
+          path,
+          candidatePath: alt,
+          url: getApiUrl(alt),
+          method: options.method || 'GET',
+          status: resAlt?.status ?? null
+        });
         if (resAlt && resAlt.status !== 404) return resAlt;
       } catch (e) {
+        console.warn('🔍 [AUTH DEBUG] fetch attempt failed', {
+          requestId,
+          path,
+          candidatePath: path.replace('/auth/jwt', '/auth'),
+          message: e && e.message ? e.message : String(e)
+        });
         // ignore and try jwt path
       }
 
       try {
         const res = await fetch(getApiUrl(path), options);
+        console.log('🔍 [AUTH DEBUG] fetch attempt', {
+          requestId,
+          path,
+          candidatePath: path,
+          url: getApiUrl(path),
+          method: options.method || 'GET',
+          status: res?.status ?? null
+        });
         if (res && res.status !== 404) return res;
       } catch (e) {
+        console.warn('🔍 [AUTH DEBUG] fetch attempt failed', {
+          requestId,
+          path,
+          candidatePath: path,
+          message: e && e.message ? e.message : String(e)
+        });
         // ignore
       }
 
+      console.warn('🔍 [AUTH DEBUG] fetch exhausted', { requestId, path });
       return null;
   };
 
@@ -320,10 +369,43 @@ export const AuthProvider = ({ children }) => {
       updateAccessToken(null);
       updateRefreshToken(null);
       
-      const resp = await tryFetchAuth('/auth/jwt/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const requestId = createAuthDebugId();
+      const loginUrl = getApiUrl('/auth/jwt/login');
+      console.log('🔍 [AUTH DEBUG] login request starting', {
+        requestId,
+        email: maskEmail(email),
+        loginUrl
+      });
+
+      const resp = await tryFetchAuth(
+        '/auth/jwt/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Request-Id': requestId },
+          body: JSON.stringify({ email, password })
+        },
+        { requestId }
+      );
       const data = resp ? await resp.json().catch(() => ({})) : {};
-      console.log('✅ LOGIN: Backend response -', { hasUser: !!data.user, userRoles: data.user?.roles, userRole: data.user?.role });
-      if (!resp || !resp.ok) throw new Error(data.message || 'Login failed');
+      console.log('🔍 [AUTH DEBUG] login response', {
+        requestId,
+        status: resp?.status ?? null,
+        ok: !!resp?.ok,
+        message: data.message || null,
+        error: data.error || null,
+        errors: data.errors || null,
+        hasUser: !!data.user,
+        userRoles: data.user?.roles,
+        userRole: data.user?.role,
+        responseKeys: data ? Object.keys(data) : []
+      });
+      if (!resp || !resp.ok) {
+        const error = new Error(data.message || (resp ? `Login failed (HTTP ${resp.status})` : 'Login failed (no response)'));
+        error.status = resp?.status ?? null;
+        error.responseData = data;
+        error.requestId = requestId;
+        throw error;
+      }
       const tokenVal = data.accessToken || data.token || null;
       updateAccessToken(tokenVal);
       updateRefreshToken(data.refreshToken || null);
@@ -346,7 +428,16 @@ export const AuthProvider = ({ children }) => {
       } else { updateUserState(null); }
       toast.success('Login successful');
       return resolvedUser;
-    } catch (e) { toast.error(e.message || 'Login failed'); throw e; } finally { setLoading(false); }
+    } catch (e) {
+      console.error('❌ [AUTH DEBUG] login failed', {
+        message: e && e.message ? e.message : String(e),
+        status: e?.status ?? null,
+        requestId: e?.requestId || null,
+        responseData: e?.responseData || null
+      });
+      toast.error(e.message || 'Login failed');
+      throw e;
+    } finally { setLoading(false); }
   }, []);
 
   const setAuthRedirect = useCallback((url) => {

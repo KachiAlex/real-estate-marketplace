@@ -1,19 +1,40 @@
-const DEFAULT_API_BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  process.env.API_BASE_URL ||
-  'https://real-estate-marketplace-1-k8jp.onrender.com';
+const DEFAULT_API_BASE_URL = 'https://real-estate-marketplace-delta.vercel.app';
+
+const isLocalhost = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const lower = value.toLowerCase();
+  return lower.includes('localhost') || lower.includes('127.0.0.1');
+};
+
+const resolveDefaultBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const host = window.location.hostname || '';
+    if (!isLocalhost(host)) {
+      return window.location.origin;
+    }
+  }
+
+  return process.env.REACT_APP_API_URL || process.env.API_BASE_URL || DEFAULT_API_BASE_URL;
+};
 
 const normalizeBaseUrl = (base) => {
-  if (!base) return DEFAULT_API_BASE_URL;
+  if (!base) return resolveDefaultBaseUrl();
 
   let normalized = String(base).trim();
   if (normalized.endsWith('/')) normalized = normalized.slice(0, -1);
   if (normalized.endsWith('/api')) normalized = normalized.slice(0, -4);
 
-  return normalized || DEFAULT_API_BASE_URL;
+  if (isLocalhost(normalized) && typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if (host && !isLocalhost(host)) {
+      return resolveDefaultBaseUrl();
+    }
+  }
+
+  return normalized || resolveDefaultBaseUrl();
 };
 
-export const getApiBaseUrl = (preferredBase) => normalizeBaseUrl(preferredBase || DEFAULT_API_BASE_URL);
+export const getApiBaseUrl = (preferredBase) => normalizeBaseUrl(preferredBase || resolveDefaultBaseUrl());
 
 export const getApiUrl = (path = '', preferredBase) => {
   const base = getApiBaseUrl(preferredBase);

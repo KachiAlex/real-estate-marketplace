@@ -1,7 +1,7 @@
 const DEFAULT_API_BASE_URL =
   process.env.REACT_APP_API_URL ||
   process.env.API_BASE_URL ||
-  'https://real-estate-marketplace-1-k8jp.onrender.com';
+  'https://real-estate-marketplace-delta.vercel.app';
 
 const isLocalhost = (value) => {
   if (!value || typeof value !== 'string') return false;

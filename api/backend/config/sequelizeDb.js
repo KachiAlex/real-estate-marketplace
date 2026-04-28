@@ -22,7 +22,9 @@ if (process.env.VERCEL) {
 
 const { Sequelize } = require('sequelize');
 // load env from workspace root (two levels up from config folder)
-require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
+if (!process.env.VERCEL) {
+  require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
+}
 
 /**
  * PostgreSQL Database Connection Configuration using Sequelize

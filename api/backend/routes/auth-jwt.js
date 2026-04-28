@@ -803,19 +803,22 @@ router.post('/login', [
   body('password').notEmpty()
 ], async (req, res) => {
   try {
-    appendDebug('login:start');
+    const requestId = req.get('x-debug-request-id') || req.get('x-request-id') || `login-${Date.now()}`;
+    res.setHeader('X-Debug-Request-Id', requestId);
+    appendDebug(`login:start requestId=${requestId} ip=${req.ip || 'unknown'} ua=${req.get('user-agent') || 'unknown'}`);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      appendDebug('validation:failed ' + JSON.stringify(errors.array()));
-      return res.status(400).json({ 
-        success: false, 
+      appendDebug(`validation:failed requestId=${requestId} ${JSON.stringify(errors.array())}`);
+      return res.status(400).json({
+        success: false,
         message: 'Validation failed',
-        errors: errors.array() 
+        errors: errors.array(),
+        requestId
       });
     }
 
     const { email, password } = req.body;
-    appendDebug('received body: ' + JSON.stringify({ email: email }));
+    appendDebug(`received body requestId=${requestId} ${JSON.stringify({ email: email ? String(email).toLowerCase() : null })}`);
 
     // Find user by email (robust: handle databases missing optional columns like `suspendedAt`)
     let user = null;
@@ -825,6 +828,7 @@ router.post('/login', [
         attributes: { include: ['password'] }
       });
     } catch (dbErr) {
+      appendDebug(`user.findOne:error requestId=${requestId} ${dbErr && dbErr.message ? dbErr.message : String(dbErr)}`);
       console.warn('User.findOne failed — attempting fallback SELECT (possible missing column):', dbErr.message);
       // Fallback: do a minimal raw SELECT that only references commonly present columns
       try {
@@ -892,23 +896,25 @@ router.post('/login', [
     }
 
     if (!user) {
-      appendDebug('user:still-not-found -> returning 401');
+      appendDebug(`user:still-not-found requestId=${requestId} -> returning 401`);
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid email or password',
+        requestId
       });
     }
 
     // Compare passwords (user may be a Sequelize instance or plain object from fallback)
     const hashed = (user.password || '');
-    appendDebug('user:found id=' + (user.id || user.email) + ' hashedLength=' + (hashed ? hashed.length : 0));
+    appendDebug(`user:found requestId=${requestId} id=` + (user.id || user.email) + ' hashedLength=' + (hashed ? hashed.length : 0));
     const isPasswordValid = await bcrypt.compare(password, hashed);
-    appendDebug('password:compare result=' + isPasswordValid);
+    appendDebug(`password:compare requestId=${requestId} result=` + isPasswordValid);
     if (!isPasswordValid) {
-      appendDebug('password:invalid -> returning 401');
+      appendDebug(`password:invalid requestId=${requestId} -> returning 401`);
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid email or password',
+        requestId
       });
     }
 
@@ -941,12 +947,13 @@ router.post('/login', [
     res.json({
       success: true,
       message: 'Login successful',
+      requestId,
       accessToken,
       refreshToken,
       user: userResponse
     });
   } catch (error) {
-    appendDebug('login:error ' + (error && error.message ? error.message : JSON.stringify(error || {})));
+    appendDebug(`login:error requestId=${requestId} ` + (error && error.message ? error.message : JSON.stringify(error || {})));
     console.error('Login error:', error);
     try {
       console.error('Login error (detailed):', util.inspect(error, { depth: 5 }));
@@ -955,7 +962,7 @@ router.post('/login', [
     }
 
     const errMsg = (error && error.message) ? error.message : (typeof error === 'string' ? error : JSON.stringify(error || {}));
-    const payload = { success: false, message: 'Server error during login. ' + errMsg, error: errMsg };
+    const payload = { success: false, message: 'Server error during login. ' + errMsg, error: errMsg, requestId };
     if (process.env.NODE_ENV !== 'production' && error && error.stack) payload.stack = error.stack;
     res.status(500).json(payload);
   }
