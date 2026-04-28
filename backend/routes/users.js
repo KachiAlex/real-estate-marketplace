@@ -105,4 +105,41 @@ router.post('/:id/roles', protect, async (req, res) => {
   }
 });
 
+// @desc    Switch active role for the current user
+// @route   POST /api/users/switch-role
+// @access  Private
+router.post('/switch-role', protect, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role) return res.status(400).json({ success: false, message: 'Role is required' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Get user's current roles
+    const currentRoles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
+    const normalizedRole = String(role).trim().toLowerCase();
+
+    // Normalize roles to ensure consistency
+    let updatedRoles = normalizeRoles(currentRoles);
+
+    // If the role is not in the user's roles array, add it (support dual/multiple roles)
+    if (!updatedRoles.includes(normalizedRole)) {
+      updatedRoles.push(normalizedRole);
+      updatedRoles = normalizeRoles(updatedRoles); // Re-normalize to ensure order and deduplication
+    }
+
+    // Update the user's roles and active role
+    await user.update({ roles: updatedRoles, activeRole: normalizedRole });
+
+    // Return the updated user object
+    const updatedUser = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } });
+
+    return res.json({ success: true, user: updatedUser.toJSON() });
+  } catch (error) {
+    console.error('Switch role error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to switch role', error: error.message });
+  }
+});
+
 module.exports = router;  

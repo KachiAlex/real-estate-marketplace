@@ -717,25 +717,18 @@ export const AuthProvider = ({ children }) => {
     const { silent = false } = options || {};
     try {
       if (!accessToken || !currentUser) throw new Error('User not logged in');
-      
-      // GUARD 1: Verify that the role being switched to is actually in the user's roles array
+
       const normalizedNewRole = String(newRole).trim().toLowerCase();
-      const userRoles = Array.isArray(currentUser.roles) ? currentUser.roles.map(r => String(r).trim().toLowerCase()) : [];
-      
-      if (!userRoles.includes(normalizedNewRole)) {
-        console.warn('🚫 switchRole: Role not in user roles array', { newRole: normalizedNewRole, userRoles });
-        throw new Error(`User does not have the ${newRole} role`);
-      }
-      
-      console.log('🔄 switchRole: Before switch -', { 
-        userId: currentUser.id, 
-        userEmail: currentUser.email, 
-        firstName: currentUser.firstName, 
+
+      console.log('🔄 switchRole: Before switch -', {
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        firstName: currentUser.firstName,
         lastName: currentUser.lastName,
         currentActiveRole: currentUser.activeRole,
         targetRole: normalizedNewRole
       });
-      
+
       if (String(accessToken).startsWith('mock')) {
         const mergedRoles = Array.from(new Set([...(currentUser.roles || []), newRole].filter(Boolean)));
         const updated = normalizeUser({ ...currentUser, role: newRole, roles: mergedRoles, activeRole: newRole }, {
@@ -746,16 +739,16 @@ export const AuthProvider = ({ children }) => {
         });
         // User data NOT persisted to localStorage
         setCurrentUser(updated);
-        console.log('🔄 switchRole: After switch (mock) -', { 
-          userId: updated.id, 
-          userEmail: updated.email, 
-          firstName: updated.firstName, 
+        console.log('🔄 switchRole: After switch (mock) -', {
+          userId: updated.id,
+          userEmail: updated.email,
+          firstName: updated.firstName,
           lastName: updated.lastName,
           activeRole: updated.activeRole
         });
         return updated;
       }
-      
+
       let resp = await fetch(getApiUrl('/api/users/switch-role'), { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
       let data = resp ? await resp.json().catch(() => ({})) : {};
 
@@ -764,19 +757,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (!resp.ok) throw new Error(data.message || 'Role switch failed');
-      
+
       let serverUser = data.user || null;
-      console.log('🔄 switchRole: Response from /api/users/switch-role:', { 
-        hasUser: !!serverUser, 
+      console.log('🔄 switchRole: Response from /api/users/switch-role:', {
+        hasUser: !!serverUser,
         userId: serverUser?.id,
         userEmail: serverUser?.email,
         firstName: serverUser?.firstName
       });
-      
+
       if (!serverUser) {
         try { const me = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } }); if (me && me.ok) { const md = await me.json().catch(() => ({})); serverUser = md.user || md; } } catch (e) {}
       }
-      
+
       // CRITICAL FIX: Preserve user identity when normalizing the response
       // Pass the current user's identity to ensure it's never overwritten
       const updated = normalizeUser(serverUser || { ...currentUser, ...data.user }, {
@@ -785,16 +778,16 @@ export const AuthProvider = ({ children }) => {
         firstName: currentUser.firstName,
         lastName: currentUser.lastName
       });
-      
-      console.log('🔄 switchRole: After normalizeUser (with identity preservation):', { 
-        userId: updated.id, 
-        userEmail: updated.email, 
-        firstName: updated.firstName, 
+
+      console.log('🔄 switchRole: After normalizeUser (with identity preservation):', {
+        userId: updated.id,
+        userEmail: updated.email,
+        firstName: updated.firstName,
         lastName: updated.lastName,
         roles: updated.roles,
         activeRole: updated.activeRole
       });
-      
+
       // CRITICAL: Ensure roles array is always preserved and merged
       updated.roles = Array.isArray(updated.roles) ? [...new Set(updated.roles)].filter(Boolean) : [];
       if (newRole && !updated.roles.includes(newRole.toLowerCase())) {
@@ -803,18 +796,18 @@ export const AuthProvider = ({ children }) => {
       if (!updated.activeRole && newRole) {
         updated.activeRole = newRole.toLowerCase();
       }
-      
+
       // User data NOT persisted to localStorage
       setCurrentUser(updated);
-      
-      console.log('🔄 switchRole: Final state -', { 
-        userId: updated.id, 
-        userEmail: updated.email, 
-        firstName: updated.firstName, 
+
+      console.log('🔄 switchRole: Final state -', {
+        userId: updated.id,
+        userEmail: updated.email,
+        firstName: updated.firstName,
         lastName: updated.lastName,
         activeRole: updated.activeRole
       });
-      
+
       if (!silent) toast.success('Role switched');
       return updated;
     } catch (e) {
