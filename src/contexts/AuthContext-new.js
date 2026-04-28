@@ -158,6 +158,23 @@ export const AuthProvider = ({ children }) => {
 
     const hydrateAuth = async () => {
       try {
+        // Startup connectivity check
+        try {
+          const healthUrl = getApiUrl('/health');
+          console.log('🔍 [AUTH DEBUG] startup health ping', { healthUrl, origin: window.location?.origin });
+          const healthResp = await fetch(healthUrl, { method: 'GET' }).catch((e) => {
+            logFetchError('health ping failed', e);
+            return null;
+          });
+          console.log('🔍 [AUTH DEBUG] health ping result', {
+            status: healthResp?.status ?? null,
+            ok: !!healthResp?.ok,
+            url: healthUrl
+          });
+        } catch (healthErr) {
+          logFetchError('health ping unexpected error', healthErr);
+        }
+
         const storedAccess = storage.get('accessToken');
         const storedRefresh = storage.get('refreshToken');
 
@@ -258,54 +275,66 @@ export const AuthProvider = ({ children }) => {
     return updateUserState(normalizedUser);
   }, [updateAccessToken, updateRefreshToken, updateUserState]);
 
+  const logFetchError = (label, e) => {
+    try {
+      console.error(`🔴 [AUTH DEBUG] ${label}`, {
+        errorType: e?.name || 'unknown',
+        errorMessage: e?.message || String(e),
+        errorCode: e?.code || null,
+        errorStack: e?.stack || null,
+        rawError: JSON.stringify(e, Object.getOwnPropertyNames(e))
+      });
+    } catch (serializeErr) {
+      console.error(`🔴 [AUTH DEBUG] ${label} (serialize failed)`, { raw: String(e) });
+    }
+  };
+
   const tryFetchAuth = async (path, options = {}, debugMeta = {}) => {
-      // Prefer the canonical /auth/* endpoints first to avoid noisy 404s,
-      // but fall back to /auth/jwt/* for environments that still expose them.
       const requestId = debugMeta.requestId || options.headers?.['X-Debug-Request-Id'] || options.headers?.['x-debug-request-id'] || null;
+      const alt = path.replace('/auth/jwt', '/auth');
+      const altUrl = getApiUrl(alt);
+      const primaryUrl = getApiUrl(path);
+
+      console.log('🔍 [AUTH DEBUG] fetch starting', {
+        requestId,
+        path,
+        altUrl,
+        primaryUrl,
+        method: options.method || 'GET',
+        origin: typeof window !== 'undefined' ? window.location?.origin : 'no-window',
+        hostname: typeof window !== 'undefined' ? window.location?.hostname : 'no-window',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'no-navigator'
+      });
+
       try {
-        const alt = path.replace('/auth/jwt', '/auth');
-        const resAlt = await fetch(getApiUrl(alt), options);
-        console.log('🔍 [AUTH DEBUG] fetch attempt', {
+        const resAlt = await fetch(altUrl, options);
+        console.log('🔍 [AUTH DEBUG] fetch alt attempt', {
           requestId,
-          path,
-          candidatePath: alt,
-          url: getApiUrl(alt),
-          method: options.method || 'GET',
-          status: resAlt?.status ?? null
+          altUrl,
+          status: resAlt?.status ?? null,
+          ok: !!resAlt?.ok,
+          headers: resAlt?.headers ? Array.from(resAlt.headers.entries()) : null
         });
         if (resAlt && resAlt.status !== 404) return resAlt;
       } catch (e) {
-        console.warn('🔍 [AUTH DEBUG] fetch attempt failed', {
-          requestId,
-          path,
-          candidatePath: path.replace('/auth/jwt', '/auth'),
-          message: e && e.message ? e.message : String(e)
-        });
-        // ignore and try jwt path
+        logFetchError(`fetch alt failed ${altUrl}`, e);
       }
 
       try {
-        const res = await fetch(getApiUrl(path), options);
-        console.log('🔍 [AUTH DEBUG] fetch attempt', {
+        const res = await fetch(primaryUrl, options);
+        console.log('🔍 [AUTH DEBUG] fetch primary attempt', {
           requestId,
-          path,
-          candidatePath: path,
-          url: getApiUrl(path),
-          method: options.method || 'GET',
-          status: res?.status ?? null
+          primaryUrl,
+          status: res?.status ?? null,
+          ok: !!res?.ok,
+          headers: res?.headers ? Array.from(res.headers.entries()) : null
         });
         if (res && res.status !== 404) return res;
       } catch (e) {
-        console.warn('🔍 [AUTH DEBUG] fetch attempt failed', {
-          requestId,
-          path,
-          candidatePath: path,
-          message: e && e.message ? e.message : String(e)
-        });
-        // ignore
+        logFetchError(`fetch primary failed ${primaryUrl}`, e);
       }
 
-      console.warn('🔍 [AUTH DEBUG] fetch exhausted', { requestId, path });
+      console.warn('🔍 [AUTH DEBUG] fetch exhausted', { requestId, path, altUrl, primaryUrl });
       return null;
   };
 
