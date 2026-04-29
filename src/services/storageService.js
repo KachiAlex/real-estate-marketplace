@@ -80,34 +80,66 @@ const createLocalFallback = (file, pathHint) => {
   };
 };
 
+/**
+ * Upload a file directly to Cloudinary using signed params from our backend.
+ * This bypasses Vercel's 4.5MB serverless body limit entirely.
+ */
+const uploadToCloudinaryDirect = async (file, uploadType, fileName = null) => {
+  // 1. Get signed upload params from backend
+  const signRes = await apiClient.post('/upload/signed', {
+    uploadType,
+    fileName: fileName || file?.name || 'upload',
+  });
+  if (!signRes.data?.success) {
+    throw new Error(signRes.data?.message || 'Failed to get signed upload params');
+  }
+  const { api_key, cloud_name, timestamp, signature, folder, public_id, resource_type, upload_url } = signRes.data.data;
+
+  // 2. Upload directly to Cloudinary
+  const cloudForm = new FormData();
+  cloudForm.append('file', file);
+  cloudForm.append('api_key', api_key);
+  cloudForm.append('timestamp', String(timestamp));
+  cloudForm.append('signature', signature);
+  cloudForm.append('folder', folder);
+  cloudForm.append('public_id', public_id);
+  cloudForm.append('use_filename', 'true');
+  cloudForm.append('unique_filename', 'false');
+
+  const uploadResponse = await fetch(upload_url, {
+    method: 'POST',
+    body: cloudForm
+  });
+  if (!uploadResponse.ok) {
+    const errText = await uploadResponse.text();
+    throw new Error(`Cloudinary upload failed: ${uploadResponse.status} ${errText}`);
+  }
+  const cloudResult = await uploadResponse.json();
+
+  return {
+    url: cloudResult.secure_url,
+    publicId: cloudResult.public_id,
+    format: cloudResult.format,
+    size: cloudResult.bytes,
+    width: cloudResult.width,
+    height: cloudResult.height,
+    resourceType: cloudResult.resource_type,
+    originalName: file?.name,
+    cloud_name
+  };
+};
+
 class StorageService {
   async uploadFile(file, path, metadata = {}) {
     try {
-      // Compress images client-side to avoid Vercel 4.5MB body limit
-      const fileToUpload = file?.type?.startsWith('image/')
-        ? await compressImage(file, 1920, 1920, 0.85)
-        : file;
-
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-      formData.append('uploadType', 'generic');
-      formData.append('metadata', JSON.stringify({ path, ...metadata }));
-
-      // Let Axios set Content-Type automatically with the multipart boundary
-      const response = await apiClient.post('/upload', formData);
-
-      const result = response.data;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Upload failed');
-      }
-
+      const result = await uploadToCloudinaryDirect(file, 'generic', file?.name);
       return {
         success: true,
-        url: result.data?.url,
-        path: result.data?.publicId || path,
-        name: result.data?.originalName || file.name,
-        size: result.data?.size || file.size,
-        type: result.data?.format || file.type
+        url: result.url,
+        path: result.publicId || path,
+        name: result.originalName || file.name,
+        size: result.size || file.size,
+        type: result.format || file.type
       };
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -123,27 +155,23 @@ class StorageService {
 
   async uploadMultipleFiles(files, basePath, metadata = {}) {
     try {
-      const formData = new FormData();
-      const compressedFiles = await Promise.all(
-        files.map((file) => file?.type?.startsWith('image/') ? compressImage(file, 1920, 1920, 0.85) : file)
+      const results = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const result = await uploadToCloudinaryDirect(file, 'generic', file.name);
+            return { success: true, ...result };
+          } catch (e) {
+            return { success: false, error: e.message, ...createLocalFallback(file, basePath) };
+          }
+        })
       );
-      compressedFiles.forEach((file) => formData.append('files', file));
-      formData.append('uploadType', 'multiple');
-      formData.append('metadata', JSON.stringify({ basePath, ...metadata }));
-
-      // Let Axios set Content-Type automatically with the multipart boundary
-      const response = await apiClient.post('/upload/multiple', formData);
-
-      const result = response.data;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Upload failed');
-      }
-
+      const successful = results.filter(r => r.success && !r.fallback);
+      const failed = results.filter(r => !r.success).map(r => r.error || 'Upload failed');
       return {
-        success: true,
-        successful: result.data?.successful || [],
-        failed: result.data?.failed || [],
-        total: result.data?.total || files.length
+        success: successful.length > 0,
+        successful,
+        failed,
+        total: files.length
       };
     } catch (error) {
       console.error('Error uploading multiple files:', error);
@@ -175,30 +203,23 @@ class StorageService {
 
   async uploadPropertyImages(files, propertyId, userId) {
     try {
-      const formData = new FormData();
-      const compressedFiles = await Promise.all(
-        files.map((file) => file?.type?.startsWith('image/') ? compressImage(file, 1920, 1920, 0.85) : file)
+      const results = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const result = await uploadToCloudinaryDirect(file, 'property_images', file.name);
+            return { success: true, ...result };
+          } catch (e) {
+            return { success: false, error: e.message, ...createLocalFallback(file, `properties/${propertyId || 'temp'}/images/${file.name}`) };
+          }
+        })
       );
-      compressedFiles.forEach((file) => formData.append('files', file));
-      formData.append('uploadType', 'property_images');
-      formData.append('metadata', JSON.stringify({
-        propertyId,
-        userId
-      }));
-
-      // Let Axios set Content-Type automatically with the multipart boundary
-      const response = await apiClient.post('/upload/multiple', formData);
-
-      const result = response.data;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Upload failed');
-      }
-
+      const successful = results.filter(r => r.success && !r.fallback);
+      const failed = results.filter(r => !r.success).map(r => r.error || 'Upload failed');
       return {
-        success: true,
-        successful: result.data?.successful || [],
-        failed: result.data?.failed || [],
-        total: result.data?.total || files.length
+        success: successful.length > 0,
+        successful,
+        failed,
+        total: files.length
       };
     } catch (error) {
       console.error('Error uploading property images:', error);
@@ -242,34 +263,23 @@ class StorageService {
       // Compress avatar client-side to avoid server body-size limits
       const fileToUpload = await compressImage(file, 1024, 1024, 0.9);
 
-      const formData = new FormData();
-      formData.append('avatar', fileToUpload);
-      formData.append('uploadType', 'user_avatar');
-      formData.append('metadata', JSON.stringify({ path, userId }));
-
-      // Let Axios set Content-Type automatically with the multipart boundary
-      const response = await apiClient.post('/upload/avatar', formData);
-
-      const result = response.data;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Upload failed');
-      }
+      const result = await uploadToCloudinaryDirect(file, 'user_avatar', fileName);
 
       const avatarInfo = {
         userId,
-        avatarUrl: result.data?.url,
+        avatarUrl: result.url,
         uploadDate: new Date().toISOString(),
-        fileName: result.data?.originalName || file.name
+        fileName: result.originalName || file.name
       };
       localStorage.setItem(`user_avatar_${userId}`, JSON.stringify(avatarInfo));
 
       return {
         success: true,
-        url: result.data?.url,
-        path: result.data?.publicId || path,
-        name: result.data?.originalName || file.name,
-        size: result.data?.size || file.size,
-        type: result.data?.format || file.type
+        url: result.url,
+        path: result.publicId || path,
+        name: result.originalName || file.name,
+        size: result.size || file.size,
+        type: result.format || file.type
       }; 
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -308,30 +318,14 @@ class StorageService {
 
   async uploadEscrowDocument(file, escrowId, documentType, userId) {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('uploadType', 'escrow_document');
-      formData.append('metadata', JSON.stringify({
-        escrowId,
-        documentType,
-        userId
-      }));
-
-      // Let Axios set Content-Type automatically with the multipart boundary
-      const response = await apiClient.post('/upload', formData);
-
-      const result = response.data;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Upload failed');
-      }
-
+      const result = await uploadToCloudinaryDirect(file, 'escrow_document', file?.name);
       return {
         success: true,
-        url: result.data?.url,
-        path: result.data?.publicId,
-        name: result.data?.originalName,
-        size: result.data?.size,
-        type: result.data?.format
+        url: result.url,
+        path: result.publicId,
+        name: result.originalName,
+        size: result.size,
+        type: result.format
       };
     } catch (error) {
       console.error('Error uploading escrow document:', error);
