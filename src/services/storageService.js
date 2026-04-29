@@ -103,8 +103,6 @@ const uploadToCloudinaryDirect = async (file, uploadType, fileName = null) => {
   cloudForm.append('signature', signature);
   cloudForm.append('folder', folder);
   cloudForm.append('public_id', public_id);
-  cloudForm.append('use_filename', 'true');
-  cloudForm.append('unique_filename', 'false');
 
   const uploadResponse = await fetch(upload_url, {
     method: 'POST',

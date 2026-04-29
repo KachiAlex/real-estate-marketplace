@@ -198,12 +198,12 @@ exports.propertyValidation = {
       .withMessage('Price must be positive'),
     
     body('type')
-      .isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'])
+      .isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial', 'residential'])
       .withMessage('Invalid property type'),
-    
+
     body('status')
       .optional()
-      .isIn(['for-sale', 'for-rent', 'sold', 'rented'])
+      .isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending', 'active', 'inactive', 'unlisted'])
       .withMessage('Invalid property status'),
     
     body('location.address')
@@ -258,12 +258,12 @@ exports.propertyValidation = {
     
     body('type')
       .optional()
-      .isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial'])
+      .isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial', 'residential'])
       .withMessage('Invalid property type'),
-    
+
     body('status')
       .optional()
-      .isIn(['for-sale', 'for-rent', 'sold', 'rented'])
+      .isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending', 'active', 'inactive', 'unlisted'])
       .withMessage('Invalid property status')
   ]
 };

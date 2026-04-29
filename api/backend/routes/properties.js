@@ -147,7 +147,7 @@ router.post('/', protect, [
   body('title').trim().isLength({ min: 5, max: 100 }).withMessage('Title must be between 5 and 100 characters'),
   body('description').trim().isLength({ min: 5, max: 2000 }).withMessage('Description must be between 5 and 2000 characters'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('type').isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial']).withMessage('Invalid property type'),
+  body('type').isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial', 'residential']).withMessage('Invalid property type'),
   body('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending']).withMessage('Invalid status'),
   body('location.address').trim().notEmpty().withMessage('Address is required'),
   body('location.city').trim().notEmpty().withMessage('City is required'),
@@ -200,8 +200,8 @@ router.put('/:id', protect, [
   body('title').optional().trim().isLength({ min: 5, max: 100 }).withMessage('Title must be between 5 and 100 characters'),
   body('description').optional().trim().isLength({ min: 5, max: 2000 }).withMessage('Description must be between 5 and 2000 characters'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('type').optional().isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial']).withMessage('Invalid property type'),
-  body('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending']).withMessage('Invalid status')
+  body('type').optional().isIn(['house', 'apartment', 'condo', 'townhouse', 'land', 'commercial', 'residential']).withMessage('Invalid property type'),
+  body('status').optional().isIn(['for-sale', 'for-rent', 'for-lease', 'for-mortgage', 'for-investment', 'sold', 'rented', 'pending', 'active', 'inactive', 'unlisted']).withMessage('Invalid status')
 ], async (req, res) => {
 
   try {
