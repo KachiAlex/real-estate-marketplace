@@ -366,9 +366,7 @@ router.post(
       const paramsToSign = {
         timestamp,
         folder: config.folder,
-        public_id: publicId,
-        use_filename: 'true',
-        unique_filename: 'false'
+        public_id: publicId
       };
 
       const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
