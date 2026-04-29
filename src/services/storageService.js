@@ -39,9 +39,8 @@ class StorageService {
       formData.append('uploadType', 'generic');
       formData.append('metadata', JSON.stringify({ path, ...metadata }));
 
-      const response = await apiClient.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Let Axios set Content-Type automatically with the multipart boundary
+      const response = await apiClient.post('/upload', formData);
 
       const result = response.data;
       if (!result?.success) {
@@ -75,9 +74,8 @@ class StorageService {
       formData.append('uploadType', 'multiple');
       formData.append('metadata', JSON.stringify({ basePath, ...metadata }));
 
-      const response = await apiClient.post('/upload/multiple', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Let Axios set Content-Type automatically with the multipart boundary
+      const response = await apiClient.post('/upload/multiple', formData);
 
       const result = response.data;
       if (!result?.success) {
@@ -130,9 +128,8 @@ class StorageService {
         userId
       }));
 
-      const response = await apiClient.post('/upload/multiple', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Let Axios set Content-Type automatically with the multipart boundary
+      const response = await apiClient.post('/upload/multiple', formData);
 
       const result = response.data;
       if (!result?.success) {
@@ -189,9 +186,8 @@ class StorageService {
       formData.append('uploadType', 'user_avatar');
       formData.append('metadata', JSON.stringify({ path, userId }));
 
-      const response = await apiClient.post('/upload/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Let Axios set Content-Type automatically with the multipart boundary
+      const response = await apiClient.post('/upload/avatar', formData);
 
       const result = response.data;
       if (!result?.success) {
@@ -260,9 +256,8 @@ class StorageService {
         userId
       }));
 
-      const response = await apiClient.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Let Axios set Content-Type automatically with the multipart boundary
+      const response = await apiClient.post('/upload', formData);
 
       const result = response.data;
       if (!result?.success) {
