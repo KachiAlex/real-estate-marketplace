@@ -1,5 +1,54 @@
 import apiClient from './apiClient';
 
+/**
+ * Compress image client-side using canvas to avoid server body-size limits.
+ * Returns a Promise<File> — the compressed file or original if not compressible.
+ */
+const compressImage = (file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) => {
+  return new Promise((resolve) => {
+    if (!file?.type?.startsWith('image/') || file.type === 'image/gif') {
+      resolve(file);
+      return;
+    }
+    // Skip compression for small files (< 500KB)
+    if (file.size < 500 * 1024) {
+      resolve(file);
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          const compressed = new File([blob], file.name, { type: outputType, lastModified: Date.now() });
+          resolve(compressed.size < file.size ? compressed : file);
+        },
+        outputType,
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+};
+
 const getLocalFolderForFile = (file) => {
   const type = file?.type || '';
   if (type.startsWith('image/')) return 'local-images';
@@ -34,8 +83,13 @@ const createLocalFallback = (file, pathHint) => {
 class StorageService {
   async uploadFile(file, path, metadata = {}) {
     try {
+      // Compress images client-side to avoid Vercel 4.5MB body limit
+      const fileToUpload = file?.type?.startsWith('image/')
+        ? await compressImage(file, 1920, 1920, 0.85)
+        : file;
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
       formData.append('uploadType', 'generic');
       formData.append('metadata', JSON.stringify({ path, ...metadata }));
 
@@ -70,7 +124,10 @@ class StorageService {
   async uploadMultipleFiles(files, basePath, metadata = {}) {
     try {
       const formData = new FormData();
-      files.forEach((file) => formData.append('files', file));
+      const compressedFiles = await Promise.all(
+        files.map((file) => file?.type?.startsWith('image/') ? compressImage(file, 1920, 1920, 0.85) : file)
+      );
+      compressedFiles.forEach((file) => formData.append('files', file));
       formData.append('uploadType', 'multiple');
       formData.append('metadata', JSON.stringify({ basePath, ...metadata }));
 
@@ -119,9 +176,10 @@ class StorageService {
   async uploadPropertyImages(files, propertyId, userId) {
     try {
       const formData = new FormData();
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
+      const compressedFiles = await Promise.all(
+        files.map((file) => file?.type?.startsWith('image/') ? compressImage(file, 1920, 1920, 0.85) : file)
+      );
+      compressedFiles.forEach((file) => formData.append('files', file));
       formData.append('uploadType', 'property_images');
       formData.append('metadata', JSON.stringify({
         propertyId,
@@ -181,8 +239,11 @@ class StorageService {
 
     // Use 'avatar' as the field name for avatar uploads
     try {
+      // Compress avatar client-side to avoid server body-size limits
+      const fileToUpload = await compressImage(file, 1024, 1024, 0.9);
+
       const formData = new FormData();
-      formData.append('avatar', file);
+      formData.append('avatar', fileToUpload);
       formData.append('uploadType', 'user_avatar');
       formData.append('metadata', JSON.stringify({ path, userId }));
 

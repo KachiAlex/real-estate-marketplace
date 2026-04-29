@@ -474,13 +474,15 @@ const AddProperty = () => {
       return;
     }
 
-    // CRITICAL: Filter out blob URLs - they won't persist after page reload
+    // Keep images with any valid URL (http, https, blob, data)
     const persistentImages = (formData.images || []).filter(img => {
-      // Keep only images with HTTP/HTTPS URLs or uploaded images
       if (!img.url) return false;
-      const isHttpUrl = img.url.startsWith('http://') || img.url.startsWith('https://');
-      if (!isHttpUrl) {
-        console.warn('Filtering out non-persistent image URL:', img.url);
+      const isValidUrl = img.url.startsWith('http://') ||
+        img.url.startsWith('https://') ||
+        img.url.startsWith('blob:') ||
+        img.url.startsWith('data:');
+      if (!isValidUrl) {
+        console.warn('Filtering out invalid image URL:', img.url);
         return false;
       }
       return true;

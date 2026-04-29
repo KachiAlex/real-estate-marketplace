@@ -3,6 +3,7 @@ const { isValidFileType, isValidFileSize } = require('../config/security');
 const { infoLogger, errorLogger } = require('../config/logger');
 const fs = require('fs').promises;
 const path = require('path');
+const { PassThrough } = require('stream');
 
 /**
  * Upload Service
@@ -52,15 +53,28 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       throw new Error(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
     }
 
+    // Detect whether multer used memoryStorage (buffer) or diskStorage (path)
+    const hasBuffer = !!file.buffer;
+    const hasPath = !!file.path;
+
     // Local fallback when Cloudinary is not configured
     if (!isConfigured()) {
-      const localRoot = path.join(__dirname, '..', 'uploads', 'local');
+      const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+      const localRoot = isServerless
+        ? path.join('/tmp', 'uploads')
+        : path.join(__dirname, '..', 'uploads', 'local');
       await fs.mkdir(localRoot, { recursive: true }).catch(() => {});
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname}`;
       const destPath = path.join(localRoot, filename);
 
-      await fs.copyFile(file.path, destPath);
-      await fs.unlink(file.path).catch(() => {});
+      if (hasBuffer) {
+        await fs.writeFile(destPath, file.buffer);
+      } else if (hasPath) {
+        await fs.copyFile(file.path, destPath);
+        await fs.unlink(file.path).catch(() => {});
+      } else {
+        throw new Error('No file data available for upload');
+      }
 
       const stats = await fs.stat(destPath);
       const publicId = filename.replace(/\.[^.]+$/, '');
@@ -102,14 +116,28 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       }
     }
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(file.path, uploadConfig);
-
-    // Delete local file after upload
-    try {
-      await fs.unlink(file.path);
-    } catch (unlinkError) {
-      errorLogger(unlinkError, null, { context: 'File cleanup after upload' });
+    // Upload to Cloudinary — support both memoryStorage (buffer) and diskStorage (path)
+    let result;
+    if (hasBuffer) {
+      result = await new Promise((resolve, reject) => {
+        const stream = new PassThrough();
+        const uploadStream = cloudinary.uploader.upload_stream(uploadConfig, (error, res) => {
+          if (error) return reject(error);
+          resolve(res);
+        });
+        stream.end(file.buffer);
+        stream.pipe(uploadStream);
+      });
+    } else if (hasPath) {
+      result = await cloudinary.uploader.upload(file.path, uploadConfig);
+      // Delete local file after upload
+      try {
+        await fs.unlink(file.path);
+      } catch (unlinkError) {
+        errorLogger(unlinkError, null, { context: 'File cleanup after upload' });
+      }
+    } else {
+      throw new Error('No file data available for upload');
     }
 
     infoLogger('File uploaded successfully', {
