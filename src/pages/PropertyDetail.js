@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaHeart, FaShare, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendar, FaShoppingCart, FaWhatsapp, FaCreditCard, FaLock, FaArrowLeft, FaPlay } from 'react-icons/fa';
 import apiClient from '../services/apiClient';
 import { createInspectionRequest } from '../services/inspectionService';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -229,6 +229,36 @@ const PropertyDetail = () => {
       return image.secure_url;
     }
     return property.coverImage || property.featuredImage || property.image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=80&h=80&fit=crop';
+  };
+
+  // Video helpers
+  const getVideoUrl = (video) => {
+    if (typeof video === 'string') return video;
+    if (video && video.url) return video.url;
+    if (video && video.secure_url) return video.secure_url;
+    return null;
+  };
+
+  const isEmbedVideo = (video) => {
+    if (!video) return false;
+    if (video.isEmbed || video.type === 'embed' || video.embedUrl) return true;
+    const url = getVideoUrl(video);
+    if (!url) return false;
+    return url.includes('/embed/') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+  };
+
+  const getEmbedUrl = (video) => {
+    const url = getVideoUrl(video);
+    if (!url) return null;
+    // YouTube
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    // Already embed
+    if (url.includes('/embed/') || url.includes('player.vimeo.com')) return url;
+    return null;
   };
 
   const handleToggleFavorite = async () => {
@@ -774,6 +804,50 @@ const PropertyDetail = () => {
                   <p className="text-gray-600 leading-relaxed">{property.description}</p>
                 </div>
               </div>
+
+              {/* Property Videos */}
+              {property.videos && Array.isArray(property.videos) && property.videos.length > 0 && (
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <FaPlay className="text-red-500" />
+                    Property Videos
+                  </h3>
+                  <div className="space-y-4">
+                    {property.videos.map((video, index) => {
+                      const isEmbed = isEmbedVideo(video);
+                      const embedUrl = getEmbedUrl(video);
+                      const videoUrl = getVideoUrl(video);
+
+                      return (
+                        <div key={`video-${index}`} className="rounded-lg overflow-hidden bg-black">
+                          {isEmbed && embedUrl ? (
+                            <div className="aspect-video">
+                              <iframe
+                                src={embedUrl}
+                                title={`Property video ${index + 1}`}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            </div>
+                          ) : videoUrl ? (
+                            <video
+                              src={videoUrl}
+                              controls
+                              className="w-full aspect-video"
+                              preload="metadata"
+                            />
+                          ) : (
+                            <div className="aspect-video flex items-center justify-center text-gray-400">
+                              <span>Video unavailable</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Amenities */}
               {property.amenities && property.amenities.length > 0 && (

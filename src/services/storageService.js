@@ -110,6 +110,15 @@ const uploadToCloudinaryDirect = async (file, uploadType, fileName = null) => {
   });
   if (!uploadResponse.ok) {
     const errText = await uploadResponse.text();
+    let parsed;
+    try { parsed = JSON.parse(errText); } catch (_) { parsed = null; }
+    const msg = parsed?.error?.message || parsed?.message || errText;
+    if (msg.toLowerCase().includes('file size too large') || msg.toLowerCase().includes('maximum is')) {
+      throw new Error(
+        `File too large for upload (${(file.size / 1024 / 1024).toFixed(1)}MB). ` +
+        `Cloudinary free plan limit is ~10MB. For videos, please paste a YouTube / Vimeo link instead.`
+      );
+    }
     throw new Error(`Cloudinary upload failed: ${uploadResponse.status} ${errText}`);
   }
   const cloudResult = await uploadResponse.json();

@@ -151,7 +151,8 @@ const EnhancedFileUpload = ({
           return newMap;
         });
 
-        toast.error(`Failed to upload ${file.name}`);
+        const errMsg = error?.message || `Failed to upload ${file.name}`;
+        toast.error(errMsg, { duration: 5000 });
         
         // Remove from uploading state after a delay
         setTimeout(() => {
