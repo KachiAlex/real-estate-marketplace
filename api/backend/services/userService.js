@@ -6,13 +6,15 @@ const mockUsersData = require('../data/mockUsers');
 
 const COLLECTION = 'users';
 
-const RAW_USER_COLUMNS_WITH_PASSWORD = `
+const RAW_USER_COLUMNS_FULL = `
   id,
   email,
   password,
   firstname AS "firstName",
   lastname AS "lastName",
   role,
+  roles,
+  activerole AS "activeRole",
   isactive AS "isActive",
   isverified AS "isVerified",
   createdat AS "createdAt",
@@ -25,6 +27,8 @@ const RAW_USER_COLUMNS_PUBLIC = `
   firstname AS "firstName",
   lastname AS "lastName",
   role,
+  roles,
+  activerole AS "activeRole",
   isactive AS "isActive",
   isverified AS "isVerified",
   createdat AS "createdAt",

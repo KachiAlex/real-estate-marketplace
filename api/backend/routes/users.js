@@ -6,6 +6,39 @@ const { User, Property } = db;
 
 const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
 
+// Detect Sequelize DB column-not-exists errors (works for both find and update)
+const isMissingColumnError = (err) => {
+  if (!err) return false;
+  const msg = String(err.message || err).toLowerCase();
+  return msg.includes('column') && msg.includes('does not exist');
+};
+
+// Fallback: load user via raw SQL so the endpoint works even if DB
+// has not yet been migrated with new columns (roles, activeRole).
+const rawFindUserByPk = async (id) => {
+  const [rows] = await User.sequelize.query(
+    `SELECT id, email, password, firstname AS "firstName", lastname AS "lastName",
+            role, isactive AS "isActive", isverified AS "isVerified",
+            createdat AS "createdAt", updatedat AS "updatedAt"
+     FROM "users" WHERE id = :id LIMIT 1`,
+    { replacements: { id } }
+  );
+  return rows && rows[0] ? rows[0] : null;
+};
+
+// Fallback: update role fields via raw SQL when Sequelize model
+// references columns not yet present in the database.
+const rawUpdateUserRoles = async (id, { roles, activeRole, role }) => {
+  const updates = [];
+  const values = { id };
+  if (role !== undefined) { updates.push(`role = :role`); values.role = role; }
+  if (activeRole !== undefined) { updates.push(`activerole = :activeRole`); values.activeRole = activeRole; }
+  if (roles !== undefined) { updates.push(`roles = :roles::jsonb`); values.roles = JSON.stringify(roles); }
+  if (!updates.length) return;
+  const sql = `UPDATE "users" SET ${updates.join(', ')} WHERE id = :id`;
+  await User.sequelize.query(sql, { replacements: values });
+};
+
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
@@ -66,39 +99,57 @@ router.post('/:id/roles', protect, async (req, res) => {
     if (actorId !== targetId && !isAdmin) return res.status(403).json({ success: false, message: 'Not authorized' });
 
     // Transactional update
-    const result = await User.sequelize.transaction(async (t) => {
-      const user = await User.findByPk(targetId, { transaction: t });
-      if (!user) throw new Error('User not found');
-      const currentRoles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
-      let updated = currentRoles.slice();
-      const r = String(role).trim().toLowerCase();
-      if (action === 'add') {
-        if (!updated.includes(r)) updated.push(r);
-      } else {
-        updated = updated.filter(x => x !== r && x !== '');
-      }
-      // normalize + ensure 'user' present
-      updated = normalizeRoles(updated);
-      const newActive = chooseActiveRole(user.activeRole, setActive ? r : null, updated);
-      // If adding vendor role, initialize or update vendorData to reflect pending KYC
-      let updates = { roles: updated, activeRole: newActive };
-      if (action === 'add' && r === 'vendor') {
-        try {
-          let vendorData = user.vendorData || {};
-          try { vendorData = typeof vendorData === 'string' ? JSON.parse(vendorData) : vendorData; } catch (e) { vendorData = vendorData || {}; }
-          vendorData.kycStatus = 'pending';
-          vendorData.updatedAt = new Date();
-          updates.vendorData = vendorData;
-        } catch (vdErr) {
-          console.warn('Failed to set vendorData on role add:', vdErr && vdErr.message ? vdErr.message : vdErr);
+    let result;
+    try {
+      result = await User.sequelize.transaction(async (t) => {
+        const user = await User.findByPk(targetId, { transaction: t });
+        if (!user) throw new Error('User not found');
+        const currentRoles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
+        let updated = currentRoles.slice();
+        const r = String(role).trim().toLowerCase();
+        if (action === 'add') {
+          if (!updated.includes(r)) updated.push(r);
+        } else {
+          updated = updated.filter(x => x !== r && x !== '');
         }
+        // normalize + ensure 'user' present
+        updated = normalizeRoles(updated);
+        const newActive = chooseActiveRole(user.activeRole, setActive ? r : null, updated);
+        let updates = { roles: updated, activeRole: newActive };
+        await user.update(updates, { transaction: t });
+        return { user, roles: updated, activeRole: newActive };
+      });
+    } catch (trxErr) {
+      if (isMissingColumnError(trxErr)) {
+        // Fallback: raw SQL update without transaction
+        const rawUser = await rawFindUserByPk(targetId);
+        if (!rawUser) throw new Error('User not found');
+        const currentRoles = Array.isArray(rawUser.roles)
+          ? rawUser.roles.map(r => String(r).toLowerCase())
+          : [String(rawUser.role || 'user').toLowerCase()];
+        let updated = currentRoles.slice();
+        const r = String(role).trim().toLowerCase();
+        if (action === 'add') {
+          if (!updated.includes(r)) updated.push(r);
+        } else {
+          updated = updated.filter(x => x !== r && x !== '');
+        }
+        updated = normalizeRoles(updated);
+        const newActive = chooseActiveRole(rawUser.activeRole, setActive ? r : null, updated);
+        await rawUpdateUserRoles(targetId, { roles: updated, activeRole: newActive, role: newActive });
+        result = { user: rawUser, roles: updated, activeRole: newActive };
+      } else {
+        throw trxErr;
       }
+    }
 
-      await user.update(updates, { transaction: t });
-      return user;
-    });
-
-    return res.json({ success: true, user: result.toJSON() });
+    const responseUser = {
+      ...result.user,
+      roles: result.roles,
+      activeRole: result.activeRole,
+      role: result.activeRole
+    };
+    return res.json({ success: true, user: responseUser });
   } catch (error) {
     console.error('Update roles error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update roles', error: error.message });
@@ -113,11 +164,24 @@ router.post('/switch-role', protect, async (req, res) => {
     const { role } = req.body;
     if (!role) return res.status(400).json({ success: false, message: 'Role is required' });
 
-    const user = await User.findByPk(req.user.id);
+    let user;
+    try {
+      user = await User.findByPk(req.user.id);
+    } catch (findErr) {
+      if (isMissingColumnError(findErr)) {
+        user = await rawFindUserByPk(req.user.id);
+      } else {
+        throw findErr;
+      }
+    }
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // Get user's current roles
-    const currentRoles = Array.isArray(user.roles) ? user.roles.map(r => String(r).toLowerCase()) : [String(user.role || 'user').toLowerCase()];
+    // Get user's current roles (from Sequelize instance or raw row)
+    const rawRoles = user.roles || user.dataValues?.roles;
+    const rawRole = user.role || user.dataValues?.role;
+    const currentRoles = Array.isArray(rawRoles)
+      ? rawRoles.map(r => String(r).toLowerCase())
+      : [String(rawRole || 'user').toLowerCase()];
     const normalizedRole = String(role).trim().toLowerCase();
 
     // Normalize roles to ensure consistency
@@ -126,16 +190,29 @@ router.post('/switch-role', protect, async (req, res) => {
     // If the role is not in the user's roles array, add it (support dual/multiple roles)
     if (!updatedRoles.includes(normalizedRole)) {
       updatedRoles.push(normalizedRole);
-      updatedRoles = normalizeRoles(updatedRoles); // Re-normalize to ensure order and deduplication
+      updatedRoles = normalizeRoles(updatedRoles);
     }
 
     // Update the user's roles and active role
-    await user.update({ roles: updatedRoles, activeRole: normalizedRole });
+    try {
+      await user.update({ roles: updatedRoles, activeRole: normalizedRole });
+    } catch (updateErr) {
+      if (isMissingColumnError(updateErr)) {
+        await rawUpdateUserRoles(req.user.id, { roles: updatedRoles, activeRole: normalizedRole, role: normalizedRole });
+      } else {
+        throw updateErr;
+      }
+    }
 
-    // Return the updated user object
-    const updatedUser = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } });
+    // Return normalized user response
+    const responseUser = {
+      ...user,
+      roles: updatedRoles,
+      activeRole: normalizedRole,
+      role: normalizedRole
+    };
 
-    return res.json({ success: true, user: updatedUser.toJSON() });
+    return res.json({ success: true, user: responseUser });
   } catch (error) {
     console.error('Switch role error:', error);
     return res.status(500).json({ success: false, message: 'Failed to switch role', error: error.message });

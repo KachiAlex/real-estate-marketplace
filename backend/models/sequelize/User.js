@@ -39,6 +39,15 @@ module.exports = (sequelize) =>
       type: DataTypes.STRING,
       defaultValue: 'user'
     },
+    roles: {
+      type: DataTypes.JSON,
+      defaultValue: ['user']
+    },
+    activeRole: {
+      type: DataTypes.STRING,
+      defaultValue: 'user',
+      field: 'activerole'
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
