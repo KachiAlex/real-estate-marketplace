@@ -223,8 +223,9 @@ router.put('/:id', protect, [
       });
     }
 
-    // Check ownership
-    if (property.owner?.id && property.owner.id !== req.user.id && req.user.role !== 'admin') {
+    // Check ownership — owner object may not be loaded
+    const ownerId = property.owner?.id || property.ownerId || property.vendorId || property.createdBy || property.sellerId;
+    if (ownerId && ownerId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this property'
@@ -261,7 +262,8 @@ router.delete('/:id', protect, async (req, res) => {
       });
     }
 
-    if (property.owner?.id && property.owner.id !== req.user.id && req.user.role !== 'admin') {
+    const ownerId = property.owner?.id || property.ownerId || property.vendorId || property.createdBy || property.sellerId;
+    if (ownerId && ownerId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to delete this property'

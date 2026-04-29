@@ -140,15 +140,18 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      const response = await apiClient.post('/verification/applications', {
+      const payload = {
         propertyId: property.id,
         propertyName: property.title,
-        propertyUrl: property.url || '',
         propertyLocation: locationDisplay,
         message: message.trim(),
         preferredBadgeColor: badgeColor,
         verificationPaymentId: paymentId
-      });
+      };
+      if (property.url && property.url.trim()) {
+        payload.propertyUrl = property.url.trim();
+      }
+      const response = await apiClient.post('/verification/applications', payload);
 
       if (response.data?.success) {
         toast.success('Verification request submitted successfully!');
