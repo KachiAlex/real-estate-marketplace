@@ -331,6 +331,55 @@ router.get('/vendor/kyc/signed', async (req, res) => {
   }
 });
 
+// Provide signed params for direct client uploads to Cloudinary (all file types)
+router.post('/signed', async (req, res) => {
+  try {
+    const { cloudinary } = require('../config/cloudinary');
+    const { isConfigured } = require('../services/uploadService');
+    if (!isConfigured()) {
+      return res.status(503).json({ success: false, message: 'Upload service not configured' });
+    }
+    const { uploadType = 'generic', filename = '' } = req.body || {};
+    const timestamp = Math.round(Date.now() / 1000);
+    const category = resolveUploadCategory(uploadType, { mimetype: filename.split('.').pop() });
+    const folderMap = {
+      images: 'propertyark/properties',
+      videos: 'propertyark/videos',
+      documents: 'propertyark/documents',
+      avatars: 'propertyark/avatars',
+      generic: 'propertyark/uploads'
+    };
+    const folder = folderMap[category] || 'propertyark/uploads';
+    const publicId = filename
+      ? `${Date.now()}_${filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')}`
+      : `upload_${Date.now()}`;
+    const resourceType = category === 'videos' ? 'video' : (category === 'documents' ? 'raw' : 'image');
+    const paramsToSign = {
+      folder,
+      public_id: publicId,
+      timestamp,
+      overwrite: 'true'
+    };
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+    res.json({
+      success: true,
+      data: {
+        api_key: process.env.CLOUDINARY_API_KEY,
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        timestamp,
+        signature,
+        folder,
+        public_id: publicId,
+        resource_type: resourceType,
+        upload_url: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`
+      }
+    });
+  } catch (e) {
+    console.error('Signed upload error:', e);
+    res.status(500).json({ success: false, message: 'Failed to create signed upload' });
+  }
+});
+
 const parseMetadata = (raw) => {
   if (!raw) return {};
   try {
