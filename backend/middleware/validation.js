@@ -69,12 +69,15 @@ exports.verificationValidation = {
       .withMessage('Property name must be between 3 and 150 characters'),
 
     body('propertyUrl')
-      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage('Property URL is required for payment tracing')
       .custom((value) => {
-        if (value === undefined || value === null || String(value).trim() === '') return true;
-        return value.match(/^https?:\/\/.+/);
-      })
-      .withMessage('Property URL must be a valid link'),
+        if (typeof value !== 'string' || !value.match(/^https?:\/\/.+/)) {
+          throw new Error('Property URL must be a valid HTTP(S) link');
+        }
+        return true;
+      }),
 
     body('propertyLocation')
       .optional()

@@ -148,8 +148,14 @@ const VerificationRequestModal = ({ property, isOpen, onClose, onSuccess }) => {
         preferredBadgeColor: badgeColor,
         verificationPaymentId: paymentId
       };
-      if (property.url && property.url.trim()) {
-        payload.propertyUrl = property.url.trim();
+      // Always include a canonical property URL so admins can trace payment
+      const canonicalUrl =
+        (property.url && property.url.trim()) ||
+        (typeof window !== 'undefined' && property.id
+          ? `${window.location.origin}/property/${property.id}`
+          : '');
+      if (canonicalUrl) {
+        payload.propertyUrl = canonicalUrl;
       }
       const response = await apiClient.post('/verification/applications', payload);
 

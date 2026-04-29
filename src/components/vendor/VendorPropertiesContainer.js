@@ -244,7 +244,12 @@ export default function VendorPropertiesContainer() {
 
   const handleRequestVerification = (prop) => {
     if (!prop) return;
-    setSelectedPropertyForVerification(prop);
+    const propertyUrl =
+      prop.url ||
+      (typeof window !== 'undefined' && prop.id
+        ? `${window.location.origin}/property/${prop.id}`
+        : '');
+    setSelectedPropertyForVerification({ ...prop, url: propertyUrl });
     setVerificationModalOpen(true);
     handleCloseDetailModal();
   };
