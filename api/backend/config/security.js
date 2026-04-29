@@ -87,7 +87,7 @@ const securityConfig = {
 
       // Allow Firebase hosting domains (web.app and firebaseapp.com)
       const isFirebaseHosting = origin && (
-        origin.includes('.web.app') || 
+        origin.includes('.web.app') ||
         origin.includes('.firebaseapp.com')
       );
 
@@ -97,6 +97,7 @@ const securityConfig = {
       }
 
       if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+        console.log('CORS: Origin allowed:', origin);
         return callback(null, true);
       }
 
@@ -105,7 +106,7 @@ const securityConfig = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-Debug-Request-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-CSRF-Token', 'X-Debug-Request-Id'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
     maxAge: 600, // 10 minutes
     optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204

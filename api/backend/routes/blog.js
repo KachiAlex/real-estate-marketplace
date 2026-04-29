@@ -228,13 +228,24 @@ router.get('/featured', async (req, res) => {
   }
 });
 
+// @desc    Get blog categories
+// @route   GET /api/blog/categories
+// @access  Public
 router.get('/categories', async (req, res) => {
   try {
+    console.log('📝 GET /api/blog/categories - Fetching categories');
+
     if (!blogService || !blogService.getCategories) {
-      return res.status(500).json({ success: false, message: 'Blog service not properly initialized' });
+      console.error('❌ Blog service not properly initialized');
+      return res.status(500).json({
+        success: false,
+        message: 'Blog service not properly initialized'
+      });
     }
 
     const categories = await blogService.getCategories();
+    console.log('✅ Retrieved', categories.length, 'categories');
+
     const categoryNames = {
       'real-estate-tips': 'Real Estate Tips',
       'market-news': 'Market News',
@@ -256,19 +267,39 @@ router.get('/categories', async (req, res) => {
       count: cat.count
     }));
 
-    res.json({ success: true, data: formattedCategories });
+    res.json({
+      success: true,
+      data: formattedCategories
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('❌ Error fetching categories:', error.message, error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+    });
   }
 });
 
+// @desc    Get popular tags
+// @route   GET /api/blog/tags
+// @access  Public
 router.get('/tags', async (req, res) => {
   try {
     const { limit = 20 } = req.query;
+
     const tags = await blogService.getPopularTags(parseInt(limit));
-    res.json({ success: true, data: tags });
+
+    res.json({
+      success: true,
+      data: tags
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error fetching tags:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 });
 
@@ -473,80 +504,6 @@ router.post('/:slug/comments', [
   }
 });
 
-// @desc    Get blog categories
-// @route   GET /api/blog/categories
-// @access  Public
-router.get('/categories', async (req, res) => {
-  try {
-    console.log('📝 GET /api/blog/categories - Fetching categories');
-    
-    if (!blogService || !blogService.getCategories) {
-      console.error('❌ Blog service not properly initialized');
-      return res.status(500).json({
-        success: false,
-        message: 'Blog service not properly initialized'
-      });
-    }
-    
-    const categories = await blogService.getCategories();
-    console.log('✅ Retrieved', categories.length, 'categories');
-
-    const categoryNames = {
-      'real-estate-tips': 'Real Estate Tips',
-      'market-news': 'Market News',
-      'investment-guides': 'Investment Guides',
-      'property-showcase': 'Property Showcase',
-      'legal-advice': 'Legal Advice',
-      'home-improvement': 'Home Improvement',
-      'neighborhood-spotlight': 'Neighborhood Spotlight',
-      'buyer-guides': 'Buyer Guides',
-      'seller-guides': 'Seller Guides',
-      'rental-advice': 'Rental Advice',
-      'mortgage-financing': 'Mortgage & Financing',
-      'property-management': 'Property Management'
-    };
-
-    const formattedCategories = categories.map(cat => ({
-      slug: cat.slug,
-      name: categoryNames[cat.slug] || cat.slug,
-      count: cat.count
-    }));
-
-    res.json({
-      success: true,
-      data: formattedCategories
-    });
-  } catch (error) {
-    console.error('❌ Error fetching categories:', error.message, error.stack);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
-    });
-  }
-});
-
-// @desc    Get popular tags
-// @route   GET /api/blog/tags
-// @access  Public
-router.get('/tags', async (req, res) => {
-  try {
-    const { limit = 20 } = req.query;
-
-    const tags = await blogService.getPopularTags(parseInt(limit));
-
-    res.json({
-      success: true,
-      data: tags
-    });
-  } catch (error) {
-    console.error('Error fetching tags:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
 
 // Admin-only management routes (must remain after public routes to avoid conflicts)
 router.use(protect, authorize('admin'), sanitizeInput);

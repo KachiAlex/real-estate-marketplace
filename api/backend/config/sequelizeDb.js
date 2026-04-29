@@ -1,30 +1,7 @@
-const path = require('path');
-
-// Vercel serverless: pre-register pg from api/node_modules before Sequelize
-// loads its postgres dialect. Vercel's cached api/backend/node_modules may have
-// sequelize but not pg, so we explicitly resolve and cache it here.
-if (process.env.VERCEL) {
-  try {
-    // Walk up: api/backend/config -> api/backend -> api -> node_modules
-    const parentNodeModules = path.resolve(__dirname, '..', '..', '..', 'node_modules');
-    const pgResolved = require.resolve('pg', { paths: [parentNodeModules] });
-    // Register under the bare 'pg' key so Sequelize's require('pg') finds it
-    const Module = require('module');
-    const originalResolve = Module._resolveFilename;
-    Module._resolveFilename = function(request, ...args) {
-      if (request === 'pg') return pgResolved;
-      return originalResolve.call(this, request, ...args);
-    };
-  } catch (e) {
-    console.warn('[sequelizeDb] Could not pre-resolve pg from parent node_modules:', e.message);
-  }
-}
-
 const { Sequelize } = require('sequelize');
+const path = require('path');
 // load env from workspace root (two levels up from config folder)
-if (!process.env.VERCEL) {
-  require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
-}
+require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 /**
  * PostgreSQL Database Connection Configuration using Sequelize

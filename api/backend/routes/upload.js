@@ -92,6 +92,7 @@ router.post(
           message: 'No files provided'
         });
       }
+
       // If Cloudinary (or other configured upload service) is available, upload directly
       if (isConfigured && isConfigured()) {
         try {
@@ -331,53 +332,64 @@ router.get('/vendor/kyc/signed', async (req, res) => {
   }
 });
 
-// Provide signed params for direct client uploads to Cloudinary (all file types)
-router.post('/signed', async (req, res) => {
-  try {
-    const { cloudinary } = require('../config/cloudinary');
-    const { isConfigured } = require('../services/uploadService');
-    if (!isConfigured()) {
-      return res.status(503).json({ success: false, message: 'Upload service not configured' });
-    }
-    const { uploadType = 'generic', filename = '' } = req.body || {};
-    const timestamp = Math.round(Date.now() / 1000);
-    const category = resolveUploadCategory(uploadType, { mimetype: filename.split('.').pop() });
-    const folderMap = {
-      images: 'propertyark/properties',
-      videos: 'propertyark/videos',
-      documents: 'propertyark/documents',
-      avatars: 'propertyark/avatars',
-      generic: 'propertyark/uploads'
-    };
-    const folder = folderMap[category] || 'propertyark/uploads';
-    const publicId = filename
-      ? `${Date.now()}_${filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')}`
-      : `upload_${Date.now()}`;
-    const resourceType = category === 'videos' ? 'video' : (category === 'documents' ? 'raw' : 'image');
-    const paramsToSign = {
-      folder,
-      public_id: publicId,
-      timestamp
-    };
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
-    res.json({
-      success: true,
-      data: {
-        api_key: process.env.CLOUDINARY_API_KEY,
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        timestamp,
-        signature,
-        folder,
-        public_id: publicId,
-        resource_type: resourceType,
-        upload_url: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`
+// Generate Cloudinary signed upload params for direct client uploads (images, videos, documents)
+// This allows the frontend to upload directly to Cloudinary, bypassing Vercel's 4.5MB body limit.
+router.post(
+  '/signed',
+  protect,
+  async (req, res) => {
+    try {
+      const { cloudinary, isConfigured } = require('../config/cloudinary');
+      if (!isConfigured()) {
+        return res.status(503).json({ success: false, message: 'Upload service not configured' });
       }
-    });
-  } catch (e) {
-    console.error('Signed upload error:', e);
-    res.status(500).json({ success: false, message: 'Failed to create signed upload' });
+
+      const { uploadType = 'generic', fileName, metadata = {} } = req.body;
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      // Map uploadType to Cloudinary folder and resource_type
+      const typeMap = {
+        generic:            { folder: 'uploads/generic',        resource_type: 'image' },
+        property_images:      { folder: 'properties/images',      resource_type: 'image' },
+        property_videos:      { folder: 'properties/videos',      resource_type: 'video' },
+        property_documents:   { folder: 'properties/documents',   resource_type: 'raw'   },
+        user_avatar:          { folder: 'users/avatars',          resource_type: 'image' },
+        escrow_document:      { folder: 'escrow/documents',       resource_type: 'raw'   },
+        mortgage_document:    { folder: 'mortgages/documents',    resource_type: 'raw'   },
+        vendor_kyc:           { folder: 'vendor/kyc',             resource_type: 'raw'   }
+      };
+
+      const config = typeMap[uploadType] || typeMap.generic;
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const publicId = `${config.folder}/${uniqueId}-${fileName || 'upload'}`;
+
+      const paramsToSign = {
+        timestamp,
+        folder: config.folder,
+        public_id: publicId
+      };
+
+      const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+
+      res.json({
+        success: true,
+        data: {
+          api_key: process.env.CLOUDINARY_API_KEY,
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          timestamp,
+          signature,
+          folder: config.folder,
+          public_id: publicId,
+          resource_type: config.resource_type,
+          upload_url: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${config.resource_type}/upload`
+        }
+      });
+    } catch (e) {
+      console.error('Signed upload error:', e);
+      res.status(500).json({ success: false, message: 'Failed to create signed upload' });
+    }
   }
-});
+);
 
 const parseMetadata = (raw) => {
   if (!raw) return {};

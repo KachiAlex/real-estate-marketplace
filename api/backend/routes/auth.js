@@ -8,104 +8,8 @@ const { verifyToken } = require('../middleware/authJwt');
 const emailService = require('../services/emailService');
 const { User } = require('../config/sequelizeDb');
 const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
-const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
-
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '363622331516-csuhmvdqv5cff2js8pe9oatd6259v6tb.apps.googleusercontent.com';
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
-
-// @desc    Google OAuth login/signup
-// @route   POST /api/auth/google
-// @access  Public
-router.post('/google', async (req, res) => {
-  try {
-    if (!googleClient || !GOOGLE_CLIENT_ID) {
-      return res.status(503).json({
-        success: false,
-        error: 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID.'
-      });
-    }
-
-    const { token } = req.body || {};
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing Google credential token'
-      });
-    }
-
-    let ticket;
-    try {
-      ticket = await googleClient.verifyIdToken({
-        idToken: token,
-        audience: GOOGLE_CLIENT_ID
-      });
-    } catch (verifyError) {
-      console.error('Google token verification failed:', verifyError.message);
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid Google credential'
-      });
-    }
-
-    const payload = ticket.getPayload();
-    if (!payload || !payload.email) {
-      return res.status(400).json({
-        success: false,
-        error: 'Google profile is missing email'
-      });
-    }
-
-    const email = payload.email.toLowerCase();
-    const firstName = payload.given_name || payload.name?.split(' ')?.[0] || 'Google';
-    const lastName = payload.family_name || payload.name?.split(' ')?.slice(1).join(' ') || 'User';
-
-    let user = await userService.findByEmail(email);
-    if (!user) {
-      user = await userService.createUser({
-        email,
-        firstName,
-        lastName,
-        isVerified: Boolean(payload.email_verified),
-        provider: 'google',
-        password: null,
-        avatar: payload.picture
-      });
-    }
-
-    const normalizedRoles = normalizeRoles(user.roles || user.role || []);
-    const activeRole = chooseActiveRole(user.activeRole, null, normalizedRoles);
-
-    const accessToken = generateToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
-
-    return res.json({
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: activeRole,
-          roles: normalizedRoles,
-          activeRole,
-          avatar: user.avatar,
-          isVerified: user.isVerified
-        },
-        accessToken,
-        refreshToken
-      }
-    });
-  } catch (error) {
-    console.error('Google auth error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to authenticate with Google'
-    });
-  }
-});
 
 /**
  * Validate password strength
@@ -422,6 +326,17 @@ router.post('/login', [
       });
     }
 
+    if (!user.password) {
+      console.warn('auth/login: user missing password hash, prompting reset', {
+        userId: user.id,
+        email: user.email
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Password not set for this account. Please use "Forgot password" to create one.'
+      });
+    }
+
     // Check if password matches
     const isMatch = await userService.comparePassword(password, user.password);
     if (!isMatch) {
@@ -431,10 +346,18 @@ router.post('/login', [
       });
     }
 
-    // Update last login
-    await userService.updateUser(user.id, {
-      lastLogin: new Date()
-    });
+    // Update last login (non-fatal if it fails)
+    try {
+      await userService.updateUser(user.id, {
+        lastLogin: new Date()
+      });
+    } catch (updateError) {
+      console.warn('auth/login: failed to update lastLogin, continuing anyway', {
+        userId: user.id,
+        email: user.email,
+        error: updateError.message
+      });
+    }
 
     // Generate token
     const token = generateToken(user.id);

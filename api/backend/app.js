@@ -1,9 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-if (!process.env.VERCEL) {
-  require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
-}
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 // Import configurations
 const { securityConfig } = require('./config/security');

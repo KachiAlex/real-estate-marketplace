@@ -1,8 +1,6 @@
 {
-  "name": "real-estate-backend",
-  "version": "1.0.1",
-  "description": "Backend source - deps resolved from parent api/node_modules",
-  "main": "app.js",
+  "name": "propertyark-serverless-api",
+  "version": "1.0.0",
   "dependencies": {
     "pg": "^8.18.0",
     "pg-hstore": "^2.3.4",

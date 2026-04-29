@@ -1,5 +1,10 @@
 const { DataTypes } = require('sequelize');
 
+/**
+ * Sequelize User model aligned with Neon users table (see neon-migration.sql).
+ * Postgres lowercases unquoted identifiers, so camelCase columns like
+ * `firstName` become `firstname`. We map those via the `field` option.
+ */
 module.exports = (sequelize) =>
   sequelize.define('User', {
     id: {

@@ -28,7 +28,8 @@
     "test:comprehensive": "npm run test:e2e:headless",
     "test:phase4": "jest --config backend/tests/jest.phase4.config.js --runInBand",
     "test:phase4:open-handles": "jest --config backend/tests/jest.phase4.config.js --runInBand --detectOpenHandles --openHandlesTimeout=5000",
-    "lint:add-property": "eslint src/pages/AddProperty.js src/contexts/PropertyContext.js --max-warnings=0"
+    "lint:add-property": "eslint src/pages/AddProperty.js src/contexts/PropertyContext.js --max-warnings=0",
+    "sync:api-backend": "node scripts/sync-api-backend.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",
