@@ -58,13 +58,17 @@ const appPath = path.join(DST, 'app.js');
 let appJs = fs.readFileSync(appPath, 'utf8');
 // Find "require('dotenv').config(...)" line and wrap it
 const dotenvLine = appJs.match(/require\('dotenv'\)\.config\(\{[^}]+\}\);/);
-if (dotenvLine && !appJs.includes("if (!process.env.VERCEL)")) {
-  appJs = appJs.replace(
-    dotenvLine[0],
-    `if (!process.env.VERCEL) {\n  ${dotenvLine[0].trim()}\n}`
-  );
-  fs.writeFileSync(appPath, appJs, 'utf8');
-  console.log('[sync-api-backend] Patched app.js for Vercel');
+if (dotenvLine) {
+  const idx = appJs.indexOf(dotenvLine[0]);
+  const preceding = appJs.substring(Math.max(0, idx - 80), idx);
+  if (!preceding.includes('if (!process.env.VERCEL)')) {
+    appJs = appJs.replace(
+      dotenvLine[0],
+      `if (!process.env.VERCEL) {\n  ${dotenvLine[0].trim()}\n}`
+    );
+    fs.writeFileSync(appPath, appJs, 'utf8');
+    console.log('[sync-api-backend] Patched app.js for Vercel');
+  }
 }
 
 // Patch 2: server.js — use simpler dotenv config
