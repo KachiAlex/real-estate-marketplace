@@ -82,9 +82,9 @@ const createApiClient = ({ baseUrl, storage, refreshFn, onBeforeRequest, axios: 
 
   // Request interceptor
   instance.interceptors.request.use(
-    (config) => {
+    async (config) => {
       if (onBeforeRequest) {
-        onBeforeRequest(config);
+        await onBeforeRequest(config);
       }
 
       const token = tokenStorage.getAccessToken();
@@ -181,7 +181,7 @@ let csrfToken = null;
 export const fetchCsrfToken = async () => {
   try {
     const { getApiUrl } = require('../utils/apiConfig');
-    const response = await axios.get(getApiUrl('/api/csrf-token'));
+    const response = await axios.get(getApiUrl('/api/csrf-token'), { withCredentials: true });
     if (response.data && response.data.token) {
       csrfToken = response.data.token;
       return response.data.token;
@@ -218,9 +218,12 @@ const addMockHeaders = (config) => {
 /**
  * Add CSRF token to request headers for state-changing requests
  */
-const addCsrfToken = (config) => {
+const addCsrfToken = async (config) => {
   // Only add CSRF token for state-changing requests
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method?.toUpperCase())) {
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
     if (csrfToken) {
       config.headers = config.headers || {};
       config.headers['X-CSRF-Token'] = csrfToken;
