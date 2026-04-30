@@ -1,0 +1,12 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    dir: backend
+    args:
+      - build
+      - -t
+      - 'gcr.io/$PROJECT_ID/github.com/kachialex/real-estate-marketplace:$COMMIT_SHA'
+      - .
+images:
+  - 'gcr.io/$PROJECT_ID/github.com/kachialex/real-estate-marketplace:$COMMIT_SHA'
+options:
+  logging: CLOUD_LOGGING_ONLY
