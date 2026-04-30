@@ -232,11 +232,6 @@ const BillingPayments = () => {
   };
 
 
-  const filteredTransactions = mockEscrowTransactions.filter(transaction => {
-    if (filterStatus === 'all') return true;
-    return transaction.status === filterStatus;
-  });
-
   return (
     <div className="p-4 sm:p-6" style={{ overflowX: 'visible' }}>
       {/* Header */}
@@ -496,17 +491,16 @@ const BillingPayments = () => {
                 </div>
               </div>
 
-              {/* Mobile transaction cards - horizontal scroll */}
-              <div className="overflow-x-auto pb-2 sm:hidden">
-                <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
+              {/* Mobile transaction cards - vertical stack */}
+              <div className="space-y-3 sm:hidden">
                 {allTransactions.filter(transaction => 
                   filterStatus === 'all' || transaction.status === filterStatus
                 ).map((transaction) => (
-                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4" style={{ minWidth: '280px' }}>
-                    <div className="flex justify-between items-start mb-3">
+                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3 gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 text-sm break-words">{transaction.description}</p>
-                        <p className="text-xs text-gray-500">ID: {transaction.id}</p>
+                        <p className="font-medium text-gray-900 text-sm break-words">{transaction.description || transaction.propertyTitle || 'Property Transaction'}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">ID: {transaction.id}</p>
                       </div>
                       <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
                         {transaction.status}
@@ -516,9 +510,9 @@ const BillingPayments = () => {
                     <div className="space-y-2 mb-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Amount</span>
-                        <span className="font-medium text-gray-900">&#8358;{transaction.amount.toLocaleString()}</span>
+                        <span className="font-medium text-gray-900">&#8358;{(transaction.totalAmount || transaction.amount || 0).toLocaleString()}</span>
                       </div>
-                      {transaction.fees > 0 && (
+                      {(transaction.fees || 0) > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Fees</span>
                           <span className="text-gray-500">&#8358;{transaction.fees.toLocaleString()}</span>
@@ -526,7 +520,7 @@ const BillingPayments = () => {
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Date</span>
-                        <span className="text-gray-900">{transaction.date}</span>
+                        <span className="text-gray-900">{transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}</span>
                       </div>
                     </div>
                     
@@ -550,7 +544,14 @@ const BillingPayments = () => {
                     </div>
                   </div>
                 ))}
-                </div>
+                {allTransactions.filter(transaction => 
+                  filterStatus === 'all' || transaction.status === filterStatus
+                ).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">No transactions found.</p>
+                    <p className="text-xs mt-1">Complete a property purchase to see transactions here.</p>
+                  </div>
+                )}
               </div>
               
               {/* Desktop table */}
@@ -582,23 +583,23 @@ const BillingPayments = () => {
                       <tr key={transaction.id}>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
+                            <div className="text-sm font-medium text-gray-900">{transaction.description || transaction.propertyTitle || 'Property Transaction'}</div>
                             <div className="text-sm text-gray-500">ID: {transaction.id}</div>
                           </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">&#8358;{transaction.amount.toLocaleString()}</div>
-                          {transaction.fees > 0 && (
+                          <div className="text-sm text-gray-900">&#8358;{(transaction.totalAmount || transaction.amount || 0).toLocaleString()}</div>
+                          {(transaction.fees || 0) > 0 && (
                             <div className="text-sm text-gray-500">Fees: &#8358;{transaction.fees.toLocaleString()}</div>
                           )}
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(transaction.status)}`}>
-                            {transaction.status}
+                            {transaction.status || 'unknown'}
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {transaction.date}
+                          {transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button 
@@ -634,44 +635,51 @@ const BillingPayments = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto pb-2">
-                <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6" style={{ minWidth: 'max-content' }}>
-                  {allTransactions.filter(transaction => 
-                    filterStatus === 'all' || transaction.status === filterStatus
-                  ).map((transaction) => (
-                    <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 sm:p-6" style={{ minWidth: '280px' }}>
-                      <div className="flex items-center justify-between mb-3 sm:mb-4">
-                        <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
-                          <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
-                        </div>
-                        <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
-                          {transaction.status}
-                        </span>
+              {/* Mobile: vertical stack / Desktop: grid */}
+              <div className="space-y-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+                {allTransactions.filter(transaction => 
+                  filterStatus === 'all' || transaction.status === filterStatus
+                ).map((transaction) => (
+                  <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="p-2 sm:p-3 bg-gray-100 rounded-lg flex-shrink-0">
+                        <FaFileInvoice className="text-gray-600 text-lg sm:text-xl" />
                       </div>
-                      
-                      <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description}</h4>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
-                      <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">&#8358;{transaction.amount.toLocaleString()}</p>
-                      
-                      <div className="flex space-x-2">
-                        <button 
-                          onClick={() => handleViewReceipt(transaction)}
-                          className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
-                        >
-                          <FaEye className="mr-1" />
-                          View
-                        </button>
-                        <button 
-                          onClick={() => handleDownloadReceipt(transaction)}
-                          className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
-                        >
-                          <FaDownload className="mr-1" />
-                          Receipt
-                        </button>
-                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(transaction.status)}`}>
+                        {transaction.status || 'unknown'}
+                      </span>
                     </div>
-                  ))}
-                </div>
+                    
+                    <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base break-words">{transaction.description || transaction.propertyTitle || 'Property Transaction'}</h4>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">Invoice #{transaction.id}</p>
+                    <p className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">&#8358;{(transaction.totalAmount || transaction.amount || 0).toLocaleString()}</p>
+                    
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewReceipt(transaction)}
+                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
+                      >
+                        <FaEye className="mr-1" />
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadReceipt(transaction)}
+                        className="btn-outline text-xs sm:text-sm flex-1 flex items-center justify-center"
+                      >
+                        <FaDownload className="mr-1" />
+                        Receipt
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {allTransactions.filter(transaction => 
+                  filterStatus === 'all' || transaction.status === filterStatus
+                ).length === 0 && (
+                  <div className="text-center py-8 text-gray-500 sm:col-span-2 lg:col-span-3">
+                    <p className="text-sm">No invoices or receipts found.</p>
+                    <p className="text-xs mt-1">Complete a property purchase to generate invoices.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
