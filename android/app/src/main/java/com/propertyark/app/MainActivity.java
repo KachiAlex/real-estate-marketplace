@@ -26,6 +26,10 @@ public class MainActivity extends BridgeActivity {
 
         super.onCreate(savedInstanceState);
 
+        // Register native login bridge for APK login bypassing WebView CORS
+        WebView webView = this.getBridge().getWebView();
+        webView.addJavascriptInterface(new NativeLoginBridge(), "NativeLoginBridge");
+
         // Add a simple indeterminate progress bar below the splash logo
         FrameLayout rootLayout = (FrameLayout) findViewById(android.R.id.content);
         if (rootLayout != null) {

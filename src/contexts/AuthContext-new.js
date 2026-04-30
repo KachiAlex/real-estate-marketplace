@@ -542,9 +542,41 @@ export const AuthProvider = ({ children }) => {
       console.log('🔍 [AUTH DEBUG] login request starting', {
         requestId,
         email: maskEmail(email),
-        loginUrl
+        loginUrl,
+        hasNativeBridge: !!(typeof window !== 'undefined' && window.NativeLoginBridge)
       });
       toast('Sending login request...', { icon: '📡', duration: 4000 });
+
+      // Try native Android bridge first (bypasses WebView CORS/network issues)
+      if (typeof window !== 'undefined' && window.NativeLoginBridge) {
+        try {
+          console.log('🔍 [AUTH DEBUG] trying native Android bridge');
+          toast('Using native network...', { icon: '🤖', duration: 4000 });
+          const nativeResult = window.NativeLoginBridge.nativeLoginSync(email, password);
+          console.log('🔍 [AUTH DEBUG] native bridge raw result', nativeResult);
+          const parsed = JSON.parse(nativeResult);
+          if (parsed.success) {
+            const nativeData = JSON.parse(parsed.body);
+            console.log('✅ [AUTH DEBUG] native bridge login success', { status: parsed.status, hasUser: !!nativeData.user });
+            const tokenVal = nativeData.accessToken || nativeData.token || null;
+            updateAccessToken(tokenVal);
+            updateRefreshToken(nativeData.refreshToken || null);
+            let resolvedUser = normalizeUser(nativeData.user);
+            if (resolvedUser) {
+              updateUserState(resolvedUser);
+            } else { updateUserState(null); }
+            toast.success('Login successful (native)');
+            return resolvedUser;
+          } else {
+            const errBody = JSON.parse(parsed.body || '{}');
+            console.warn('🔴 [AUTH DEBUG] native bridge login failed', { status: parsed.status, error: errBody.error, message: errBody.message });
+            throw new Error(errBody.message || `Native login failed (HTTP ${parsed.status})`);
+          }
+        } catch (nativeErr) {
+          console.warn('🔴 [AUTH DEBUG] native bridge error, falling back to WebView', nativeErr);
+          toast('Native failed, trying WebView...', { icon: '🔄', duration: 3000 });
+        }
+      }
 
       const resp = await tryFetchAuth(
         '/auth/jwt/login',
