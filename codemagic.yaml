@@ -55,12 +55,6 @@ workflows:
       # Uncomment when exporting signed IPA:
       # - $CM_BUILD_DIR/build/PropertyArk.ipa
 
-    publishing:
-      # Uncomment to send build status to Slack / email:
-      # email:
-      #   recipients:
-      #     - your-email@example.com
-
   android-build:
     name: Build Android App
     environment:
@@ -87,9 +81,3 @@ workflows:
 
     artifacts:
       - android/app/build/outputs/apk/debug/app-debug.apk
-
-    publishing:
-      # Uncomment to send build status to Slack / email:
-      # email:
-      #   recipients:
-      #     - your-email@example.com
