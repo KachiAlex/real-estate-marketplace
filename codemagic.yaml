@@ -18,7 +18,7 @@ workflows:
         script: |
           npx cap sync ios
 
-      - name: Build iOS archive (unsigned)
+      - name: Build iOS archive
         script: |
           cd ios/App
           xcodebuild -project App.xcodeproj \
@@ -27,26 +27,22 @@ workflows:
             -destination 'generic/platform=iOS' \
             -archivePath $CM_BUILD_DIR/build/App.xcarchive \
             archive \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=YES
 
-      # NOTE: To create a signed .ipa for App Store / TestFlight:
-      # 1. Go to Codemagic UI → Settings → Code signing
-      # 2. Add your iOS Distribution Certificate (.p12) and Provisioning Profile
-      # 3. Uncomment the steps below:
-      #
-      # - name: Export signed IPA
-      #   script: |
-      #     cd ios/App
-      #     xcodebuild -exportArchive \
-      #       -archivePath $CM_BUILD_DIR/build/App.xcarchive \
-      #       -exportPath $CM_BUILD_DIR/build \
-      #       -exportOptionsPlist ExportOptions.plist
-      #
-      # - name: Rename IPA
-      #   script: |
-      #     mv $CM_BUILD_DIR/build/*.ipa $CM_BUILD_DIR/build/PropertyArk.ipa
+      - name: Export signed IPA
+        script: |
+          cd ios/App
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/App.xcarchive \
+            -exportPath $CM_BUILD_DIR/build \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Rename IPA
+        script: |
+          mv $CM_BUILD_DIR/build/*.ipa $CM_BUILD_DIR/build/PropertyArk.ipa
 
     artifacts:
+      - $CM_BUILD_DIR/build/PropertyArk.ipa
       - $CM_BUILD_DIR/build/App.xcarchive
 
   android-build:
