@@ -1,0 +1,95 @@
+workflows:
+  ios-build:
+    name: Build iOS App
+    environment:
+      node: "20"
+      xcode: "16.2"
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build web assets
+        script: |
+          npm run build
+
+      - name: Sync Capacitor iOS
+        script: |
+          npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios/App && pod install
+
+      - name: Build iOS archive (unsigned)
+        script: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath $CM_BUILD_DIR/build/App.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      # NOTE: To create a signed .ipa for App Store / TestFlight:
+      # 1. Go to Codemagic UI → Settings → Code signing
+      # 2. Add your iOS Distribution Certificate (.p12) and Provisioning Profile
+      # 3. Uncomment the steps below:
+      #
+      # - name: Export signed IPA
+      #   script: |
+      #     cd ios/App
+      #     xcodebuild -exportArchive \
+      #       -archivePath $CM_BUILD_DIR/build/App.xcarchive \
+      #       -exportPath $CM_BUILD_DIR/build \
+      #       -exportOptionsPlist ExportOptions.plist
+      #
+      # - name: Rename IPA
+      #   script: |
+      #     mv $CM_BUILD_DIR/build/*.ipa $CM_BUILD_DIR/build/PropertyArk.ipa
+
+    artifacts:
+      - $CM_BUILD_DIR/build/App.xcarchive
+      # Uncomment when exporting signed IPA:
+      # - $CM_BUILD_DIR/build/PropertyArk.ipa
+
+    publishing:
+      # Uncomment to send build status to Slack / email:
+      # email:
+      #   recipients:
+      #     - your-email@example.com
+
+  android-build:
+    name: Build Android App
+    environment:
+      node: "20"
+      android:
+        ndk: "r27c"
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build web assets
+        script: |
+          npm run build
+
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+
+      - name: Build Android APK
+        script: |
+          cd android
+          ./gradlew assembleDebug
+
+    artifacts:
+      - android/app/build/outputs/apk/debug/app-debug.apk
+
+    publishing:
+      # Uncomment to send build status to Slack / email:
+      # email:
+      #   recipients:
+      #     - your-email@example.com
