@@ -235,8 +235,10 @@ export default function VendorPropertiesContainer() {
         handleCloseDetailModal();
       }
     } catch (error) {
-      console.error('Failed to delete property:', error);
-      alert('Failed to delete property. Please try again.');
+      const status = error?.response?.status;
+      const msg = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Unknown error';
+      console.error(`[Delete Property] Status: ${status}, Message: ${msg}`, error);
+      alert(`Failed to delete property: ${msg}`);
     } finally {
       setLoading(false);
     }

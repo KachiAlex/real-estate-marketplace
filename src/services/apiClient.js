@@ -238,9 +238,9 @@ const client = createApiClient({
   baseUrl: getApiBaseUrl(),
   storage: tokenStorage,
   refreshFn: createRefreshFunction(getApiBaseUrl()),
-  onBeforeRequest: (config) => {
+  onBeforeRequest: async (config) => {
     addMockHeaders(config);
-    addCsrfToken(config);
+    await addCsrfToken(config);
     return config;
   },
   axios: axios
