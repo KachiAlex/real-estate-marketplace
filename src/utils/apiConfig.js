@@ -7,11 +7,25 @@ const isLocalhost = (value) => {
 };
 
 const resolveDefaultBaseUrl = () => {
-  // Backend is on Vercel in the same project, use same origin
+  // ALWAYS use the hardcoded production backend URL for native/Capacitor apps.
+  // Capacitor WebView origins can be file://, capacitor://, or http://localhost —
+  // none of those can reach the backend. The only valid API target is the
+  // deployed production URL.
   if (typeof window !== 'undefined' && window.location?.origin) {
+    const origin = window.location.origin;
     const host = window.location.hostname || '';
+    // In a native/Capacitor/WebView context the origin is never a real API origin
+    if (
+      origin.startsWith('file://') ||
+      origin.startsWith('capacitor://') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('https://localhost') ||
+      isLocalhost(host)
+    ) {
+      return DEFAULT_API_BASE_URL;
+    }
     if (!isLocalhost(host)) {
-      return window.location.origin;
+      return origin;
     }
   }
 

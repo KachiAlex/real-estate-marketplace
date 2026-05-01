@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+import { CapacitorHttp } from '@capacitor/core';
 const defaultContextValue = {
   currentUser: null,
   loading: true,
@@ -364,123 +365,133 @@ export const AuthProvider = ({ children }) => {
   };
 
   const tryFetchAuth = async (path, options = {}, debugMeta = {}) => {
+      const errors = [];
       const requestId = debugMeta.requestId || options.headers?.['X-Debug-Request-Id'] || options.headers?.['x-debug-request-id'] || null;
       const alt = path.replace('/auth/jwt', '/auth');
       const altUrl = getApiUrl(alt);
       const primaryUrl = getApiUrl(path);
 
       console.log('🔍 [AUTH DEBUG] fetch starting', {
-        requestId,
-        path,
-        altUrl,
-        primaryUrl,
+        requestId, path, altUrl, primaryUrl,
         method: options.method || 'GET',
         origin: typeof window !== 'undefined' ? window.location?.origin : 'no-window',
-        hostname: typeof window !== 'undefined' ? window.location?.hostname : 'no-window',
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'no-navigator',
-        hasCapacitorHttp: !!(typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Http)
+        hasCapHttp: !!(CapacitorHttp && typeof CapacitorHttp.request === 'function')
       });
 
-      // Try 1: fetch with timeout
+      const pushError = (label, e) => {
+        const msg = `${label}: ${e?.message || e?.name || String(e)}`;
+        errors.push(msg);
+        logFetchError(label, e);
+        toast(`[${label}] ${msg}`, { duration: 5000 });
+      };
+
+      // Try 1: fetch alt
       try {
         const resAlt = await fetchWithTimeout(altUrl, options, 15000);
-        console.log('🔍 [AUTH DEBUG] fetch alt attempt', {
-          requestId,
-          altUrl,
-          status: resAlt?.status ?? null,
-          ok: !!resAlt?.ok,
-          source: 'fetch'
-        });
-        if (resAlt && resAlt.status !== 404) return resAlt;
-      } catch (e) {
-        logFetchError(`fetch alt failed ${altUrl}`, e);
-      }
+        if (resAlt && resAlt.status !== 404) return { response: resAlt, errors };
+      } catch (e) { pushError('fetch-alt', e); }
 
-      // Try 2: fetch primary with timeout
+      // Try 2: fetch primary
       try {
         const res = await fetchWithTimeout(primaryUrl, options, 15000);
-        console.log('🔍 [AUTH DEBUG] fetch primary attempt', {
-          requestId,
-          primaryUrl,
-          status: res?.status ?? null,
-          ok: !!res?.ok,
-          source: 'fetch'
-        });
-        if (res && res.status !== 404) return res;
-      } catch (e) {
-        logFetchError(`fetch primary failed ${primaryUrl}`, e);
-      }
+        if (res && res.status !== 404) return { response: res, errors };
+      } catch (e) { pushError('fetch-primary', e); }
 
-      // Try 3: XMLHttpRequest fallback
+      // Try 3: XHR alt
       try {
-        console.log('🔍 [AUTH DEBUG] trying XHR fallback', { requestId, altUrl });
         const resAltXhr = await xhrFetch(altUrl, options);
-        console.log('🔍 [AUTH DEBUG] XHR alt attempt', {
-          requestId,
-          altUrl,
-          status: resAltXhr?.status ?? null,
-          ok: !!resAltXhr?.ok,
-          source: 'xhr'
-        });
-        if (resAltXhr && resAltXhr.status !== 404) return resAltXhr;
-      } catch (e) {
-        logFetchError(`XHR alt failed ${altUrl}`, e);
-      }
+        if (resAltXhr && resAltXhr.status !== 404) return { response: resAltXhr, errors };
+      } catch (e) { pushError('xhr-alt', e); }
 
+      // Try 4: XHR primary
       try {
-        console.log('🔍 [AUTH DEBUG] trying XHR fallback primary', { requestId, primaryUrl });
         const resXhr = await xhrFetch(primaryUrl, options);
-        console.log('🔍 [AUTH DEBUG] XHR primary attempt', {
-          requestId,
-          primaryUrl,
-          status: resXhr?.status ?? null,
-          ok: !!resXhr?.ok,
-          source: 'xhr'
-        });
-        if (resXhr && resXhr.status !== 404) return resXhr;
-      } catch (e) {
-        logFetchError(`XHR primary failed ${primaryUrl}`, e);
+        if (resXhr && resXhr.status !== 404) return { response: resXhr, errors };
+      } catch (e) { pushError('xhr-primary', e); }
+
+      // Try 5: CapacitorHttp direct (uses native Android HTTP)
+      if (CapacitorHttp && typeof CapacitorHttp.request === 'function') {
+        try {
+          console.log('🔍 [AUTH DEBUG] trying CapacitorHttp direct', { primaryUrl });
+          const bodyObj = (options.body && typeof options.body === 'string') ? JSON.parse(options.body) : (options.body || undefined);
+          const capRes = await CapacitorHttp.request({
+            method: options.method || 'GET',
+            url: primaryUrl,
+            headers: options.headers || {},
+            data: bodyObj,
+          });
+          console.log('🔍 [AUTH DEBUG] CapacitorHttp result', { status: capRes.status });
+          const wrapped = {
+            ok: capRes.status >= 200 && capRes.status < 300,
+            status: capRes.status,
+            headers: { get: (h) => capRes.headers?.[h.toLowerCase()] || capRes.headers?.[h] || null },
+            text: async () => (typeof capRes.data === 'string' ? capRes.data : JSON.stringify(capRes.data)),
+            json: async () => (typeof capRes.data === 'object' ? capRes.data : JSON.parse(capRes.data || '{}')),
+          };
+          return { response: wrapped, errors };
+        } catch (e) { pushError('capacitor-http', e); }
+      } else {
+        errors.push('capacitor-http: not available');
       }
 
-      // Try 4: Native CapacitorHttp fallback
-      try {
-        console.log('🔍 [AUTH DEBUG] trying native HTTP fallback', { requestId, altUrl });
-        const resAltNative = await nativeHttpRequest(altUrl, options);
-        console.log('🔍 [AUTH DEBUG] native alt attempt', {
-          requestId,
-          altUrl,
-          status: resAltNative?.status ?? null,
-          ok: !!resAltNative?.ok,
-          source: 'native'
-        });
-        if (resAltNative && resAltNative.status !== 404) return resAltNative;
-      } catch (e) {
-        logFetchError(`native alt failed ${altUrl}`, e);
+      // Try 6: CapacitorHttp alt endpoint
+      if (CapacitorHttp && typeof CapacitorHttp.request === 'function') {
+        try {
+          console.log('🔍 [AUTH DEBUG] trying CapacitorHttp alt', { altUrl });
+          const bodyObj = (options.body && typeof options.body === 'string') ? JSON.parse(options.body) : (options.body || undefined);
+          const capRes = await CapacitorHttp.request({
+            method: options.method || 'GET',
+            url: altUrl,
+            headers: options.headers || {},
+            data: bodyObj,
+          });
+          const wrapped = {
+            ok: capRes.status >= 200 && capRes.status < 300,
+            status: capRes.status,
+            headers: { get: (h) => capRes.headers?.[h.toLowerCase()] || capRes.headers?.[h] || null },
+            text: async () => (typeof capRes.data === 'string' ? capRes.data : JSON.stringify(capRes.data)),
+            json: async () => (typeof capRes.data === 'object' ? capRes.data : JSON.parse(capRes.data || '{}')),
+          };
+          return { response: wrapped, errors };
+        } catch (e) { pushError('capacitor-http-alt', e); }
       }
 
-      try {
-        console.log('🔍 [AUTH DEBUG] trying native HTTP fallback primary', { requestId, primaryUrl });
-        const resNative = await nativeHttpRequest(primaryUrl, options);
-        console.log('🔍 [AUTH DEBUG] native primary attempt', {
-          requestId,
-          primaryUrl,
-          status: resNative?.status ?? null,
-          ok: !!resNative?.ok,
-          source: 'native'
-        });
-        if (resNative && resNative.status !== 404) return resNative;
-      } catch (e) {
-        logFetchError(`native primary failed ${primaryUrl}`, e);
+      // Try 7: NativeLoginBridge (JavaScriptInterface)
+      if (typeof window !== 'undefined' && window.NativeLoginBridge) {
+        try {
+          console.log('🔍 [AUTH DEBUG] trying NativeLoginBridge');
+          const bridgeBody = options.body || '{}';
+          const bridgeRes = window.NativeLoginBridge.nativeLoginSync(
+            JSON.parse(bridgeBody).email || '',
+            JSON.parse(bridgeBody).password || ''
+          );
+          const parsed = JSON.parse(bridgeRes);
+          const wrapped = {
+            ok: !!parsed.success,
+            status: parsed.success ? 200 : 400,
+            headers: { get: () => null },
+            text: async () => bridgeRes,
+            json: async () => parsed,
+          };
+          return { response: wrapped, errors };
+        } catch (e) { pushError('native-bridge', e); }
+      } else {
+        errors.push('native-bridge: not injected');
       }
 
-      console.warn('🔍 [AUTH DEBUG] ALL transports exhausted', { requestId, path, altUrl, primaryUrl });
-      return null;
+      const errorSummary = errors.length ? errors.join('\n') : 'No error details captured';
+      console.warn('🔍 [AUTH DEBUG] ALL transports exhausted', { requestId, path, altUrl, primaryUrl, errors });
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert(`TRANSPORT FAIL:\n${errorSummary}\n\nPrimary URL:\n${primaryUrl}`);
+      }
+      return { response: null, errors };
   };
 
   const register = useCallback(async (payload) => {
     setLoading(true);
     try {
-      const resp = await tryFetchAuth('/auth/jwt/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const { response: resp } = await tryFetchAuth('/auth/jwt/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       if (!resp || !resp.ok) {
         const error = new Error(data.message || 'Registration failed');
@@ -493,7 +504,7 @@ export const AuthProvider = ({ children }) => {
       let resolvedUser = normalizeUser(data.user);
       if (tokenVal) {
         try {
-          const meResp = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { Authorization: `Bearer ${tokenVal}` } });
+          const { response: meResp, errors: meErrors } = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { Authorization: `Bearer ${tokenVal}` } });
           if (meResp && meResp.ok) {
             const meData = await meResp.json().catch(() => ({}));
             resolvedUser = normalizeUser(meData.user || meData);
@@ -539,13 +550,17 @@ export const AuthProvider = ({ children }) => {
       
       const requestId = createAuthDebugId();
       const loginUrl = getApiUrl('/auth/jwt/login');
+      const hasNativeBridge = !!(typeof window !== 'undefined' && window.NativeLoginBridge);
+      const hasCapacitorHttp = !!(CapacitorHttp && typeof CapacitorHttp.request === 'function');
       console.log('🔍 [AUTH DEBUG] login request starting', {
         requestId,
         email: maskEmail(email),
         loginUrl,
-        hasNativeBridge: !!(typeof window !== 'undefined' && window.NativeLoginBridge)
+        hasNativeBridge,
+        hasCapacitorHttp
       });
       toast('Sending login request...', { icon: '📡', duration: 4000 });
+      toast(`URL: ${loginUrl}`, { duration: 5000 });
 
       // Try native Android bridge first (bypasses WebView CORS/network issues)
       if (typeof window !== 'undefined' && window.NativeLoginBridge) {
@@ -578,7 +593,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      const resp = await tryFetchAuth(
+      const { response: resp, errors: transportErrors } = await tryFetchAuth(
         '/auth/jwt/login',
         {
           method: 'POST',
@@ -598,7 +613,8 @@ export const AuthProvider = ({ children }) => {
         hasUser: !!data.user,
         userRoles: data.user?.roles,
         userRole: data.user?.role,
-        responseKeys: data ? Object.keys(data) : []
+        responseKeys: data ? Object.keys(data) : [],
+        transportErrors
       });
       if (!resp || !resp.ok) {
         const msg = data.message || (resp ? `Login failed (HTTP ${resp.status})` : 'Login failed (no response)');
@@ -607,6 +623,7 @@ export const AuthProvider = ({ children }) => {
         error.status = resp?.status ?? null;
         error.responseData = data;
         error.requestId = requestId;
+        error.transportErrors = transportErrors;
         throw error;
       }
       const tokenVal = data.accessToken || data.token || null;
@@ -615,7 +632,7 @@ export const AuthProvider = ({ children }) => {
       let resolvedUser = normalizeUser(data.user);
       if (tokenVal) {
         try {
-          const meResp = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { Authorization: `Bearer ${tokenVal}` } });
+          const { response: meResp, errors: meErrors } = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { Authorization: `Bearer ${tokenVal}` } });
           if (meResp && meResp.ok) {
             const meData = await meResp.json().catch(() => ({}));
             resolvedUser = normalizeUser(meData.user || meData);
@@ -636,13 +653,21 @@ export const AuthProvider = ({ children }) => {
         message: e && e.message ? e.message : String(e),
         status: e?.status ?? null,
         requestId: e?.requestId || null,
-        responseData: e?.responseData || null
+        responseData: e?.responseData || null,
+        transportErrors: e?.transportErrors || null
       });
       const errMsg = e && e.message ? e.message : 'Login failed';
       toast.error(errMsg, { duration: 6000 });
-      // Also show a native alert for critical "no response" errors so user sees it even if toast container fails
-      if (errMsg.includes('no response') && typeof window !== 'undefined' && window.alert) {
-        window.alert(`Login failed: ${errMsg}\n\nPlease check your internet connection.`);
+      // Always show exact error in alert for debugging on mobile
+      if (typeof window !== 'undefined' && window.alert) {
+        const capHttp = !!(CapacitorHttp && typeof CapacitorHttp.request === 'function');
+        const nativeBridge = !!(typeof window !== 'undefined' && window.NativeLoginBridge);
+        const allErrors = (e?.transportErrors || []).join('\n');
+        window.alert(
+          `LOGIN ERROR:\n${errMsg}\n\n` +
+          `Transports:\n- NativeBridge=${nativeBridge}\n- CapacitorHttp=${capHttp}\n\n` +
+          `All errors:\n${allErrors || 'No details'}`
+        );
       }
       throw e;
     } finally { setLoading(false); }
@@ -726,7 +751,7 @@ export const AuthProvider = ({ children }) => {
   const refreshCurrentUser = useCallback(async () => {
     if (!accessToken) throw new Error('Not authenticated');
     try {
-      const resp = await tryFetchAuth('/auth/jwt/me', {
+      const { response: resp } = await tryFetchAuth('/auth/jwt/me', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -799,7 +824,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!serverUser) {
-        try { const me = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } }); if (me && me.ok) { const md = await me.json().catch(() => ({})); serverUser = md.user || md; } } catch (e) {}
+        try { const { response: me } = await tryFetchAuth('/auth/jwt/me', { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } }); if (me && me.ok) { const md = await me.json().catch(() => ({})); serverUser = md.user || md; } } catch (e) {}
       }
 
       // CRITICAL FIX: Preserve user identity when normalizing the response
@@ -855,7 +880,7 @@ export const AuthProvider = ({ children }) => {
   const updateUserProfile = useCallback(async (updates) => {
     try {
       if (!currentUser) throw new Error('Not logged in');
-      const resp = await tryFetchAuth('/api/auth/jwt/update-profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+      const { response: resp } = await tryFetchAuth('/api/auth/jwt/update-profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
       const data = resp ? await resp.json().catch(() => ({})) : {};
       console.log('updateUserProfile response', resp && resp.status, data);
       if (!resp || !resp.ok) {
