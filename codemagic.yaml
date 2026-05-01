@@ -2,7 +2,7 @@ workflows:
   ios-build:
     name: Build iOS App
     environment:
-      node: "20"
+      node: "22"
       xcode: "16.2"
       cocoapods: default
     scripts:
@@ -56,7 +56,7 @@ workflows:
   android-build:
     name: Build Android App
     environment:
-      node: "20"
+      node: "22"
     scripts:
       - name: Install npm dependencies
         script: |
