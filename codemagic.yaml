@@ -57,8 +57,6 @@ workflows:
     name: Build Android App
     environment:
       node: "20"
-      android:
-        ndk: "r27c"
     scripts:
       - name: Install npm dependencies
         script: |
