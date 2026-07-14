@@ -3,15 +3,21 @@ import './setupGlobalUser';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import { HelmetProvider } from './utils/HelmetShim';
 import './index.css';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 import { initializeCapacitor, setupCapacitorErrorHandler } from './capacitor-init.js';
+import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { initializeAnalytics, reportWebVital } from './utils/analytics';
 
 console.log('[Mobile] index.js loaded');
+
+const Router = typeof window !== 'undefined' && (window.location.protocol === 'capacitor:' || window.location.protocol === 'file:')
+  ? HashRouter
+  : BrowserRouter;
 
 // Set up Capacitor error handlers immediately
 setupCapacitorErrorHandler();
@@ -121,15 +127,22 @@ async function initializeAndRender() {
     <React.StrictMode>
       <ErrorBoundary>
         <HelmetProvider>
-          <HashRouter>
+          <Router>
             <App />
-          </HashRouter>
+          </Router>
         </HelmetProvider>
         <Toaster position="top-right" reverseOrder={false} />
       </ErrorBoundary>
     </React.StrictMode>
   );
 }
+
+initializeAnalytics();
+getCLS(reportWebVital);
+getFID(reportWebVital);
+getFCP(reportWebVital);
+getLCP(reportWebVital);
+getTTFB(reportWebVital);
 
 // Start the initialization and rendering process
 initializeAndRender();

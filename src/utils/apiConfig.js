@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://propertyark.vercel.app';
+const DEFAULT_API_BASE_URL = 'https://propertyark.africa';
 
 const PSEUDO_NATIVE_HOST_MARKERS = [
   'appassets.',

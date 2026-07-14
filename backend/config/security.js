@@ -77,6 +77,8 @@ const securityConfig = {
         'http://localhost:3001',
         'https://propertyark.com',
         'https://www.propertyark.com',
+        'https://propertyark.africa',
+        'https://www.propertyark.africa',
         'https://propertyark.vercel.app',
         'https://real-estate-marketplace-37544.web.app',
         'https://real-estate-marketplace-37544.firebaseapp.com'

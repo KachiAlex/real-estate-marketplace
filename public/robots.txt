@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /messages
+Disallow: /saved-properties
+Disallow: /my-inquiries
+Disallow: /billing-payments
+Disallow: /api/
+
+Sitemap: https://propertyark.africa/sitemap.xml

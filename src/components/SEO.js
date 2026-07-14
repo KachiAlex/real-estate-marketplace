@@ -5,16 +5,16 @@ import { Helmet } from '../utils/HelmetShim';
  * Handles meta tags, Open Graph tags, and structured data for SEO
  */
 const SEO = ({
-  title = 'Real Estate Marketplace',
-  description = 'Find your dream property - Browse properties for sale, rent, and investment opportunities across Nigeria',
-  image = '/og-image.jpg',
-  url = 'https://real-estate-marketplace-37544.web.app',
+  title = 'PropertyArk | Nigeria Real Estate Marketplace',
+  description = 'Find verified properties for sale, rent, and investment opportunities across Nigeria with PropertyArk.',
+  image = '/logo.png',
+  url = 'https://propertyark.africa',
   type = 'website',
   keywords = 'real estate, property, buy property, rent property, investment, Nigeria',
   property = null,
   article = null
 }) => {
-  const fullTitle = title === 'Real Estate Marketplace' ? title : `${title} | Real Estate Marketplace`;
+  const fullTitle = title === 'PropertyArk | Nigeria Real Estate Marketplace' ? title : `${title} | PropertyArk`;
   const fullImage = image.startsWith('http') ? image : `${url}${image}`;
   const fullUrl = url;
 
@@ -57,7 +57,7 @@ const SEO = ({
   const organizationStructuredData = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
-    "name": "Real Estate Marketplace",
+    "name": "PropertyArk",
     "url": fullUrl,
     "logo": `${fullUrl}/logo.png`,
     "description": description,
@@ -83,7 +83,7 @@ const SEO = ({
     "dateModified": article.updatedAt,
     "author": {
       "@type": "Person",
-      "name": article.author || "Real Estate Marketplace"
+      "name": article.author || "PropertyArk"
     }
   } : null;
 
@@ -101,20 +101,20 @@ const SEO = ({
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImage} />
       <meta property="og:url" content={fullUrl} />
-      <meta property="og:site_name" content="Real Estate Marketplace" />
+      <meta property="og:site_name" content="PropertyArk" />
 
       {/* Twitter Card Tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImage} />
-      <meta name="twitter:site" content="@realestatemarketplace" />
+      <meta name="twitter:site" content="@PropertyArk" />
 
       {/* Additional Meta Tags */}
       <meta name="robots" content="index, follow" />
       <meta name="language" content="English" />
       <meta name="revisit-after" content="7 days" />
-      <meta name="author" content="Real Estate Marketplace" />
+      <meta name="author" content="PropertyArk" />
 
       {/* Structured Data */}
       {propertyStructuredData && (
