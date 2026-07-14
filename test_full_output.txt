@@ -1,0 +1,2032 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:1
++ npm run test:phase4 2>&1 | Out-File -FilePath test_full_output.txt -E ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 test:phase4
+> jest --config backend/tests/jest.phase4.config.js --runInBand
+
+  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\analytics.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (analytics.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+(node:6068) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 
+'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Dashboard metrics retrieved for admin primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+GET /api/admin/analytics/overview 200 2198.601 ms - 358 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:38:49.744Z] GET /overview - Status: 200 - Time: 2342.62ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Transaction analytics retrieved (month) for admin primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+GET /api/admin/analytics/transactions?period=month 200 44.060 ms - 357 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:38:52.480Z] GET /transactions - Status: 200 - Time: 43.85ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Analytics export (transactions, json) for admin primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+GET /api/admin/analytics/export?format=json&dataType=transactions 200 315.133 ms - 248 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:38:52.672Z] GET /export - Status: 200 - Time: 202.58ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Function.errorLogger [as getRevenueAnalytics] (../services/analyticsService.js:268:7)
+      at ../routes/analytics.js:220:23
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at errorLogger (../routes/analytics.js:232:5)
+
+GET /api/admin/analytics/revenue?period=month 500 165.360 ms - 63 - User: primaryadmin
+  console.log
+    Γ¥î [2026-03-19T14:38:53.676Z] GET /revenue - Status: 500 - Time: 161.36ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+FAIL backend/tests/analytics.test.js (304.384 s)
+  Phase4 - Analytics API
+    ΓêÜ GET /api/admin/analytics/overview requires admin and returns 200 (4839 
+ms)
+    ΓêÜ GET /api/admin/analytics/transactions requires admin and returns 200 
+(157 ms)
+    ΓêÜ GET /api/admin/analytics/export requires admin and returns 200 (636 ms)
+    ├ù GET /api/admin/analytics/revenue requires admin and returns 200 (670 ms)
+
+  ΓùÅ Phase4 - Analytics API ΓÇ║ GET /api/admin/analytics/revenue requires 
+admin and returns 200
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: 500
+    Received array: [200, 401, 403]
+
+    [0m [90m 31 |[39m       
+[33m.[39m[36mset[39m([32m'Accept'[39m[33m,[39m 
+[32m'application/json'[39m)
+     [90m 32 |[39m       
+[33m.[39m[36mset[39m([32m'x-mock-user-email'[39m[33m,[39m 
+[32m'admin@propertyark.com'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 33 |[39m     expect([[35m200[39m[33m,[39m 
+[35m401[39m[33m,[39m 
+[35m403[39m])[33m.[39mtoContain(res[33m.[39mstatusCode)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 34 |[39m   })[33m;[39m
+     [90m 35 |[39m })[33m;[39m
+     [90m 36 |[39m[0m
+
+      at Object.toContain (analytics.test.js:33:29)
+
+  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\chat.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (chat.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+(node:6068) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 
+'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+GET /api/chat/conversations 200 24.623 ms - 92 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:40:08.856Z] GET /conversations - Status: 200 - Time: 42.02ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Conversation created: conv_primaryadmin_vendor-user-123_1773931209365 with 2 participants
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Conversation created by primaryadmin: conv_primaryadmin_vendor-user-123_1773931209365
+
+      at log (../config/logger.js:133:13)
+
+POST /api/chat/conversations 201 2472.854 ms - 406 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:40:09.348Z] POST /conversations - Status: 201 - Time: 2094.04ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Function.errorLogger [as _encryptMessage] (../services/chatEnhancedService.js:718:7)
+      at Function._encryptMessage [as sendMessage] (../services/chatEnhancedService.js:101:37)
+      at sendMessage (../routes/chatEnhanced.js:159:38)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)
+      at protect (setupTest.js:40:14)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15
+      at param (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:365:14)
+      at param (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:376:14)
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:421:3)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at Function.handle (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:175:3)
+      at router (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:47:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../server.js:431:3)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/rbac.js:187:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/csrf.js:157:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at cookieParser (../../node_modules/cookie-parser/index.js:57:14)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/requestLogger.js:226:5)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/sanitize.js:24:5)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at urlencodedParser (../node_modules/.pnpm/body-parser@1.20.4/node_modules/body-parser/lib/types/urlencoded.js:82:7)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at ../node_modules/.pnpm/body-parser@1.20.4/node_modules/body-parser/lib/read.js:137:5
+      at invokeCallback (../node_modules/.pnpm/raw-body@2.5.3/node_modules/raw-body/index.js:238:16)
+      at done (../node_modules/.pnpm/raw-body@2.5.3/node_modules/raw-body/index.js:227:7)
+      at IncomingMessage.onEnd (../node_modules/.pnpm/raw-body@2.5.3/node_modules/raw-body/index.js:287:7)
+
+  console.log
+    Γä╣∩╕Å Message sent to conversation conv_primaryadmin_vendor-user-123_1773931209365 by user primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Message sent to conv_primaryadmin_vendor-user-123_1773931209365 by primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+POST /api/chat/conversations/conv_primaryadmin_vendor-user-123_1773931209365/messages 201 455.819 ms - 456 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:40:11.497Z] POST /conversations/conv_primaryadmin_vendor-user-123_1773931209365/messages - Status: 201 - Time: 455.73ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Function.errorLogger (../services/chatEnhancedService.js:193:7)
+      at getMessages (../routes/chatEnhanced.js:124:38)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)
+      at protect (setupTest.js:40:14)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15
+      at param (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:365:14)
+      at param (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:376:14)
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:421:3)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at Function.handle (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:175:3)
+      at router (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:47:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../server.js:431:3)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/rbac.js:187:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/csrf.js:157:12)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at cookieParser (../../node_modules/cookie-parser/index.js:57:14)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/requestLogger.js:226:5)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at next (../middleware/sanitize.js:24:5)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at urlencodedParser (../node_modules/.pnpm/body-parser@1.20.4/node_modules/body-parser/lib/types/urlencoded.js:91:7)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at jsonParser (../node_modules/.pnpm/body-parser@1.20.4/node_modules/body-parser/lib/types/json.js:113:7)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at logger (../node_modules/.pnpm/morgan@1.10.1/node_modules/morgan/index.js:144:5)
+      at Layer.handle [as handle_request] (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:328:13)
+      at ../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:286:9
+      at Function.process_params (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)
+      at next (../node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:537:6)
+      at xXssProtectionMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:315:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xPoweredByMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:308:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xPermittedCrossDomainPoliciesMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:301:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xFrameOptionsMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:285:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xDownloadOptionsMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:265:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xDnsPrefetchControlMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:258:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at xContentTypeOptionsMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:250:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at strictTransportSecurityMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:243:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at referrerPolicyMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:211:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+      at originAgentClusterMiddleware (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:186:3)
+      at internalNext (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:535:6)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at errorLogger (../routes/chatEnhanced.js:131:5)
+
+GET /api/chat/conversations/test-conversation-123/messages 500 196.609 ms - 87 - User: primaryadmin
+  console.log
+    Γ¥î [2026-03-19T14:40:11.980Z] GET /conversations/test-conversation-123/messages - Status: 500 - Time: 196.67ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+FAIL backend/tests/chat.test.js (77.478 s)
+  Phase4 - Chat API
+    ΓêÜ GET /api/chat/conversations returns 200 (243 ms)
+    ΓêÜ POST /api/chat/conversations/:conversationId/messages returns 201 
+(3021 ms)
+    ├ù GET /api/chat/conversations/:conversationId/messages returns 200 (244 
+ms)
+
+  ΓùÅ Phase4 - Chat API ΓÇ║ GET 
+/api/chat/conversations/:conversationId/messages returns 200
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: 500
+    Received array: [200, 404]
+
+    [0m [90m 37 |[39m       
+[33m.[39m[36mset[39m([32m'x-mock-user-email'[39m[33m,[39m 
+[32m'admin@propertyark.com'[39m)[33m;[39m
+     [90m 38 |[39m     [90m// Will return 200 or 404 if conversation not 
+found[39m
+    [31m[1m>[22m[39m[90m 39 |[39m     expect([[35m200[39m[33m,[39m 
+[35m404[39m])[33m.[39mtoContain(res[33m.[39mstatusCode)[33m;[39m
+     [90m    |[39m                        [31m[1m^[22m[39m
+     [90m 40 |[39m   })[33m;[39m
+     [90m 41 |[39m })[33m;[39m
+     [90m 42 |[39m[0m
+
+      at Object.toContain (chat.test.js:39:24)
+
+  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\notifications.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (notifications.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+(node:6068) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 
+'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to get user notifications: Error: 
+        at Query.run (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+        at D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\sequelize.js:650:28
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+        at Function.aggregate (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2067:19)
+        at Function.count (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2124:20)
+        at async Promise.all (index 0)
+        at Function.findAndCountAll (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2183:27)
+        at NotificationService.getUserNotifications (D:\real-estate-marketplace\backend\services\notificationService.js:154:31)
+        at D:\real-estate-marketplace\backend\routes\notifications.js:48:22 {
+      name: 'SequelizeDatabaseError',
+      parent: error: invalid input syntax for type uuid: "primaryadmin"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 111,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: '99',
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: undefined,
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin';`,
+        parameters: undefined
+      },
+      original: error: invalid input syntax for type uuid: "primaryadmin"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 111,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: '99',
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: undefined,
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin';`,
+        parameters: undefined
+      },
+      sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin';`,
+      parameters: {}
+    }
+
+    [0m [90m 174 |[39m       }[33m;[39m
+     [90m 175 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 176 |[39m       console[33m.[39merror([32m'Failed to get user notifications:'[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 177 |[39m       [36mreturn[39m { success[33m:[39m [36mfalse[39m[33m,[39m error[33m:[39m error[33m.[39mmessage }[33m;[39m
+     [90m 178 |[39m     }
+     [90m 179 |[39m   }[0m
+
+      at NotificationService.error [as getUserNotifications] (../services/notificationService.js:176:15)
+      at ../routes/notifications.js:48:22
+
+GET /api/notifications 500 13592.646 ms - 80 - User: primaryadmin
+  console.log
+    Γ¥î [2026-03-19T14:41:00.167Z] GET / - Status: 500 - Time: 13591.48ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.error
+    Create inspection notification error: Error: 
+        at Query.run (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+        at D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\sequelize.js:650:28
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at PostgresQueryInterface.insert (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\abstract\query-interface.js:795:21)
+        at model.save (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:4154:35)
+        at Function.create (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2305:12)
+        at NotificationService.createNotification (D:\real-estate-marketplace\backend\services\notificationService.js:43:21)
+        at D:\real-estate-marketplace\backend\routes\notifications.js:109:24 {
+      name: 'SequelizeDatabaseError',
+      parent: error: invalid input syntax for type uuid: "test-recipient-123"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 150,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: undefined,
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: "unnamed portal parameter $2 = '...'",
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: 'INSERT INTO "notifications" ("id","userId","type","title","message","data","isRead","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING "id","userId","type","title","message","data","isRead","readAt","createdAt","updatedAt";',
+        parameters: [
+          '00000000-0000-4000-8000-000000000000',
+          'test-recipient-123',
+          'inspection_requested',
+          'Inspection Requested',
+          'A new inspection has been requested',
+          '{}',
+          false,
+          '2026-03-19 14:41:10.719 +00:00',
+          '2026-03-19 14:41:10.725 +00:00'
+        ]
+      },
+      original: error: invalid input syntax for type uuid: "test-recipient-123"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 150,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: undefined,
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: "unnamed portal parameter $2 = '...'",
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: 'INSERT INTO "notifications" ("id","userId","type","title","message","data","isRead","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING "id","userId","type","title","message","data","isRead","readAt","createdAt","updatedAt";',
+        parameters: [
+          '00000000-0000-4000-8000-000000000000',
+          'test-recipient-123',
+          'inspection_requested',
+          'Inspection Requested',
+          'A new inspection has been requested',
+          '{}',
+          false,
+          '2026-03-19 14:41:10.719 +00:00',
+          '2026-03-19 14:41:10.725 +00:00'
+        ]
+      },
+      sql: 'INSERT INTO "notifications" ("id","userId","type","title","message","data","isRead","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING "id","userId","type","title","message","data","isRead","readAt","createdAt","updatedAt";',
+      parameters: [
+        '00000000-0000-4000-8000-000000000000',
+        'test-recipient-123',
+        'inspection_requested',
+        'Inspection Requested',
+        'A new inspection has been requested',
+        '{}',
+        false,
+        '2026-03-19 14:41:10.719 +00:00',
+        '2026-03-19 14:41:10.725 +00:00'
+      ]
+    }
+
+    [0m [90m 120 |[39m       })[33m;[39m
+     [90m 121 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 122 |[39m       console[33m.[39merror([32m'Create inspection notification error:'[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 123 |[39m       res[33m.[39mstatus([35m500[39m)[33m.[39mjson({
+     [90m 124 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m
+     [90m 125 |[39m         message[33m:[39m [32m'Failed to save inspection notifications'[39m[0m
+
+      at error (../routes/notifications.js:122:15)
+
+POST /api/notifications/inspection 500 4634.186 ms - 69 - User: primaryadmin
+  console.log
+    Γ¥î [2026-03-19T14:41:10.346Z] POST /inspection - Status: 500 - Time: 4449.81ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.error
+    Get unread count error: Error: 
+        at Query.run (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+        at D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\sequelize.js:650:28
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at PostgresQueryInterface.rawSelect (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+        at Function.aggregate (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2067:19)
+        at Function.count (D:\real-estate-marketplace\backend\node_modules\.pnpm\sequelize@6.37.8_pg-hstore@2.3.4_pg@8.20.0\node_modules\sequelize\src\model.js:2124:20)
+        at NotificationService.getUnreadCount (D:\real-estate-marketplace\backend\services\notificationService.js:59:12)
+        at D:\real-estate-marketplace\backend\routes\notifications.js:268:27 {
+      name: 'SequelizeDatabaseError',
+      parent: error: invalid input syntax for type uuid: "primaryadmin"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 111,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: '99',
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: undefined,
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin' AND "Notification"."isRead" = false;`,
+        parameters: undefined
+      },
+      original: error: invalid input syntax for type uuid: "primaryadmin"
+          at parseErrorMessage (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:394:9)
+          at Parser.handlePacket (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:212:19)
+          at Parser.parse (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\parser.ts:105:30)
+          at TLSSocket.<anonymous> (D:\real-estate-marketplace\backend\node_modules\.pnpm\pg-protocol@1.13.0\node_modules\pg-protocol\src\index.ts:7:48)
+          at TLSSocket.emit (node:events:524:28)
+          at addChunk (node:internal/streams/readable:561:12)
+          at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+          at TLSSocket.Readable.push (node:internal/streams/readable:392:5)
+          at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+        length: 111,
+        severity: 'ERROR',
+        code: '22P02',
+        detail: undefined,
+        hint: undefined,
+        position: '99',
+        internalPosition: undefined,
+        internalQuery: undefined,
+        where: undefined,
+        schema: undefined,
+        table: undefined,
+        column: undefined,
+        dataType: undefined,
+        constraint: undefined,
+        file: 'uuid.c',
+        line: '174',
+        routine: 'string_to_uuid',
+        sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin' AND "Notification"."isRead" = false;`,
+        parameters: undefined
+      },
+      sql: `SELECT count(*) AS "count" FROM "notifications" AS "Notification" WHERE "Notification"."userId" = 'primaryadmin' AND "Notification"."isRead" = false;`,
+      parameters: {}
+    }
+
+    [0m [90m 273 |[39m       })[33m;[39m
+     [90m 274 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 275 |[39m       console[33m.[39merror([32m'Get unread count error:'[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 276 |[39m       res[33m.[39mstatus([35m500[39m)[33m.[39mjson({
+     [90m 277 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m
+     [90m 278 |[39m         message[33m:[39m [32m'Failed to get unread count'[39m[0m
+
+      at error (../routes/notifications.js:275:15)
+
+GET /api/notifications/unread/count 500 263.866 ms - 56 - User: primaryadmin
+  console.log
+    Γ¥î [2026-03-19T14:41:14.819Z] GET /unread/count - Status: 500 - Time: 264.70ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+FAIL backend/tests/notifications.test.js (62.71 s)
+  Phase4 - Notifications API
+    ├ù GET /api/notifications returns 200 (10018 ms)
+    ΓêÜ POST /api/notifications/inspection returns 201 or 200 (4656 ms)
+    ΓêÜ GET /api/notifications/unread/count returns 200 (281 ms)
+
+  ΓùÅ Phase4 - Notifications API ΓÇ║ GET /api/notifications returns 200
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a 
+long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 2 |[39m
+     [90m 3 |[39m describe([32m'Phase4 - Notifications API'[39m[33m,[39m 
+() [33m=>[39m {
+    [31m[1m>[22m[39m[90m 4 |[39m   test([32m'GET /api/notifications 
+returns 200'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m   |[39m   [31m[1m^[22m[39m
+     [90m 5 |[39m     [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)
+     [90m 6 |[39m       
+[33m.[39m[36mget[39m([32m'/api/notifications'[39m)
+     [90m 7 |[39m       
+[33m.[39m[36mset[39m([32m'Accept'[39m[33m,[39m 
+[32m'application/json'[39m)[0m
+
+      at test (notifications.test.js:4:3)
+      at Object.describe (notifications.test.js:3:1)
+
+  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\search.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (search.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+(node:6068) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 
+'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search performed: query="apartment", filters={"type":null,"minPrice":null,"maxPrice":null,"minBedrooms":null,"maxBedrooms":null,"minBathrooms":null,"maxBathrooms":null,"location":null,"amenities":[],"minSquareFeet":null,"maxSquareFeet":null}, page=1
+
+      at log (../config/logger.js:133:13)
+
+GET /api/search?q=apartment 200 614.237 ms - 1016 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:46:12.925Z] GET / - Status: 200 - Time: 615.30ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Advanced search: {"q":"house","type":null,"minPrice":100000,"maxPrice":null,"minBedrooms":null,"maxBedrooms":null,"minBathrooms":null,"maxBathrooms":null,"location":null,"amenities":[],"minSquareFeet":null,"maxSquareFeet":null,"sort":"relevance","page":1,"limit":20}
+
+      at log (../config/logger.js:133:13)
+
+GET /api/search/advanced?q=house&minPrice=100000 200 155.889 ms - 996 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:46:18.910Z] GET /advanced - Status: 200 - Time: 159.98ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+GET /api/search/autocomplete?q=ap 200 8.287 ms - 94 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:46:19.202Z] GET /autocomplete - Status: 200 - Time: 8.99ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+PASS backend/tests/search.test.js (303.341 s)
+  Phase4 - Search API
+    ΓêÜ GET /api/search with query returns 200 or 500 (9822 ms)
+    ΓêÜ GET /api/search/advanced with query returns 200 or 500 (212 ms)
+    ΓêÜ GET /api/search/autocomplete returns 200 or 500 (122 ms)
+
+  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\reviews.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+(node:6068) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 
+'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+GET /api/reviews/trending?limit=10 200 22.727 ms - 48 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:49:10.423Z] GET /trending - Status: 200 - Time: 15.43ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+GET /api/reviews/properties/test-property-123/reviews 200 17.087 ms - 70 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:49:10.478Z] GET /properties/test-property-123/reviews - Status: 200 - Time: 17.64ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Review created: rev_test-property-123_primaryadmin_1773931750784 by user primaryadmin for property test-property-123
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Review created for property test-property-123 by user primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+POST /api/reviews/properties/test-property-123/reviews 201 260.861 ms - 483 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T14:49:10.781Z] POST /properties/test-property-123/reviews - Status: 201 - Time: 43.44ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+GET /api/reviews/properties/test-property-123/rating 200 2.270 ms - 241 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T14:49:10.844Z] GET /properties/test-property-123/rating - Status: 200 - Time: 4.27ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+PASS backend/tests/reviews.test.js (171.289 s)
+  Phase4 - Reviews API
+    ΓêÜ GET /api/reviews/trending returns 200 or 500 (90 ms)
+    ΓêÜ GET /api/reviews/properties/:propertyId/reviews returns 200 or 500 (47 
+ms)
+    ΓêÜ POST /api/reviews/properties/:propertyId/reviews returns 201 or 200 
+(305 ms)
+    ΓêÜ GET /api/reviews/properties/:propertyId/rating returns 200 or 500 (29 
+ms)
+
+Test Suites: 3 failed, 2 passed, 5 total
+Tests:       3 failed, 14 passed, 17 total
+Snapshots:   0 total
+Time:        930.391 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect 
+async operations that kept running after all tests finished?

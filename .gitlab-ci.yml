@@ -1,0 +1,166 @@
+# GitLab CI/CD for PropertyArk
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+  CACHE_KEY: "$CI_COMMIT_REF_SLUG"
+
+cache:
+  key: $CACHE_KEY
+  paths:
+    - frontend/node_modules/
+    - backend/node_modules/
+    - mobile/node_modules/
+
+# Frontend Tests
+test:frontend:
+  stage: test
+  image: node:18
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run test
+  artifacts:
+    reports:
+      junit: frontend/test-results/junit.xml
+  only:
+    - main
+    - merge_requests
+
+# Backend Tests
+test:backend:
+  stage: test
+  image: node:18
+  services:
+    - postgres:15
+  variables:
+    POSTGRES_DB: propertyark_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    DATABASE_URL: postgresql://postgres:postgres@postgres:5432/propertyark_test
+  before_script:
+    - cd backend
+    - npm ci
+  script:
+    - npm run test
+  artifacts:
+    reports:
+      junit: backend/test-results/junit.xml
+  only:
+    - main
+    - merge_requests
+
+# Build Frontend
+build:frontend:
+  stage: build
+  image: node:18
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/.next/
+    expire_in: 1 hour
+  only:
+    - main
+
+# Build Backend
+build:backend:
+  stage: build
+  image: node:18
+  before_script:
+    - cd backend
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - backend/dist/
+    expire_in: 1 hour
+  only:
+    - main
+
+# Build Mobile App
+build:mobile:
+  stage: build
+  image: node:18
+  before_script:
+    - cd mobile
+    - npm ci
+    - npx expo prebuild --platform android --clean --non-interactive
+  script:
+    - cd android
+    - ./gradlew assembleRelease
+  artifacts:
+    paths:
+      - mobile/android/app/build/outputs/apk/release/app-release.apk
+    expire_in: 1 hour
+  only:
+    - main
+
+# Deploy to Production
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H your-server.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # Deploy Frontend
+    - rsync -avz --delete frontend/.next/ user@your-server.com:/var/www/propertyark/frontend/
+    
+    # Deploy Backend
+    - rsync -avz --delete backend/dist/ user@your-server.com:/var/www/propertyark/backend/
+    
+    # Deploy Mobile APK
+    - rsync -avz mobile-app/android/app/build/outputs/apk/release/app-release.apk user@your-server.com:/var/www/propertyark/mobile/
+    
+    # Restart services
+    - ssh user@your-server.com "cd /var/www/propertyark && docker-compose down && docker-compose up -d"
+  environment:
+    name: production
+    url: https://propertyark.com
+  only:
+    - main
+  when: manual
+
+# Deploy to Staging
+deploy:staging:
+  stage: deploy
+  image: node:18
+  before_script:
+    - npm install -g vercel
+  script:
+    - cd frontend
+    - vercel --prod --token $VERCEL_TOKEN
+  environment:
+    name: staging
+    url: https://propertyark-staging.vercel.app
+  only:
+    - main
+    - merge_requests
+
+# Deploy Mobile APK to GitLab Pages
+deploy:mobile-pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public/mobile
+    - cp mobile/android/app/build/outputs/apk/release/app-release.apk public/mobile/PropertyArk.apk
+    - echo '<!DOCTYPE html><html><head><title>PropertyArk Mobile App</title></head><body><h1>PropertyArk Mobile App</h1><p><a href="/mobile/PropertyArk.apk">Download APK</a></p></body></html>' > public/index.html
+  artifacts:
+    paths:
+      - public/
+  only:
+    - main

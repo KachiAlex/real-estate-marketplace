@@ -1,0 +1,200 @@
+﻿npx : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:48
++ ... host:3000'; npx cypress run --headless *> cypress-full-16specs.log; e ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+
+DevTools listening on 
+ws://127.0.0.1:55550/devtools/browser/69630dcf-d2f0-40e0-9af3-1e0c4380ff0e
+Couldn't find tsconfig.json. tsconfig-paths will be skipped
+
+====================================================================================================
+
+  (Run Starting)
+
+  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+  Γöé Cypress:        13.17.0                                                                        Γöé
+  Γöé Browser:        Electron 118 (headless)                                                        Γöé
+  Γöé Node Version:   v20.20.0 (D:\Program Files\nodejs\node.exe)                                    Γöé
+  Γöé Specs:          16 found (authentication.cy.js, buyer-journey.cy.js, debug-overlay.cy.js, escr Γöé
+  Γöé                 ow-payments.cy.js, homepage.cy.js, navigation.cy.js, onboard-vendor.cy.js, pro Γöé
+  Γöé                 perty-details.cy.js, property-direct.cy.js, property-interactions.cy.js, prope Γöé
+  Γöé                 rty-listing.cy.js, supp...)                                                    Γöé
+  Γöé Searched:       cypress/e2e/**/*.cy.{js,jsx,ts,tsx}                                            Γöé
+  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+                                                                                                    
+  Running:  authentication.cy.js                                                           (1 of 16)
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: 
+https://github.com/browserslist/update-db#readme
+
+
+  Authentication E2E Tests
+    ΓêÜ should navigate to register page (11610ms)
+    ΓêÜ should display registration form (4159ms)
+
+
+  2 passing (16s)
+
+
+  (Results)
+
+  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+  Γöé Tests:        2                                                                                Γöé
+  Γöé Passing:      2                                                                                Γöé
+  Γöé Failing:      0                                                                                Γöé
+  Γöé Pending:      0                                                                                Γöé
+  Γöé Skipped:      0                                                                                Γöé
+  Γöé Screenshots:  0                                                                                Γöé
+  Γöé Video:        true                                                                             Γöé
+  Γöé Duration:     16 seconds                                                                       Γöé
+  Γöé Spec Ran:     authentication.cy.js                                                             Γöé
+  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+
+  (Video)
+
+  -  Video output: D:\real-estate-marketplace\cypress\videos\authentication.cy.js.mp4
+
+
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+                                                                                                    
+  Running:  buyer-journey.cy.js                                                            (2 of 16)
+
+
+  Buyer Journey
+    1) should complete user registration flow
+    2) should search and filter properties
+    3) should save property as favorite
+    4) should submit property inquiry
+    5) should complete mortgage application
+
+
+  0 passing (1m)
+  5 failing
+
+  1) Buyer Journey
+       should complete user registration flow:
+     AssertionError: Timed out retrying after 10000ms: Expected to find content: 'Sign Up' but never did.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/buyer-journey.cy.js:18:7)
+
+  2) Buyer Journey
+       should search and filter properties:
+     AssertionError: Timed out retrying after 10000ms: Expected to find element: `input[name="email"]`, but never found it.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/buyer-journey.cy.js:37:7)
+
+  3) Buyer Journey
+       should save property as favorite:
+     AssertionError: Timed out retrying after 10000ms: Expected to find element: `input[name="email"]`, but never found it.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/buyer-journey.cy.js:57:7)
+
+  4) Buyer Journey
+       should submit property inquiry:
+     AssertionError: Timed out retrying after 10000ms: Expected to find element: `input[name="email"]`, but never found it.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/buyer-journey.cy.js:74:7)
+
+  5) Buyer Journey
+       should complete mortgage application:
+     AssertionError: Timed out retrying after 10000ms: Expected to find element: `input[name="email"]`, but never found it.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/buyer-journey.cy.js:93:7)
+
+
+
+
+  (Results)
+
+  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+  Γöé Tests:        5                                                                                Γöé
+  Γöé Passing:      0                                                                                Γöé
+  Γöé Failing:      5                                                                                Γöé
+  Γöé Pending:      0                                                                                Γöé
+  Γöé Skipped:      0                                                                                Γöé
+  Γöé Screenshots:  5                                                                                Γöé
+  Γöé Video:        true                                                                             Γöé
+  Γöé Duration:     1 minute, 7 seconds                                                              Γöé
+  Γöé Spec Ran:     buyer-journey.cy.js                                                              Γöé
+  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+
+  (Screenshots)
+
+  -  D:\real-estate-marketplace\cypress\screenshots\buyer-journey.cy.js\Buyer Journey     (1280x720)
+      -- should complete user registration flow (failed).png                                        
+  -  D:\real-estate-marketplace\cypress\screenshots\buyer-journey.cy.js\Buyer Journey     (1280x720)
+      -- should search and filter properties (failed).png                                           
+  -  D:\real-estate-marketplace\cypress\screenshots\buyer-journey.cy.js\Buyer Journey     (1280x720)
+      -- should save property as favorite (failed).png                                              
+  -  D:\real-estate-marketplace\cypress\screenshots\buyer-journey.cy.js\Buyer Journey     (1280x720)
+      -- should submit property inquiry (failed).png                                                
+  -  D:\real-estate-marketplace\cypress\screenshots\buyer-journey.cy.js\Buyer Journey     (1280x720)
+      -- should complete mortgage application (failed).png                                          
+
+
+  (Video)
+
+  -  Video output: D:\real-estate-marketplace\cypress\videos\buyer-journey.cy.js.mp4
+
+
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+                                                                                                    
+  Running:  debug-overlay.cy.js                                                            (3 of 16)
+
+
+  Dev server overlay debug
+    1) captures webpack-dev-server overlay text if present and logs console errors
+
+
+  0 passing (16s)
+  1 failing
+
+  1) Dev server overlay debug
+       captures webpack-dev-server overlay text if present and logs console errors:
+     AssertionError: Timed out retrying after 5000ms: Expected to find element: `iframe#webpack-dev-server-client-overlay`, but never found it.
+      at Context.eval (webpack://real-estate-marketplace/./cypress/e2e/debug-overlay.cy.js:23:7)
+
+
+
+
+  (Results)
+
+  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+  Γöé Tests:        1                                                                                Γöé
+  Γöé Passing:      0                                                                                Γöé
+  Γöé Failing:      1                                                                                Γöé
+  Γöé Pending:      0                                                                                Γöé
+  Γöé Skipped:      0                                                                                Γöé
+  Γöé Screenshots:  1                                                                                Γöé
+  Γöé Video:        true                                                                             Γöé
+  Γöé Duration:     16 seconds                                                                       Γöé
+  Γöé Spec Ran:     debug-overlay.cy.js                                                              Γöé
+  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+
+  (Screenshots)
+
+  -  D:\real-estate-marketplace\cypress\screenshots\debug-overlay.cy.js\Dev server ov     (1280x720)
+     erlay debug -- captures webpack-dev-server overlay text if present and logs cons               
+     ole errors (failed).png                                                                        
+
+
+  (Video)
+
+  -  Video output: D:\real-estate-marketplace\cypress\videos\debug-overlay.cy.js.mp4
+
+
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+                                                                                                    
+  Running:  escrow-payments.cy.js                                                          (4 of 16)

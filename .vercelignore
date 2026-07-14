@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+api/backend/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+yarn.lock
+
+# Testing
+coverage
+.nyc_output
+
+# Build
+build/
+dist/
+
+# Environment
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Backend server.js not needed for serverless deployment
+# backend/
+server.js
+
+# Mobile app (exclude from web deployment)
+mobile/
+expo/
+.eas/

@@ -1,0 +1,118 @@
+/**
+ * React Native WebView Android Build Configuration
+ * 
+ * This is a specialized build configuration for the React Native WebView wrapper
+ * that loads the PropertyArk web app from a live server.
+ */
+
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace "com.propertyark.mobile"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.propertyark.mobile"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+
+        release {
+            def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            def keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+            def keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+
+            if (keystorePath && keystorePassword && keyAlias && keyPassword) {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            debuggable true
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            signingConfig signingConfigs.release
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    buildFeatures {
+        compose false
+        viewBinding true
+    }
+
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+    // AndroidX
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.core:core-splashscreen:1.0.1'
+
+    // Kotlin
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
+
+    // Material Design
+    implementation 'com.google.android.material:material:1.9.0'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+task verifyBuildConfig {
+    doLast {
+        println "React Native WebView Build Configuration:"
+        println "  Application ID: ${android.defaultConfig.applicationId}"
+        println "  Version Code: ${android.defaultConfig.versionCode}"
+        println "  Version Name: ${android.defaultConfig.versionName}"
+        println "  Min SDK: ${android.defaultConfig.minSdk}"
+        println "  Target SDK: ${android.defaultConfig.targetSdk}"
+        println "  Compile SDK: ${android.compileSdk}"
+    }
+}
+
+preBuild.dependsOn verifyBuildConfig

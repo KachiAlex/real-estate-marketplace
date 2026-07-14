@@ -1,0 +1,464 @@
+﻿node : FAIL src/components/layout/__tests__/Header.test.js (47.213 s)
+At line:1 char:1
++ node .\node_modules\react-scripts\bin\react-scripts.js test --watchAl ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL src/compon...t.js (47.213 s) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Header
+    ΓêÜ should render header component (326 ms)
+    ├ù should display user menu when user is logged in (61 ms)
+    ├ù should toggle user menu on click (23 ms)
+    ΓêÜ should show minimal header on dashboard routes (33 ms)
+    ΓêÜ should show full header on non-dashboard routes (29 ms)
+    ├ù should handle logout (19 ms)
+
+  ΓùÅ Header ΓÇ║ should display user menu when user is logged in
+
+    TestingLibraryElementError: Unable to find a label with the text of: User 
+menu
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white shadow fixed top-0 inset-x-0 
+z-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex 
+justify-between items-center h-16 py-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"flex items-center"[39m
+                [33mhref[39m=[32m"/"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"PropertyArk Logo"[39m
+                  [33mclass[39m=[32m"w-auto h-14 sm:h-16 md:h-20"[39m
+                  [33msrc[39m=[32m"/logo.png?v=4.0"[39m
+                  [33mstyle[39m=[32m"background-color: transparent;"[39m
+                [36m/>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<nav[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Sale"[39m
+              [36m>[39m
+                [0mFor Sale[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Rent"[39m
+              [36m>[39m
+                [0mFor Rent[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=Shortlet"[39m
+              [36m>[39m
+                [0mShortlet[0m
+              [36m</a>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"relative"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange flex items-center gap-1"[39m
+                [36m>[39m
+                  [0mProfessional Services[0m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"w-4 h-4 transition-transform "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19 14l-7 7m0 0l-7-7m7 7V3"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</nav>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"text-sm text-gray-700 
+hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/auth/login"[39m
+              [36m>[39m
+                [0mSign in[0m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Toggle menu"[39m
+              [33mclass[39m=[32m"lg:hidden p-2 rounded-lg text-gray-700 
+hover:text-brand-orange hover:bg-gray-100"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-width[39m=[32m"0"[39m
+                [33mviewBox[39m=[32m"0 0 448 512"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 132h416c8.837 0 16-7.163 
+16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 
+16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 
+0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 
+16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 
+16 16 16z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 73 |[39m   it([32m'should display user menu when user is 
+logged in'[39m[33m,[39m () [33m=>[39m {
+     [90m 74 |[39m     renderHeader([32m'/dashboard'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 75 |[39m     [36mconst[39m userMenuButton 
+[33m=[39m screen[33m.[39mgetByLabelText([32m'User menu'[39m)[33m;[39m
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 76 |[39m     
+expect(userMenuButton)[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m 77 |[39m   })[33m;[39m
+     [90m 78 |[39m[0m
+
+      at Object.getElementError 
+(node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText 
+(node_modules/@testing-library/dom/dist/queries/label-text.js:103:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText 
+(node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> 
+(src/components/layout/__tests__/Header.test.js:75:35)
+      at TestScheduler.scheduleTests (node_modules/react-scripts/node_modules/@
+jest/core/build/TestScheduler.js:333:13)
+      at runJest 
+(node_modules/react-scripts/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ΓùÅ Header ΓÇ║ should toggle user menu on click
+
+    TestingLibraryElementError: Unable to find a label with the text of: User 
+menu
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white shadow fixed top-0 inset-x-0 
+z-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex 
+justify-between items-center h-16 py-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"flex items-center"[39m
+                [33mhref[39m=[32m"/"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"PropertyArk Logo"[39m
+                  [33mclass[39m=[32m"w-auto h-14 sm:h-16 md:h-20"[39m
+                  [33msrc[39m=[32m"/logo.png?v=4.0"[39m
+                  [33mstyle[39m=[32m"background-color: transparent;"[39m
+                [36m/>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<nav[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Sale"[39m
+              [36m>[39m
+                [0mFor Sale[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Rent"[39m
+              [36m>[39m
+                [0mFor Rent[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=Shortlet"[39m
+              [36m>[39m
+                [0mShortlet[0m
+              [36m</a>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"relative"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange flex items-center gap-1"[39m
+                [36m>[39m
+                  [0mProfessional Services[0m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"w-4 h-4 transition-transform "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19 14l-7 7m0 0l-7-7m7 7V3"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</nav>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"text-sm text-gray-700 
+hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/auth/login"[39m
+              [36m>[39m
+                [0mSign in[0m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Toggle menu"[39m
+              [33mclass[39m=[32m"lg:hidden p-2 rounded-lg text-gray-700 
+hover:text-brand-orange hover:bg-gray-100"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-width[39m=[32m"0"[39m
+                [33mviewBox[39m=[32m"0 0 448 512"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 132h416c8.837 0 16-7.163 
+16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 
+16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 
+0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 
+16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 
+16 16 16z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 79 |[39m   it([32m'should toggle user menu on 
+click'[39m[33m,[39m () [33m=>[39m {
+     [90m 80 |[39m     renderHeader([32m'/dashboard'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 81 |[39m     [36mconst[39m userMenuButton 
+[33m=[39m screen[33m.[39mgetByLabelText([32m'User menu'[39m)[33m;[39m
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 82 |[39m     
+     [90m 83 |[39m     fireEvent[33m.[39mclick(userMenuButton)[33m;[39m
+     [90m 84 |[39m     [90m// Menu should be visible after click[39m[0m
+
+      at Object.getElementError 
+(node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText 
+(node_modules/@testing-library/dom/dist/queries/label-text.js:103:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText 
+(node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> 
+(src/components/layout/__tests__/Header.test.js:81:35)
+      at TestScheduler.scheduleTests (node_modules/react-scripts/node_modules/@
+jest/core/build/TestScheduler.js:333:13)
+      at runJest 
+(node_modules/react-scripts/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ΓùÅ Header ΓÇ║ should handle logout
+
+    TestingLibraryElementError: Unable to find a label with the text of: User 
+menu
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white shadow fixed top-0 inset-x-0 
+z-50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex 
+justify-between items-center h-16 py-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"flex items-center"[39m
+                [33mhref[39m=[32m"/"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"PropertyArk Logo"[39m
+                  [33mclass[39m=[32m"w-auto h-14 sm:h-16 md:h-20"[39m
+                  [33msrc[39m=[32m"/logo.png?v=4.0"[39m
+                  [33mstyle[39m=[32m"background-color: transparent;"[39m
+                [36m/>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<nav[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Sale"[39m
+              [36m>[39m
+                [0mFor Sale[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=For%20Rent"[39m
+              [36m>[39m
+                [0mFor Rent[0m
+              [36m</a>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/properties?status=Shortlet"[39m
+              [36m>[39m
+                [0mShortlet[0m
+              [36m</a>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"relative"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"px-3 py-2 text-sm font-medium 
+text-brand-blue hover:text-brand-orange flex items-center gap-1"[39m
+                [36m>[39m
+                  [0mProfessional Services[0m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"w-4 h-4 transition-transform "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19 14l-7 7m0 0l-7-7m7 7V3"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</nav>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden lg:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"text-sm text-gray-700 
+hover:text-brand-orange"[39m
+                [33mhref[39m=[32m"/auth/login"[39m
+              [36m>[39m
+                [0mSign in[0m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Toggle menu"[39m
+              [33mclass[39m=[32m"lg:hidden p-2 rounded-lg text-gray-700 
+hover:text-brand-orange hover:bg-gray-100"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-width[39m=[32m"0"[39m
+                [33mviewBox[39m=[32m"0 0 448 512"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 132h416c8.837 0 16-7.163 
+16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 
+16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 
+0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 
+16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 
+16 16 16z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 114 |[39m
+     [90m 115 |[39m     renderHeader([32m'/dashboard'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 116 |[39m     [36mconst[39m userMenuButton 
+[33m=[39m screen[33m.[39mgetByLabelText([32m'User menu'[39m)[33m;[39m
+     [90m     |[39m                                   [31m[1m^[22m[39m
+     [90m 117 |[39m     fireEvent[33m.[39mclick(userMenuButton)[33m;[39m
+     [90m 118 |[39m
+     [90m 119 |[39m     [90m// Wait for menu to appear and find logout 
+button[39m[0m
+
+      at Object.getElementError 
+(node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText 
+(node_modules/@testing-library/dom/dist/queries/label-text.js:103:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText 
+(node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> 
+(src/components/layout/__tests__/Header.test.js:116:35)
+      at TestScheduler.scheduleTests (node_modules/react-scripts/node_modules/@
+jest/core/build/TestScheduler.js:333:13)
+      at runJest 
+(node_modules/react-scripts/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI 
+(node_modules/react-scripts/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 passed, 6 total
+Snapshots:   0 total
+Time:        82.345 s
+Ran all test suites matching 
+/src\\components\\layout\\__tests__\\Header.test.js/i.

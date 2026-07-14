@@ -1,0 +1,172 @@
+﻿import React from 'react';
+import { Link } from 'react-router-dom';
+import { useSidebar } from '../../contexts/SidebarContext';
+import { 
+  FaBuilding, 
+  FaFileContract, 
+  FaFileAlt, 
+  FaUsers, 
+  FaChartBar,
+  FaBlog,
+  FaCheckCircle,
+  FaSignOutAlt,
+  FaTimes
+} from 'react-icons/fa';
+
+export const ADMIN_MENU_ITEMS = [
+    { 
+      id: 'properties', 
+      label: 'Properties', 
+      icon: FaBuilding,
+      description: 'Manage property listings and verifications'
+    },
+    { 
+      id: 'verification', 
+      label: 'Verification', 
+      icon: FaCheckCircle,
+      description: 'Handle badge applications and pricing'
+    },
+    { 
+      id: 'escrow', 
+      label: 'Escrow', 
+      icon: FaFileContract,
+      description: 'Monitor escrow transactions'
+    },
+    { 
+      id: 'disputes', 
+      label: 'Disputes', 
+      icon: FaFileAlt,
+      description: 'Handle dispute resolutions'
+    },
+    { 
+      id: 'users', 
+      label: 'Users', 
+      icon: FaUsers,
+      description: 'Manage user accounts'
+    },
+    { 
+      id: 'blog', 
+      label: 'Blog', 
+      icon: FaBlog,
+      description: 'Manage blog posts and content'
+    },
+    // { 
+    //   id: 'mortgage-banks', 
+    //   label: 'Mortgage Banks', 
+    //   icon: FaUniversity,
+    //   description: 'Verify and manage mortgage banks'
+    // }
+  ];
+
+const AdminSidebar = ({ activeTab, setActiveTab, chatNotifications = { unread: 0, urgent: 0 }, onLogout }) => {
+  const { isMobileSidebarOpen, closeMobileSidebar } = useSidebar();
+
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    closeMobileSidebar();
+  };
+
+  return (
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[60] lg:hidden transition-opacity"
+          onClick={closeMobileSidebar}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`
+        w-64 bg-white shadow-lg h-screen fixed left-0 top-0 z-[70] flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+      {/* Admin Header */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            onClick={closeMobileSidebar}
+          >
+            <div>
+              <img
+                src="/logo.png"
+                alt="PropertyArk Logo"
+                className="w-auto h-16 object-contain"
+              />
+            </div>
+          </Link>
+          {/* Close button for mobile */}
+          <button
+            onClick={closeMobileSidebar}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold ml-1">ADMIN PANEL</p>
+      </div>
+
+      {/* Navigation Menu */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <nav className="space-y-1">
+          {ADMIN_MENU_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleTabClick(item.id)}
+                className={`w-full flex items-start space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                  isActive
+                    ? 'bg-brand-blue text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                title={item.description}
+              >
+                <div className="relative mt-0.5">
+                  <Icon className="text-lg flex-shrink-0" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="block truncate">{item.label}</span>
+                  <span className={`block text-xs leading-snug break-words ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                    {item.description}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Admin Info */}
+      <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+        <div className="text-center mb-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">
+            System Status
+          </p>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-600">Online</span>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+        >
+          <FaSignOutAlt />
+          Logout
+        </button>
+      </div>
+    </div>
+    </>
+  );
+};
+
+export default AdminSidebar;
+
+

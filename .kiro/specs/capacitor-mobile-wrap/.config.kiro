@@ -1,0 +1,14 @@
+{
+  "specType": "feature",
+  "workflowType": "requirements-first",
+  "featureName": "capacitor-mobile-wrap",
+  "displayName": "Capacitor Mobile App Wrap",
+  "description": "Wrap PropertyArk web app with Capacitor for iOS and Android, ensuring stable startup and proper mobile functionality",
+  "createdAt": "2026-05-08",
+  "status": "active",
+  "phases": 11,
+  "totalTasks": 44,
+  "completedTasks": 0,
+  "priority": "high",
+  "tags": ["mobile", "capacitor", "ios", "android", "web-wrap"]
+}

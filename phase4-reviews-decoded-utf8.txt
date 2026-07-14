@@ -1,0 +1,302 @@
+﻿  console.log
+    Using DATABASE_URL for Sequelize: postgresql://finberlinkdb_user:*****@dpg-d6inmc7gi27c738modv0-a.virginia-postgres.render.com:5432/finberlinkdb?sslmode=require
+
+      at Object.<anonymous> (../config/sequelizeDb.js:42:9)
+
+  console.log
+    Sequelize DB SSL config -> require: true rejectUnauthorized: false
+
+      at Object.<anonymous> (../config/sequelizeDb.js:51:9)
+
+  console.warn
+    X-XSS-Protection does not take options. Remove the property to silence this warning.
+
+    [0m [90m 4 |[39m [36mconst[39m securityConfig [33m=[39m {
+     [90m 5 |[39m   [90m// Helmet configuration for security headers[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   helmet[33m:[39m helmet({
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m     [90m// Phase 3.1: Comprehensive Content Security Policy (CSP)[39m
+     [90m 8 |[39m     contentSecurityPolicy[33m:[39m {
+     [90m 9 |[39m       directives[33m:[39m {[0m
+
+      at getMiddlewareFunctionsFromOptions (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:509:12)
+      at helmet (../node_modules/.pnpm/helmet@7.2.0/node_modules/helmet/index.cjs:524:31)
+      at Object.helmet (../config/security.js:6:11)
+      at Object.require (../server.js:24:28)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    ≡ƒÜÇ Starting server...
+
+      at Object.log (../server.js:151:9)
+
+  console.log
+    ≡ƒôî Port: 5001
+
+      at Object.log (../server.js:152:9)
+
+  console.log
+    ≡ƒîì Environment: test
+
+      at Object.log (../server.js:153:9)
+
+  console.warn
+    ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)
+
+    [0m [90m 171 |[39m } [36melse[39m {
+     [90m 172 |[39m   [36mif[39m (process[33m.[39menv[33m.[39m[33mALLOW_MOCK_AUTH[39m [33m!==[39m [32m'false'[39m) {
+    [31m[1m>[22m[39m[90m 173 |[39m     console[33m.[39mwarn([32m'ΓÜá∩╕Å  Mock authentication is ENABLED in development (OK for dev/testing only)'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 174 |[39m   }
+     [90m 175 |[39m }
+     [90m 176 |[39m[0m
+
+      at Object.warn (../server.js:173:13)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    ≡ƒô¬ Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.
+
+      at EmailService.log [as initializeTransporter] (../services/emailService.js:14:17)
+
+  console.log
+    ≡ƒöÑ PaystackService: Constructor called
+
+      at new log (../services/paystackService.js:9:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Secret key loaded: true
+
+      at new log (../services/paystackService.js:10:13)
+
+  console.log
+    ≡ƒöÑ PaystackService: Public key loaded: true
+
+      at new log (../services/paystackService.js:11:13)
+
+  console.log
+    Γä╣∩╕Å Alerts and preferences routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Analytics routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Search routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Chat enhanced routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Reviews routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.error
+    Failed to load buyer routes: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 624 |[39m   app[33m.[39muse([32m'/api/buyer'[39m[33m,[39m require([32m'./routes/buyer'[39m))[33m;[39m
+     [90m 625 |[39m } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 626 |[39m   console[33m.[39merror([32m'Failed to load buyer routes:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m           [31m[1m^[22m[39m
+     [90m 627 |[39m }
+     [90m 628 |[39m
+     [90m 629 |[39m [90m// Chats routes for buyer-vendor messaging[39m[0m
+
+      at Object.error (../server.js:626:11)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:636:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: undefined
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:645:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Γ¥î Error: Route.post() requires a callback function but got a [object Undefined]
+
+    [0m [90m 104 |[39m     console[33m.[39merror([33mJSON[39m[33m.[39mstringify(logEntry))[33m;[39m
+     [90m 105 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+     [90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m 109 |[39m     }[0m
+
+      at error (../config/logger.js:106:13)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.error
+    Error: Route.post() requires a callback function but got a [object Undefined]
+        at Route.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\route.js:216:15)
+        at Function.proto.<computed> [as post] (D:\real-estate-marketplace\backend\node_modules\.pnpm\express@4.22.1\node_modules\express\lib\router\index.js:521:19)
+        at Object.post (D:\real-estate-marketplace\backend\routes\support.js:47:8)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at Object.require (D:\real-estate-marketplace\backend\server.js:649:25)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at Runtime.requireModuleOrMock (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1048:21)
+        at require (D:\real-estate-marketplace\backend\tests\testHelper.js:9:19)
+        at Object.getApp [as app] (D:\real-estate-marketplace\backend\tests\testHelper.js:17:12)
+        at Object.app (D:\real-estate-marketplace\backend\tests\reviews.test.js:1:18)
+        at Runtime._execModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1439:24)
+        at Runtime._loadModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:1022:12)
+        at Runtime.requireModule (D:\real-estate-marketplace\node_modules\jest-runtime\build\index.js:882:12)
+        at jestAdapter (D:\real-estate-marketplace\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:77:13)
+        at runTestInternal (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\real-estate-marketplace\node_modules\jest-runner\build\runTest.js:444:34)
+
+    [0m [90m 106 |[39m     console[33m.[39merror([32m'Γ¥î Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m 107 |[39m     [36mif[39m (error[33m.[39mstack) {
+    [31m[1m>[22m[39m[90m 108 |[39m       console[33m.[39merror(error[33m.[39mstack)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 109 |[39m     }
+     [90m 110 |[39m     [36mif[39m ([33mObject[39m[33m.[39mkeys(additionalInfo)[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 111 |[39m       console[33m.[39merror([32m'Additional Info:'[39m[33m,[39m additionalInfo)[33m;[39m[0m
+
+      at error (../config/logger.js:108:15)
+      at Object.errorLogger (../server.js:653:3)
+      at require (testHelper.js:9:19)
+      at Object.getApp [as app] (testHelper.js:17:12)
+      at Object.app (reviews.test.js:1:18)
+
+  console.log
+    Γä╣∩╕Å RBAC routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å 2FA routes loaded successfully
+
+      at log (../config/logger.js:133:13)
+
+node : (node:18004) Warning: SECURITY WARNING: The SSL modes 'prefer', 
+'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+At line:1 char:1
++ node .\node_modules\jest\bin\jest.js --config backend/tests/jest.phas ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:18004) Wa... 'verify-full'. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.log
+    Γä╣∩╕Å Socket.IO messaging initialized
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Email service status { status: 'Ready' }
+
+      at log (../config/logger.js:133:13)
+
+GET /api/reviews/trending?limit=10 200 85.218 ms - 48 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T15:09:27.591Z] GET /trending - Status: 200 - Time: 81.08ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+GET /api/reviews/properties/test-property-123/reviews 200 7.270 ms - 70 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T15:09:27.903Z] GET /properties/test-property-123/reviews - Status: 200 - Time: 8.18ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+  console.log
+    Γä╣∩╕Å Review created: rev_test-property-123_primaryadmin_1773932968594 by user primaryadmin for property test-property-123
+
+      at log (../config/logger.js:133:13)
+
+  console.log
+    Γä╣∩╕Å Review created for property test-property-123 by user primaryadmin
+
+      at log (../config/logger.js:133:13)
+
+POST /api/reviews/properties/test-property-123/reviews 201 845.507 ms - 483 - User: primaryadmin
+  console.log
+    Γ£à [2026-03-19T15:09:28.590Z] POST /properties/test-property-123/reviews - Status: 201 - Time: 329.61ms - User: primaryadmin
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+GET /api/reviews/properties/test-property-123/rating 200 3.956 ms - 241 - User: anonymous
+  console.log
+    Γ£à [2026-03-19T15:09:29.162Z] GET /properties/test-property-123/rating - Status: 200 - Time: 13.32ms - User: anonymous
+
+      at ServerResponse.log (../middleware/requestLogger.js:193:17)
+
+PASS backend/tests/reviews.test.js (191.982 s)
+  Phase4 - Reviews API
+    ΓêÜ GET /api/reviews/trending returns 200 or 500 (647 ms)
+    ΓêÜ GET /api/reviews/properties/:propertyId/reviews returns 200 or 500 (89 
+ms)
+    ΓêÜ POST /api/reviews/properties/:propertyId/reviews returns 201 or 200 
+(1050 ms)
+    ΓêÜ GET /api/reviews/properties/:propertyId/rating returns 200 or 500 (144 
+ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        198.745 s
+Ran all test suites matching /backend\\tests\\reviews.test.js/i.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect 
+async operations that kept running after all tests finished?

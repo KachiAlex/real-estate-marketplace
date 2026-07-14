@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PropertyArk</string>
+    <string name="title_activity_main">PropertyArk</string>
+    <string name="package_name">com.propertyark.app</string>
+    <string name="custom_url_scheme">com.propertyark.app</string>
+</resources>

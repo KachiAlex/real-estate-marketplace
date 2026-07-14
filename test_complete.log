@@ -1,0 +1,15 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional dependencies, or
+At line:1 char:1
++ npm run test:phase4 2>&1 | Out-File -Encoding UTF8 test_complete.log; ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or:String) [], RemoteExcept 
+   ion
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless otherwise omitted.
+
+> real-estate-marketplace@1.0.1 test:phase4
+> jest --config backend/tests/jest.phase4.config.js --runInBand
+

@@ -1,0 +1,71 @@
+workflows:
+  ios-build:
+    name: Build iOS App
+    environment:
+      node: "22"
+      xcode: "16.2"
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build web assets
+        script: |
+          npm run build
+
+      - name: Sync Capacitor iOS
+        script: |
+          npx cap sync ios
+
+      - name: Build iOS archive
+        script: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath $CM_BUILD_DIR/build/App.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=YES
+
+      - name: Export signed IPA
+        script: |
+          cd ios/App
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/App.xcarchive \
+            -exportPath $CM_BUILD_DIR/build \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Rename IPA
+        script: |
+          mv $CM_BUILD_DIR/build/*.ipa $CM_BUILD_DIR/build/PropertyArk.ipa
+
+    artifacts:
+      - $CM_BUILD_DIR/build/PropertyArk.ipa
+      - $CM_BUILD_DIR/build/App.xcarchive
+
+  android-build:
+    name: Build Android App
+    environment:
+      node: "22"
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build web assets
+        script: |
+          npm run build
+
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+
+      - name: Build Android APK
+        script: |
+          cd android
+          ./gradlew assembleDebug
+
+    artifacts:
+      - android/app/build/outputs/apk/debug/app-debug.apk

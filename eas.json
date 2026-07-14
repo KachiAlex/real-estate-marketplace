@@ -1,0 +1,59 @@
+{
+  "cli": {
+    "version": ">= 16.28.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "NODE_ENV": "development",
+        "REACT_APP_API_URL": "https://dev-api.propertyark.com",
+        "REACT_APP_ENVIRONMENT": "development"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "buildConfiguration": "Debug"
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "channel": "staging",
+      "env": {
+        "NODE_ENV": "staging",
+        "REACT_APP_API_URL": "https://staging-api.propertyark.com",
+        "REACT_APP_ENVIRONMENT": "staging"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "production",
+      "env": {
+        "NODE_ENV": "production",
+        "REACT_APP_API_URL": "https://api.propertyark.com",
+        "REACT_APP_ENVIRONMENT": "production"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {}
+}

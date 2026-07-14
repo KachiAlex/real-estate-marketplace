@@ -1,0 +1,249 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/components/__tests__/EscrowP ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/components/__tests__/EscrowPaymentFlow.test.js
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Component mounting...
+
+      at src/components/EscrowPaymentFlow.js:198:13
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: providedProperty: {
+      id: 'prop-1',
+      title: 'Test Property',
+      price: 1000000,
+      owner: { id: 'vendor-1' }
+    }
+
+      at src/components/EscrowPaymentFlow.js:199:13
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: providedInvestment: null
+
+      at src/components/EscrowPaymentFlow.js:200:13
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Data already provided, setting loading to false
+
+      at src/components/EscrowPaymentFlow.js:203:15
+
+  console.log
+    [Socket] No auth token available, skipping Socket.IO connection
+
+      at src/components/EscrowPaymentFlow.js:339:15
+
+  console.log
+    [Socket] No auth token available, skipping Socket.IO connection
+
+      at src/components/EscrowPaymentFlow.js:339:15
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: handleProcessPayment called
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:590:13)
+
+  console.log
+    ≡ƒöÑ User: { id: 'u1', uid: 'u1', email: 'buyer@example.com' }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:591:13)
+
+  console.log
+    ≡ƒöÑ Payment data: {
+      paymentMethod: 'paystack',
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      cardholderName: ''
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:592:13)
+
+  console.log
+    ≡ƒöÑ Property: {
+      id: 'prop-1',
+      title: 'Test Property',
+      price: 1000000,
+      owner: { id: 'vendor-1' }
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:593:13)
+
+  console.log
+    ≡ƒöÑ Investment: null
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:594:13)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Starting validation...
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:602:15)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Using paystack payment, skipping card validation
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:614:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Setting loading state...
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:617:15)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Current item: {
+      id: 'prop-1',
+      title: 'Test Property',
+      price: 1000000,
+      owner: { id: 'vendor-1' }
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:623:15)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Item details: {
+      itemId: 'prop-1',
+      itemPriceValue: 1000000,
+      itemTitleValue: 'Test Property'
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:629:15)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Seller ID: vendor-1
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:639:15)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Creating escrow transaction...
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:641:15)
+
+  console.log
+    [Socket] No auth token available, skipping Socket.IO connection
+
+      at src/components/EscrowPaymentFlow.js:339:15
+
+  console.log
+    [Socket] No auth token available, skipping Socket.IO connection
+
+      at src/components/EscrowPaymentFlow.js:339:15
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Escrow result: { success: true, id: 'escrow-1' }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:668:15)
+
+  console.log
+    ≡ƒÜÇ EscrowPaymentFlow: Starting payment initialization...
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:694:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: API Payload: {
+      amount: 1000000,
+      paymentMethod: 'paystack',
+      paymentType: 'escrow',
+      relatedEntity: {
+        type: 'property',
+        id: 'escrow-1',
+        metadata: { escrowId: 'escrow-1', propertyId: 'prop-1', investmentId: null }
+      },
+      description: 'Escrow payment for property purchase: Test Property',
+      currency: 'NGN'
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:713:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: API URL: http://localhost:5001/api/payments/initialize
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:714:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Headers: {
+      'Content-Type': 'application/json',
+      'X-Mock-User-Email': 'buyer@example.com'
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:715:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Cache busting with timestamp: 1774036498947
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:716:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Response status: 200
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:725:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Response data: {
+      success: true,
+      data: {
+        payment: { id: 'payment-1', reference: 'ref-1' },
+        providerData: { txRef: 'ref-1', authorizationUrl: '' }
+      }
+    }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:727:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Payment initialized
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:786:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Provider data: { txRef: 'ref-1', authorizationUrl: '' }
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:787:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Authorization URL: undefined
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:788:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Is client-side fallback: undefined
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:789:17)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Launching Paystack with reference: ref-1
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:818:21)
+
+  console.log
+    ≡ƒöÑ EscrowPaymentFlow: Using client-side SDK (fallback mode): undefined
+
+      at handleProcessPayment (src/components/EscrowPaymentFlow.js:819:21)
+
+  console.log
+    [Socket] No auth token available, skipping Socket.IO connection
+
+      at src/components/EscrowPaymentFlow.js:339:15
+          at Array.forEach (<anonymous>)
+
+PASS src/components/__tests__/EscrowPaymentFlow.test.js (50.972 s)
+  EscrowPaymentFlow (Paystack)
+    ΓêÜ calls PaystackPop initializer when Paystack is selected and user 
+continues to payment (2890 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        88.038 s
+Ran all test suites matching 
+/src\\components\\__tests__\\EscrowPaymentFlow.test.js/i.

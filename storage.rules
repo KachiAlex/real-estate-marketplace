@@ -1,0 +1,63 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User avatars
+    match /users/{userId}/avatar/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User company logos
+    match /users/{userId}/logo/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Property images - relaxed for development
+    match /properties/{propertyId}/images/{fileName} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Property videos - relaxed for development
+    match /properties/{propertyId}/videos/{fileName} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Property documents - relaxed for development
+    match /properties/{propertyId}/documents/{fileName} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Temporary uploads (for property creation) - relaxed for development
+    match /properties/temp/{fileType}/{fileName} {
+      allow read, write: if true;
+    }
+    
+    // Escrow documents
+    match /escrow/{escrowId}/documents/{fileName} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.buyerId || 
+         request.auth.uid == resource.metadata.sellerId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // Investment documents
+    match /investments/{investmentId}/documents/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == resource.metadata.sponsorId || 
+         request.auth.token.role == 'admin');
+    }
+    
+    // General file uploads
+    match /uploads/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

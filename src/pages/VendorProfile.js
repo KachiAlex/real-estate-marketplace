@@ -1,0 +1,1003 @@
+﻿import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { FaUser, FaCamera, FaTimes, FaUpload } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import storageService from '../services/storageService';
+import BecomeBuyerModal from '../components/BecomeBuyerModal';
+
+const VendorProfile = () => {
+  const { user, updateUserProfile, logout } = useAuth();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || user?.user?.email || '',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
+    avatar: user?.avatar || ''
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+  const [success, setSuccess] = useState(false);
+  const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
+  const [buyerModalMode, setBuyerModalMode] = useState('create');
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: true,
+    sms: false,
+    inApp: true,
+    marketing: false
+  });
+  const [privacyPrefs, setPrivacyPrefs] = useState({
+    showPhone: false,
+    showEmail: true,
+    shareAnalytics: false,
+    twoFactor: true
+  });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const fileInputRef = useRef(null);
+
+  // Sync form data and avatar preview when user changes
+  useEffect(() => {
+    if (user) {
+      let savedAvatar = null;
+      try {
+        const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUserData.avatar && currentUserData.avatar.startsWith('data:')) {
+          savedAvatar = currentUserData.avatar;
+        }
+      } catch (e) {
+        console.error('Error reading localStorage:', e);
+      }
+      
+      const avatarToUse = savedAvatar || user?.avatar || '';
+      const shouldUpdateAvatar = !avatarPreview || (avatarToUse && avatarToUse !== avatarPreview);
+      
+      setFormData({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        email: user?.email || user?.user?.email || '',
+        phone: user?.phone || '',
+        bio: user?.bio || '',
+        avatar: avatarToUse
+      });
+      
+      if (shouldUpdateAvatar) {
+        setAvatarPreview(avatarToUse || null);
+      }
+    }
+  }, [user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Use avatarPreview if available (from recent upload), otherwise use formData.avatar
+      const avatarToSave = avatarPreview || formData.avatar || user?.avatar || '';
+      
+      const updatedUserData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        bio: formData.bio,
+        avatar: avatarToSave
+      };
+
+      // Update local context (do NOT persist to localStorage)
+      if (updateUserProfile) {
+        await updateUserProfile(updatedUserData);
+      }
+      
+      // CRITICAL: Do NOT save user data to localStorage - always fetch fresh from server
+      // The updateUserProfile function in AuthContext handles state updates
+      
+      // Update formData and preview to ensure consistency
+      setFormData(prev => ({ ...prev, avatar: avatarToSave }));
+      if (avatarToSave) {
+        setAvatarPreview(avatarToSave);
+      }
+      
+      setSuccess(true);
+      toast.success('Profile updated successfully!');
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WEBP, or GIF)');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    // Create preview immediately for better UX and get local data URL
+    const localDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target.result);
+        resolve(event.target.result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    setUploadingAvatar(true);
+
+    try {
+      const userId = user?.id || user?.uid;
+
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Upload to backend API
+      const uploadResult = await storageService.uploadUserAvatar(file, userId);
+
+      let avatarUrl;
+      
+      if (!uploadResult.success) {
+        // If backend upload fails, use local data URL as fallback
+        console.error('Backend upload failed:', uploadResult.error);
+        console.log('Using local data URL as fallback');
+        avatarUrl = localDataUrl;
+        
+        // Update local state with local URL
+        // CRITICAL: Do NOT save user data to localStorage
+        // Try to update via updateUserProfile
+        try {
+          await updateUserProfile({ avatar: avatarUrl });
+        } catch (profileError) {
+          console.warn('updateUserProfile failed:', profileError);
+          // Continue anyway - state will be updated on next refresh
+        }
+        
+        setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+        setAvatarPreview(avatarUrl);
+        toast.error('Profile picture saved locally. Server upload failed.');
+        return; // Exit early since we're using local fallback
+      }
+
+      avatarUrl = uploadResult.url;
+      console.log('Backend upload successful:', avatarUrl);
+
+      // Update local state
+      await updateUserProfile({ avatar: avatarUrl });
+      setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+      setAvatarPreview(avatarUrl);
+      
+      // CRITICAL: Do NOT save user data to localStorage - always fetch fresh from server
+      
+      toast.success('Profile picture uploaded successfully!');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      
+      let errorMessage = 'Failed to upload profile picture';
+      
+      if (error.message?.includes('permission')) {
+        errorMessage = 'Upload permission denied. Please try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      
+      // Revert preview on error
+      setAvatarPreview(user?.avatar || null);
+    } finally {
+      setUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setAvatarPreview(null);
+      setFormData(prev => ({ ...prev, avatar: '' }));
+      
+      // CRITICAL: Do NOT save user data to localStorage - always fetch fresh from server
+      
+      // Update user profile
+      await updateUserProfile({ avatar: '' });
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast.success('Profile picture removed');
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      toast.error('Failed to remove profile picture');
+    }
+  };
+
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isBuyer = roles.includes('buyer');
+  const buyerPreferences = user?.buyerData?.preferences || {};
+  const buyerSince = user?.buyerData?.buyerSince;
+
+  const openBuyerModal = (mode = 'create') => {
+    setBuyerModalMode(mode);
+    setIsBuyerModalOpen(true);
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      // Call API to change password
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || 'Failed to change password');
+        return;
+      }
+
+      toast.success('Password changed successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowChangePasswordModal(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Failed to change password');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await fetch('/api/auth/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        toast.error('Failed to delete account');
+        return;
+      }
+
+      toast.success('Account deleted successfully');
+      await logout();
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+          <p className="mt-1 text-gray-600">Manage your account information</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+              
+              {/* Profile Picture */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Profile Picture</label>
+                <div className="flex items-center space-x-6">
+                  <div className="relative">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Profile"
+                        className="h-24 w-24 rounded-full object-cover border-4 border-gray-200"
+                      />
+                    ) : (
+                      <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
+                        <FaUser className="h-10 w-10 text-gray-400" />
+          </div>
+                    )}
+                <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      disabled={uploadingAvatar}
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <FaCamera className="h-3 w-3" />
+                </button>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      disabled={uploadingAvatar}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <FaUpload className="mr-2 h-4 w-4" />
+                      {uploadingAvatar ? 'Uploading...' : 'Change Picture'}
+                </button>
+                    {avatarPreview && (
+              <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="flex items-center px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors"
+              >
+                        <FaTimes className="mr-2 h-4 w-4" />
+                        Remove Picture
+              </button>
+            )}
+                    <p className="text-xs text-gray-500">JPG, PNG, WEBP or GIF. Max size 5MB</p>
+          </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+        </div>
+      </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.firstName ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.lastName ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+                </div>
+              </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-gray-400 text-xs">(Cannot be changed)</span>
+                  </label>
+                  <input
+                      type="email"
+                    name="email"
+                    value={formData.email}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  <p className="mt-1 text-xs text-gray-500">Your email is locked to your login credentials</p>
+              </div>
+
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="(555) 123-4567"
+                  />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Tell us about yourself..."
+                  />
+            </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+                </div>
+              </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            {/* Buyer Status */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Buyer Program</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Access curated investment opportunities and buyer tools from your vendor hub.
+              </p>
+              <button
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md font-medium transition-colors"
+                onClick={() => {
+                  setBuyerModalMode('create');
+                  setIsBuyerModalOpen(true);
+                }}
+              >
+                {isBuyer ? 'Manage Buyer Profile' : 'Become a Buyer'}
+              </button>
+              {isBuyer && (
+                <button
+                  className="w-full mt-3 border border-orange-200 text-orange-600 py-2 rounded-md text-sm"
+                  onClick={() => {
+                    setBuyerModalMode('edit');
+                    setIsBuyerModalOpen(true);
+                  }}
+                >
+                  Update Preferences
+                </button>
+              )}
+            </div>
+            {/* Account Info */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm text-gray-500">Member Since</span>
+                  <p className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Account Status</span>
+                  <p className="font-medium text-green-600">Active</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">User ID</span>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-bold text-blue-600 text-lg tracking-wider">{user?.userCode || 'PAK-XXXXXX'}</p>
+                    <button
+                      onClick={async (e) => {
+                        const button = e.currentTarget;
+                        const originalText = button.textContent;
+                        try {
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          await navigator.clipboard.writeText(textToCopy);
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        } catch (err) {
+                          // Fallback for older browsers
+                          const textToCopy = user?.userCode || '';
+                          if (!textToCopy) {
+                            toast.error('User ID not available');
+                            return;
+                          }
+                          
+                          const textArea = document.createElement('textarea');
+                          textArea.value = textToCopy;
+                          textArea.style.position = 'fixed';
+                          textArea.style.opacity = '0';
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          document.execCommand('copy');
+                          document.body.removeChild(textArea);
+                          
+                          button.textContent = 'Copied!';
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          button.classList.remove('bg-blue-100', 'text-blue-700');
+                          
+                          toast.success(`User ID "${textToCopy}" copied!`, {
+                            icon: '✅',
+                            duration: 3000,
+                            style: {
+                              background: '#10b981',
+                              color: '#fff',
+                            },
+                          });
+                          
+                          setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                          }, 2000);
+                        }
+                      }}
+                      className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+                    >
+                      Copy
+                    </button>
+                </div>
+              </div>
+                {/* Vendor ID - only shown if user is a vendor */}
+                {user?.vendorCode && (
+                  <div>
+                    <span className="text-sm text-gray-500">Vendor ID</span>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono font-bold text-green-600 text-lg tracking-wider">{user.vendorCode}</p>
+                      <button
+                        onClick={async (e) => {
+                          const button = e.currentTarget;
+                          const originalText = button.textContent;
+                          try {
+                            const textToCopy = user?.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            await navigator.clipboard.writeText(textToCopy);
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          } catch (err) {
+                            // Fallback for older browsers
+                            const textToCopy = user?.vendorCode || '';
+                            if (!textToCopy) {
+                              toast.error('Vendor ID not available');
+                              return;
+                            }
+                            
+                            const textArea = document.createElement('textarea');
+                            textArea.value = textToCopy;
+                            textArea.style.position = 'fixed';
+                            textArea.style.opacity = '0';
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            
+                            button.textContent = 'Copied!';
+                            button.classList.add('bg-blue-100', 'text-blue-700');
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            
+                            toast.success(`Vendor ID "${textToCopy}" copied!`, {
+                              icon: '✅',
+                              duration: 3000,
+                              style: {
+                                background: '#10b981',
+                                color: '#fff',
+                              },
+                            });
+                            
+                            setTimeout(() => {
+                              button.textContent = originalText;
+                              button.classList.remove('bg-blue-100', 'text-blue-700');
+                              button.classList.add('bg-green-100', 'text-green-700');
+                            }, 2000);
+                          }
+                        }}
+                        className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded transition-colors"
+                      >
+                        Copy
+                      </button>
+                      </div>
+                    <p className="text-xs text-gray-500 mt-1">Share this with buyers to find your properties</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => setShowChangePasswordModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Change Password
+                </button>
+                <button 
+                  onClick={() => setShowNotificationModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Notification Settings
+                </button>
+                <button 
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Privacy Settings
+                </button>
+                <button 
+                  onClick={() => setShowDeleteAccountModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+        </div>
+      </div>
+      </div>
+      {isBuyerModalOpen && (
+        <BecomeBuyerModal
+          isOpen={isBuyerModalOpen}
+          onClose={() => setIsBuyerModalOpen(false)}
+          mode={buyerModalMode}
+          initialPreferences={buyerPreferences}
+          buyerSince={buyerSince}
+        />
+      )}
+
+      {/* Notification Settings Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Notification Settings</h3>
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Email alerts</p>
+                  <p className="text-sm text-gray-500">Property inquiries, payments, and account notices</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.email}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, email: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">SMS alerts</p>
+                  <p className="text-sm text-gray-500">Time-sensitive updates and reminders</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.sms}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, sms: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">In-app notifications</p>
+                  <p className="text-sm text-gray-500">Badges and alerts inside your dashboard</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.inApp}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, inApp: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Product updates</p>
+                  <p className="text-sm text-gray-500">Tips, new features, and marketing emails</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.marketing}
+                  onChange={(e) => setNotificationPrefs(prev => ({ ...prev, marketing: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  toast.success('Notification preferences saved');
+                  setShowNotificationModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Settings Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Privacy Settings</h3>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Show phone number</p>
+                  <p className="text-sm text-gray-500">Display your phone on listings and inquiries</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.showPhone}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, showPhone: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Show email</p>
+                  <p className="text-sm text-gray-500">Allow buyers to reach you via email</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.showEmail}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, showEmail: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Share usage analytics</p>
+                  <p className="text-sm text-gray-500">Help improve the product with anonymized data</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.shareAnalytics}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, shareAnalytics: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+              <label className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">Two-factor authentication</p>
+                  <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={privacyPrefs.twoFactor}
+                  onChange={(e) => setPrivacyPrefs(prev => ({ ...prev, twoFactor: e.target.checked }))}
+                  className="h-5 w-5 text-blue-600 rounded"
+                />
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  toast.success('Privacy preferences saved');
+                  setShowPrivacyModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowChangePasswordModal(false);
+                  setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangePassword}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Account</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete your account? This action cannot be undone. All your data, properties, and listings will be permanently deleted.
+            </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800">
+                <strong>Warning:</strong> This will permanently delete your account and all associated data.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteAccountModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default VendorProfile;

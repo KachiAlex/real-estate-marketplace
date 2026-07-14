@@ -1,0 +1,17 @@
+﻿npm : npm warn config optional Use `--omit=optional` to exclude optional 
+dependencies, or
+At line:1 char:51
++ ... ECK='true'; npm run frontend:test -- src/components/__tests__/EscrowP ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn config...ependencies, or 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless 
+otherwise omitted.
+
+> real-estate-marketplace@1.0.1 frontend:test
+> cross-env SKIP_PREFLIGHT_CHECK=true CI=true react-scripts test --runInBand --watch=false src/components/__tests__/EscrowPaymentFlow.test.js
+

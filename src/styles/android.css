@@ -1,0 +1,408 @@
+/**
+ * Android-Specific Styles
+ * 
+ * This file contains styles that are specific to Android devices.
+ * These styles are applied when the app is running on Android.
+ */
+
+/* ============================================================================
+   Android Platform Detection
+   ============================================================================
+   
+   These styles are applied when the app is running on Android.
+   Use the .platform-android class to target Android-specific styles.
+*/
+
+.platform-android {
+  /* Android-specific global styles */
+}
+
+/* ============================================================================
+   Android Status Bar Handling
+   ============================================================================
+   
+   Android status bar is typically 24dp on regular devices and larger on notched devices.
+   The safe area insets handle this automatically.
+*/
+
+.platform-android body {
+  /* Ensure proper spacing for Android status bar */
+  background-color: #f97316; /* Match status bar color */
+}
+
+/* ============================================================================
+   Android Navigation Bar Styling
+   ============================================================================
+   
+   Android uses a bottom navigation bar (system navigation) on many devices.
+   Ensure content doesn't overlap with the navigation bar area.
+*/
+
+.platform-android .navigation-bar {
+  /* Add bottom safe area padding for navigation bar */
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}
+
+/* ============================================================================
+   Android Button Styling
+   ============================================================================
+   
+   Android buttons have specific styling conventions (Material Design).
+   Use larger touch targets (minimum 48dp) for accessibility.
+*/
+
+.platform-android button,
+.platform-android .btn {
+  /* Ensure minimum touch target size (48dp) */
+  min-height: 48px;
+  min-width: 48px;
+  
+  /* Material Design button appearance */
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  /* Add ripple effect styling (visual indicator) */
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.platform-android button:active,
+.platform-android .btn:active {
+  /* Provide visual feedback on press */
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   Android Input Styling
+   ============================================================================
+   
+   Android inputs have specific styling conventions (Material Design).
+   Ensure proper spacing and sizing for touch interaction.
+*/
+
+.platform-android input,
+.platform-android textarea,
+.platform-android select {
+  /* Ensure minimum touch target size */
+  min-height: 48px;
+  
+  /* Material Design input appearance */
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  font-size: 16px; /* Prevent zoom on focus */
+  
+  /* Disable default Android styling */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.platform-android input:focus,
+.platform-android textarea:focus,
+.platform-android select:focus {
+  /* Material Design focus appearance */
+  border-color: #f97316;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* ============================================================================
+   Android Scrolling Behavior
+   ============================================================================
+   
+   Android has specific scrolling behavior.
+   Ensure smooth scrolling is enabled.
+*/
+
+.platform-android {
+  /* Enable smooth scrolling on Android */
+  scroll-behavior: smooth;
+}
+
+.platform-android .scrollable {
+  /* Ensure scrollable elements have smooth scrolling */
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  
+  /* Use GPU acceleration for better performance */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* ============================================================================
+   Android Safe Area Handling
+   ============================================================================
+   
+   Android devices with notches have specific safe area requirements.
+   The safe area insets are automatically set by Capacitor.
+*/
+
+.platform-android .header {
+  /* Add top safe area padding for notch */
+  padding-top: max(1rem, env(safe-area-inset-top, 1rem));
+}
+
+.platform-android .footer {
+  /* Add bottom safe area padding for navigation bar */
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}
+
+/* ============================================================================
+   Android Modal/Dialog Styling
+   ============================================================================
+   
+   Android modals have specific styling conventions (Material Design).
+*/
+
+.platform-android .modal,
+.platform-android .dialog {
+  /* Material Design modal appearance */
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  
+  /* Ensure modal respects safe areas */
+  max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem);
+}
+
+/* ============================================================================
+   Android Bottom Sheet Styling
+   ============================================================================
+   
+   Android bottom sheets are a common UI pattern.
+*/
+
+.platform-android .bottom-sheet {
+  /* Position at bottom with safe area padding */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  
+  /* Add bottom safe area padding for navigation bar */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  
+  /* Material Design bottom sheet appearance */
+  border-radius: 16px 16px 0 0;
+  background-color: #ffffff;
+  box-shadow: 0 -5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 -8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 -3px 14px 2px rgba(0, 0, 0, 0.12);
+  
+  /* Ensure bottom sheet is above content */
+  z-index: 100;
+  
+  /* Enable smooth animation */
+  transition: transform 0.3s ease-in-out;
+}
+
+/* ============================================================================
+   Android FAB (Floating Action Button) Styling
+   ============================================================================
+   
+   Android FABs are a common UI pattern for primary actions.
+*/
+
+.platform-android .fab {
+  /* Position FAB at bottom-right with safe area padding */
+  position: fixed;
+  bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+  right: max(1rem, env(safe-area-inset-right, 1rem));
+  
+  /* Material Design FAB appearance */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #f97316;
+  color: #ffffff;
+  
+  /* Material Design shadow */
+  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+              0 6px 10px 0 rgba(0, 0, 0, 0.14),
+              0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  
+  /* Ensure FAB is above content */
+  z-index: 50;
+  
+  /* Center content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Enable smooth animation */
+  transition: all 0.2s ease-in-out;
+}
+
+.platform-android .fab:active {
+  /* FAB active state */
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  transform: scale(0.95);
+}
+
+/* ============================================================================
+   Android Text Styling
+   ============================================================================
+   
+   Android has specific text rendering characteristics.
+*/
+
+.platform-android {
+  /* Use system fonts for Android */
+  font-family: -android-system, 'Roboto', 'Helvetica Neue', sans-serif;
+  
+  /* Enable font smoothing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   Android Link Styling
+   ============================================================================
+   
+   Android links have specific styling conventions.
+*/
+
+.platform-android a {
+  /* Material Design link appearance */
+  color: #f97316;
+  text-decoration: none;
+  
+  /* Ensure minimum touch target size */
+  padding: 8px;
+  margin: -8px;
+  
+  /* Add ripple effect */
+  position: relative;
+  overflow: hidden;
+}
+
+.platform-android a:active {
+  /* Material Design active link appearance */
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   Android Form Styling
+   ============================================================================
+   
+   Android forms have specific styling conventions (Material Design).
+*/
+
+.platform-android form {
+  /* Ensure proper spacing in forms */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.platform-android .form-group {
+  /* Material Design form group appearance */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.platform-android .form-label {
+  /* Material Design label appearance */
+  font-weight: 500;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+/* ============================================================================
+   Android Landscape Orientation
+   ============================================================================
+   
+   Android landscape orientation has different safe area requirements.
+*/
+
+@media (orientation: landscape) {
+  .platform-android .header {
+    /* Reduce top padding in landscape */
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
+  }
+  
+  .platform-android .fab {
+    /* Adjust FAB position for landscape */
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+    right: max(0.5rem, env(safe-area-inset-right, 0.5rem));
+  }
+}
+
+/* ============================================================================
+   Android Dark Mode Support
+   ============================================================================
+   
+   Support for Android dark mode (Android 10+).
+*/
+
+@media (prefers-color-scheme: dark) {
+  .platform-android {
+    /* Dark mode styles for Android */
+    background-color: #121212;
+    color: #ffffff;
+  }
+  
+  .platform-android input,
+  .platform-android textarea,
+  .platform-android select {
+    /* Dark mode input styling */
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-color: #424242;
+  }
+  
+  .platform-android .modal,
+  .platform-android .dialog {
+    /* Dark mode modal styling */
+    background-color: #1e1e1e;
+  }
+  
+  .platform-android .bottom-sheet {
+    /* Dark mode bottom sheet styling */
+    background-color: #1e1e1e;
+  }
+}
+
+/* ============================================================================
+   Android Accessibility
+   ============================================================================
+   
+   Ensure Android accessibility features are supported.
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-android * {
+    /* Disable animations for users who prefer reduced motion */
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   Android Hardware Back Button Handling
+   ============================================================================
+   
+   Android devices have a hardware back button.
+   Ensure proper navigation behavior.
+*/
+
+.platform-android .back-button {
+  /* Ensure back button is easily accessible */
+  min-height: 48px;
+  min-width: 48px;
+  
+  /* Position at top-left with safe area padding */
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: env(safe-area-inset-left, 0px);
+  z-index: 1000;
+}
+

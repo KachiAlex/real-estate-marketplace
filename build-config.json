@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "description": "Android APK Build Configuration Profiles",
+  "profiles": {
+    "development": {
+      "name": "development",
+      "buildType": "debug",
+      "variant": "debug",
+      "description": "Development build profile for rapid iteration",
+      "signingConfig": {
+        "keystorePath": ".android/debug.keystore",
+        "keystorePassword": "android",
+        "keyAlias": "androiddebugkey",
+        "keyPassword": "android"
+      },
+      "buildParameters": {
+        "minifyEnabled": false,
+        "shrinkResources": false,
+        "debuggable": true,
+        "versionCode": 1,
+        "versionName": "1.0.0-dev",
+        "parallelEnabled": true,
+        "cacheEnabled": true
+      },
+      "environmentVariables": {
+        "API_ENDPOINT": "https://dev-api.example.com",
+        "LOG_LEVEL": "debug",
+        "FEATURE_FLAGS": "all"
+      },
+      "outputDirectory": "build-artifacts/debug"
+    },
+    "staging": {
+      "name": "staging",
+      "buildType": "release",
+      "variant": "staging",
+      "description": "Staging build profile for pre-production testing",
+      "signingConfig": {
+        "keystorePath": ".android/staging.keystore",
+        "keystorePassword": "staging-password",
+        "keyAlias": "staging-key",
+        "keyPassword": "staging-key-password"
+      },
+      "buildParameters": {
+        "minifyEnabled": true,
+        "shrinkResources": true,
+        "debuggable": false,
+        "versionCode": 100,
+        "versionName": "1.0.0-staging",
+        "parallelEnabled": true,
+        "cacheEnabled": true
+      },
+      "environmentVariables": {
+        "API_ENDPOINT": "https://staging-api.example.com",
+        "LOG_LEVEL": "info",
+        "FEATURE_FLAGS": "stable"
+      },
+      "outputDirectory": "build-artifacts/staging"
+    },
+    "production": {
+      "name": "production",
+      "buildType": "release",
+      "variant": "release",
+      "description": "Production build profile for app store release",
+      "signingConfig": {
+        "keystorePath": ".android/production.keystore",
+        "keystorePassword": "production-password",
+        "keyAlias": "production-key",
+        "keyPassword": "production-key-password",
+        "certificateSubjectDN": "CN=Example Inc, O=Example Inc, C=US"
+      },
+      "buildParameters": {
+        "minifyEnabled": true,
+        "shrinkResources": true,
+        "debuggable": false,
+        "versionCode": 100,
+        "versionName": "1.0.0",
+        "parallelEnabled": true,
+        "cacheEnabled": true
+      },
+      "environmentVariables": {
+        "API_ENDPOINT": "https://api.example.com",
+        "LOG_LEVEL": "warn",
+        "FEATURE_FLAGS": "stable"
+      },
+      "outputDirectory": "build-artifacts/release"
+    }
+  }
+}

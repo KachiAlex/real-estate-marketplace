@@ -1,0 +1,17 @@
+﻿node : PASS backend/__tests__/investmentService.test.js (19.305 s)
+At line:1 char:1
++ node .\node_modules\jest\bin\jest.js backend/__tests__/investmentServ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS backend/__...t.js (19.305 s) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  investmentService (unit)
+    ΓêÜ listInvestments returns data and pagination-like response (12 ms)
+    ΓêÜ getUserInvestments computes summary (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        23.585 s
+Ran all test suites matching /backend\\__tests__\\investmentService.test.js/i.

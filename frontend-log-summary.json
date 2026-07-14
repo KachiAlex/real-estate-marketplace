@@ -1,0 +1,35 @@
+{
+  "passSuites": 19,
+  "failSuites": 7,
+  "totalReportedSuites": 26,
+  "failedSuites": [
+    {
+      "status": "FAIL",
+      "suite": "src/services/__tests__/inspectionService.test.js (7.788 s)"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/components/layout/__tests__/Header.test.js"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/pages/__tests__/RegisterPage.test.js"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/components/__tests__/EscrowPaymentFlow.test.js (8.286 s)"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/pages/__tests__/LoginPage.test.js"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/components/auth/__tests__/SignInModal.test.js"
+    },
+    {
+      "status": "FAIL",
+      "suite": "src/contexts/__tests__/PropertyContext.test.js"
+    }
+  ]
+}

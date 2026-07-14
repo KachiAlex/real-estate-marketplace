@@ -1,0 +1,13 @@
+services:
+  android-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: react-native-build
+    volumes:
+      - ./mobile-app/android/app/build:/build/mobile-app/android/app/build
+    environment:
+      - GRADLE_USER_HOME=/root/.gradle
+      - _JAVA_OPTIONS=-Xmx4g
+    working_dir: /build/mobile-app/android
+    command: bash -c "chmod +x gradlew && ./gradlew assembleRelease && echo 'Build complete!'"

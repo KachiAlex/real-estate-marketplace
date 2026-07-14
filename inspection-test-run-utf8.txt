@@ -1,0 +1,88 @@
+﻿  console.log
+    Using localStorage for creating inspection requests (API unavailable)
+
+      at createInspectionRequest (src/services/inspectionService.js:299:13)
+
+  console.log
+    Using localStorage for creating inspection requests (API unavailable)
+
+      at createInspectionRequest (src/services/inspectionService.js:299:13)
+
+  console.log
+    Using localStorage for inspection requests (API unavailable)
+
+      at listInspectionRequestsByVendor (src/services/inspectionService.js:359:13)
+
+  console.log
+    Using localStorage for inspection requests (API unavailable)
+
+      at listInspectionRequestsByVendor (src/services/inspectionService.js:359:13)
+
+  console.log
+    Using localStorage for inspection requests (API unavailable)
+
+      at listInspectionRequestsByVendor (src/services/inspectionService.js:359:13)
+
+  console.log
+    Using localStorage for inspection requests (API unavailable)
+
+      at listInspectionRequestsByVendor (src/services/inspectionService.js:359:13)
+
+  console.log
+    Using localStorage for buyer inspection requests (API unavailable)
+
+      at listInspectionRequestsByBuyer (src/services/inspectionService.js:389:13)
+
+  console.log
+    Using localStorage for buyer inspection requests (API unavailable)
+
+      at listInspectionRequestsByBuyer (src/services/inspectionService.js:389:13)
+
+  console.log
+    Using localStorage for updating inspection requests (API unavailable)
+
+      at updateInspectionRequest (src/services/inspectionService.js:404:13)
+
+  console.log
+    Using localStorage for updating inspection requests (API unavailable)
+
+      at updateInspectionRequest (src/services/inspectionService.js:404:13)
+
+  console.log
+    Inspection requests stored locally: 0
+
+      at syncLocalInspectionRequests (src/services/inspectionService.js:483:13)
+
+node : PASS src/services/__tests__/inspectionService.test.js (47.116 s)
+At line:1 char:1
++ node .\node_modules\react-scripts\bin\react-scripts.js test --watchAl ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS src/servic...t.js (47.116 s) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  inspectionService
+    createInspectionRequest
+      ΓêÜ should create inspection request and save to localStorage (290 ms)
+      ΓêÜ should append to existing requests (7 ms)
+    listInspectionRequestsByVendor
+      ΓêÜ should filter requests by vendorId (7 ms)
+      ΓêÜ should filter requests by vendorEmail (7 ms)
+      ΓêÜ should return empty array if no matches (9 ms)
+      ΓêÜ should sort by createdAt descending (6 ms)
+    listInspectionRequestsByBuyer
+      ΓêÜ should filter requests by buyerId (9 ms)
+      ΓêÜ should return empty array if no matches (10 ms)
+    updateInspectionRequest
+      ΓêÜ should update request with provided updates (14 ms)
+      ΓêÜ should not update non-existent request (6 ms)
+    syncLocalInspectionRequests
+      ΓêÜ should be a function (2 ms)
+      ΓêÜ should handle sync without errors (19 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        93.652 s
+Ran all test suites matching 
+/src\\services\\__tests__\\inspectionService.test.js/i.
