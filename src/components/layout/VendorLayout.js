@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaBars } from 'react-icons/fa';
 import { useSidebar } from '../../contexts/SidebarContext';
 import VendorSidebar from './VendorSidebar';
 
 const VendorLayout = ({ children }) => {
-  const { isCollapsed, toggleMobileSidebar } = useSidebar();
+  const { isCollapsed, toggleMobileSidebar, enableDesktopSidebar, disableDesktopSidebar } = useSidebar();
+
+  useEffect(() => {
+    enableDesktopSidebar();
+    return () => disableDesktopSidebar();
+  }, [disableDesktopSidebar, enableDesktopSidebar]);
 
   return (
     <div className="flex w-full">
