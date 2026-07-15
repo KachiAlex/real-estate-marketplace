@@ -6,7 +6,6 @@ import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 import { getApiUrl } from '../../utils/apiConfig';
-import { uploadToCloudinaryDirect } from '../../utils/cloudinaryDirectUpload';
 import { validatePasswordStrength, PASSWORD_REQUIREMENTS, getPasswordRequirementErrors } from '../../utils/passwordPolicy';
 
 const PasswordRequirementsList = ({ passwordStrength }) => {
@@ -203,12 +202,21 @@ const toggleRole
       if (signedResp && signedResp.ok) {
         const signedJson = await signedResp.json().catch(() => null);
         const signedParams = signedJson && signedJson.data;
-        if (signedParams) {
+        if (signedParams && signedParams.upload_url) {
           const uploads = [];
           for (const f of files) {
             try {
-              const upl = await uploadToCloudinaryDirect(f, signedParams);
-              uploads.push(upl);
+              const upl = await fetch(signedParams.upload_url, {
+                method: 'PUT',
+                body: f,
+                headers: { 'Content-Type': f.type || 'application/octet-stream' },
+              });
+              if (!upl.ok) throw new Error(`Upload failed: ${upl.status}`);
+              uploads.push({
+                url: signedParams.public_url,
+                name: f.name,
+                publicId: signedParams.object_key,
+              });
             } catch (err) {
               console.warn('Direct upload failed for file', f.name, err);
             }

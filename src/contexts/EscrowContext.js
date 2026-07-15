@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { getAuthToken } from '../utils/authToken';
+import { fetchCsrfToken } from '../services/apiClient';
 
 // Mock escrow transactions - REMOVED to prevent users from seeing mock data
 const mockEscrowTransactions = [];
@@ -69,8 +70,12 @@ export const EscrowProvider = ({ children }) => {
           const headers = { 'Content-Type': 'application/json' };
           if (token) headers.Authorization = `Bearer ${token}`;
 
+          const csrfToken = await fetchCsrfToken();
+          if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
           const resp = await fetch(getApiUrl('/escrow'), {
             method: 'POST',
+            credentials: 'include',
             headers,
             body: JSON.stringify({
               propertyId: String(itemId),

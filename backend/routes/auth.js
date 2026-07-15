@@ -520,7 +520,7 @@ router.get('/me', protect, async (req, res) => {
 router.put('/profile', protect, [
   body('firstName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
   body('lastName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
-  body('phone').optional().matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/).withMessage('Please provide a valid phone number')
+  body('phone').optional({ checkFalsy: true }).matches(/^(?:\+234\d{10}|234\d{10}|0\d{10}|\d{10})$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
   try {
     // Check for validation errors

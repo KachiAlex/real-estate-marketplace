@@ -1,0 +1,31 @@
+name: Phase4 Jest Open Handles
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - backend/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/phase4-jest-open-handles.yml
+
+jobs:
+  phase4-open-handles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Phase 4 with open handle detection
+        run: npm run test:phase4:open-handles

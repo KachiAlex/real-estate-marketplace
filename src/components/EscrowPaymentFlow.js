@@ -4,10 +4,11 @@ import { useProperty } from '../contexts/PropertyContext';
 import { useEscrow } from '../contexts/EscrowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useInvestment } from '../contexts/InvestmentContext';
-import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake, FaSpinner } from 'react-icons/fa';
+import { FaShoppingCart, FaLock, FaCreditCard, FaCheck, FaArrowLeft, FaCheckCircle, FaUserCheck, FaHandshake, FaSpinner, FaUniversity } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { getAuthToken } from '../utils/authToken';
+import { fetchCsrfToken } from '../services/apiClient';
 import { initializePaystackPayment } from '../services/paystackService';
 import { connectSocket, joinEscrowRoom, leaveEscrowRoom, onEvent, offEvent } from '../services/socketService';
 
@@ -54,6 +55,9 @@ const buildAuthHeaders = async (user) => {
   } else if (fallbackEmail) {
     headers['X-Mock-User-Email'] = fallbackEmail;
   }
+
+  const csrfToken = await fetchCsrfToken();
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
   return headers;
 };
@@ -157,6 +161,7 @@ const EscrowPaymentFlow = ({
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [paymentError, setPaymentError] = useState('');
   const [providerLimit, setProviderLimit] = useState(null);
+  const [bankTransferDetails, setBankTransferDetails] = useState(null);
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [isPaymentVerifying, setIsPaymentVerifying] = useState(false);
   const [activeEscrowId, setActiveEscrowId] = useState(null);
@@ -717,6 +722,7 @@ const EscrowPaymentFlow = ({
 
         const response = await fetch(getApiUrl('/payments/initialize'), {
           method: 'POST',
+          credentials: 'include',
           headers,
           body: JSON.stringify(payload),
           cache: 'no-store'
@@ -886,6 +892,16 @@ const EscrowPaymentFlow = ({
             setPaymentError('Unable to launch Paystack. Try again.');
             toast.error('Unable to launch Paystack.');
           }
+        } else if (providerData.isBankTransfer || paymentData.paymentMethod === 'bank_transfer') {
+          const bankDetails = providerData.bankDetails || {};
+          setBankTransferDetails({
+            ...bankDetails,
+            reference: providerReference || paymentRecord?.reference,
+            amount: itemPriceValue
+          });
+          setPaymentStatus('processing');
+          setStep(2);
+          toast.success('Bank transfer details generated. Please complete the transfer to proceed.');
         } else {
           // fallback: open provider authorization URL inside iframe (used only if provider returns an authorization link)
           if (!authorizationUrl) {
@@ -1077,7 +1093,7 @@ const EscrowPaymentFlow = ({
             {/* Payment Method Selection */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-900">Payment Method</label>
-              <div className="grid grid-cols-1 gap-3 max-w-xs">
+              <div className="grid grid-cols-2 gap-3 max-w-xs">
                 <button
                   type="button"
                   onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'paystack' }))}
@@ -1092,35 +1108,125 @@ const EscrowPaymentFlow = ({
                     <p className="font-medium text-gray-900 text-sm">Paystack</p>
                   </div>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentData(prev => ({ ...prev, paymentMethod: 'bank_transfer' }))}
+                  className={`p-4 border-2 rounded-lg transition ${
+                    paymentData.paymentMethod === 'bank_transfer'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <FaUniversity className="mx-auto text-xl mb-2 text-blue-600" />
+                    <p className="font-medium text-gray-900 text-sm">Bank Transfer</p>
+                  </div>
+                </button>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Paystack Checkout</h2>
-                <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
-              </div>
+              {paymentData.paymentMethod === 'bank_transfer' ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-gray-900">Bank Transfer Details</h2>
+                    <span className="text-sm text-gray-500">Manual • Verified in 1-2 hours</span>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  handleProcessPayment();
-                }}
-                disabled={loading || isInitializingPayment}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
-              >
-                {isInitializingPayment ? (
-                  <>
-                    <FaCreditCard className="animate-spin" />
-                    <span>Initializing Payment...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaCreditCard />
-                    <span>Pay with Paystack</span>
-                  </>
-                )}
-              </button>
+                  {bankTransferDetails ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Bank Name:</span>
+                          <span className="font-semibold text-gray-900">{bankTransferDetails.bankName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Account Name:</span>
+                          <span className="font-semibold text-gray-900">{bankTransferDetails.accountName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Account Number:</span>
+                          <span className="font-semibold text-gray-900 font-mono text-base">{bankTransferDetails.accountNumber}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(bankTransferDetails.amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Reference:</span>
+                          <span className="font-semibold text-gray-900 font-mono text-xs">{bankTransferDetails.reference}</span>
+                        </div>
+                      </div>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-yellow-800">
+                        {bankTransferDetails.instructions}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(bankTransferDetails.accountNumber);
+                          toast.success('Account number copied to clipboard');
+                        }}
+                        className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-medium text-sm hover:bg-gray-200 transition"
+                      >
+                        Copy Account Number
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleVerifyPendingPayment}
+                        disabled={isPaymentVerifying}
+                        className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
+                      >
+                        {isPaymentVerifying ? (
+                          <><FaSpinner className="animate-spin" /><span>Verifying...</span></>
+                        ) : (
+                          <><FaCheck /><span>I've Made the Transfer — Verify</span></>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleProcessPayment()}
+                      disabled={loading || isInitializingPayment}
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
+                    >
+                      {isInitializingPayment ? (
+                        <><FaSpinner className="animate-spin" /><span>Generating Details...</span></>
+                      ) : (
+                        <><FaUniversity /><span>Get Bank Transfer Details</span></>
+                      )}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-gray-900">Paystack Checkout</h2>
+                    <span className="text-sm text-gray-500">Secure • Encrypted • Instant</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleProcessPayment();
+                    }}
+                    disabled={loading || isInitializingPayment}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-70"
+                  >
+                    {isInitializingPayment ? (
+                      <>
+                        <FaCreditCard className="animate-spin" />
+                        <span>Initializing Payment...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaCreditCard />
+                        <span>Pay with Paystack</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
 
 
@@ -1350,5 +1456,6 @@ const EscrowPaymentFlow = ({
 };
 
 export default EscrowPaymentFlow;
+
 
 

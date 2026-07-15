@@ -314,74 +314,64 @@ router.post(
   }
 );
 
-// Provide Cloudinary signed upload params for direct client uploads
+// Provide MinIO presigned URL for vendor KYC direct uploads
 router.get('/vendor/kyc/signed', async (req, res) => {
   try {
-    const { cloudinary } = require('../config/cloudinary');
-    const { isConfigured } = require('../services/uploadService');
-    if (!isConfigured()) {
+    const minioService = require('../services/minioUploadService');
+    const { publicBaseUrl } = require('../config/minio');
+    if (!minioService.isConfigured()) {
       return res.status(503).json({ success: false, message: 'Upload service not configured' });
     }
-    const timestamp = Math.floor(Date.now() / 1000);
-    // For signature we sign only timestamp for simple direct uploads; adjust params as needed
-    const signature = cloudinary.utils.api_sign_request({ timestamp }, process.env.CLOUDINARY_API_SECRET);
-    res.json({ success: true, data: { api_key: process.env.CLOUDINARY_API_KEY, cloud_name: process.env.CLOUDINARY_CLOUD_NAME, timestamp, signature } });
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const objectKey = `vendor/kyc/${uniqueId}-document`;
+    const presignedUrl = await minioService.getPresignedUrl(objectKey, 3600);
+    res.json({ success: true, data: { upload_url: presignedUrl, public_url: `${publicBaseUrl}/${objectKey}`, object_key: objectKey } });
   } catch (e) {
     console.error('Signed upload error:', e);
     res.status(500).json({ success: false, message: 'Failed to create signed upload' });
   }
 });
 
-// Generate Cloudinary signed upload params for direct client uploads (images, videos, documents)
-// This allows the frontend to upload directly to Cloudinary, bypassing Vercel's 4.5MB body limit.
+// Generate MinIO presigned URL for direct client uploads
 router.post(
   '/signed',
   protect,
   async (req, res) => {
     try {
-      const { cloudinary, isConfigured } = require('../config/cloudinary');
-      if (!isConfigured()) {
+      const minioService = require('../services/minioUploadService');
+      const { minioClient, bucketName, publicBaseUrl } = require('../config/minio');
+      if (!minioService.isConfigured()) {
         return res.status(503).json({ success: false, message: 'Upload service not configured' });
       }
 
       const { uploadType = 'generic', fileName, metadata = {} } = req.body;
-      const timestamp = Math.floor(Date.now() / 1000);
 
-      // Map uploadType to Cloudinary folder and resource_type
       const typeMap = {
-        generic:            { folder: 'uploads/generic',        resource_type: 'image' },
-        property_images:      { folder: 'properties/images',      resource_type: 'image' },
-        property_videos:      { folder: 'properties/videos',      resource_type: 'video' },
-        property_documents:   { folder: 'properties/documents',   resource_type: 'raw'   },
-        user_avatar:          { folder: 'users/avatars',          resource_type: 'image' },
-        escrow_document:      { folder: 'escrow/documents',       resource_type: 'raw'   },
-        mortgage_document:    { folder: 'mortgages/documents',    resource_type: 'raw'   },
-        vendor_kyc:           { folder: 'vendor/kyc',             resource_type: 'raw'   }
+        generic:             { folder: 'uploads/generic' },
+        property_images:     { folder: 'properties/images' },
+        property_videos:     { folder: 'properties/videos' },
+        property_documents:  { folder: 'properties/documents' },
+        user_avatar:         { folder: 'users/avatars' },
+        escrow_document:     { folder: 'escrow/documents' },
+        mortgage_document:   { folder: 'mortgages/documents' },
+        vendor_kyc:          { folder: 'vendor/kyc' }
       };
 
       const config = typeMap[uploadType] || typeMap.generic;
+      const ext = path.extname(fileName || 'file');
       const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const publicId = `${config.folder}/${uniqueId}-${fileName || 'upload'}`;
+      const objectKey = `${config.folder}/${uniqueId}-${fileName || 'upload'}`;
 
-      const paramsToSign = {
-        timestamp,
-        folder: config.folder,
-        public_id: publicId
-      };
-
-      const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+      const presignedUrl = await minioService.getPresignedUrl(objectKey, 3600);
+      const publicUrl = `${publicBaseUrl}/${objectKey}`;
 
       res.json({
         success: true,
         data: {
-          api_key: process.env.CLOUDINARY_API_KEY,
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-          timestamp,
-          signature,
-          folder: config.folder,
-          public_id: publicId,
-          resource_type: config.resource_type,
-          upload_url: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${config.resource_type}/upload`
+          upload_url: presignedUrl,
+          public_url: publicUrl,
+          object_key: objectKey,
+          folder: config.folder
         }
       });
     } catch (e) {

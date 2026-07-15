@@ -84,62 +84,46 @@ const createLocalFallback = (file, pathHint) => {
  * Upload a file directly to Cloudinary using signed params from our backend.
  * This bypasses Vercel's 4.5MB serverless body limit entirely.
  */
-const uploadToCloudinaryDirect = async (file, uploadType, fileName = null) => {
-  // 1. Get signed upload params from backend
+const uploadToMinioDirect = async (file, uploadType, fileName = null) => {
+  // 1. Get presigned URL from backend
   const signRes = await apiClient.post('/upload/signed', {
     uploadType,
     fileName: fileName || file?.name || 'upload',
   });
   if (!signRes.data?.success) {
-    throw new Error(signRes.data?.message || 'Failed to get signed upload params');
+    throw new Error(signRes.data?.message || 'Failed to get presigned upload URL');
   }
-  const { api_key, cloud_name, timestamp, signature, folder, public_id, resource_type, upload_url } = signRes.data.data;
+  const { upload_url, public_url, object_key } = signRes.data.data;
 
-  // 2. Upload directly to Cloudinary
-  const cloudForm = new FormData();
-  cloudForm.append('file', file);
-  cloudForm.append('api_key', api_key);
-  cloudForm.append('timestamp', String(timestamp));
-  cloudForm.append('signature', signature);
-  cloudForm.append('folder', folder);
-  cloudForm.append('public_id', public_id);
-
+  // 2. Upload directly to MinIO via presigned PUT URL
   const uploadResponse = await fetch(upload_url, {
-    method: 'POST',
-    body: cloudForm
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': file?.type || 'application/octet-stream',
+    },
   });
   if (!uploadResponse.ok) {
-    const errText = await uploadResponse.text();
-    let parsed;
-    try { parsed = JSON.parse(errText); } catch (_) { parsed = null; }
-    const msg = parsed?.error?.message || parsed?.message || errText;
-    if (msg.toLowerCase().includes('file size too large') || msg.toLowerCase().includes('maximum is')) {
-      throw new Error(
-        `File too large for upload (${(file.size / 1024 / 1024).toFixed(1)}MB). ` +
-        `Cloudinary free plan limit is ~10MB. For videos, please paste a YouTube / Vimeo link instead.`
-      );
-    }
-    throw new Error(`Cloudinary upload failed: ${uploadResponse.status} ${errText}`);
+    const errText = await uploadResponse.text().catch(() => null);
+    throw new Error(`MinIO upload failed: ${uploadResponse.status} ${errText || ''}`);
   }
-  const cloudResult = await uploadResponse.json();
 
   return {
-    url: cloudResult.secure_url,
-    publicId: cloudResult.public_id,
-    format: cloudResult.format,
-    size: cloudResult.bytes,
-    width: cloudResult.width,
-    height: cloudResult.height,
-    resourceType: cloudResult.resource_type,
+    url: public_url,
+    publicId: object_key,
+    format: (file?.name || '').split('.').pop(),
+    size: file?.size,
+    width: null,
+    height: null,
+    resourceType: file?.type?.startsWith('video/') ? 'video' : (file?.type?.includes('pdf') ? 'raw' : 'image'),
     originalName: file?.name,
-    cloud_name
   };
 };
 
 class StorageService {
   async uploadFile(file, path, metadata = {}) {
     try {
-      const result = await uploadToCloudinaryDirect(file, 'generic', file?.name);
+      const result = await uploadToMinioDirect(file, 'generic', file?.name);
       return {
         success: true,
         url: result.url,
@@ -165,7 +149,7 @@ class StorageService {
       const results = await Promise.all(
         files.map(async (file) => {
           try {
-            const result = await uploadToCloudinaryDirect(file, 'generic', file.name);
+            const result = await uploadToMinioDirect(file, 'generic', file.name);
             return { success: true, ...result };
           } catch (e) {
             return { success: false, error: e.message, ...createLocalFallback(file, basePath) };
@@ -213,7 +197,7 @@ class StorageService {
       const results = await Promise.all(
         files.map(async (file) => {
           try {
-            const result = await uploadToCloudinaryDirect(file, 'property_images', file.name);
+            const result = await uploadToMinioDirect(file, 'property_images', file.name);
             return { success: true, ...result };
           } catch (e) {
             return { success: false, error: e.message, ...createLocalFallback(file, `properties/${propertyId || 'temp'}/images/${file.name}`) };
@@ -270,7 +254,7 @@ class StorageService {
       // Compress avatar client-side to avoid server body-size limits
       const fileToUpload = await compressImage(file, 1024, 1024, 0.9);
 
-      const result = await uploadToCloudinaryDirect(file, 'user_avatar', fileName);
+      const result = await uploadToMinioDirect(file, 'user_avatar', fileName);
 
       const avatarInfo = {
         userId,
@@ -325,7 +309,7 @@ class StorageService {
 
   async uploadEscrowDocument(file, escrowId, documentType, userId) {
     try {
-      const result = await uploadToCloudinaryDirect(file, 'escrow_document', file?.name);
+      const result = await uploadToMinioDirect(file, 'escrow_document', file?.name);
       return {
         success: true,
         url: result.url,

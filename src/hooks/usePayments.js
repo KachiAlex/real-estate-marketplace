@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { fetchCsrfToken } from '../services/apiClient';
+import { getApiUrl } from '../utils/apiConfig';
 
 /**
  * Custom hook for managing payments
@@ -23,11 +25,15 @@ export const usePayments = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/payments/initialize', {
+      const csrfToken = await fetchCsrfToken();
+
+      const response = await fetch(getApiUrl('/payments/initialize'), {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
         },
         body: JSON.stringify({
           amount,

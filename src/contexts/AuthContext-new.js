@@ -372,6 +372,24 @@ export const AuthProvider = ({ children }) => {
       const altUrl = getApiUrl(alt);
       const primaryUrl = getApiUrl(path);
 
+      // Add CSRF token for state-changing requests
+      const method = (options.method || 'GET').toUpperCase();
+      let enhancedOptions = { ...options, credentials: 'include' };
+      if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+        try {
+          const { fetchCsrfToken } = await import('../services/apiClient');
+          const csrfToken = await fetchCsrfToken();
+          if (csrfToken) {
+            enhancedOptions.headers = {
+              ...enhancedOptions.headers,
+              'X-CSRF-Token': csrfToken
+            };
+          }
+        } catch (e) {
+          console.warn('tryFetchAuth: Failed to fetch CSRF token:', e?.message);
+        }
+      }
+
       console.log('🔍 [AUTH DEBUG] fetch starting', {
         requestId, path, altUrl, primaryUrl,
         method: options.method || 'GET',
@@ -387,27 +405,27 @@ export const AuthProvider = ({ children }) => {
         toast(`[${label}] ${msg}`, { duration: 5000 });
       };
 
-      // Try 1: fetch alt
+      // Try 1: fetch primary (the /jwt path that actually exists)
       try {
-        const resAlt = await fetchWithTimeout(altUrl, options, 15000);
-        if (resAlt && resAlt.status !== 404) return { response: resAlt, errors };
-      } catch (e) { pushError('fetch-alt', e); }
-
-      // Try 2: fetch primary
-      try {
-        const res = await fetchWithTimeout(primaryUrl, options, 15000);
+        const res = await fetchWithTimeout(primaryUrl, enhancedOptions, 15000);
         if (res && res.status !== 404) return { response: res, errors };
       } catch (e) { pushError('fetch-primary', e); }
 
+      // Try 2: fetch alt (without /jwt, for legacy compatibility)
+      try {
+        const resAlt = await fetchWithTimeout(altUrl, enhancedOptions, 15000);
+        if (resAlt && resAlt.status !== 404) return { response: resAlt, errors };
+      } catch (e) { pushError('fetch-alt', e); }
+
       // Try 3: XHR alt
       try {
-        const resAltXhr = await xhrFetch(altUrl, options);
+        const resAltXhr = await xhrFetch(altUrl, enhancedOptions);
         if (resAltXhr && resAltXhr.status !== 404) return { response: resAltXhr, errors };
       } catch (e) { pushError('xhr-alt', e); }
 
       // Try 4: XHR primary
       try {
-        const resXhr = await xhrFetch(primaryUrl, options);
+        const resXhr = await xhrFetch(primaryUrl, enhancedOptions);
         if (resXhr && resXhr.status !== 404) return { response: resXhr, errors };
       } catch (e) { pushError('xhr-primary', e); }
 

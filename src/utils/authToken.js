@@ -32,8 +32,24 @@ export const hasAuthToken = async () => {
 
 export const authenticatedFetch = async (url, options = {}) => {
   const headers = await getAuthHeaders();
+
+  // Add CSRF token for state-changing requests
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    try {
+      const { fetchCsrfToken } = await import('../services/apiClient');
+      const csrfToken = await fetchCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+    } catch (e) {
+      console.warn('authenticatedFetch: Failed to fetch CSRF token:', e?.message);
+    }
+  }
+
   const requestOptions = {
     ...options,
+    credentials: 'include',
     headers: {
       ...headers,
       ...(options.headers || {})

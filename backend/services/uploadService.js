@@ -1,9 +1,9 @@
-const { cloudinary, isConfigured, uploadOptions, getThumbnailUrl } = require('../config/cloudinary');
 const { isValidFileType, isValidFileSize } = require('../config/security');
 const { infoLogger, errorLogger } = require('../config/logger');
 const fs = require('fs').promises;
 const path = require('path');
-const { PassThrough } = require('stream');
+const minioUploadService = require('./minioUploadService');
+const { uploadOptions } = require('../config/minio');
 
 /**
  * Upload Service
@@ -57,8 +57,8 @@ const uploadFile = async (file, category = 'images', options = {}) => {
     const hasBuffer = !!file.buffer;
     const hasPath = !!file.path;
 
-    // Local fallback when Cloudinary is not configured
-    if (!isConfigured()) {
+    // Local fallback when MinIO is not configured
+    if (!minioUploadService.isConfigured()) {
       const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
       const localRoot = isServerless
         ? path.join('/tmp', 'uploads')
@@ -81,7 +81,7 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       const format = (path.extname(filename) || '').replace('.', '');
       const resourceType = securityCategory === 'videos' ? 'video' : (securityCategory === 'documents' ? 'raw' : 'image');
 
-      infoLogger('File stored locally (Cloudinary fallback)', { filename, resourceType });
+      infoLogger('File stored locally (MinIO fallback)', { filename, resourceType });
 
       return {
         success: true,
@@ -97,51 +97,11 @@ const uploadFile = async (file, category = 'images', options = {}) => {
       };
     }
 
-    // Prepare upload options and ensure resource_type defaults match category
-    const uploadConfig = {
-      ...uploadOptions[category],
-      ...options,
-      use_filename: true,
-      unique_filename: true,
-    };
-
-    // Ensure resource_type is explicitly set to avoid Cloudinary errors
-    if (!uploadConfig.resource_type) {
-      if (securityCategory === 'documents' || securityCategory === 'mortgagedocuments' || securityCategory === 'mortgageDocument') {
-        uploadConfig.resource_type = 'raw';
-      } else if (securityCategory === 'videos') {
-        uploadConfig.resource_type = 'video';
-      } else {
-        uploadConfig.resource_type = 'image';
-      }
-    }
-
-    // Upload to Cloudinary — support both memoryStorage (buffer) and diskStorage (path)
-    let result;
-    if (hasBuffer) {
-      result = await new Promise((resolve, reject) => {
-        const stream = new PassThrough();
-        const uploadStream = cloudinary.uploader.upload_stream(uploadConfig, (error, res) => {
-          if (error) return reject(error);
-          resolve(res);
-        });
-        stream.end(file.buffer);
-        stream.pipe(uploadStream);
-      });
-    } else if (hasPath) {
-      result = await cloudinary.uploader.upload(file.path, uploadConfig);
-      // Delete local file after upload
-      try {
-        await fs.unlink(file.path);
-      } catch (unlinkError) {
-        errorLogger(unlinkError, null, { context: 'File cleanup after upload' });
-      }
-    } else {
-      throw new Error('No file data available for upload');
-    }
+    // Upload to MinIO
+    const result = await minioUploadService.uploadFile(file, category, options);
 
     infoLogger('File uploaded successfully', {
-      publicId: result.public_id,
+      publicId: result.data.publicId,
       category,
       size: file.size
     });
@@ -149,14 +109,14 @@ const uploadFile = async (file, category = 'images', options = {}) => {
     return {
       success: true,
       data: {
-        url: result.secure_url,
-        publicId: result.public_id,
-        format: result.format,
-        size: result.bytes,
-        width: result.width,
-        height: result.height,
-        resourceType: result.resource_type,
-        thumbnail: category === 'images' ? getThumbnailUrl(result.public_id) : null
+        url: result.data.url,
+        publicId: result.data.publicId,
+        format: result.data.format,
+        size: result.data.size,
+        width: result.data.width,
+        height: result.data.height,
+        resourceType: result.data.resourceType,
+        thumbnail: null
       }
     };
   } catch (error) {
@@ -239,26 +199,24 @@ const uploadMultipleFiles = async (files, category = 'images', options = {}) => 
 };
 
 /**
- * Delete a file from Cloudinary
- * @param {String} publicId - Cloudinary public ID
- * @param {String} resourceType - Resource type (image, video, raw)
+ * Delete a file from MinIO
+ * @param {String} publicId - Object key in MinIO
+ * @param {String} resourceType - Resource type (unused in MinIO but kept for API compat)
  * @returns {Promise<Object>} Deletion result
  */
 const deleteFile = async (publicId, resourceType = 'image') => {
   try {
-    if (!isConfigured()) {
-      throw new Error('Cloudinary is not configured');
+    if (!minioUploadService.isConfigured()) {
+      throw new Error('MinIO is not configured');
     }
 
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType
-    });
+    const result = await minioUploadService.deleteFile(publicId);
 
-    infoLogger('File deleted successfully', { publicId, resourceType });
+    infoLogger('File deleted successfully', { publicId });
 
     return {
-      success: result.result === 'ok',
-      message: result.result === 'ok' ? 'File deleted successfully' : 'File not found or already deleted'
+      success: result.success,
+      message: result.success ? 'File deleted successfully' : 'File not found or already deleted'
     };
   } catch (error) {
     errorLogger(error, null, { context: 'File deletion', publicId });
@@ -267,9 +225,9 @@ const deleteFile = async (publicId, resourceType = 'image') => {
 };
 
 /**
- * Delete multiple files from Cloudinary
- * @param {Array} publicIds - Array of Cloudinary public IDs
- * @param {String} resourceType - Resource type
+ * Delete multiple files from MinIO
+ * @param {Array} publicIds - Array of object keys
+ * @param {String} resourceType - Unused but kept for API compat
  * @returns {Promise<Object>} Deletion results
  */
 const deleteMultipleFiles = async (publicIds, resourceType = 'image') => {
@@ -278,12 +236,9 @@ const deleteMultipleFiles = async (publicIds, resourceType = 'image') => {
       throw new Error('No public IDs provided');
     }
 
-    const result = await cloudinary.api.delete_resources(publicIds, {
-      resource_type: resourceType
-    });
-
-    const deleted = Object.keys(result.deleted).filter(id => result.deleted[id] === 'deleted');
-    const notFound = Object.keys(result.deleted).filter(id => result.deleted[id] === 'not_found');
+    const results = await Promise.allSettled(publicIds.map(id => minioUploadService.deleteFile(id)));
+    const deleted = results.filter(r => r.status === 'fulfilled' && r.value.success).map((_, i) => publicIds[i]);
+    const notFound = results.filter(r => r.status === 'fulfilled' && !r.value.success).map((_, i) => publicIds[i]);
 
     infoLogger('Multiple files deleted', {
       totalDeleted: deleted.length,
@@ -422,13 +377,15 @@ const uploadMortgageDocuments = async (files, userId, applicationId = null) => {
  * @returns {Object} URLs for different sizes
  */
 const generateImageVariants = (publicId) => {
+  const { publicBaseUrl } = require('../config/minio');
+  const baseUrl = `${publicBaseUrl}/${publicId}`;
   return {
-    original: cloudinary.url(publicId, { secure: true }),
-    large: getThumbnailUrl(publicId, 1920, 1080),
-    medium: getThumbnailUrl(publicId, 1200, 800),
-    small: getThumbnailUrl(publicId, 800, 600),
-    thumbnail: getThumbnailUrl(publicId, 400, 300),
-    card: getThumbnailUrl(publicId, 600, 400)
+    original: baseUrl,
+    large: baseUrl,
+    medium: baseUrl,
+    small: baseUrl,
+    thumbnail: baseUrl,
+    card: baseUrl
   };
 };
 
@@ -443,6 +400,6 @@ module.exports = {
   uploadAvatar,
   uploadMortgageDocuments,
   generateImageVariants,
-  isConfigured
+  isConfigured: minioUploadService.isConfigured
 };
 

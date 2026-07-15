@@ -220,7 +220,7 @@ router.post('/pay', [
       vendor,
       plan,
       payment,
-      callbackUrl: `${process.env.CLIENT_URL || 'http://localhost:3000'}/subscription/payment/verify`
+      callbackUrl: `${process.env.CLIENT_URL || 'http://localhost:3000'}/vendor/subscription`
     });
 
     if (!paystackResult.success) {

@@ -62,7 +62,7 @@ const PropertyPurchaseButton = ({ property, className = '' }) => {
         <EscrowPaymentFlow
           property={property}
           defaultPaymentMethod="paystack"
-          autoStartPayment={true}
+          autoStartPayment={false}
           onClose={() => setShowPaymentFlow(false)}
           isModal={true}
         />

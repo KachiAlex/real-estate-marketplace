@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCreditCard, FaLock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaTimes, FaCreditCard, FaLock, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaCheck } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { authenticatedFetch } from '../utils/authToken';
 
 const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentUrl, setPaymentUrl] = useState('');
   const [reference, setReference] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const popupRef = useRef(null);
+  const pollIntervalRef = useRef(null);
 
   const openPaymentPopup = (url) => {
     if (typeof window === 'undefined') return null;
@@ -91,24 +98,37 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
         return;
       }
 
-      const checkPayment = setInterval(() => {
+      popupRef.current = popup;
+
+      // Poll for popup closure
+      pollIntervalRef.current = setInterval(() => {
         if (!popup || popup.closed) {
-          clearInterval(checkPayment);
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+          popupRef.current = null;
           verifyPayment();
         }
       }, 1000);
 
+      // Timeout after 30 minutes
       setTimeout(() => {
-        clearInterval(checkPayment);
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
         if (popup && !popup.closed) {
           popup.close();
         }
+        popupRef.current = null;
       }, 30 * 60 * 1000);
     }
   };
 
   const verifyPayment = async () => {
     if (!reference) return;
+
+    setVerifying(true);
+    setError('');
 
     try {
       const response = await authenticatedFetch(getApiUrl('/subscription/verify'), {
@@ -122,14 +142,23 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
       const result = await response.json();
 
       if (result.success) {
-        onSuccess && onSuccess(result.data);
-        onClose();
+        setPaymentComplete(true);
+        setVerifying(false);
+        toast.success('Subscription payment successful! Welcome aboard.');
+        if (onSuccess) onSuccess(result.data);
+        // Auto-close after showing success state
+        setTimeout(() => {
+          onClose();
+          navigate('/vendor/subscription');
+        }, 2000);
       } else {
-        setError('Payment verification failed. Please try again.');
+        setVerifying(false);
+        setError(result.message || 'Payment verification failed. If you have completed payment, please contact support.');
       }
     } catch (error) {
+      setVerifying(false);
       console.error('Payment verification error:', error);
-      setError('Payment verification failed');
+      setError('Payment verification failed. If you have completed payment, please contact support.');
     }
   };
 
@@ -140,6 +169,14 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (popupRef.current && !popupRef.current.closed) popupRef.current.close();
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -174,6 +211,25 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               >
                 Retry
               </button>
+            </div>
+          ) : paymentComplete ? (
+            <div className="text-center py-8 space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <FaCheckCircle className="text-green-600 text-3xl" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Payment Successful!</h3>
+              <p className="text-gray-600 text-sm">Your subscription is now active. Redirecting...</p>
+              <div className="flex items-center justify-center">
+                <FaSpinner className="animate-spin text-blue-600" />
+              </div>
+            </div>
+          ) : verifying ? (
+            <div className="text-center py-8 space-y-4">
+              <div className="flex items-center justify-center">
+                <FaSpinner className="animate-spin text-blue-600 text-3xl" />
+              </div>
+              <p className="text-gray-600">Verifying your payment...</p>
+              <p className="text-xs text-gray-400">Please do not close this window.</p>
             </div>
           ) : paymentUrl ? (
             <div className="space-y-4 sm:space-y-6">
@@ -224,7 +280,7 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
                   <div>
                     <h4 className="font-semibold text-blue-900 mb-1 text-sm">Secure Payment</h4>
                     <p className="text-xs sm:text-sm text-blue-800">
-                      Your payment is processed securely through Paystack. 
+                      Your payment is processed securely through Paystack.
                       We never store your card information.
                     </p>
                   </div>
@@ -243,6 +299,18 @@ const SubscriptionPaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
               <p className="text-xs text-gray-500 text-center">
                 You will be redirected to Paystack's secure payment page
               </p>
+
+              <button
+                onClick={verifyPayment}
+                disabled={verifying}
+                className="w-full bg-green-600 text-white h-11 min-h-[44px] px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center text-sm disabled:opacity-70"
+              >
+                {verifying ? (
+                  <><FaSpinner className="animate-spin mr-2" /><span>Verifying...</span></>
+                ) : (
+                  <><FaCheck className="mr-2" /><span>I've Completed Payment — Verify</span></>
+                )}
+              </button>
             </div>
           ) : (
             <div className="text-center py-8">

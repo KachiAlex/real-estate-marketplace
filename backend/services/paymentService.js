@@ -122,6 +122,20 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
           link: flutterwaveResult.data.link
         };
       }
+    } else if (paymentMethod === 'bank_transfer') {
+      const bankDetails = {
+        bankName: process.env.BANK_TRANSFER_BANK_NAME || 'Propertyark Escrow Account',
+        accountName: process.env.BANK_TRANSFER_ACCOUNT_NAME || 'Propertyark Nigeria Ltd',
+        accountNumber: process.env.BANK_TRANSFER_ACCOUNT_NUMBER || '0123456789',
+        routingNumber: process.env.BANK_TRANSFER_ROUTING_NUMBER || '',
+        instructions: 'Transfer the exact amount and include the payment reference in the transfer narration. Your escrow funds will be confirmed once the transfer is verified (typically within 1-2 business hours).'
+      };
+      providerData = {
+        txRef: reference,
+        bankDetails,
+        isBankTransfer: true
+      };
+      console.log('PaymentService: Bank transfer payment initialized with reference:', reference);
     }
   } catch (providerError) {
     console.error('PaymentService: Provider initialization error:', providerError.message);

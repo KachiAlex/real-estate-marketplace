@@ -115,8 +115,10 @@ const shouldSkipCsrf = (req) => {
     return true;
   }
 
-  // Safe HTTP methods - no state change
-  if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
+  // OPTIONS and HEAD are safe - skip CSRF. 
+  // GET must NOT be skipped: csurf needs to run on GET to attach req.csrfToken()
+  // and set the CSRF cookie. csurf internally only validates state-changing methods.
+  if (req.method === 'OPTIONS' || req.method === 'HEAD') {
     return true;
   }
 
@@ -155,6 +157,17 @@ const csrfProtectionConditional = (req, res, next) => {
   if (shouldSkipCsrf(req)) {
     // Skip CSRF for this request
     return next();
+  }
+
+  // Debug: log CSRF-related headers and cookies for POST/PUT/DELETE/PATCH
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    console.log('🔒 [CSRF-DEBUG]', req.method, req.path, {
+      hasXCsrfHeader: !!req.headers['x-csrf-token'],
+      xCsrfToken: req.headers['x-csrf-token'] ? req.headers['x-csrf-token'].substring(0, 10) + '...' : 'MISSING',
+      cookieHeader: req.headers.cookie ? req.headers.cookie.substring(0, 100) : 'MISSING',
+      hasCsrfCookie: !!(req.cookies && req.cookies._csrf),
+      csrfCookieValue: req.cookies && req.cookies._csrf ? req.cookies._csrf.substring(0, 10) + '...' : 'MISSING'
+    });
   }
 
   // Apply CSRF protection

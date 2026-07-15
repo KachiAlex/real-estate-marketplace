@@ -1,0 +1,116 @@
+name: Build Android APK (Gradle)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'mobile-app/**'
+      - '.github/workflows/build-android-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Clean npm cache and remove lock files
+        run: npm cache clean --force
+      
+      - name: Delete lock files for clean install
+        working-directory: ./mobile-app
+        run: rm -f package-lock.json yarn.lock
+      
+      - name: Install yarn
+        run: npm install -g yarn
+      
+      - name: Clean install dependencies with yarn
+        working-directory: ./mobile-app
+        run: |
+          rm -rf node_modules yarn.lock
+          yarn install --network-timeout=100000
+      
+      - name: Configure git (required for prebuild)
+        run: |
+          git config --global user.email "build@example.com"
+          git config --global user.name "Build Bot"
+      
+      - name: Prebuild native Android code
+        working-directory: ./mobile-app
+        run: npx expo prebuild --platform android --clean
+      
+      - name: Configure Gradle globally for all modules
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties << 'GRADLE_PROPS'
+          org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=2048m
+          kotlin.jvm.target.validation.mode=warning
+          android.compileSdkVersion=36
+          android.targetSdkVersion=36
+          android.minSdkVersion=24
+          GRADLE_PROPS
+          
+          # Create init script to force SDK versions on all projects
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/android-sdk.gradle << 'GRADLE_INIT'
+          allprojects {
+            afterEvaluate {
+              if (plugins.hasPlugin('com.android.base')) {
+                android {
+                  if (!compileSdkVersion) {
+                    compileSdk 36
+                  }
+                  if (!defaultConfig.targetSdkVersion) {
+                    defaultConfig.targetSdkVersion 36
+                  }
+                  if (!defaultConfig.minSdkVersion) {
+                    defaultConfig.minSdkVersion 24
+                  }
+                }
+              }
+            }
+          }
+          GRADLE_INIT
+      
+      - name: Build APK with Gradle
+        working-directory: ./mobile-app/android
+        env:
+          _JAVA_OPTIONS: "-Xmx4g"
+        run: |
+          ./gradlew assembleRelease 2>&1 | tail -200
+      
+      - name: Find and upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ./mobile-app/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+      
+      - name: Display build result
+        if: success()
+        run: echo "✅ APK built successfully at mobile-app/android/app/build/outputs/apk/release/app-release.apk"
+      
+      - name: Notify on failure
+        if: failure()
+        run: echo "❌ APK build failed. Check logs above for details."

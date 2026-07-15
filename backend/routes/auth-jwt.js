@@ -1125,7 +1125,7 @@ router.put('/update-profile', verifyToken, [
   // same validation as /api/auth/profile
   body('firstName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
   body('lastName').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
-  body('phone').optional().matches(/^([+]?\d{1,4}[-.\s]?)?(\(?\d{2,4}\)?[-.\s]?){1,4}\d{3,4}$/).withMessage('Please provide a valid phone number')
+  body('phone').optional({ checkFalsy: true }).matches(/^([+]?\d{1,4}[-.\s]?)?(\(?\d{2,4}\)?[-.\s]?){1,4}\d{3,4}$/).withMessage('Please provide a valid phone number')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
