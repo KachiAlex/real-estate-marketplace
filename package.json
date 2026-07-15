@@ -5,7 +5,7 @@
   "private": true,
   "main": "backend/server.js",
   "proxy": "http://localhost:5001",
-  "homepage": ".",
+  "homepage": "/",
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
