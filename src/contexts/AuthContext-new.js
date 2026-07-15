@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
+import { fetchCsrfToken } from '../services/apiClient';
 import { CapacitorHttp } from '@capacitor/core';
 const defaultContextValue = {
   currentUser: null,
@@ -806,7 +807,17 @@ export const AuthProvider = ({ children }) => {
         return updated;
       }
 
-      let resp = await fetch(getApiUrl('/api/users/switch-role'), { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
+      const csrfToken = await fetchCsrfToken();
+      let resp = await fetch(getApiUrl('/api/users/switch-role'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+        body: JSON.stringify({ role: newRole })
+      });
       let data = resp ? await resp.json().catch(() => ({})) : {};
 
       if (!resp || resp.status === 404) {
