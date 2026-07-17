@@ -131,6 +131,8 @@ const shouldSkipCsrf = (req) => {
     '/api/auth/logout',        // User logout
     '/api/auth/forgot-password', // Password reset request
     '/api/auth/reset-password', // Password reset confirmation
+    '/api/auth/jwt/google',   // Google OAuth callback (no CSRF token available)
+    '/api/auth/google',       // Google OAuth (legacy route)
     '/api/health',             // Health check
     '/api/config',             // Static config
     '/uploads'                 // Serving static files

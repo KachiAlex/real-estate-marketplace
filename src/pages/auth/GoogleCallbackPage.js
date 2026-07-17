@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import { getApiUrl } from '../../utils/apiConfig';
@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 const GoogleCallbackPage = () => {
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -21,20 +20,20 @@ const GoogleCallbackPage = () => {
     const errorParam = params.get('error');
 
     if (errorParam) {
-      setError(`Google authentication error: ${errorParam}`);
+      toast.error(`Google authentication error: ${errorParam}`, { duration: 5000 });
       setTimeout(() => navigate('/auth/login', { replace: true }), 3000);
       return;
     }
 
     if (!code) {
-      setError('No authorization code received from Google.');
+      toast.error('No authorization code received from Google.', { duration: 5000 });
       setTimeout(() => navigate('/auth/login', { replace: true }), 3000);
       return;
     }
 
     const savedState = sessionStorage.getItem('google_oauth_state');
     if (savedState && state !== savedState) {
-      setError('State mismatch. Possible CSRF attack detected.');
+      toast.error('State mismatch. Possible CSRF attack detected.', { duration: 5000 });
       setTimeout(() => navigate('/auth/login', { replace: true }), 3000);
       return;
     }
@@ -87,7 +86,7 @@ const GoogleCallbackPage = () => {
         }
       } catch (err) {
         console.error('Google callback error:', err);
-        setError(err.message || 'Google sign-in failed.');
+        toast.error(err.message || 'Google sign-in failed.', { duration: 5000 });
         setTimeout(() => navigate('/auth/login', { replace: true }), 3000);
       }
     })();
@@ -96,17 +95,10 @@ const GoogleCallbackPage = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-900">
       <div className="text-center">
-        {error ? (
-          <div className="space-y-3">
-            <div className="text-red-400 text-lg font-medium">{error}</div>
-            <div className="text-slate-400 text-sm">Redirecting back to login...</div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="inline-block w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-            <div className="text-white text-lg font-medium">Completing Google sign-in...</div>
-          </div>
-        )}
+        <div className="space-y-3">
+          <div className="inline-block w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <div className="text-white text-lg font-medium">Completing Google sign-in...</div>
+        </div>
       </div>
     </div>
   );
