@@ -949,14 +949,17 @@ export const AuthProvider = ({ children }) => {
     } catch (e) { console.warn('setUserLocally failed', e); return null; }
   }, [currentUser]);
 
-  const signInWithGoogle = useCallback(async (idToken) => {
+  const signInWithGoogle = useCallback(async (credential) => {
     setLoading(true);
     try {
       const url = getApiUrl('/auth/jwt/google');
+      const body = typeof credential === 'string'
+        ? { idToken: credential }
+        : { code: credential.code, redirectUri: credential.redirectUri };
       const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
+        body: JSON.stringify(body)
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp || !resp.ok) {

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
-import { getApiUrl } from '../../utils/apiConfig';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 import toast from 'react-hot-toast';
 
@@ -42,41 +41,11 @@ const GoogleCallbackPage = () => {
 
     (async () => {
       try {
-        const resp = await fetch(getApiUrl('/auth/jwt/google'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, redirectUri: `${window.location.origin}/auth/google-callback` })
+        const user = await signInWithGoogle({
+          code,
+          redirectUri: `${window.location.origin}/auth/google-callback`
         });
-        const data = await resp.json().catch(() => ({}));
-        if (!resp || !resp.ok) {
-          throw new Error(data.message || 'Google sign-in failed on server');
-        }
 
-        const tokenVal = data.accessToken || data.token || null;
-        if (tokenVal) {
-          localStorage.setItem('accessToken', tokenVal);
-          if (data.refreshToken) {
-            localStorage.setItem('refreshToken', data.refreshToken);
-          }
-        }
-
-        let user = data.user;
-        if (tokenVal) {
-          try {
-            const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
-              method: 'GET',
-              headers: { Authorization: `Bearer ${tokenVal}` }
-            });
-            if (meResp && meResp.ok) {
-              const meData = await meResp.json().catch(() => ({}));
-              if (meData.user || meData) user = meData.user || meData;
-            }
-          } catch (e) {
-            console.warn('Google callback: failed to fetch /me', e);
-          }
-        }
-
-        toast.success('Google sign-in successful!');
         const redirect = sessionStorage.getItem('authRedirect');
         if (redirect) {
           sessionStorage.removeItem('authRedirect');
