@@ -229,6 +229,12 @@ const AdminDashboard = () => {
   const escrowsLoadedRef = useRef(false);
   const disputesLoadedRef = useRef(false);
   const propertiesLoadedRef = useRef(false);
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+  const escrowStatusFilterRef = useRef(escrowStatusFilter);
+  escrowStatusFilterRef.current = escrowStatusFilter;
+  const escrowSearchRef = useRef(escrowSearch);
+  escrowSearchRef.current = escrowSearch;
   const [blogPosts, setBlogPosts] = useState([]);
   const [blogLoading, setBlogLoading] = useState(false);
 
@@ -732,10 +738,10 @@ const AdminDashboard = () => {
     setEscrowLoading(true);
     setEscrowError('');
     try {
-      const requestedPage = page || pagination.currentPage || 1;
-      const requestedLimit = limit || pagination.itemsPerPage || 20;
-      const statusFilter = status || escrowStatusFilter;
-      const searchQuery = search !== undefined ? search : escrowSearch;
+      const requestedPage = page || paginationRef.current.currentPage || 1;
+      const requestedLimit = limit || paginationRef.current.itemsPerPage || 20;
+      const statusFilter = status || escrowStatusFilterRef.current;
+      const searchQuery = search !== undefined ? search : escrowSearchRef.current;
 
       const response = await apiClient.get('/escrow', {
         params: {
@@ -779,7 +785,7 @@ const AdminDashboard = () => {
     } finally {
       setEscrowLoading(false);
     }
-  }, [user, pagination.currentPage, pagination.itemsPerPage, escrowStatusFilter, escrowSearch]);
+  }, [user]);
 
   const fetchAdminDisputes = useCallback(async () => {
     if (!user || user.role !== 'admin') return;
@@ -857,7 +863,8 @@ const AdminDashboard = () => {
     fetchEscrowTransactions({ page: 1 });
     fetchAdminDisputes();
     loadUsersFromApi({ page: 1, limit: 100 });
-  }, [user?.role, fetchEscrowTransactions, fetchAdminDisputes, loadUsersFromApi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
@@ -872,7 +879,7 @@ const AdminDashboard = () => {
     if (activeTab === 'disputes' && !disputeLoading && !disputesLoadedRef.current) {
       fetchAdminDisputes();
     }
-  }, [activeTab, user?.role, loading, fetchAdminProperties, selectedStatus, selectedVerificationStatus, fetchEscrowTransactions, fetchAdminDisputes, fetchFailedPayments, escrowLoading, disputeLoading]);
+  }, [activeTab, user?.role, loading, selectedStatus, selectedVerificationStatus, escrowLoading, disputeLoading]);
 
   useEffect(() => {
     if (!statsLoading && user?.role === 'admin' && !statsRefreshIntervalRef.current) {
@@ -911,7 +918,8 @@ const AdminDashboard = () => {
         usersRefreshIntervalRef.current = null;
       }
     };
-  }, [activeTab, user?.role, loadUsersFromApi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, user?.role]);
 
   // ...
 
@@ -1512,15 +1520,13 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <AdminDisputesManagement
-                disputes={disputes}
-                loading={disputeLoading}
-                error={disputeError}
-                onResolveDispute={handleResolveDispute}
-                onRefresh={fetchAdminDisputes}
-              />
-            </div>
+            <AdminDisputesManagement
+              disputes={disputes}
+              loading={disputeLoading}
+              error={disputeError}
+              onResolveDispute={handleResolveDispute}
+              onRefresh={fetchAdminDisputes}
+            />
           </div>
         )}
 

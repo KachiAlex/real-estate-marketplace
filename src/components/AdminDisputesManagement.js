@@ -11,13 +11,16 @@ import {
   FaDollarSign,
   FaUser,
   FaHome,
-  FaCalendar
+  FaCalendar,
+  FaThLarge,
+  FaList
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', onResolveDispute, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [viewMode, setViewMode] = useState('card');
   const [selectedDispute, setSelectedDispute] = useState(null);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [resolutionType, setResolutionType] = useState('');
@@ -191,19 +194,37 @@ const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', o
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div className="relative">
-            <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="under_review">Under Review</option>
-              <option value="resolved">Resolved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="under_review">Under Review</option>
+                <option value="resolved">Resolved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('card')}
+                className={`px-3 py-2 text-sm ${viewMode === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                title="Card view"
+              >
+                <FaThLarge />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                title="List view"
+              >
+                <FaList />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -215,7 +236,7 @@ const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', o
           <h3 className="text-lg font-semibold text-gray-600 mb-2">No Disputes Found</h3>
           <p className="text-gray-500">No disputes match your search criteria.</p>
         </div>
-      ) : (
+      ) : viewMode === 'card' ? (
         <div className="space-y-4">
           {filteredDisputes.map((dispute) => (
             <div key={dispute.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -281,6 +302,47 @@ const AdminDisputesManagement = ({ disputes = [], loading = false, error = '', o
               </div>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Property</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Buyer</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Seller</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Reason</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Amount</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredDisputes.map((dispute) => (
+                  <tr key={dispute.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-900 font-medium">{dispute.propertyTitle || '—'}</td>
+                    <td className="px-4 py-3 text-gray-700">{dispute.buyerName || '—'}</td>
+                    <td className="px-4 py-3 text-gray-700">{dispute.sellerName || '—'}</td>
+                    <td className="px-4 py-3 text-gray-700">{getDisputeReasonLabel(dispute.reason)}</td>
+                    <td className="px-4 py-3 text-gray-700">{formatCurrency(dispute.amount)}</td>
+                    <td className="px-4 py-3">{getStatusBadge(dispute.status)}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(dispute.createdAt)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleResolve(dispute)}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-flex items-center space-x-1 text-xs"
+                      >
+                        <FaGavel />
+                        <span>Resolve</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
