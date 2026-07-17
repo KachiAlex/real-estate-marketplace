@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import { getApiUrl } from '../utils/apiConfig';
 import { authenticatedFetch } from '../utils/authToken';
 
-const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }) => {
+const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth, onConfigChange }) => {
   // All hooks must be called unconditionally at the top level
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,10 +23,13 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   const [newStatus, setNewStatus] = useState(''); // New status being selected
   const [changing, setChanging] = useState(false); // Loading state for status change
   const [subscriptionFee, setSubscriptionFee] = useState(config?.vendorSubscriptionFee || 50000);
+  const [verificationFee, setVerificationFee] = useState(config?.verificationFee || 50000);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     setSubscriptionFee(config?.vendorSubscriptionFee || 50000);
-  }, [config?.vendorSubscriptionFee]);
+    setVerificationFee(config?.verificationFee || 50000);
+  }, [config?.vendorSubscriptionFee, config?.verificationFee]);
 
   // Fetch verification applications
   const fetchApplications = async () => {
@@ -204,11 +207,49 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
   const handleSubscriptionFeeChange = (e) => {
     const value = Number(e.target.value.replace(/[^\d]/g, ''));
     setSubscriptionFee(value);
-    if (typeof config?.onConfigChange === 'function') {
-      config.onConfigChange({ vendorSubscriptionFee: value });
+    if (typeof onConfigChange === 'function') {
+      onConfigChange({ vendorSubscriptionFee: value });
     }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem('vendorSubscriptionFee', value);
+  };
+
+  const handleVerificationFeeChange = (e) => {
+    const value = Number(e.target.value.replace(/[^\d]/g, ''));
+    setVerificationFee(value);
+    if (typeof onConfigChange === 'function') {
+      onConfigChange({ verificationFee: value });
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const response = await authenticatedFetch(getApiUrl('/admin/settings'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          verificationFee: Number(verificationFee),
+          vendorSubscriptionFee: Number(subscriptionFee)
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to save settings');
+      }
+
+      const data = await response.json();
+      if (typeof onConfigChange === 'function') {
+        onConfigChange({
+          verificationFee: Number(verificationFee),
+          vendorSubscriptionFee: Number(subscriptionFee)
+        });
+      }
+      toast.success('Verification settings saved successfully');
+    } catch (err) {
+      console.error('AdminVerificationCenter: Error saving settings', err);
+      toast.error(err.message || 'Failed to save settings');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -224,16 +265,38 @@ const AdminVerificationCenter = ({ config, isAuthenticated, onRequireAdminAuth }
           <p className="text-sm text-gray-600 mt-1">
             Manage property verification requests and badge approvals
           </p>
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Subscription Fee (₦)</label>
-            <input
-              type="number"
-              min="0"
-              value={subscriptionFee}
-              onChange={handleSubscriptionFeeChange}
-              className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-xs text-gray-500">This fee is required for new vendor onboarding.</span>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Verification Fee (₦)</label>
+              <input
+                type="number"
+                min="0"
+                value={verificationFee}
+                onChange={handleVerificationFeeChange}
+                className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-xs text-gray-500">Fee charged for property verification.</span>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Subscription Fee (₦)</label>
+              <input
+                type="number"
+                min="0"
+                value={subscriptionFee}
+                onChange={handleSubscriptionFeeChange}
+                className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-xs text-gray-500">Required for new vendor onboarding.</span>
+            </div>
+            <button
+              onClick={handleSaveSettings}
+              disabled={savingSettings}
+              className={`px-5 py-2.5 rounded-lg text-white font-medium transition ${
+                savingSettings ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {savingSettings ? 'Saving...' : 'Save Settings'}
+            </button>
           </div>
         </div>
         
