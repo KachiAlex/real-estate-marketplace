@@ -42,7 +42,104 @@
     <script src="https://js.paystack.co/v1/inline.js"></script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <noscript>
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #1e293b;">
+        <h1 style="font-size: 2.5rem; color: #f97316; margin-bottom: 8px;">PropertyArk</h1>
+        <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 32px;">Buy, sell, rent, and invest in properties with secure escrow services in Nigeria.</p>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 16px;">About PropertyArk</h2>
+        <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 24px;">
+          PropertyArk is a real estate marketplace platform that enables users to browse, list, and transact properties across Nigeria.
+          Our platform provides secure escrow services for property transactions, investment opportunities in real estate,
+          mortgage facilitation, and professional property services. Users can search for properties by location, type, and price,
+          connect with verified vendors, and complete transactions with confidence through our escrow protection.
+        </p>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 16px;">Key Features</h2>
+        <ul style="font-size: 1.05rem; line-height: 1.8; margin-bottom: 24px; padding-left: 20px;">
+          <li>Browse thousands of property listings across Nigeria</li>
+          <li>Secure escrow services for safe property transactions</li>
+          <li>Real estate investment opportunities with verified returns</li>
+          <li>Mortgage facilitation and application management</li>
+          <li>Direct messaging with property vendors and agents</li>
+          <li>Property verification and KYC for trusted transactions</li>
+        </ul>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 16px;">Get Started</h2>
+        <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 16px;">
+          You can browse properties without an account. To list properties, make inquiries, or use escrow services,
+          please sign in or create a free account.
+        </p>
+        <p style="margin-bottom: 32px;">
+          <a href="/auth/login" style="display: inline-block; background: #f97316; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 12px;">Sign In</a>
+          <a href="/auth/register" style="display: inline-block; border: 2px solid #f97316; color: #f97316; padding: 10px 26px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create Account</a>
+        </p>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 16px;">Legal</h2>
+        <p style="font-size: 1.05rem;">
+          <a href="/privacy-policy" style="color: #f97316;">Privacy Policy</a> &middot;
+          <a href="/terms-of-service" style="color: #f97316;">Terms of Service</a>
+        </p>
+
+        <p style="margin-top: 40px; color: #94a3b8; font-size: 0.9rem;">
+          PropertyArk &middot; <a href="mailto:support@propertyark.africa" style="color: #f97316;">support@propertyark.africa</a>
+        </p>
+      </div>
+    </noscript>
+    <div id="root">
+      <div id="app-loading-placeholder" style="font-family: 'Inter', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 60px 20px; color: #1e293b; min-height: 100vh;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="/logo.png" alt="PropertyArk Logo" style="width: 48px; height: 48px;" onerror="this.style.display='none'"/>
+          <h1 style="font-size: 2.5rem; color: #f97316; margin: 0;">PropertyArk</h1>
+        </div>
+        <p style="font-size: 1.35rem; color: #475569; margin-bottom: 32px; font-weight: 500;">Buy, sell, rent, and invest in properties with secure escrow services in Nigeria.</p>
+
+        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">What is PropertyArk?</h2>
+        <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; color: #334155;">
+          PropertyArk is a real estate marketplace platform that enables users to browse, list, and transact properties across Nigeria.
+          Our platform provides secure escrow services for property transactions, investment opportunities in real estate,
+          mortgage facilitation, and professional property services. Users can search for properties by location, type, and price,
+          connect with verified vendors, and complete transactions with confidence through our escrow protection.
+        </p>
+
+        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Key Features</h2>
+        <ul style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; padding-left: 24px; color: #334155;">
+          <li>Browse thousands of property listings across Nigeria</li>
+          <li>Secure escrow services for safe property transactions</li>
+          <li>Real estate investment opportunities with verified returns</li>
+          <li>Mortgage facilitation and application management</li>
+          <li>Direct messaging with property vendors and agents</li>
+          <li>Property verification and KYC for trusted transactions</li>
+        </ul>
+
+        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Browse Properties Without an Account</h2>
+        <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; color: #334155;">
+          You can browse property listings, search by location and price, and view property details without creating an account.
+          To list properties, make inquiries, use escrow services, or save favorites, please sign in or create a free account.
+        </p>
+
+        <div style="margin-bottom: 32px;">
+          <a href="/auth/login" style="display: inline-block; background: #f97316; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem; margin-right: 12px;">Sign In</a>
+          <a href="/auth/register" style="display: inline-block; border: 2px solid #f97316; color: #f97316; padding: 12px 30px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Create Free Account</a>
+        </div>
+
+        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Legal</h2>
+        <p style="font-size: 1.1rem; margin-bottom: 32px;">
+          <a href="/privacy-policy" style="color: #f97316; text-decoration: none;">Privacy Policy</a>
+          &nbsp;&middot;&nbsp;
+          <a href="/terms-of-service" style="color: #f97316; text-decoration: none;">Terms of Service</a>
+        </p>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 24px; margin-top: 40px;">
+          <p style="color: #64748b; font-size: 1rem; margin-bottom: 8px;">
+            <strong>PropertyArk</strong> &middot; Real Estate Marketplace for Nigeria
+          </p>
+          <p style="color: #94a3b8; font-size: 0.95rem;">
+            Contact: <a href="mailto:support@propertyark.africa" style="color: #f97316;">support@propertyark.africa</a>
+            &nbsp;&middot;&nbsp; Suite 305, Orago Complex, Kam Salem Street, Garki, Abuja
+          </p>
+        </div>
+      </div>
+    </div>
   </body>
 </html> 

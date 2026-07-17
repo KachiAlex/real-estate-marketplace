@@ -14,17 +14,37 @@ class EmailService {
         console.log('📪 Email service disabled via DISABLE_EMAIL flag. All emails will be skipped.');
         return;
       }
-      // Priority: SendGrid > Custom SMTP > Ethereal (development)
+      // Priority: Brevo > SendGrid > Custom SMTP > Ethereal (development)
       
-      // Check if SendGrid API key is configured
-      if (process.env.SENDGRID_API_KEY) {
+      // Check if Brevo SMTP is configured
+      if (process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST) {
+        const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST;
+        const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587');
+        const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER;
+        const pass = process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_PASSWORD || process.env.SMTP_PASS;
+        
+        if (user && pass) {
+          this.transporter = nodemailer.createTransport({
+            host,
+            port,
+            secure: port === 465,
+            auth: {
+              user,
+              pass
+            }
+          });
+          console.log(`✅ Email service initialized with Brevo SMTP (${host}:${port})`);
+        } else {
+          console.warn('⚠️ Brevo SMTP host set but missing credentials (BREVO_SMTP_USER/BREVO_SMTP_KEY)');
+        }
+      } else if (process.env.SENDGRID_API_KEY) {
         // Use SendGrid SMTP
         this.transporter = nodemailer.createTransport({
           host: 'smtp.sendgrid.net',
           port: 587,
-          secure: false, // true for 465, false for other ports
+          secure: false,
           auth: {
-            user: 'apikey', // SendGrid requires 'apikey' as username
+            user: 'apikey',
             pass: process.env.SENDGRID_API_KEY
           }
         });
@@ -226,6 +246,47 @@ class EmailService {
     };
 
     return await this.sendTemplateEmail(user, type, variables);
+  }
+
+  async sendPasswordReset({ email, firstName, resetUrl, expiresIn = '15 minutes' }) {
+    try {
+      const subject = 'Password Reset Request - PropertyArk';
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p>Hello ${firstName || 'User'},</p>
+            <p>You requested a password reset for your PropertyArk account.</p>
+            <p>Click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="display: inline-block; padding: 14px 28px; background: #f97316; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Reset Password</a>
+            </div>
+            <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #f97316; font-size: 14px;">${resetUrl}</p>
+            <p style="color: #666; font-size: 14px;">This link will expire in ${expiresIn}.</p>
+            <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px;">PropertyArk — Real Estate Marketplace</p>
+          </div>
+        </body>
+        </html>
+      `;
+      const text = `Hello ${firstName || 'User'},\n\nYou requested a password reset for your PropertyArk account.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in ${expiresIn}.\n\nIf you didn't request this, please ignore this email.\n\nPropertyArk — Real Estate Marketplace`;
+
+      return await this.sendEmail(email, subject, html, text);
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   async sendSystemMaintenanceEmail(users, maintenanceMessage, scheduledTime) {

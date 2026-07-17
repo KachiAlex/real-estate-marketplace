@@ -126,6 +126,9 @@ const shouldSkipCsrf = (req) => {
   const publicPaths = [
     '/api/auth/register',      // New user registration
     '/api/auth/login',         // User login
+    '/api/auth/jwt/login',     // JWT login
+    '/api/auth/jwt/logout',    // JWT logout
+    '/api/auth/logout',        // User logout
     '/api/auth/forgot-password', // Password reset request
     '/api/auth/reset-password', // Password reset confirmation
     '/api/health',             // Health check

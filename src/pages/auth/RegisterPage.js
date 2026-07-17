@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import StaticHeroBanner from '../../components/StaticHeroBanner';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
@@ -28,7 +29,7 @@ const PasswordRequirementsList = ({ passwordStrength }) => {
 };
 
 const RegisterPage = ({ isModal = false, onClose }) => {
-  const { register, loading } = useAuth();
+  const { register, signInWithGoogle, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     firstName: '',
@@ -443,6 +444,28 @@ const toggleRole
           </Link>
         </div>
       </form>
+
+      <div className="mt-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-white/15" />
+          <span className="text-xs uppercase tracking-wider text-white/40">or</span>
+          <div className="flex-1 h-px bg-white/15" />
+        </div>
+        <GoogleAuthButton
+          onSuccess={async (idToken) => {
+            try {
+              setError('');
+              const loggedInUser = await signInWithGoogle(idToken);
+              toast.success('Welcome to PropertyArk!');
+              navigate(getPostLoginRoute(loggedInUser), { replace: true });
+            } catch (err) {
+              setError(err.message || 'Google sign-in failed.');
+            }
+          }}
+          onError={(err) => setError(err.message || 'Google sign-in was cancelled.')}
+          disabled={loading}
+        />
+      </div>
       </AuthLayout>
     </>
   );

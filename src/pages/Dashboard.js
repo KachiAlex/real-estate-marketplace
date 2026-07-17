@@ -15,6 +15,24 @@ import toast from 'react-hot-toast';
 import PriceTrendsChart from '../components/PriceTrendsChart';
 import apiClient from '../services/apiClient';
 
+const resolveImageUrl = (image) => {
+  if (!image && image !== 0) return null;
+  if (typeof image === 'string') return image;
+  if (image && typeof image === 'object') {
+    return image.url || image.secure_url || image.src || image.path || null;
+  }
+  return null;
+};
+
+const getPropertyImageUrl = (property) => {
+  if (!property) return null;
+  const direct = resolveImageUrl(property.coverImage) || resolveImageUrl(property.featuredImage) || resolveImageUrl(property.image);
+  if (direct) return direct;
+  const images = Array.isArray(property.images) ? property.images : [];
+  const firstImage = images[0];
+  return resolveImageUrl(firstImage) || null;
+};
+
 const Dashboard = () => {
   const { user, setAuthRedirect } = useAuth();
   const navigate = useNavigate();
@@ -817,10 +835,11 @@ const Dashboard = () => {
               <div key={property.id} className="property-card">
                 <div className="relative">
                   <img
-                    src={property.coverImage || property.featuredImage || property.image}
+                    src={getPropertyImageUrl(property) || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
                     alt={property.title}
                     className="property-card-image"
                     loading="lazy"
+                    onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'; }}
                   />
                   {property.tag && (
                     <div className={`absolute top-2 left-2 tag ${property.tagColor} text-white px-2 py-1 rounded text-xs font-medium`}>

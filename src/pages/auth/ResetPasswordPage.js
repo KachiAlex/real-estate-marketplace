@@ -43,6 +43,7 @@ const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState('idle');
@@ -51,10 +52,14 @@ const ResetPasswordPage = () => {
 
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
+    const emailFromUrl = searchParams.get('email');
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
     } else {
       setError('Invalid reset link. Please request a new password reset.');
+    }
+    if (emailFromUrl) {
+      setEmail(decodeURIComponent(emailFromUrl));
     }
   }, [searchParams]);
 
@@ -94,7 +99,8 @@ const ResetPasswordPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           token: token.trim(), 
-          newPassword: newPassword.trim() 
+          email: email.trim().toLowerCase(),
+          password: newPassword.trim() 
         })
       });
 

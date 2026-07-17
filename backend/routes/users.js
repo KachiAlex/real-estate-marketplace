@@ -219,4 +219,65 @@ router.post('/switch-role', protect, async (req, res) => {
   }
 });
 
+// @desc    Get list of users in the app (for messaging/contacts)
+// @route   GET /api/users
+// @access  Private
+router.get('/', protect, async (req, res) => {
+  try {
+    const currentUserId = req.user?.id;
+    const { search = '', role, limit = 50, page = 1 } = req.query;
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const parsedPage = Math.max(1, parseInt(page) || 1);
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    const where = { id: { [require('sequelize').Op.ne]: currentUserId } };
+    if (role) where.role = role;
+    if (search && search.trim()) {
+      const s = `%${search.trim()}%`;
+      where[require('sequelize').Op.or] = [
+        { firstName: { [require('sequelize').Op.iLike]: s } },
+        { lastName: { [require('sequelize').Op.iLike]: s } },
+        { email: { [require('sequelize').Op.iLike]: s } }
+      ];
+    }
+
+    const { rows, count } = await User.findAndCountAll({
+      where,
+      attributes: { exclude: ['password', 'refreshToken', 'resetToken', 'resetTokenExpiry', 'verificationToken', 'verificationTokenExpiry'] },
+      order: [['firstName', 'ASC'], ['lastName', 'ASC']],
+      limit: parsedLimit,
+      offset
+    });
+
+    const sanitizedUsers = rows.map((user) => {
+      const data = user.toJSON ? user.toJSON() : user;
+      return {
+        id: data.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email,
+        role: data.role,
+        phone: data.phone,
+        avatar: data.avatar,
+        isVerified: data.isVerified
+      };
+    });
+
+    res.json({
+      success: true,
+      data: sanitizedUsers,
+      pagination: {
+        total: count,
+        page: parsedPage,
+        limit: parsedLimit,
+        pages: Math.ceil(count / parsedLimit)
+      }
+    });
+  } catch (error) {
+    console.error('Get users list error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;  

@@ -65,7 +65,7 @@ const validatePasswordStrength = (password) => {
 
 // determine whether SSL was expected (mimics sequelizeDb resolvedRequireSSL)
 const LOCAL_DB_REQUIRE_SSL = (process.env.DB_REQUIRE_SSL === 'true') || process.env.NODE_ENV === 'production';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '989525174178-b3vermtr2nv5gq88umuu1nerfe39190s.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '989525174178-ts9qr3cag46dd3t6v8521puacj0u8dvi.apps.googleusercontent.com';
 const googleOAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 const deriveNamesFromGooglePayload = (payload = {}) => {
@@ -215,7 +215,7 @@ const generateRefreshToken = (userId) => {
 // @route   POST /api/auth/register
 // @access  Public
 router.post('/register', [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }),
   body('password').custom((value) => {
     const validation = validatePasswordStrength(value);
     if (!validation.isValid) {
@@ -628,18 +628,47 @@ router.post('/google', async (req, res) => {
       return res.status(503).json({ success: false, message: 'Google OAuth is not configured on the server' });
     }
 
-    const { idToken } = req.body || {};
-    if (!idToken) {
-      return res.status(400).json({ success: false, message: 'Google ID token missing' });
-    }
+    const { idToken, code, redirectUri } = req.body || {};
 
     let payload;
-    try {
-      const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
-      payload = ticket.getPayload();
-    } catch (verifyErr) {
-      console.error('Google token verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
-      return res.status(401).json({ success: false, message: 'Invalid Google token' });
+    if (code) {
+      const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+      if (!GOOGLE_CLIENT_SECRET) {
+        return res.status(503).json({ success: false, message: 'Google OAuth client secret not configured on server' });
+      }
+      try {
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code,
+            client_id: GOOGLE_CLIENT_ID,
+            client_secret: GOOGLE_CLIENT_SECRET,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code'
+          })
+        });
+        const tokenData = await tokenRes.json();
+        if (!tokenData.id_token) {
+          console.error('Google code exchange failed:', tokenData);
+          return res.status(401).json({ success: false, message: 'Failed to exchange Google authorization code' });
+        }
+        const ticket = await googleOAuthClient.verifyIdToken({ idToken: tokenData.id_token, audience: GOOGLE_CLIENT_ID });
+        payload = ticket.getPayload();
+      } catch (exchangeErr) {
+        console.error('Google code exchange error:', exchangeErr && exchangeErr.message ? exchangeErr.message : exchangeErr);
+        return res.status(401).json({ success: false, message: 'Invalid Google authorization code' });
+      }
+    } else if (idToken) {
+      try {
+        const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+        payload = ticket.getPayload();
+      } catch (verifyErr) {
+        console.error('Google token verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
+        return res.status(401).json({ success: false, message: 'Invalid Google token' });
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'Google ID token or authorization code missing' });
     }
 
     const email = payload && payload.email ? payload.email.toLowerCase() : null;
@@ -722,7 +751,7 @@ router.post('/google', async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }),
   body('password').notEmpty()
 ], async (req, res) => {
   try {
@@ -951,7 +980,7 @@ router.post('/refresh', async (req, res) => {
 // @access  Public
 router.post('/verify-email', [
   body('token').isLength({ min: 64, max: 64 }).withMessage('Invalid verification token'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Please provide a valid email')
 ], async (req, res) => {
   try {
     // Check for validation errors

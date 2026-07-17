@@ -27,6 +27,9 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import GoogleCallbackPage from './pages/auth/GoogleCallbackPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import SignInModal from './components/auth/SignInModal';
 import RegisterModal from './components/auth/RegisterModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
@@ -113,6 +116,7 @@ const AuthRoutes = () => (
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+    <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
     <Route path="*" element={<Navigate to="/auth/login" replace />} />
   </Routes>
 );
@@ -130,6 +134,9 @@ const MainRoutes = ({ locationOverride }) => (
     <Route path="/auth/login" element={<LoginPage />} />
     <Route path="/auth/register" element={<RegisterPage />} />
     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
+    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    <Route path="/terms-of-service" element={<TermsOfService />} />
     <Route path="/blog" element={<Blog />} />
     <Route path="/blog/:slug" element={<BlogDetail />} />
     <Route path="/professional-services/enquiry" element={<ProfessionalServicesEnquiry />} />

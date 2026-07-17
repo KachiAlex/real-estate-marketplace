@@ -63,6 +63,7 @@ app.use(securityConfig.httpsRedirect);
 // ABSOLUTE FIRST ROUTE: Register forgot-password with proper token generation
 // This ensures it works even if anything else fails
 const crypto = require('crypto');
+const userService = require('./services/userService');
 
 app.post('/api/auth/forgot-password', async function(req, res) {
   try {
@@ -105,7 +106,7 @@ app.post('/api/auth/forgot-password', async function(req, res) {
 
     // Save token hash and expiry to database
     try {
-      await user.update({
+      await userService.updateUser(user.id, {
         resetPasswordToken: resetTokenHash,
         resetPasswordExpires: resetTokenExpiry
       });

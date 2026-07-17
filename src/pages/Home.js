@@ -94,6 +94,38 @@ const Home = () => {
   const [appliedBathrooms, setAppliedBathrooms] = useState('');
   const [appliedVendor, setAppliedVendor] = useState('');
 
+  // Normalize location names (handle aliases) - same as Properties page
+  const normalizeLocation = (location) => {
+    if (!location) return location;
+    const locationMap = {
+      'port harcourt': 'Rivers',
+      'port-harcourt': 'Rivers',
+      'ph': 'Rivers',
+      'fct': 'Abuja',
+      'abuja fct': 'Abuja',
+      'abuja (fct)': 'Abuja',
+      'fct abuja': 'Abuja'
+    };
+    const normalized = locationMap[location.toLowerCase().trim()];
+    return normalized || location;
+  };
+
+  // Build a searchable location string from any property format
+  const buildLocationSearchString = (property) => {
+    if (!property) return '';
+    const parts = [];
+    if (typeof property.location === 'string') parts.push(property.location);
+    if (property.location && typeof property.location === 'object') {
+      if (property.location.address) parts.push(property.location.address);
+      if (property.location.city) parts.push(property.location.city);
+      if (property.location.state) parts.push(property.location.state);
+    }
+    if (property.address) parts.push(property.address);
+    if (property.city) parts.push(property.city);
+    if (property.state) parts.push(property.state);
+    return parts.join(', ').toLowerCase();
+  };
+
   // Fetch properties on mount
   useEffect(() => {
     fetchProperties({}).catch(err => {
@@ -130,54 +162,67 @@ const Home = () => {
     // Apply search query (from applied filters)
     if (appliedSearchQuery && appliedSearchQuery.trim()) {
       const query = appliedSearchQuery.toLowerCase();
-      filtered = filtered.filter(property => 
-        property?.title?.toLowerCase().includes(query) ||
-        property?.description?.toLowerCase().includes(query) ||
-        property?.location?.toLowerCase().includes(query) ||
-        property?.address?.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(property => {
+        const locationString = buildLocationSearchString(property);
+        return property?.title?.toLowerCase().includes(query) ||
+          property?.description?.toLowerCase().includes(query) ||
+          locationString.includes(query) ||
+          property?.city?.toLowerCase().includes(query) ||
+          property?.state?.toLowerCase().includes(query)
+      });
     }
     
-    // Apply location filter (from applied filters) - optimized for precise matching
+    // Apply location filter (from applied filters) - uses normalizeLocation for fuzzy matching
     if (appliedLocation) {
-      const searchLocation = appliedLocation.toLowerCase().trim();
+      const normalizedSearchLocation = normalizeLocation(appliedLocation).toLowerCase().trim();
       filtered = filtered.filter(property => {
-        // Priority 1: Check city field (most reliable)
+        // Build all location-related fields
         const city = property?.city?.toLowerCase() || 
                      (property?.location?.city && typeof property.location === 'object' ? property.location.city.toLowerCase() : '') || '';
-        if (city === searchLocation) {
-          return true;
-        }
-        
-        // Priority 2: Check state field
         const state = property?.state?.toLowerCase() || 
                       (property?.location?.state && typeof property.location === 'object' ? property.location.state.toLowerCase() : '') || '';
-        if (state === searchLocation) {
+        const normalizedCity = normalizeLocation(city).toLowerCase();
+        const normalizedState = normalizeLocation(state).toLowerCase();
+        
+        // Check normalized city and state
+        if (normalizedCity === normalizedSearchLocation || city === normalizedSearchLocation) {
+          return true;
+        }
+        if (normalizedState === normalizedSearchLocation || state === normalizedSearchLocation) {
           return true;
         }
         
-        // Priority 3: Check string location field (for mock data format: "Address, City, State")
+        // Check if search term is contained in city or state (partial match)
+        if (city && city.includes(normalizedSearchLocation)) return true;
+        if (state && normalizedSearchLocation.includes(state)) return true;
+        
+        // Check string location field
         if (property?.location && typeof property.location === 'string') {
           const locationString = property.location.toLowerCase();
-          // Split by comma and check each part
-          const locationParts = locationString.split(',').map(part => part.trim());
-          // Check if any part exactly matches the search location
-          if (locationParts.includes(searchLocation)) {
+          const locationParts = locationString.split(',').map(part => normalizeLocation(part.trim()).toLowerCase());
+          if (locationParts.includes(normalizedSearchLocation)) {
             return true;
           }
-          // Also check if the location string ends with the search term (common pattern)
-          if (locationString.endsWith(searchLocation) || locationString.endsWith(`, ${searchLocation}`)) {
+          // Check if any part contains the search term
+          if (locationParts.some(part => part.includes(normalizedSearchLocation))) {
             return true;
           }
         }
         
-        // Priority 4: Check if location object has city or state that matches
+        // Check location object
         if (property?.location && typeof property.location === 'object') {
           const objCity = property.location.city?.toLowerCase() || '';
           const objState = property.location.state?.toLowerCase() || '';
-          if (objCity === searchLocation || objState === searchLocation) {
+          if (normalizeLocation(objCity).toLowerCase() === normalizedSearchLocation || 
+              normalizeLocation(objState).toLowerCase() === normalizedSearchLocation) {
             return true;
           }
+        }
+        
+        // Full location string fallback
+        const fullLocationString = buildLocationSearchString(property);
+        if (fullLocationString.includes(normalizedSearchLocation)) {
+          return true;
         }
         
         return false;
@@ -294,7 +339,7 @@ const Home = () => {
     'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 
     'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 
     'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 
-    'Zamfara', 'Abuja (FCT)'
+    'Zamfara', 'Abuja'
   ];
   const propertyTypes = ['Apartment', 'House', 'Villa', 'Condo', 'Townhouse', 'Penthouse', 'Land', 'Commercial'];
   const propertyStatuses = ['For Sale', 'For Rent', 'For Lease', 'Shortlet'];

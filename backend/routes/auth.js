@@ -403,7 +403,7 @@ router.post('/login', [
 // @access  Public
 router.post('/verify-email', [
   body('token').isLength({ min: 64, max: 64 }).withMessage('Invalid verification token'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+  body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email')
 ], async (req, res) => {
   try {
     // Check for validation errors
@@ -801,7 +801,7 @@ const forgotPasswordHandler = async (req, res, next) => {
 // @access  Public (requires valid reset token)
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email'),
   body('password').custom((value) => {
     const validation = validatePasswordStrength(value);
     if (!validation.isValid) {
@@ -900,7 +900,7 @@ router.post('/reset-password', [
 // @route   POST /api/auth/sync-password
 // @access  Public (but requires Firebase token validation)
 router.post('/sync-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('email').isEmail().normalizeEmail(emailNormalizeOptions).withMessage('Please provide a valid email'),
   body('newPassword').custom((value) => {
     const validation = validatePasswordStrength(value);
     if (!validation.isValid) {

@@ -3,17 +3,22 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import MinimalChat from '../components/MinimalChat';
-import { FaEnvelope, FaSearch, FaSync } from 'react-icons/fa';
+import { FaEnvelope, FaSearch, FaSync, FaUserPlus, FaUsers } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const Messages = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages' | 'users'
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [startingChat, setStartingChat] = useState(false);
 
   const fetchConversations = async () => {
     setLoading(true);
@@ -33,6 +38,78 @@ const Messages = () => {
       return [];
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async (search = '') => {
+    setUsersLoading(true);
+    try {
+      const resp = await apiClient.get(`/users?search=${encodeURIComponent(search)}&limit=50`);
+      const payload = resp.data || {};
+      const data = Array.isArray(payload?.data) ? payload.data : [];
+      setUsers(data);
+      return data;
+    } catch (err) {
+      console.error('Failed to load users', err);
+      toast.error('Failed to load users');
+      setUsers([]);
+      return [];
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const startConversation = async (targetUser) => {
+    if (!targetUser?.id || !user?.id) return;
+    setStartingChat(true);
+    try {
+      // Try to find existing conversation with this user
+      const existing = conversations.find(c => c.contact?.id === targetUser.id);
+      if (existing) {
+        setSelectedConversation(existing);
+        setActiveTab('messages');
+        return;
+      }
+
+      // Start a new chat via API (no property required)
+      const chatResp = await apiClient.post('/chats/start', {
+        buyerId: user.id,
+        vendorId: targetUser.id,
+        propertyId: 'direct',
+        starterId: user.id,
+        initialMessage: 'Hello'
+      });
+
+      const chatData = chatResp.data || {};
+      if (!chatData.success && !chatData.chatId) {
+        throw new Error(chatData.error || 'Failed to start conversation');
+      }
+
+      const newChatId = chatData.chatId || `${chatData.conversation?.propertyId}-${chatData.conversation?.participant1Id}-${chatData.conversation?.participant2Id}`;
+      const newConversation = {
+        id: newChatId,
+        conversationId: chatData.conversation?.id || newChatId,
+        propertyId: chatData.conversation?.propertyId || 'direct',
+        contact: {
+          id: targetUser.id,
+          name: targetUser.name || `${targetUser.firstName} ${targetUser.lastName}`.trim() || targetUser.email,
+          role: targetUser.role || 'user',
+          email: targetUser.email,
+          phone: targetUser.phone
+        },
+        property: { id: 'direct', title: 'Direct Message' },
+        lastMessageAt: new Date().toISOString()
+      };
+
+      setConversations(prev => [newConversation, ...prev]);
+      setSelectedConversation(newConversation);
+      setActiveTab('messages');
+      toast.success('Conversation started', { duration: 1500 });
+    } catch (err) {
+      console.error('Failed to start conversation', err);
+      toast.error(err.message || 'Failed to start conversation');
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -138,6 +215,12 @@ const Messages = () => {
     };
   }, [location.state]);
 
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers(userSearch);
+    }
+  }, [activeTab, userSearch]);
+
   const filtered = conversations.filter(c => {
     const name = c.contact?.name || '';
     const title = c.property?.title || '';
@@ -154,45 +237,77 @@ const Messages = () => {
           <div className="p-4 border-b">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">Messages</h2>
-              <button 
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
-                title="Refresh conversations"
-              >
-                <FaSync className={`${refreshing ? 'animate-spin' : ''}`} />
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveTab('messages')}
+                  className={`px-3 py-1 rounded text-sm font-medium ${activeTab === 'messages' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Chats
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`px-3 py-1 rounded text-sm font-medium ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Users
+                </button>
+              </div>
             </div>
             <div className="relative">
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
               <input
                 className="w-full pl-10 pr-3 py-2 border rounded-md"
-                placeholder="Search conversations..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                placeholder={activeTab === 'users' ? 'Search users...' : 'Search conversations...'}
+                value={activeTab === 'users' ? userSearch : searchTerm}
+                onChange={e => activeTab === 'users' ? setUserSearch(e.target.value) : setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="p-6 text-center">Loading conversations…</div>
-            ) : filtered.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">
-                <FaEnvelope className="mx-auto mb-2 text-3xl text-gray-300" />
-                No conversations
-              </div>
+            {activeTab === 'messages' ? (
+              loading ? (
+                <div className="p-6 text-center">Loading conversations…</div>
+              ) : filtered.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  <FaEnvelope className="mx-auto mb-2 text-3xl text-gray-300" />
+                  No conversations
+                </div>
+              ) : (
+                filtered.map(conv => (
+                  <button
+                    key={conv.id}
+                    onClick={() => setSelectedConversation(conv)}
+                    className={`w-full text-left p-3 border-b hover:bg-gray-50 ${selectedConversation?.id === conv.id ? 'bg-gray-100' : ''}`}
+                  >
+                    <div className="font-medium">{conv.contact?.name || 'Unknown'}</div>
+                    <div className="text-sm text-gray-600 truncate">{conv.lastMessage?.text || conv.property?.title}</div>
+                  </button>
+                ))
+              )
             ) : (
-              filtered.map(conv => (
-                <button
-                  key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                  className={`w-full text-left p-3 border-b hover:bg-gray-50 ${selectedConversation?.id === conv.id ? 'bg-gray-100' : ''}`}
-                >
-                  <div className="font-medium">{conv.contact?.name || 'Unknown'}</div>
-                  <div className="text-sm text-gray-600 truncate">{conv.lastMessage?.text || conv.property?.title}</div>
-                </button>
-              ))
+              usersLoading ? (
+                <div className="p-6 text-center">Loading users…</div>
+              ) : users.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  <FaUsers className="mx-auto mb-2 text-3xl text-gray-300" />
+                  No users found
+                </div>
+              ) : (
+                users.map(u => (
+                  <button
+                    key={u.id}
+                    onClick={() => startConversation(u)}
+                    disabled={startingChat}
+                    className="w-full text-left p-3 border-b hover:bg-gray-50 flex justify-between items-center disabled:opacity-50"
+                  >
+                    <div>
+                      <div className="font-medium">{u.name || u.email}</div>
+                      <div className="text-sm text-gray-600">{u.email} • {u.role}</div>
+                    </div>
+                    <FaUserPlus className="text-gray-400" />
+                  </button>
+                ))
+              )
             )}
           </div>
         </div>

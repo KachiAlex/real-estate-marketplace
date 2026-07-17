@@ -127,7 +127,7 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
           {/* Main Heading */}
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
-              Find Your Dream Property <span className="text-orange-400">in Nigeria</span>
+              PropertyArk — Find Your Dream Property <span className="text-orange-400">in Nigeria</span>
             </h1>
             <p className="text-lg sm:text-xl text-white/90 mt-2">
               Search thousands of properties for sale, rent, and investment opportunities

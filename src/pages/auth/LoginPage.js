@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import AuthLayout from '../../components/layout/AuthLayout';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import toast from 'react-hot-toast';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 
 const LoginPage = () => {
-  const { login, loading } = useAuth();
+  const { login, signInWithGoogle, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -35,10 +36,31 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (idToken) => {
+    try {
+      setError('');
+      const loggedInUser = await signInWithGoogle(idToken);
+      toast.success('Welcome back!');
+      const redirect = sessionStorage.getItem('authRedirect');
+      if (redirect) {
+        sessionStorage.removeItem('authRedirect');
+        navigate(redirect, { replace: true });
+      } else {
+        navigate(getPostLoginRoute(loggedInUser), { replace: true });
+      }
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed.');
+    }
+  };
+
+  const handleGoogleError = (err) => {
+    setError(err.message || 'Google sign-in was cancelled.');
+  };
+
   return (
     <AuthLayout
       title="Welcome back"
-      description="Sign in to pick up where you left off � properties, alerts, and requests stay in sync across every device."
+      description="Sign in to pick up where you left off — properties, alerts, and requests stay in sync across every device."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -78,7 +100,7 @@ const LoginPage = () => {
           disabled={loading}
           className="w-full h-12 min-h-[44px] rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-3 text-center text-base font-semibold text-slate-900 shadow-lg shadow-orange-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? 'Signing in�' : 'Sign in'}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
 
         <div className="flex flex-wrap items-center justify-between text-sm text-slate-200">
@@ -90,6 +112,19 @@ const LoginPage = () => {
           </Link>
         </div>
       </form>
+
+      <div className="mt-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-white/15" />
+          <span className="text-xs uppercase tracking-wider text-white/40">or</span>
+          <div className="flex-1 h-px bg-white/15" />
+        </div>
+        <GoogleAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          disabled={loading}
+        />
+      </div>
     </AuthLayout>
   );
 };

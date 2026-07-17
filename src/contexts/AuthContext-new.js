@@ -944,12 +944,56 @@ export const AuthProvider = ({ children }) => {
       const merged = normalizeUser({ ...(currentUser || {}), ...(partialUser || {}) });
       merged.roles = Array.isArray(merged.roles) ? Array.from(new Set(merged.roles)) : merged.roles || [];
       if (!merged.activeRole && merged.roles && merged.roles.length > 0) merged.activeRole = merged.roles[0];
-      // CRITICAL: DO NOT save user data to localStorage - always fetch fresh from server
-      // localStorage.setItem('currentUser', JSON.stringify(merged));
       setCurrentUser(merged);
       return merged;
     } catch (e) { console.warn('setUserLocally failed', e); return null; }
   }, [currentUser]);
+
+  const signInWithGoogle = useCallback(async (idToken) => {
+    setLoading(true);
+    try {
+      const url = getApiUrl('/auth/jwt/google');
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp || !resp.ok) {
+        const msg = data.message || 'Google sign-in failed';
+        toast.error(msg, { duration: 5000 });
+        throw new Error(msg);
+      }
+      const tokenVal = data.accessToken || data.token || null;
+      updateAccessToken(tokenVal);
+      updateRefreshToken(data.refreshToken || null);
+      let resolvedUser = normalizeUser(data.user);
+      if (tokenVal) {
+        try {
+          const meResp = await fetch(getApiUrl('/auth/jwt/me'), {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${tokenVal}` }
+          });
+          if (meResp && meResp.ok) {
+            const meData = await meResp.json().catch(() => ({}));
+            resolvedUser = normalizeUser(meData.user || meData);
+          }
+        } catch (e) {
+          console.warn('signInWithGoogle: failed to refresh /me', e);
+        }
+      }
+      if (resolvedUser) {
+        updateUserState(resolvedUser);
+      }
+      toast.success('Google sign-in successful');
+      return resolvedUser;
+    } catch (e) {
+      console.error('signInWithGoogle error:', e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, [updateAccessToken, updateRefreshToken, updateUserState]);
 
   const registerAsVendor = useCallback(async (vendorInfo) => { try { return await switchRole('vendor'); } catch (e) { throw e; } }, [switchRole]);
 
@@ -992,6 +1036,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     loginLocally,
+    signInWithGoogle,
     setUserLocally,
     logout,
     refreshAccessToken,
