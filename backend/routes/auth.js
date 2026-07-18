@@ -8,6 +8,7 @@ const { verifyToken } = require('../middleware/authJwt');
 const emailService = require('../services/emailService');
 const { User } = require('../config/sequelizeDb');
 const { normalizeRoles, chooseActiveRole } = require('../utils/roleUtils');
+const { infoLogger } = require('../config/logger');
 
 const router = express.Router();
 
@@ -863,7 +864,7 @@ router.post('/reset-password', [
       });
     }
 
-    logger.info('Reset password token validated, updating password', { userId: user.id, email: normalizedEmail });
+    infoLogger('Reset password token validated, updating password', { userId: user.id, email: normalizedEmail });
 
     // Update password and immediately clear reset token fields  
     // Clear token BEFORE updating password to prevent any attack window
@@ -881,7 +882,7 @@ router.post('/reset-password', [
       });
     }
 
-    logger.info('Password reset successfully', { userId: user.id, email: normalizedEmail });
+    infoLogger('Password reset successfully', { userId: user.id, email: normalizedEmail });
 
     res.json({
       success: true,
