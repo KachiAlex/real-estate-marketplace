@@ -1,6 +1,6 @@
 import VendorPropertiesContainer from './components/vendor/VendorPropertiesContainer';
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext-new';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { InvestmentProvider } from './contexts/InvestmentContext';
@@ -110,6 +110,12 @@ const VendorRoute = ({ children }) => (
   </VendorLayout>
 );
 
+const ResetPasswordRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const qs = searchParams.toString();
+  return <Navigate to={`/auth/reset-password${qs ? `?${qs}` : ''}`} replace />;
+};
+
 const AuthRoutes = () => (
   <Routes>
     <Route path="/auth/login" element={<LoginPage />} />
@@ -127,7 +133,7 @@ const MainRoutes = ({ locationOverride }) => (
     <Route path="/login" element={<Navigate to="/auth/login" replace />} />
     <Route path="/register" element={<Navigate to="/auth/register" replace />} />
     <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
-    <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
+    <Route path="/reset-password" element={<ResetPasswordRedirect />} />
     
     <Route path="/" element={<Home />} />
     <Route path="/about" element={<About />} />
@@ -410,8 +416,8 @@ function AppContent() {
   useRefreshUserOnRouteChange();
   
   // Auth modal routes that should overlay the current page with header visible
-  const authModalRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
-  const authLayoutPaths = [];
+  const authModalRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password'];
+  const authLayoutPaths = ['/auth/reset-password'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAuthModalRoute = authModalRoutes.includes(location.pathname);
   const isAuthRoute = authLayoutPaths.includes(location.pathname);
