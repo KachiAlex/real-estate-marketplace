@@ -1122,7 +1122,7 @@ const Home = () => {
             )}
           </button>
         </div>
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
           {/* Filters Sidebar */}
           <div className="hidden lg:block lg:w-80 bg-gray-800 text-white rounded-2xl border border-gray-700/70 shadow-lg p-6 lg:sticky lg:top-24 lg:self-stretch lg:min-h-[calc(100vh-6rem)] overflow-hidden">
             {renderFilters()}
@@ -1153,7 +1153,7 @@ const Home = () => {
 
             {/* Property Grid */}
             {(filteredProperties?.length || 0) > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {currentProperties.map((property) => {
                   const cardId = property.id || property.propertyId;
                   const propertyImage = property.coverImage || property.featuredImage || property.image || property.images?.[0]?.url || property.images?.[0] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop';
@@ -1313,11 +1313,11 @@ const Home = () => {
               }
               
               return (
-                <div className="flex items-center justify-center mt-8 space-x-2">
+                <div className="flex items-center justify-center mt-6 sm:mt-8 space-x-1 sm:space-x-2">
                   <button 
                     onClick={() => handlePaginationClick(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     title="Previous page"
                   >
                     &lt;
@@ -1327,13 +1327,13 @@ const Home = () => {
                     <>
                       <button 
                         onClick={() => handlePaginationClick(1)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                        className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm"
                         title="Go to page 1"
                       >
                         1
                       </button>
                       {startPage > 2 && (
-                        <span className="px-3 py-2 text-gray-600">...</span>
+                        <span className="px-2 sm:px-3 py-2 text-gray-600 text-sm">...</span>
                       )}
                     </>
                   )}
@@ -1342,7 +1342,7 @@ const Home = () => {
                     <button 
                       key={pageNumber}
                       onClick={() => handlePaginationClick(pageNumber)}
-                      className={`px-3 py-2 rounded-lg ${
+                      className={`px-2 sm:px-3 py-2 rounded-lg text-sm ${
                         currentPage === pageNumber
                           ? 'bg-orange-500 text-white'
                           : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
@@ -1356,11 +1356,11 @@ const Home = () => {
                   {endPage < totalPages && (
                     <>
                       {endPage < totalPages - 1 && (
-                        <span className="px-3 py-2 text-gray-600">...</span>
+                        <span className="px-2 sm:px-3 py-2 text-gray-600 text-sm">...</span>
                       )}
                       <button 
                         onClick={() => handlePaginationClick(totalPages)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                        className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm"
                         title={`Go to page ${totalPages}`}
                       >
                         {totalPages}
@@ -1371,7 +1371,7 @@ const Home = () => {
                   <button 
                     onClick={() => handlePaginationClick(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     title="Next page"
                   >
                     &gt;
@@ -1400,32 +1400,32 @@ const Home = () => {
       )}
 
       {/* Security & Value Proposition Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 mt-12">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12 sm:py-20 mt-8 sm:mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 rounded-full mb-6">
+          <div className="text-center mb-8 sm:mb-16">
+            <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-white bg-opacity-20 rounded-full mb-4 sm:mb-6">
               <FaLock className="text-yellow-300" />
-              <p className="font-medium">Bank-Level Security</p>
+              <p className="font-medium text-sm sm:text-base">Bank-Level Security</p>
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               Why Choose PropertyArk for Secure Real Estate?
             </h2>
             
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-base sm:text-xl text-blue-100 max-w-3xl mx-auto">
               We understand the risks in real estate transactions. That's why we've built the most secure 
               property marketplace in Nigeria with multiple layers of protection for buyers, sellers, and investors.
             </p>
           </div>
 
           {/* Security Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-16">
             {/* Escrow Protection */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaShieldAlt className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaShieldAlt className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Escrow Protection</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Escrow Protection</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 Your money is held in secure escrow until the transaction is complete. No payments are released 
                 until both parties are satisfied. Our escrow system protects your funds at every stage.
@@ -1447,11 +1447,11 @@ const Home = () => {
             </div>
 
             {/* Verified Properties */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaCertificate className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaCertificate className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Property Verification</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Property Verification</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 Every property listing undergoes rigorous verification. We confirm ownership, legality, 
                 documents, and accuracy of details before listing. No fake listings on our platform.
@@ -1473,11 +1473,11 @@ const Home = () => {
             </div>
 
             {/* Dispute Resolution */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaHandshake className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaHandshake className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Fair Dispute Resolution</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Fair Dispute Resolution</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 If something goes wrong, we're here to help. Our expert team mediates disputes fairly 
                 and ensures both parties are treated justly. We provide transparent resolution processes.
@@ -1499,11 +1499,11 @@ const Home = () => {
             </div>
 
             {/* Legal Compliance */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaFileContract className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaFileContract className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Legal Documentation</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Legal Documentation</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 We guide you through all legal requirements. From contracts to deed transfers, our legal 
                 framework ensures compliance with Nigerian real estate laws and regulations.
@@ -1525,11 +1525,11 @@ const Home = () => {
             </div>
 
             {/* 24/7 Support */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaClock className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaClock className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">24/7 Support</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">24/7 Support</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 Our dedicated support team is available around the clock to assist you with any concerns. 
                 Get help via phone, email, or live chat whenever you need it.
@@ -1551,11 +1551,11 @@ const Home = () => {
             </div>
 
             {/* Mobile Access */}
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
-              <div className="w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <FaMobileAlt className="text-3xl text-white" />
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 sm:p-8 border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 mx-auto">
+                <FaMobileAlt className="text-2xl sm:text-3xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Mobile-First Platform</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Mobile-First Platform</h3>
               <p className="text-blue-100 text-center leading-relaxed">
                 Browse, search, and complete transactions from anywhere. Our mobile-optimized platform 
                 makes real estate investing accessible from your phone, tablet, or computer.
@@ -1578,11 +1578,11 @@ const Home = () => {
           </div>
 
           {/* CTA Section */}
-          <div className="bg-white text-gray-900 rounded-2xl p-12 text-center shadow-2xl">
-            <h3 className="text-3xl md:text-4xl font-bold mb-4">
+          <div className="bg-white text-gray-900 rounded-2xl p-6 sm:p-12 text-center shadow-2xl">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               Ready to Invest Securely?
             </h3>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
               Join thousands of smart investors who trust PropertyArk for their real estate transactions. 
               Start browsing verified properties today.
             </p>
@@ -1601,18 +1601,18 @@ const Home = () => {
       </div>
 
       {/* Premium Property Discovery Section */}
-      <div className="bg-brand-blue text-white py-16 mt-16">
+      <div className="bg-brand-blue text-white py-12 sm:py-16 mt-8 sm:mt-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Experience Premium Property Discovery</h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4">Experience Premium Property Discovery</h2>
+            <p className="text-base sm:text-xl text-gray-300 max-w-3xl mx-auto">
               PropertyArk offers exclusive features to enhance your property search. 
               Our advanced tools help you find, evaluate, and secure your dream property with confidence.
             </p>
           </div>
 
           <div className="flex justify-center">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
               <div className="bg-white bg-opacity-10 rounded-lg p-6 text-center">
                 <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FaEye className="text-2xl text-white" />
@@ -1654,16 +1654,16 @@ const Home = () => {
       <HomeSections />
 
       {/* Blog Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-gray-50 py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Latest Insights & News</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Latest Insights & News</h2>
+            <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">
               Stay informed with expert advice, market trends, and property investment tips from our blog.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {(() => {
               const publishedPosts = getPublishedBlogPosts().slice(0, 3);
               return publishedPosts.length > 0 ? (
@@ -1678,7 +1678,7 @@ const Home = () => {
             })()}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-8 sm:mt-12">
             <Link 
               to="/blog" 
               className="inline-flex items-center gap-2 px-8 py-3 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl group"
@@ -1691,9 +1691,9 @@ const Home = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      <footer className="bg-gray-900 text-white py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {/* Company Info */}
             <div className="lg:col-span-1">
               <div className="flex items-center mb-4">

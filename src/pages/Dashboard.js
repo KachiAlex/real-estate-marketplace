@@ -496,15 +496,15 @@ const Dashboard = () => {
   }, [location.pathname, user, loadFavorites, refreshDashboardStats]);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Main Content Area */}
       <div className="w-full">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="welcome-section">
+        <div className="mb-6 sm:mb-8">
+          <div className="welcome-section p-4 sm:p-8">
             {console.log('🔍 Dashboard user object:', user)}
-            <h1 className="text-2xl font-bold mb-2">Good Afternoon, {user?.firstName}!</h1>
-            <p className="text-blue-100 mb-4">
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">Good Afternoon, {user?.firstName}!</h1>
+            <p className="text-sm sm:text-base text-blue-100 mb-4">
               Welcome to your dashboard. Track your property journey, manage saved listings, and explore new opportunities in the African real estate market.
             </p>
             {/* Switch to Vendor Button */}
@@ -513,7 +513,7 @@ const Dashboard = () => {
             </div>
 
         {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
                 onClick={() => navigate('/saved-properties')}
@@ -572,7 +572,7 @@ const Dashboard = () => {
             </div>
 
             {/* Additional Analytics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-3 sm:mt-4">
               <div 
                 className="stats-card cursor-pointer hover:bg-blue-700 transition-colors"
                 onClick={() => navigate('/investment')}
@@ -619,10 +619,10 @@ const Dashboard = () => {
         </div>
 
         {/* Market Insights & Trends */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Market Insights & Trends</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Market Insights & Trends</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               
               {/* Property Price Trends */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
@@ -698,10 +698,10 @@ const Dashboard = () => {
 
         {/* Investment Portfolio Section */}
         {user && (
-          <div className="mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Your Investment Portfolio</h3>
+          <div className="mb-6 sm:mb-8">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Your Investment Portfolio</h3>
                 <button
                   onClick={() => navigate('/investment')}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -715,9 +715,9 @@ const Dashboard = () => {
                 const recentInvestments = userInvestments.slice(0, 3);
                 
                 return (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Investment Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                       <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -822,15 +822,15 @@ const Dashboard = () => {
         
 
         {/* Continue Browsing Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Continue Browsing</h2>
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Browsing</h2>
             <Link to="/properties" className="text-brand-blue hover:text-blue-700 text-sm font-medium">
               View history →
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {Array.isArray(properties) && properties.slice(0, 6).map((property) => (
               <div key={property.id} className="property-card">
                 <div className="relative">

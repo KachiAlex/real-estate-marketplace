@@ -13,21 +13,21 @@ const AuthLayout = ({
   const content = (
     <div className={`min-h-screen bg-slate-950 text-white ${isModal ? 'rounded-3xl border border-white/10 shadow-2xl' : ''}`}>
       {/* For full-page auth, allow the page header above and center the card within the remaining viewport */}
-      <div className={`relative isolate ${isModal ? 'rounded-3xl overflow-hidden' : 'min-h-screen overflow-hidden flex items-center justify-center px-4 py-12'}`}>
+      <div className={`relative isolate ${isModal ? 'rounded-3xl overflow-hidden' : 'min-h-screen overflow-hidden flex items-center justify-center px-4 py-8 sm:py-12'}`}>
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#050B1E] to-[#11131F]" aria-hidden="true" />
         <div className={`relative z-10 flex ${isModal ? 'min-h-full items-center justify-center px-4 py-12' : 'w-full justify-center'}`}>
-          <div className={`grid w-full ${isModal ? 'max-w-3xl' : 'max-w-6xl'} gap-10 ${isModal ? '' : 'lg:grid-cols-[1.1fr_0.9fr]'}`}>
-            <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-2xl">
-              <div className="mb-8 space-y-2 text-white">
+          <div className={`grid w-full ${isModal ? 'max-w-3xl' : 'max-w-6xl'} gap-6 sm:gap-10 ${isModal ? '' : 'lg:grid-cols-[1.1fr_0.9fr]'}`}>
+            <div className="rounded-[24px] sm:rounded-[32px] border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl backdrop-blur-2xl">
+              <div className="mb-6 sm:mb-8 space-y-2 text-white">
                 <p className="text-xs uppercase tracking-[0.4em] text-amber-300/90">PropertyArk</p>
-                <h1 className="text-3xl font-semibold leading-tight text-white">{title}</h1>
-                <p className="text-base text-slate-200">{description}</p>
+                <h1 className="text-2xl sm:text-3xl font-semibold leading-tight text-white">{title}</h1>
+                <p className="text-sm sm:text-base text-slate-200">{description}</p>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {children}
               </div>
               {footer && (
-                <div className="mt-6 text-sm text-slate-300">
+                <div className="mt-4 sm:mt-6 text-sm text-slate-300">
                   {footer}
                 </div>
               )}

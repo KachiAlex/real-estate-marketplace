@@ -681,23 +681,23 @@ const PropertyDetail = () => {
 
   return (
     <Fragment>
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <div className="mb-8">
+          <div className="mb-4 sm:mb-8">
             <Breadcrumbs items={breadcrumbItems} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
               {/* Image Gallery */}
-              <div className="mb-8">
+              <div className="mb-4 sm:mb-8">
                 <div className="relative">
                   <img
                     src={getCurrentImage()}
                     alt={property.title}
-                    className="w-full h-96 object-cover rounded-lg"
+                    className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-lg"
                     key={`main-image-${activeImage}`}
                   />
                   <div className="absolute top-4 right-4 flex gap-2">
@@ -751,9 +751,9 @@ const PropertyDetail = () => {
               </div>
 
               {/* Property Details */}
-              <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
-                <p className="text-lg text-gray-600 mb-6">
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">{property.title}</h1>
+                <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">
                   {(() => {
                     if (typeof property.location === 'string') {
                       return property.location;
@@ -769,10 +769,10 @@ const PropertyDetail = () => {
                   })()}
                 </p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
-                      <FaBed className="mr-2" />
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600 flex items-center justify-center">
+                      <FaBed className="mr-1 sm:mr-2" />
                       {property.bedrooms || property.details?.bedrooms || 0}
                     </div>
                     <div className="text-sm text-gray-500">Bedrooms</div>
@@ -807,8 +807,8 @@ const PropertyDetail = () => {
 
               {/* Property Videos */}
               {property.videos && Array.isArray(property.videos) && property.videos.length > 0 && (
-                <div className="bg-white rounded-lg shadow p-6 mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-8">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                     <FaPlay className="text-red-500" />
                     Property Videos
                   </h3>
@@ -851,9 +851,9 @@ const PropertyDetail = () => {
 
               {/* Amenities */}
               {property.amenities && property.amenities.length > 0 && (
-                <div className="bg-white rounded-lg shadow p-6 mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-8">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Amenities</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                     {property.amenities.map((amenity, index) => (
                       <div key={index} className="flex items-center">
                         <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -868,9 +868,9 @@ const PropertyDetail = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Vendor</h3>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Property Vendor</h3>
                 <div className="space-y-3">
                   <div className="flex items-center">
                     <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-3">
@@ -968,8 +968,8 @@ const PropertyDetail = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Purchase Information</h3>
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Purchase Information</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Property Value:</span>
@@ -996,8 +996,8 @@ const PropertyDetail = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h3>
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Property Information</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Property ID:</span>

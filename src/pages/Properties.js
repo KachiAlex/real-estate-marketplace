@@ -913,11 +913,11 @@ const Properties = () => {
   // Status helpers currently unused in this layout
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Page Header */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <div className="flex items-center space-x-3 mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Properties</h1>
           {alertName && (
             <div className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
               <FaBell className="text-xs" />
@@ -965,7 +965,7 @@ const Properties = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Mobile filter toggle */}
         <div className="lg:hidden flex justify-between items-center">
           <button
@@ -977,8 +977,19 @@ const Properties = () => {
           </button>
         </div>
         {/* Left Sidebar - Filters */}
-        <div className={`w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${showFilters ? '' : 'hidden'} lg:block`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+        {showFilters && (
+          <div className="fixed inset-0 z-[80] lg:hidden" onClick={() => setShowFilters(false)}>
+            <div className="absolute inset-0 bg-black bg-opacity-50" />
+          </div>
+        )}
+        <div className={`w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 ${showFilters ? 'fixed inset-x-0 bottom-0 top-16 z-[81] overflow-y-auto rounded-t-2xl lg:static lg:z-auto lg:rounded-lg lg:top-auto' : 'hidden'} lg:block`}>
+          <div className="flex items-center justify-between mb-4 lg:hidden">
+            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <button onClick={() => setShowFilters(false)} className="p-2 text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 hidden lg:block">Filters</h3>
           
           {/* Search Input */}
           <div className="mb-6">
@@ -1095,13 +1106,13 @@ const Properties = () => {
         {/* Right Content Area */}
         <div className="w-full lg:flex-1">
           {/* Results Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                 {filteredProperties.length} Properties Found
               </h2>
               <p className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredProperties.length)} of {filteredProperties.length} properties
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredProperties.length)} of {filteredProperties.length}
                 {filteredProperties.length !== safeProperties.length && (
                   <span className="text-blue-600 ml-2">(filtered from {safeProperties.length} total)</span>
                 )}
@@ -1110,7 +1121,7 @@ const Properties = () => {
             <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
             >
               <option value="mostRecent">Sort by: Most Recent</option>
               <option value="priceLow">Price: Low to High</option>
@@ -1120,7 +1131,7 @@ const Properties = () => {
           </div>
 
           {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {loading ? (
               <PropertyCardSkeleton count={12} />
             ) : currentProperties.length > 0 ? currentProperties.map((property) => (
@@ -1176,13 +1187,13 @@ const Properties = () => {
                   onClick={() => handleViewDetails(property.id)}
                   className="p-4 cursor-pointer"
                 >
-                  <div className="text-2xl font-bold text-gray-900 mb-1 price-inline">
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 price-inline">
                     {formatCurrency(property.price || 0)}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{property.location}</p>
+                  <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{property.title}</h3>
+                  <p className="text-gray-600 text-xs sm:text-sm mb-3">{property.location}</p>
                   
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600 mb-3">
                     <div className="flex items-center space-x-1">
                       <FaBed />
                       <span>{property.bedrooms || property.details?.bedrooms || 0} Bedrooms</span>
@@ -1236,8 +1247,8 @@ const Properties = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center mt-8">
-              <div className="flex items-center space-x-2">
+            <div className="flex justify-center mt-6 sm:mt-8">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <button 
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}

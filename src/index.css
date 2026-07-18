@@ -457,8 +457,11 @@ code {
     margin-bottom: 1.5rem;
   }
   
-  /* Link optimization for touch */
-  a {
+  /* Link optimization for touch - only apply to nav/action links */
+  nav a,
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
@@ -632,27 +635,10 @@ code {
   .container {
     padding: 1rem;
   }
-  
+
   /* Adjust section spacing */
   section {
     margin-bottom: 1.5rem;
-  }
-  
-  /* Adjust margin on elements */
-  .mb-4 {
-    margin-bottom: 1.5rem;
-  }
-  
-  .mb-6 {
-    margin-bottom: 2rem;
-  }
-  
-  .p-4 {
-    padding: 1.25rem;
-  }
-  
-  .p-6 {
-    padding: 1.5rem;
   }
 }
 
@@ -790,7 +776,7 @@ code {
   
   /* Prevent images from exceeding container width */
   img[src] {
-    width: 100%;
+    max-width: 100%;
     height: auto;
   }
 }

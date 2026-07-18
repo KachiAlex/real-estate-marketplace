@@ -109,7 +109,7 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
     : popularSearches.slice(0, 5);
 
   return (
-    <div className="relative h-[420px] sm:h-[520px] md:h-[600px] w-full overflow-hidden shadow-2xl">
+    <div className="relative h-[380px] sm:h-[520px] md:h-[600px] w-full overflow-hidden shadow-2xl">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
@@ -125,29 +125,29 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-6xl">
           {/* Main Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
               PropertyArk — Find Your Dream Property <span className="text-orange-400">in Nigeria</span>
             </h1>
-            <p className="text-lg sm:text-xl text-white/90 mt-2">
+            <p className="text-base sm:text-xl text-white/90 mt-2">
               Search thousands of properties for sale, rent, and investment opportunities
             </p>
           </div>
 
           {/* Search Bar - Prominent in Banner */}
-          <div className="w-full max-w-4xl mx-auto mb-6" ref={searchContainerRef}>
+          <div className="w-full max-w-4xl mx-auto mb-4 sm:mb-6" ref={searchContainerRef}>
             <div className="bg-white rounded-2xl shadow-2xl p-2 relative">
               <div className="relative flex-1">
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl z-10" />
+                <FaSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg sm:text-xl z-10" />
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search properties, locations, investments..."
+                  placeholder="Search properties, locations..."
                   value={searchQuery}
                   onChange={handleInputChange}
                   onFocus={handleInputFocus}
                   onKeyDown={handleKeyPress}
-                  className="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border-0 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 />
                 
                 {/* Search Suggestions Dropdown */}
@@ -178,7 +178,7 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex items-center justify-center space-x-3 mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:space-x-3 mt-4">
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -186,11 +186,11 @@ const StaticHeroBanner = ({ onOpenRegisterModal }) => {
                     onOpenRegisterModal();
                   }
                 }}
-                className="inline-block px-6 py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-lg font-semibold shadow-lg"
+                className="w-full sm:w-auto inline-block px-6 py-3 sm:py-4 bg-brand-orange text-white rounded-2xl hover:bg-orange-600 text-base sm:text-lg font-semibold shadow-lg"
               >
                 Get started
               </button>
-            <button onClick={() => { navigate('/properties'); window.scrollTo({ top: 0, behavior: 'instant' }); }} className="inline-flex items-center space-x-2 px-5 py-3 bg-white/10 text-white rounded-2xl border border-white/20 hover:bg-white/20">
+            <button onClick={() => { navigate('/properties'); window.scrollTo({ top: 0, behavior: 'instant' }); }} className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 bg-white/10 text-white rounded-2xl border border-white/20 hover:bg-white/20">
               <span>Explore listings</span>
               <FaArrowRight />
             </button>

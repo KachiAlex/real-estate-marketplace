@@ -41,7 +41,7 @@ export default function Header() {
         paddingRight: 'max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px))'
       }}
     >
-      <div className={`w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 flex justify-between items-center gap-3 h-20 sm:h-24 md:h-28 ${isDesktopSidebarEnabled ? 'lg:pl-64' : ''}`}>
+      <div className={`w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 flex justify-between items-center gap-3 h-16 sm:h-20 md:h-24 ${isDesktopSidebarEnabled ? 'lg:pl-64' : ''}`}>
         {!isDesktopSidebarEnabled && (
           <div className="flex items-center">
             <Link to="/" className="flex items-center" aria-label="PropertyArk home">
@@ -49,7 +49,7 @@ export default function Header() {
                 <img 
                   src={`${process.env.PUBLIC_URL || ''}/logo.png?v=4.0`} 
                   alt="PropertyArk Logo" 
-                  className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+                  className="h-16 sm:h-20 md:h-24 w-auto object-contain"
                   style={{ backgroundColor: 'transparent', border: 'none' }}
                   onError={(e) => {
                     console.error('Logo failed to load:', e);
