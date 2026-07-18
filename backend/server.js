@@ -62,6 +62,8 @@ app.use(securityConfig.httpsRedirect);
 
 // ABSOLUTE FIRST ROUTE: Register forgot-password with proper token generation
 // This ensures it works even if anything else fails
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const crypto = require('crypto');
 const userService = require('./services/userService');
 
