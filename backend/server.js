@@ -60,98 +60,9 @@ app.options('*', cors(securityConfig.cors));
 // Phase 2.3: HTTPS redirect middleware (enforce HTTPS in production)
 app.use(securityConfig.httpsRedirect);
 
-// ABSOLUTE FIRST ROUTE: Register forgot-password with proper token generation
-// This ensures it works even if anything else fails
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// forgot-password route is registered after body parser middleware below
 const crypto = require('crypto');
 const userService = require('./services/userService');
-
-app.post('/api/auth/forgot-password', async function(req, res) {
-  try {
-    const { email } = req.body;
-
-    // Validate email input
-    if (!email || typeof email !== 'string' || email.trim().length === 0) {
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    
-    // Attempt to find user (don't expose if email exists)
-    let user;
-    try {
-      user = await userService.findByEmail(normalizedEmail);
-    } catch (dbError) {
-      console.error('❌ [FORGOT-PASSWORD] Database error:', dbError.message);
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-    }
-
-    // For security - always return success message (don't reveal if email exists)
-    if (!user) {
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-    }
-
-    // Generate reset token (32 bytes = 64 hex chars)
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
-
-    // Save token hash and expiry to database
-    try {
-      await userService.updateUser(user.id, {
-        resetPasswordToken: resetTokenHash,
-        resetPasswordExpires: resetTokenExpiry
-      });
-      console.log('✅ [FORGOT-PASSWORD] Reset token saved for user:', normalizedEmail);
-    } catch (updateError) {
-      console.error('❌ [FORGOT-PASSWORD] Failed to save reset token:', updateError.message);
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-    }
-
-    // Send password reset email
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://yourapp.com'}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
-    
-    try {
-      if (emailService && typeof emailService.sendPasswordReset === 'function') {
-        await emailService.sendPasswordReset({
-          email: normalizedEmail,
-          firstName: user.firstName || 'User',
-          resetUrl: resetUrl,
-          expiresIn: '15 minutes'
-        });
-        console.log('✅ [FORGOT-PASSWORD] Password reset email sent to:', normalizedEmail);
-      }
-    } catch (emailError) {
-      console.error('⚠️ [FORGOT-PASSWORD] Email send failed (non-fatal):', emailError.message);
-      // Continue - token was saved even if email failed
-    }
-
-    // Always return success for security (don't reveal email status)
-    return res.json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
-    });
-  } catch (error) {
-    console.error('❌ [FORGOT-PASSWORD] Unexpected error:', error.message);
-    return res.json({
-      success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
-    });
-  }
-});
 
 // Trust Cloud Run/Proxies so rate limiter and IP-based logic work correctly
 app.set('trust proxy', 1);
@@ -292,13 +203,89 @@ setImmediate(async () => {
   }
 });
 
-// NOTE: forgot-password route is now registered at the VERY TOP of the file
-// (right after const app = express()) to ensure it's the first route
-
 app.use(securityConfig.helmet);
 app.use(createMorganLogger());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Forgot password route - placed after body parser but before CSRF
+app.post('/api/auth/forgot-password', async function(req, res) {
+  try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string' || email.trim().length === 0) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    let user;
+    try {
+      user = await userService.findByEmail(normalizedEmail);
+    } catch (dbError) {
+      console.error('❌ [FORGOT-PASSWORD] Database error:', dbError.message);
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    try {
+      await userService.updateUser(user.id, {
+        resetPasswordToken: resetTokenHash,
+        resetPasswordExpires: resetTokenExpiry
+      });
+      console.log('✅ [FORGOT-PASSWORD] Reset token saved for user:', normalizedEmail);
+    } catch (updateError) {
+      console.error('❌ [FORGOT-PASSWORD] Failed to save reset token:', updateError.message);
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://propertyark.africa'}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
+    
+    try {
+      if (emailService && typeof emailService.sendPasswordReset === 'function') {
+        await emailService.sendPasswordReset({
+          email: normalizedEmail,
+          firstName: user.firstName || 'User',
+          resetUrl: resetUrl,
+          expiresIn: '15 minutes'
+        });
+        console.log('✅ [FORGOT-PASSWORD] Password reset email sent to:', normalizedEmail);
+      }
+    } catch (emailError) {
+      console.error('⚠️ [FORGOT-PASSWORD] Email send failed (non-fatal):', emailError.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('❌ [FORGOT-PASSWORD] Unexpected error:', error.message);
+    return res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  }
+});
 
 // Apply input sanitization to all routes
 app.use(sanitizeMiddleware);
