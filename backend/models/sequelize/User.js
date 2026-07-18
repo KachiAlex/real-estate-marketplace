@@ -57,6 +57,16 @@ module.exports = (sequelize) =>
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       field: 'isverified'
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'resetpasswordtoken'
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'resetpasswordexpires'
     }
   }, {
     tableName: 'users',

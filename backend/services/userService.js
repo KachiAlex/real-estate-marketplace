@@ -49,7 +49,9 @@ const FIELD_TO_DB_COLUMN = {
   role: 'role',
   isActive: 'isactive',
   isVerified: 'isverified',
-  password: 'password'
+  password: 'password',
+  resetPasswordToken: 'resetpasswordtoken',
+  resetPasswordExpires: 'resetpasswordexpires'
 };
 
 // Convert Sequelize instance to plain object and normalize date fields
