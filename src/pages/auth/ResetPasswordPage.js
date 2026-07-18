@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import AuthLayout from '../../components/layout/AuthLayout';
 import toast from 'react-hot-toast';
 import { getApiUrl } from '../../utils/apiConfig';
@@ -49,6 +50,8 @@ const ResetPasswordPage = () => {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
@@ -172,40 +175,60 @@ const ResetPasswordPage = () => {
         )}
 
         <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label htmlFor="new-password" className="block text-sm font-medium text-white mb-2">
             New Password
           </label>
-          <input
-            id="new-password"
-            name="new-password"
-            type="password"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-            placeholder="Enter new password"
-            disabled={status === 'loading'}
-            data-testid="new-password-input"
-          />
+          <div className="relative">
+            <input
+              id="new-password"
+              name="new-password"
+              type={showNewPassword ? 'text' : 'password'}
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 bg-white/10 text-white placeholder:text-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/70 focus:border-white sm:text-sm"
+              placeholder="Enter new password"
+              disabled={status === 'loading'}
+              data-testid="new-password-input"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword(!showNewPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/60 hover:text-white"
+              tabIndex={-1}
+            >
+              {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
           <PasswordStrengthIndicator passwordStrength={passwordStrength} />
         </div>
 
         <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
             Confirm Password
           </label>
-          <input
-            id="confirm-password"
-            name="confirm-password"
-            type="password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-            placeholder="Confirm new password"
-            disabled={status === 'loading'}
-            data-testid="confirm-password-input"
-          />
+          <div className="relative">
+            <input
+              id="confirm-password"
+              name="confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 bg-white/10 text-white placeholder:text-white/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/70 focus:border-white sm:text-sm"
+              placeholder="Confirm new password"
+              disabled={status === 'loading'}
+              data-testid="confirm-password-input"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/60 hover:text-white"
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
         </div>
 
         <div>
