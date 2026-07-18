@@ -68,6 +68,7 @@ const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME 
 // Build Sequelize options and only include ssl dialectOptions when SSL is required
 const sequelizeOptions = {
   dialect: 'postgres',
+  timezone: '+00:00',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: isServerless ? {
     // Serverless-optimized pool settings

@@ -242,7 +242,7 @@ app.post('/api/auth/forgot-password', async function(req, res) {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     try {
       await userService.updateUser(user.id, {

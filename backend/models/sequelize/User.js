@@ -64,7 +64,7 @@ module.exports = (sequelize) =>
       field: 'resetpasswordtoken'
     },
     resetPasswordExpires: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATE(3),
       allowNull: true,
       field: 'resetpasswordexpires'
     }
