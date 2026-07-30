@@ -87,59 +87,17 @@
       </div>
     </noscript>
     <div id="root">
-      <div id="app-loading-placeholder" style="font-family: 'Inter', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 60px 20px; color: #1e293b; min-height: 100vh;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="/logo.png" alt="PropertyArk Logo" style="width: 48px; height: 48px;" onerror="this.style.display='none'"/>
-          <h1 style="font-size: 2.5rem; color: #f97316; margin: 0;">PropertyArk</h1>
-        </div>
-        <p style="font-size: 1.35rem; color: #475569; margin-bottom: 32px; font-weight: 500;">Buy, sell, rent, and invest in properties with secure escrow services in Nigeria.</p>
-
-        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">What is PropertyArk?</h2>
-        <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; color: #334155;">
-          PropertyArk is a real estate marketplace platform that enables users to browse, list, and transact properties across Nigeria.
-          Our platform provides secure escrow services for property transactions, investment opportunities in real estate,
-          mortgage facilitation, and professional property services. Users can search for properties by location, type, and price,
-          connect with verified vendors, and complete transactions with confidence through our escrow protection.
-        </p>
-
-        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Key Features</h2>
-        <ul style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; padding-left: 24px; color: #334155;">
-          <li>Browse thousands of property listings across Nigeria</li>
-          <li>Secure escrow services for safe property transactions</li>
-          <li>Real estate investment opportunities with verified returns</li>
-          <li>Mortgage facilitation and application management</li>
-          <li>Direct messaging with property vendors and agents</li>
-          <li>Property verification and KYC for trusted transactions</li>
-        </ul>
-
-        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Browse Properties Without an Account</h2>
-        <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 28px; color: #334155;">
-          You can browse property listings, search by location and price, and view property details without creating an account.
-          To list properties, make inquiries, use escrow services, or save favorites, please sign in or create a free account.
-        </p>
-
-        <div style="margin-bottom: 32px;">
-          <a href="/auth/login" style="display: inline-block; background: #f97316; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem; margin-right: 12px;">Sign In</a>
-          <a href="/auth/register" style="display: inline-block; border: 2px solid #f97316; color: #f97316; padding: 12px 30px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Create Free Account</a>
-        </div>
-
-        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 12px;">Legal</h2>
-        <p style="font-size: 1.1rem; margin-bottom: 32px;">
-          <a href="/privacy-policy" style="color: #f97316; text-decoration: none;">Privacy Policy</a>
-          &nbsp;&middot;&nbsp;
-          <a href="/terms-of-service" style="color: #f97316; text-decoration: none;">Terms of Service</a>
-        </p>
-
-        <div style="border-top: 1px solid #e2e8f0; padding-top: 24px; margin-top: 40px;">
-          <p style="color: #64748b; font-size: 1rem; margin-bottom: 8px;">
-            <strong>PropertyArk</strong> &middot; Real Estate Marketplace for Nigeria
-          </p>
-          <p style="color: #94a3b8; font-size: 0.95rem;">
-            Contact: <a href="mailto:support@propertyark.africa" style="color: #f97316;">support@propertyark.africa</a>
-            &nbsp;&middot;&nbsp; Suite 305, Orago Complex, Kam Salem Street, Garki, Abuja
-          </p>
-        </div>
+      <!-- Branded splash screen — replaced by React once mounted -->
+      <div id="app-splash" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#0f172a;font-family:'Inter',Arial,sans-serif;">
+        <img src="/logo.png" alt="PropertyArk" style="width:72px;height:72px;margin-bottom:20px;animation:splash-pulse 1.4s ease-in-out infinite;" onerror="this.style.display='none'"/>
+        <h1 style="font-size:1.75rem;font-weight:700;color:#f97316;margin:0 0 14px 0;letter-spacing:-0.02em;">PropertyArk</h1>
+        <div style="width:36px;height:36px;border:3px solid rgba(249,115,22,0.2);border-top-color:#f97316;border-radius:50%;animation:splash-spin 0.8s linear infinite;"></div>
+        <p style="margin-top:16px;font-size:0.85rem;color:#94a3b8;">Loading secure properties…</p>
       </div>
+      <style>
+        @keyframes splash-spin { to { transform: rotate(360deg); } }
+        @keyframes splash-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.92); } }
+      </style>
     </div>
   </body>
 </html> 

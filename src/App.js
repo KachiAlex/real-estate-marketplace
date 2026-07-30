@@ -16,6 +16,7 @@ import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import VendorLayout from './components/layout/VendorLayout';
 import LoadingSpinner from './components/LoadingSpinner';
+import SplashScreen from './components/SplashScreen';
 import AITourGuide from './components/AITourGuide';
 import ErrorBoundary from './components/ErrorBoundary';
 import retryImport from './utils/retryImport';
@@ -459,11 +460,7 @@ function AppContent() {
 
   // Show loading state during initialization
   if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center w-full h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <SplashScreen label="Loading secure properties…" />;
   }
 
   return (
