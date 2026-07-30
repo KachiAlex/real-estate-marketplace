@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext-new';
 import getPostLoginRoute from '../../utils/getPostLoginRoute';
 import toast from 'react-hot-toast';
+import SplashScreen from '../../components/SplashScreen';
 
 const GoogleCallbackPage = () => {
   const { signInWithGoogle } = useAuth();
@@ -62,14 +63,7 @@ const GoogleCallbackPage = () => {
   }, [navigate, signInWithGoogle]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-900">
-      <div className="text-center">
-        <div className="space-y-3">
-          <div className="inline-block w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-          <div className="text-white text-lg font-medium">Completing Google sign-in...</div>
-        </div>
-      </div>
-    </div>
+    <SplashScreen label="Completing Google sign-in…" />
   );
 };
 
