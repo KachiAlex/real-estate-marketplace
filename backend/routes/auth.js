@@ -166,7 +166,7 @@ router.post('/register', [
     });
 
     // Send verification email (Phase 2.4)
-    const verificationUrl = `${process.env.FRONTEND_URL || 'https://yourapp.com'}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    const verificationUrl = `${process.env.FRONTEND_URL || 'https://propertyark.africa'}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
     try {
       await emailService.sendEmail(
         email,

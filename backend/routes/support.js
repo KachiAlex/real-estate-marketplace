@@ -135,7 +135,7 @@ router.post('/inquiry', authenticateToken, async (req, res) => {
           message,
           priority,
           createdAt: inquiry.createdAt ? inquiry.createdAt.toLocaleString() : new Date().toLocaleString(),
-          inquiryUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/support/${inquiry.id}`
+          inquiryUrl: `${process.env.FRONTEND_URL || 'https://propertyark.africa'}/admin/support/${inquiry.id}`
         };
         const sendResult = await emailService.sendBulkEmails(recipients, 'support_inquiry', variables);
         logger.info('Support inquiry notification send result', { inquiryId: inquiry.id, sendResult });

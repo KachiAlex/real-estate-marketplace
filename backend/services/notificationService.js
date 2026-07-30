@@ -18,14 +18,6 @@ const normalizeId = (value) => {
   return null;
 };
 
-const toFirestoreTimestamp = (value) => {
-  if (!value) return null;
-  if (value.toDate) return value;
-  const dateValue = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(dateValue.getTime())) return null;
-  return admin.firestore.Timestamp.fromDate(dateValue);
-};
-
 class NotificationService {
   constructor() { this.socketIO = null; }
   initializeSocketIO(io) { this.socketIO = io; }

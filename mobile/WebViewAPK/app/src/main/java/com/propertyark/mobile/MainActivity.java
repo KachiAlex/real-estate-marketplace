@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
     private TextView statusText;
     
     // Production web app URL
-    private static final String APP_URL = "https://real-estate-marketplace-delta.vercel.app";
+    private static final String APP_URL = "https://www.propertyark.africa";
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -419,7 +419,7 @@ class EmailService {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/mortgage-bank-dashboard?applicationId=${application._id}" 
+              <a href="${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application._id}" 
                  style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                 Review Application
               </a>
@@ -465,7 +465,7 @@ Applicant Information:
 - Monthly Income: ${application.employmentDetails?.monthlyIncome?.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }) || 'N/A'}
 - Documents: ${application.documents?.length || 0} document(s) uploaded
 
-Review the application: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/mortgage-bank-dashboard?applicationId=${application._id}
+Review the application: ${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application._id}
 
 PropertyArk Platform
       `;
@@ -586,7 +586,7 @@ PropertyArk Platform
             ` : ''}
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/mortgages" 
+              <a href="${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgages" 
                  style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                 View Application
               </a>
@@ -622,7 +622,7 @@ Application Details:
 
 ${notes ? `Bank Notes:\n${notes}\n\n` : ''}
 
-View your application: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/mortgages
+View your application: ${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgages
 
 PropertyArk Platform
       `;

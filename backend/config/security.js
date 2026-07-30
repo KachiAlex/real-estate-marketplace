@@ -99,12 +99,11 @@ const securityConfig = {
       }
 
       if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-        console.log('CORS: Origin allowed:', origin);
         return callback(null, true);
       }
 
-      console.warn('CORS: Origin not explicitly allowed, permitting temporarily:', origin);
-      return callback(null, true);
+      console.warn('CORS: Origin not allowed:', origin);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

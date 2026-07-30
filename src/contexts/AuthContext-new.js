@@ -402,7 +402,6 @@ export const AuthProvider = ({ children }) => {
         const msg = `${label}: ${e?.message || e?.name || String(e)}`;
         errors.push(msg);
         logFetchError(label, e);
-        toast(`[${label}] ${msg}`, { duration: 5000 });
       };
 
       // Try 1: fetch primary (the /jwt path that actually exists)
@@ -499,11 +498,7 @@ export const AuthProvider = ({ children }) => {
         errors.push('native-bridge: not injected');
       }
 
-      const errorSummary = errors.length ? errors.join('\n') : 'No error details captured';
       console.warn('🔍 [AUTH DEBUG] ALL transports exhausted', { requestId, path, altUrl, primaryUrl, errors });
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert(`TRANSPORT FAIL:\n${errorSummary}\n\nPrimary URL:\n${primaryUrl}`);
-      }
       return { response: null, errors };
   };
 
@@ -578,14 +573,10 @@ export const AuthProvider = ({ children }) => {
         hasNativeBridge,
         hasCapacitorHttp
       });
-      toast('Sending login request...', { icon: '📡', duration: 4000 });
-      toast(`URL: ${loginUrl}`, { duration: 5000 });
-
       // Try native Android bridge first (bypasses WebView CORS/network issues)
       if (typeof window !== 'undefined' && window.NativeLoginBridge) {
         try {
           console.log('🔍 [AUTH DEBUG] trying native Android bridge');
-          toast('Using native network...', { icon: '🤖', duration: 4000 });
           const nativeResult = window.NativeLoginBridge.nativeLoginSync(email, password);
           console.log('🔍 [AUTH DEBUG] native bridge raw result', nativeResult);
           const parsed = JSON.parse(nativeResult);
@@ -608,7 +599,6 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (nativeErr) {
           console.warn('🔴 [AUTH DEBUG] native bridge error, falling back to WebView', nativeErr);
-          toast('Native failed, trying WebView...', { icon: '🔄', duration: 3000 });
         }
       }
 
@@ -677,17 +667,6 @@ export const AuthProvider = ({ children }) => {
       });
       const errMsg = e && e.message ? e.message : 'Login failed';
       toast.error(errMsg, { duration: 6000 });
-      // Always show exact error in alert for debugging on mobile
-      if (typeof window !== 'undefined' && window.alert) {
-        const capHttp = !!(CapacitorHttp && typeof CapacitorHttp.request === 'function');
-        const nativeBridge = !!(typeof window !== 'undefined' && window.NativeLoginBridge);
-        const allErrors = (e?.transportErrors || []).join('\n');
-        window.alert(
-          `LOGIN ERROR:\n${errMsg}\n\n` +
-          `Transports:\n- NativeBridge=${nativeBridge}\n- CapacitorHttp=${capHttp}\n\n` +
-          `All errors:\n${allErrors || 'No details'}`
-        );
-      }
       throw e;
     } finally { setLoading(false); }
   }, []);

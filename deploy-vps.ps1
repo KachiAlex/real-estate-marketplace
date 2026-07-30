@@ -16,7 +16,7 @@ $REMOTE_APP_DIR = "/var/www/propertyark"
 $PM2_PROCESS = "propertyark-api"
 $DEPLOY_TARBALL = "deploy-package.tar.gz"
 
-$SSH_OPTS = "-i $SSH_PATH -o StrictHostKeyChecking=no -o PasswordAuthentication=no"
+$SSH_ARGS = @("-i", $SSH_PATH, "-o", "StrictHostKeyChecking=no", "-o", "PasswordAuthentication=no")
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Property Ark - VPS Deployment" -ForegroundColor Cyan
@@ -42,7 +42,7 @@ if (-not $sshCmd) {
 
 # Test SSH connection
 Write-Host "[1/7] Testing SSH connection..." -ForegroundColor Yellow
-$testResult = ssh $SSH_OPTS $REMOTE_USER_HOST "echo 'SSH connection OK'" 2>&1
+$testResult = ssh @SSH_ARGS $REMOTE_USER_HOST "echo 'SSH connection OK'" 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "SSH connection failed." -ForegroundColor Red
     Write-Host "If this is the first time, run setup-vps-ssh.ps1 to copy your SSH key." -ForegroundColor Yellow
@@ -92,7 +92,7 @@ Write-Host "  Tarball created: $sizeMB MB" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "[4/7] Uploading to VPS..." -ForegroundColor Yellow
-scp $SSH_OPTS $DEPLOY_TARBALL "${REMOTE_USER_HOST}:/tmp/$DEPLOY_TARBALL"
+scp @SSH_ARGS $DEPLOY_TARBALL "${REMOTE_USER_HOST}:/tmp/$DEPLOY_TARBALL"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Upload failed!" -ForegroundColor Red
     exit 1
@@ -122,7 +122,7 @@ echo '  Cleaning up...'
 rm /tmp/$DEPLOY_TARBALL
 "@
 
-ssh $SSH_OPTS $REMOTE_USER_HOST $remoteCmd 2>&1
+ssh @SSH_ARGS $REMOTE_USER_HOST $remoteCmd 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Extraction/install failed!" -ForegroundColor Red
     exit 1
@@ -133,7 +133,7 @@ Write-Host "  Dependencies installed" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "[6/7] Restarting PM2 process..." -ForegroundColor Yellow
-ssh $SSH_OPTS $REMOTE_USER_HOST "pm2 restart $PM2_PROCESS --update-env && sleep 3 && pm2 save" 2>&1
+ssh @SSH_ARGS $REMOTE_USER_HOST "pm2 restart $PM2_PROCESS --update-env && sleep 3 && pm2 save" 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "PM2 restart failed!" -ForegroundColor Red
     exit 1
@@ -144,7 +144,7 @@ Write-Host "  PM2 restarted and state saved" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "[7/7] Verifying deployment..." -ForegroundColor Yellow
-$verifyResult = ssh $SSH_OPTS $REMOTE_USER_HOST "pm2 list && echo '---' && curl -s https://propertyark.africa/api/health && echo '' && curl -s -o /dev/null -w 'Frontend: %{http_code}' https://propertyark.africa/ && echo ''" 2>&1
+$verifyResult = ssh @SSH_ARGS $REMOTE_USER_HOST "pm2 list && echo '---' && curl -s https://propertyark.africa/api/health && echo '' && curl -s -o /dev/null -w 'Frontend: %{http_code}' https://propertyark.africa/ && echo ''" 2>&1
 Write-Host $verifyResult -ForegroundColor White
 
 # ── Cleanup ─────────────────────────────────────────────────────────

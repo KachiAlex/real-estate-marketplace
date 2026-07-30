@@ -91,11 +91,11 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       // Custom fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-2xl w-full">
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
+          <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-2xl w-full">
             <div className="mb-6">
               <svg
-                className="mx-auto h-24 w-24 text-red-500"
+                className="mx-auto h-24 w-24 text-orange-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -131,13 +131,13 @@ class ErrorBoundary extends React.Component {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={this.handleRefresh}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 rounded-2xl hover:brightness-110 transition font-semibold"
               >
                 Refresh Page
               </button>
               <button
                 onClick={this.handleGoHome}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                className="px-6 py-3 border-2 border-orange-500 text-orange-500 rounded-2xl hover:bg-orange-50 transition font-semibold"
               >
                 Go to Home
               </button>
@@ -158,7 +158,7 @@ class ErrorBoundary extends React.Component {
                 If this problem persists, please{' '}
                 <a 
                   href="/help-support" 
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-orange-600 hover:text-orange-700 font-medium"
                 >
                   contact support
                 </a>

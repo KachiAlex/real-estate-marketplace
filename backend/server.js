@@ -68,10 +68,7 @@ const userService = require('./services/userService');
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+  cors: securityConfig.cors
 });
 const PORT = process.env.PORT || 5001;
 const socketsEnabled = process.env.DISABLE_SOCKETS !== 'true' && process.env.NODE_ENV !== 'test';
