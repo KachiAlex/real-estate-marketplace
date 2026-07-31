@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult, query, param } = require('express-validator');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
 const propertyService = require('../services/propertyService');
+const verificationService = require('../services/verificationService');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,12 +25,6 @@ router.get('/', optionalAuth, [
   query('state').optional().trim().notEmpty().withMessage('State cannot be empty')
 ], async (req, res) => {
   try {
-    console.log('GET /api/properties called with query:', req.query);
-    // Developer debug helper: force an error when `debug=true` to capture stack traces
-    if (String(req.query.debug).toLowerCase() === 'true' || String(req.query.debug) === '1') {
-      throw new Error('Intentional debug error from /api/properties (debug=true)');
-    }
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -309,6 +304,32 @@ router.post('/:id/favorite', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+});
+
+router.post('/verify-request', protect, async (req, res) => {
+  try {
+    const { propertyId, paymentReference, amount } = req.body;
+    if (!propertyId) {
+      return res.status(400).json({ success: false, message: 'propertyId is required' });
+    }
+    const application = await verificationService.submitApplication({
+      applicant: req.user,
+      propertyId,
+      verificationPaymentId: paymentReference,
+      message: req.body.notes || ''
+    });
+    res.status(201).json({
+      success: true,
+      message: 'Verification request submitted successfully',
+      data: application
+    });
+  } catch (error) {
+    console.error('Verify request error:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to submit verification request'
     });
   }
 });

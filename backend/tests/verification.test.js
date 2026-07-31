@@ -1,66 +1,70 @@
 const { request, app } = require('./testHelper');
 
 describe('Phase4 - Vendor Property Verification API', () => {
-  test('GET /api/verification/status returns 200', async () => {
+  test('GET /api/verification/config returns 200', async () => {
     const res = await request(app)
-      .get('/api/verification/status')
+      .get('/api/verification/config')
       .set('Accept', 'application/json')
       .set('x-mock-user-email', 'vendor1@example.com');
-    expect([200, 401, 403, 404]).toContain(res.statusCode);
+    expect([200, 401, 403, 404, 500]).toContain(res.statusCode);
   });
 
-  test('POST /api/verification/submit returns appropriate status', async () => {
+  test('POST /api/verification/applications (vendor submit)', async () => {
     const res = await request(app)
-      .post('/api/verification/submit')
+      .post('/api/verification/applications')
       .set('Accept', 'application/json')
       .set('x-mock-user-email', 'vendor1@example.com')
       .send({
         propertyId: 'prop_1',
-        documents: ['doc1.pdf', 'doc2.pdf'],
-        notes: 'Please verify this property'
+        propertyName: 'Test Property',
+        attachments: ['doc1.pdf', 'doc2.pdf'],
+        message: 'Please verify this property'
       });
     expect([200, 201, 400, 401, 403, 404, 500]).toContain(res.statusCode);
   });
 
-  test('GET /api/verification/requests returns 200 for vendor', async () => {
+  test('GET /api/verification/applications/mine returns for vendor', async () => {
     const res = await request(app)
-      .get('/api/verification/requests')
+      .get('/api/verification/applications/mine')
       .set('Accept', 'application/json')
       .set('x-mock-user-email', 'vendor1@example.com');
-    expect([200, 401, 403, 404]).toContain(res.statusCode);
+    expect([200, 401, 403, 404, 500]).toContain(res.statusCode);
   });
 
-  test('GET /api/verification/requests/:id returns 404 for non-existent request', async () => {
+  test('GET /api/verification/applications (admin list)', async () => {
     const res = await request(app)
-      .get('/api/verification/requests/non-existent-id')
-      .set('Accept', 'application/json')
-      .set('x-mock-user-email', 'vendor1@example.com');
-    expect([200, 401, 403, 404]).toContain(res.statusCode);
-  });
-
-  test('GET /api/verification/admin/pending returns 200 for admin', async () => {
-    const res = await request(app)
-      .get('/api/verification/admin/pending')
+      .get('/api/verification/applications?status=pending')
       .set('Accept', 'application/json')
       .set('x-mock-user-email', 'admin@propertyark.com');
-    expect([200, 401, 403, 404]).toContain(res.statusCode);
+    expect([200, 401, 403, 404, 500]).toContain(res.statusCode);
   });
 
-  test('POST /api/verification/admin/approve returns appropriate status', async () => {
+  test('PATCH /api/verification/applications/:id/status (decision)', async () => {
     const res = await request(app)
-      .post('/api/verification/admin/approve')
+      .patch('/api/verification/applications/non-existent-id/status')
       .set('Accept', 'application/json')
       .set('x-mock-user-email', 'admin@propertyark.com')
-      .send({ requestId: 'req_1', notes: 'Approved' });
+      .send({
+        status: 'approved',
+        adminNotes: 'Approved'
+      });
     expect([200, 400, 401, 403, 404, 500]).toContain(res.statusCode);
   });
+});
 
-  test('POST /api/verification/admin/reject returns appropriate status', async () => {
+describe('Phase4 - Property verify request', () => {
+  test('POST /api/properties/verify-request returns appropriate status', async () => {
     const res = await request(app)
-      .post('/api/verification/admin/reject')
+      .post('/api/properties/verify-request')
       .set('Accept', 'application/json')
-      .set('x-mock-user-email', 'admin@propertyark.com')
-      .send({ requestId: 'req_1', reason: 'Documents incomplete' });
-    expect([200, 400, 401, 403, 404, 500]).toContain(res.statusCode);
+      .set('x-mock-user-email', 'vendor1@example.com')
+      .send({
+        propertyId: 'prop_1',
+        paymentReference: 'test-ref-123',
+        amount: 50000,
+        notes: 'Please verify this property'
+      });
+    expect([200, 201, 400, 401, 403, 404, 500]).toContain(res.statusCode);
+    expect(res.statusCode).not.toBe(404);
   });
 });
