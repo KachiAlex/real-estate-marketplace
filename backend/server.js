@@ -526,12 +526,6 @@ try {
 }
 
 try {
-  app.use('/api/debug', require('./routes/debug'));
-} catch (error) {
-  console.error('Failed to load debug routes:', error.message);
-}
-
-try {
   app.use('/api/admin', require('./routes/admin'));
 } catch (error) {
   console.error('Failed to load admin routes:', error.message);
@@ -836,14 +830,10 @@ app.use((err, req, res, next) => {
     }
   }
   
-  // Log ALL errors for debugging - use both console.log and console.error
-  console.log('❌ [GLOBAL-HANDLER] Error caught - Path:', req.path);
-  console.log('❌ [GLOBAL-HANDLER] Original URL:', req.originalUrl);
-  console.log('❌ [GLOBAL-HANDLER] Error message:', err.message);
-  console.error('❌ [GLOBAL-HANDLER] Error caught - Path:', req.path);
-  console.error('❌ [GLOBAL-HANDLER] Original URL:', req.originalUrl);
-  console.error('❌ [GLOBAL-HANDLER] Error message:', err.message);
-  console.error('❌ [GLOBAL-HANDLER] Error stack:', err.stack);
+  // Log errors securely: do not echo request details that may contain tokens or PII
+  console.error('[GLOBAL-HANDLER] Error caught - Path:', req.path);
+  console.error('[GLOBAL-HANDLER] Error message:', err.message);
+  console.error('[GLOBAL-HANDLER] Error stack:', err.stack);
   
   // Special handling for forgot-password route - ALWAYS return success for security
   // Check EVERY possible way the URL could be represented - be extremely aggressive

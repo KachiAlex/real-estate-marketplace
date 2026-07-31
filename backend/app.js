@@ -91,7 +91,6 @@ const routeLoaders = [
   ['payments', () => require('./routes/payments')],
   ['escrow', () => require('./routes/escrow')],
   ['verification', () => require('./routes/verification')],
-  ['debug', () => require('./routes/debug')],
   ['disputes', () => require('./routes/disputes')],
   ['admin', () => require('./routes/admin')],
   ['assistant', () => require('./routes/assistant')],

@@ -164,17 +164,6 @@ const csrfProtectionConditional = (req, res, next) => {
     return next();
   }
 
-  // Debug: log CSRF-related headers and cookies for POST/PUT/DELETE/PATCH
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    console.log('🔒 [CSRF-DEBUG]', req.method, req.path, {
-      hasXCsrfHeader: !!req.headers['x-csrf-token'],
-      xCsrfToken: req.headers['x-csrf-token'] ? req.headers['x-csrf-token'].substring(0, 10) + '...' : 'MISSING',
-      cookieHeader: req.headers.cookie ? req.headers.cookie.substring(0, 100) : 'MISSING',
-      hasCsrfCookie: !!(req.cookies && req.cookies._csrf),
-      csrfCookieValue: req.cookies && req.cookies._csrf ? req.cookies._csrf.substring(0, 10) + '...' : 'MISSING'
-    });
-  }
-
   // Apply CSRF protection
   csrfProtection(req, res, next);
 };

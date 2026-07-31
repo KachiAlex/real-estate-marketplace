@@ -51,22 +51,6 @@ exports.protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
     }
 
-    // DEBUG: Log request path/method and what we received (mask token)
-    try {
-      const authHeader = req.headers.authorization || null;
-      let masked = null;
-      if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-        const t = authHeader.split(' ')[1] || '';
-        const len = t.length;
-        masked = `${t.slice(0,8)}...${t.slice(-8)} (len=${len})`;
-      }
-      console.log(`[protect] DEBUG - ${req.method} ${req.originalUrl} - Authorization header:`, authHeader ? 'Present' : 'Missing');
-      console.log('[protect] DEBUG - Authorization (masked):', masked || authHeader);
-      console.log('[protect] DEBUG - Token extracted:', token ? `Yes (${token.length} chars)` : 'No');
-    } catch (logErr) {
-      console.warn('[protect] DEBUG - failed to log headers', logErr?.message || logErr);
-    }
-
     // Check if token exists
     if (!token) {
       // CRITICAL: In production, NEVER allow mock auth fallback
