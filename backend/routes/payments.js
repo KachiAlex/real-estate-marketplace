@@ -206,9 +206,6 @@ router.post('/initialize',
           currency
         });
 
-        console.log('Payments route: Payment service result:', result);
-        console.log('Payments route: Provider data:', result.providerData);
-
         // Ensure providerData is included in response
         const paymentRecord = result.payment ? (result.payment.toJSON ? result.payment.toJSON() : result.payment) : result;
         

@@ -93,29 +93,22 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
       }
     } else if (paymentMethod === 'flutterwave') {
       const flutterwavePayload = {
-        tx_ref: reference,
+        reference,
         amount,
         currency,
+        description,
         customer: {
           email: user.email,
+          phone: user.phone || '',
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim()
-        },
-        customizations: {
-          title: description,
-          description
-        },
-        meta: {
-          userId: user.id,
-          paymentId: payment.id,
-          relatedEntity
         }
       };
-      
+
       const flutterwaveResult = await flutterwaveService.initializePayment(flutterwavePayload);
-      if (flutterwaveResult && flutterwaveResult.data) {
+      if (flutterwaveResult && flutterwaveResult.success && flutterwaveResult.data) {
         providerData = {
           txRef: reference,
-          link: flutterwaveResult.data.link
+          authorizationUrl: flutterwaveResult.data.authorizationUrl
         };
       }
     } else if (paymentMethod === 'bank_transfer') {

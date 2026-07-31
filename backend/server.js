@@ -246,7 +246,7 @@ app.post('/api/auth/forgot-password', async function(req, res) {
         resetPasswordToken: resetTokenHash,
         resetPasswordExpires: resetTokenExpiry
       });
-      console.log('✅ [FORGOT-PASSWORD] Reset token saved for user:', normalizedEmail);
+      // Reset token saved successfully
     } catch (updateError) {
       console.error('❌ [FORGOT-PASSWORD] Failed to save reset token:', updateError.message);
       return res.json({
@@ -265,7 +265,7 @@ app.post('/api/auth/forgot-password', async function(req, res) {
           resetUrl: resetUrl,
           expiresIn: '15 minutes'
         });
-        console.log('✅ [FORGOT-PASSWORD] Password reset email sent to:', normalizedEmail);
+        // Password reset email sent successfully
       }
     } catch (emailError) {
       console.error('⚠️ [FORGOT-PASSWORD] Email send failed (non-fatal):', emailError.message);
@@ -529,12 +529,6 @@ try {
   app.use('/api/debug', require('./routes/debug'));
 } catch (error) {
   console.error('Failed to load debug routes:', error.message);
-}
-
-try {
-  app.use('/api/disputes', require('./routes/disputes'));
-} catch (error) {
-  console.error('Failed to load disputes routes:', error.message);
 }
 
 try {

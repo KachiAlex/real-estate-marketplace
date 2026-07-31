@@ -244,7 +244,6 @@ router.put('/update-admin', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
     const { email, firstName, lastName, password } = req.body;
-    console.log('Update-admin request body:', req.body);
     // Find user by email
     let user;
     try {

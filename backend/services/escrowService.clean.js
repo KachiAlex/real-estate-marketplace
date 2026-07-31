@@ -544,33 +544,46 @@ class EscrowService {
       await Promise.all(notificationPromises);
     } catch (e) {
       console.warn('Failed to send resolution notifications:', e.message);
-  }
-
-  // Check access permissions
-  if (user?.role !== 'admin' && (dispute || mockDispute)) {
-    const disputeEscrowId = dispute?.escrowId || mockDispute?.escrowId;
-    const tx = dispute
-      ? await EscrowModel.findByPk(disputeEscrowId)
-      : mockEscrowTransactions.find((mockTx) => mockTx.id === disputeEscrowId);
-    const userId = user?.id || user;
-    const buyerId = tx?.buyerId;
-    const sellerId = tx?.sellerId;
-
-    if (!tx || (userId !== buyerId && userId !== sellerId)) {
-      const error = new Error('Not authorized to view this dispute');
-      error.statusCode = 403;
-      throw error;
     }
-  }
 
-  if (dispute) {
     return dispute.toJSON();
   }
 
-  return normalizeMockDispute(mockDispute);
-}
+  async getDisputeById(disputeId, user) {
+    const dispute = await db.DisputeResolution.findByPk(disputeId);
+    const mockDispute = !dispute
+      ? (Array.isArray(mockDisputes) ? mockDisputes.find((d) => d.id === disputeId) : null)
+      : null;
 
-async listDisputes({ user, status, page = 1, limit = 20 } = {}) {
+    if (!dispute && !mockDispute) {
+      return null;
+    }
+
+    // Check access permissions
+    if (user?.role !== 'admin') {
+      const disputeEscrowId = dispute?.escrowId || mockDispute?.escrowId;
+      const tx = dispute
+        ? await EscrowModel.findByPk(disputeEscrowId)
+        : mockEscrowTransactions.find((mockTx) => mockTx.id === disputeEscrowId);
+      const userId = user?.id || user;
+      const buyerId = tx?.buyerId;
+      const sellerId = tx?.sellerId;
+
+      if (!tx || (userId !== buyerId && userId !== sellerId)) {
+        const error = new Error('Not authorized to view this dispute');
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
+    if (dispute) {
+      return dispute.toJSON();
+    }
+
+    return normalizeMockDispute(mockDispute);
+  }
+
+  async listDisputes({ user, status, page = 1, limit = 20 } = {}) {
   const isAdmin = user?.role === 'admin';
   const userId = getUserIdValue(user);
   const where = {};

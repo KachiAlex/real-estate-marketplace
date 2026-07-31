@@ -194,7 +194,7 @@ class EmailService {
       isApproved: isApproved,
       notes: notes,
       verificationDate: new Date().toLocaleDateString(),
-      propertyUrl: `${process.env.FRONTEND_URL}/properties/${property._id}`
+      propertyUrl: `${process.env.FRONTEND_URL}/properties/${property.id || property._id}`
     };
 
     return await this.sendTemplateEmail(
@@ -209,11 +209,11 @@ class EmailService {
       userName: `${user.firstName} ${user.lastName}`,
       propertyTitle: escrow.propertyId?.title || 'Property',
       escrowAmount: escrow.amount?.toLocaleString(),
-      escrowId: escrow._id,
+      escrowId: escrow.id || escrow._id,
       status: escrow.status,
       createdDate: escrow.createdAt?.toLocaleDateString(),
       expectedCompletion: escrow.expectedCompletion?.toLocaleDateString(),
-      escrowUrl: `${process.env.FRONTEND_URL}/escrow/${escrow._id}`
+      escrowUrl: `${process.env.FRONTEND_URL}/escrow/${escrow.id || escrow._id}`
     };
 
     return await this.sendTemplateEmail(user, type, variables);
@@ -240,9 +240,9 @@ class EmailService {
       userName: `${user.firstName} ${user.lastName}`,
       propertyTitle: investment.propertyId?.title || 'Property',
       investmentAmount: investment.amount?.toLocaleString(),
-      investmentId: investment._id,
+      investmentId: investment.id || investment._id,
       expectedReturn: investment.expectedReturn,
-      investmentUrl: `${process.env.FRONTEND_URL}/investments/${investment._id}`
+      investmentUrl: `${process.env.FRONTEND_URL}/investments/${investment.id || investment._id}`
     };
 
     return await this.sendTemplateEmail(user, type, variables);
@@ -354,7 +354,7 @@ class EmailService {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; width: 40%;">Application ID:</td>
-                  <td style="padding: 8px 0;">${application._id}</td>
+                  <td style="padding: 8px 0;">${application.id || application._id}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold;">Property:</td>
@@ -419,7 +419,7 @@ class EmailService {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application._id}" 
+              <a href="${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application.id || application._id}" 
                  style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                 Review Application
               </a>
@@ -448,7 +448,7 @@ Hello ${bankUser.firstName || 'Bank Representative'},
 A new mortgage application has been submitted to your bank.
 
 Application Details:
-- Application ID: ${application._id}
+- Application ID: ${application.id || application._id}
 - Property: ${property.title || 'N/A'}
 - Location: ${property.location || property.city && property.state ? `${property.city}, ${property.state}` : 'N/A'}
 - Property Price: ${property.price?.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }) || 'N/A'}
@@ -465,7 +465,7 @@ Applicant Information:
 - Monthly Income: ${application.employmentDetails?.monthlyIncome?.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }) || 'N/A'}
 - Documents: ${application.documents?.length || 0} document(s) uploaded
 
-Review the application: ${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application._id}
+Review the application: ${process.env.FRONTEND_URL || 'https://propertyark.africa'}/mortgage-bank-dashboard?applicationId=${application.id || application._id}
 
 PropertyArk Platform
       `;

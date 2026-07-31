@@ -19,7 +19,7 @@ class PaystackService {
         reference: paymentData.reference,
         currency: paymentData.currency || 'NGN',
         metadata: paymentData.metadata,
-        callback_url: `${process.env.CLIENT_URL}/payment/callback`,
+        callback_url: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://propertyark.africa'}/payment/callback`,
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
       };
 
@@ -175,7 +175,7 @@ class PaystackService {
             }
           ]
         },
-        callback_url: callbackUrl || `${process.env.CLIENT_URL}/subscription/payment/verify`,
+        callback_url: callbackUrl || `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://propertyark.africa'}/subscription/payment/verify`,
         channels: ['card', 'bank', 'ussd', 'bank_transfer']
       };
 
