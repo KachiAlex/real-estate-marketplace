@@ -6,10 +6,6 @@ class PaystackService {
     this.publicKey = process.env.PAYSTACK_PUBLIC_KEY;
     this.secretKey = process.env.PAYSTACK_SECRET_KEY;
     
-    console.log('🔥 PaystackService: Constructor called');
-    console.log('🔥 PaystackService: Secret key loaded:', !!this.secretKey);
-    console.log('🔥 PaystackService: Public key loaded:', !!this.publicKey);
-    
     if (!this.secretKey) {
       console.error('❌ CRITICAL: PAYSTACK_SECRET_KEY is not set in environment variables');
     }
@@ -17,15 +13,6 @@ class PaystackService {
 
   async initializePayment(paymentData) {
     try {
-      console.log('🔥 PaystackService: initializePayment called');
-      console.log('🔥 PaystackService: Secret key present:', !!this.secretKey);
-      console.log('🔥 PaystackService: Payment data:', {
-        amount: paymentData.amount,
-        email: paymentData.email,
-        reference: paymentData.reference,
-        currency: paymentData.currency
-      });
-
       const payload = {
         amount: paymentData.amount,
         email: paymentData.email,
@@ -36,9 +23,6 @@ class PaystackService {
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
       };
 
-      console.log('🔥 PaystackService: Payload:', payload);
-      console.log('🔥 PaystackService: Making request to:', `${this.baseURL}/transaction/initialize`);
-
       const response = await axios.post(`${this.baseURL}/transaction/initialize`, payload, {
         headers: {
           Authorization: `Bearer ${this.secretKey}`,
@@ -46,11 +30,8 @@ class PaystackService {
         }
       });
 
-      console.log('🔥 PaystackService: Response status:', response.status);
-      console.log('🔥 PaystackService: Response data:', response.data);
-
       if (response.data.status) {
-        const result = {
+        return {
           success: true,
           data: {
             authorizationUrl: response.data.data.authorization_url,
@@ -58,22 +39,15 @@ class PaystackService {
             reference: response.data.data.reference
           }
         };
-        console.log('🔥 PaystackService: Returning success result:', result);
-        return result;
       } else {
-        console.warn('🔥 PaystackService: Response status is false:', response.data);
+        console.warn('PaystackService: initialization returned false status');
         return {
           success: false,
           message: response.data.message || 'Failed to initialize payment'
         };
       }
     } catch (error) {
-      console.error('❌ PaystackService: payment initialization error');
-      console.error('❌ PaystackService: Error message:', error.message);
-      console.error('❌ PaystackService: Error response data:', error.response?.data);
-      console.error('❌ PaystackService: Error response status:', error.response?.status);
-      console.error('❌ PaystackService: Full error:', error);
-      
+      console.error('PaystackService: payment initialization error:', error.response?.data || error.message);
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Payment initialization failed'

@@ -73,19 +73,16 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
         }
       };
       
-      console.log('PaymentService: Initializing Paystack payment with payload:', paystackPayload);
       const paystackResult = await paystackService.initializePayment(paystackPayload);
-      console.log('PaymentService: Paystack result:', paystackResult);
-      
+
       if (paystackResult && paystackResult.success && paystackResult.data) {
         providerData = {
           txRef: paystackResult.data.reference || reference,
           authorizationUrl: paystackResult.data.authorizationUrl,
           accessCode: paystackResult.data.accessCode
         };
-        console.log('PaymentService: Provider data set from Paystack API:', providerData);
       } else {
-        console.warn('PaymentService: Paystack backend initialization failed, using client-side fallback:', paystackResult);
+        console.warn('PaymentService: Paystack backend initialization failed, using client-side fallback');
         // Fallback: Return a marker that tells frontend to use client-side Paystack SDK
         // The frontend will use initializePaystackPayment with the reference
         providerData = {
@@ -93,7 +90,6 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
           authorizationUrl: `paystack-client-side:${reference}`, // Special marker for client-side handling
           isClientSideFallback: true
         };
-        console.log('PaymentService: Using client-side fallback for Paystack');
       }
     } else if (paymentMethod === 'flutterwave') {
       const flutterwavePayload = {
@@ -135,11 +131,9 @@ async function initializePayment({ user, amount, paymentMethod, paymentType, rel
         bankDetails,
         isBankTransfer: true
       };
-      console.log('PaymentService: Bank transfer payment initialized with reference:', reference);
     }
   } catch (providerError) {
     console.error('PaymentService: Provider initialization error:', providerError.message);
-    console.error('PaymentService: Provider error details:', providerError);
     // Continue without provider data - frontend can handle fallback
   }
   
