@@ -200,15 +200,15 @@ const EscrowPaymentFlow = ({
   }, [property?.id, investment?.id, activeEscrowId]);
 
   useEffect(() => {
-    console.log('🔥 EscrowPaymentFlow: Component mounting...');
-    console.log('🔥 EscrowPaymentFlow: providedProperty:', providedProperty);
-    console.log('🔥 EscrowPaymentFlow: providedInvestment:', providedInvestment);
+    // console.log('🔥 EscrowPaymentFlow: Component mounting...');
+    // console.log('🔥 EscrowPaymentFlow: providedProperty:', providedProperty);
+    // console.log('🔥 EscrowPaymentFlow: providedInvestment:', providedInvestment);
     
     if (providedProperty || providedInvestment) {
-      console.log('🔥 EscrowPaymentFlow: Data already provided, setting loading to false');
+      // console.log('🔥 EscrowPaymentFlow: Data already provided, setting loading to false');
       setLoading(false);
     } else {
-      console.log('🔥 EscrowPaymentFlow: No data provided, will fetch from params');
+      // console.log('🔥 EscrowPaymentFlow: No data provided, will fetch from params');
     }
   }, [providedProperty, providedInvestment]);
 
@@ -319,7 +319,7 @@ const EscrowPaymentFlow = ({
     if (step !== 1) return; // only trigger from review step
 
     // Advance to payment and start the provider flow automatically
-    console.log('🔥 EscrowPaymentFlow: autoStartPayment triggered — advancing to payment and initializing provider');
+    // console.log('🔥 EscrowPaymentFlow: autoStartPayment triggered — advancing to payment and initializing provider');
     setStep(2);
     // Small timeout to ensure UI updates before starting heavy async ops
     setTimeout(() => {
@@ -341,11 +341,11 @@ const EscrowPaymentFlow = ({
     const token = user?.accessToken || user?.token || (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null);
     
     if (!token) {
-      console.log('[Socket] No auth token available, skipping Socket.IO connection');
+      // console.log('[Socket] No auth token available, skipping Socket.IO connection');
       return;
     }
 
-    console.log('[Socket] Connecting to Socket.IO with user:', user?.id);
+    // console.log('[Socket] Connecting to Socket.IO with user:', user?.id);
     try {
       connectSocket(token);
     } catch (error) {
@@ -354,7 +354,7 @@ const EscrowPaymentFlow = ({
 
     // Listen for payment status updates
     const handlePaymentCompleted = (data) => {
-      console.log('[Socket] Payment completed event received:', data);
+      // console.log('[Socket] Payment completed event received:', data);
       setPaymentStatus('completed');
       setPaymentError('');
       removeEscrowPaymentEntry(data.paymentId);
@@ -370,7 +370,7 @@ const EscrowPaymentFlow = ({
     };
 
     const handlePaymentFailed = (data) => {
-      console.log('[Socket] Payment failed event received:', data);
+      // console.log('[Socket] Payment failed event received:', data);
       setPaymentStatus('failed');
       setPaymentError(data.message || 'Payment processing failed');
       toast.error(data.message || 'Payment processing failed');
@@ -378,7 +378,7 @@ const EscrowPaymentFlow = ({
 
     // Listen for escrow status updates
     const handleEscrowFunded = (data) => {
-      console.log('[Socket] Escrow funded event received:', data);
+      // console.log('[Socket] Escrow funded event received:', data);
       if (data.escrowId === activeEscrowId) {
         setPaymentStatus('completed');
         toast.success('Escrow account funded successfully!');
@@ -386,21 +386,21 @@ const EscrowPaymentFlow = ({
     };
 
     const handleEscrowStatusChanged = (data) => {
-      console.log('[Socket] Escrow status changed event received:', data);
+      // console.log('[Socket] Escrow status changed event received:', data);
       if (data.escrowId === activeEscrowId) {
         toast.info(`Escrow status updated to: ${data.status}`);
       }
     };
 
     const handleEscrowDisputed = (data) => {
-      console.log('[Socket] Escrow disputed event received:', data);
+      // console.log('[Socket] Escrow disputed event received:', data);
       if (data.escrowId === activeEscrowId) {
         toast.error('A dispute has been filed for this escrow transaction');
       }
     };
 
     const handleEscrowCancelled = (data) => {
-      console.log('[Socket] Escrow cancelled event received:', data);
+      // console.log('[Socket] Escrow cancelled event received:', data);
       if (data.escrowId === activeEscrowId) {
         setPaymentStatus('failed');
         toast.warning('Escrow transaction has been cancelled');
@@ -592,11 +592,11 @@ const EscrowPaymentFlow = ({
 
 
   const handleProcessPayment = async () => {
-    console.log('🔥 EscrowPaymentFlow: handleProcessPayment called');
-    console.log('🔥 User:', user);
-    console.log('🔥 Payment data:', paymentData);
-    console.log('🔥 Property:', property);
-    console.log('🔥 Investment:', investment);
+    // console.log('🔥 EscrowPaymentFlow: handleProcessPayment called');
+    // console.log('🔥 User:', user);
+    // console.log('🔥 Payment data:', paymentData);
+    // console.log('🔥 Property:', property);
+    // console.log('🔥 Investment:', investment);
     
     try {
       if (!user || (!user.id && !user.uid)) {
@@ -604,46 +604,46 @@ const EscrowPaymentFlow = ({
         return;
       }
 
-      console.log('🔥 EscrowPaymentFlow: Starting validation...');
+      // console.log('🔥 EscrowPaymentFlow: Starting validation...');
       
       // Validate payment data if card payment
       if (paymentData.paymentMethod === 'card') {
-        console.log('🔥 EscrowPaymentFlow: Validating card payment...');
-        console.log('🔥 EscrowPaymentFlow: Card details:', paymentData);
+        // console.log('🔥 EscrowPaymentFlow: Validating card payment...');
+        // console.log('🔥 EscrowPaymentFlow: Card details:', paymentData);
         if (!paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv || !paymentData.cardholderName) {
-          console.log('❌ EscrowPaymentFlow: Card validation failed');
+          // console.log('❌ EscrowPaymentFlow: Card validation failed');
           toast.error('Please fill in all payment details');
           return;
         }
       } else {
-        console.log(`🔥 EscrowPaymentFlow: Using ${paymentData.paymentMethod || 'paystack'} payment, skipping card validation`);
+        // console.log(`🔥 EscrowPaymentFlow: Using ${paymentData.paymentMethod || 'paystack'} payment, skipping card validation`);
       }
 
-      console.log('🔥 EscrowPaymentFlow: Setting loading state...');
+      // console.log('🔥 EscrowPaymentFlow: Setting loading state...');
       setLoading(true);
       setPaymentError('');
 
       // Step 1: Create escrow transaction using EscrowContext
       const currentItem = property || investment;
-      console.log('🔥 EscrowPaymentFlow: Current item:', currentItem);
+      // console.log('🔥 EscrowPaymentFlow: Current item:', currentItem);
       
       const itemPriceValue = currentItem ? (property ? property.price : (investment?.minInvestment || investment?.minimumInvestment || 0)) : 0;
       const itemTitleValue = property ? property.title : (investment?.investmentTitle || investment?.title || 'Investment');
       const itemId = property ? property.id : investment?.id;
       
-      console.log('🔥 EscrowPaymentFlow: Item details:', { itemId, itemPriceValue, itemTitleValue });
+      // console.log('🔥 EscrowPaymentFlow: Item details:', { itemId, itemPriceValue, itemTitleValue });
 
       if (!itemId || !itemPriceValue || itemPriceValue <= 0) {
-        console.log('❌ EscrowPaymentFlow: Invalid item or price');
+        // console.log('❌ EscrowPaymentFlow: Invalid item or price');
         toast.error('Invalid item or price');
         setLoading(false);
         return;
       }
 
       const sellerId = property?.owner?.id || property?.ownerId || investment?.vendorId || investment?.sponsorId || null;
-      console.log('🔥 EscrowPaymentFlow: Seller ID:', sellerId);
+      // console.log('🔥 EscrowPaymentFlow: Seller ID:', sellerId);
       
-      console.log('🔥 EscrowPaymentFlow: Creating escrow transaction...');
+      // console.log('🔥 EscrowPaymentFlow: Creating escrow transaction...');
       // Create escrow transaction using the context function
       const escrowResult = await createEscrowTransaction(
         itemId,
@@ -670,7 +670,7 @@ const EscrowPaymentFlow = ({
         }
       );
 
-      console.log('🔥 EscrowPaymentFlow: Escrow result:', escrowResult);
+      // console.log('🔥 EscrowPaymentFlow: Escrow result:', escrowResult);
 
       if (!escrowResult.success) {
         toast.error(escrowResult.error || 'Failed to create escrow transaction');
@@ -696,7 +696,7 @@ const EscrowPaymentFlow = ({
 
       try {
         setIsInitializingPayment(true);
-        console.log('🚀 EscrowPaymentFlow: Starting payment initialization...');
+        // console.log('🚀 EscrowPaymentFlow: Starting payment initialization...');
 
         const payload = {
           amount: itemPriceValue,
@@ -715,10 +715,10 @@ const EscrowPaymentFlow = ({
           currency: 'NGN'
         };
         
-        console.log('🔥 EscrowPaymentFlow: API Payload:', payload);
-        console.log('🔥 EscrowPaymentFlow: API URL:', getApiUrl('/payments/initialize'));
-        console.log('🔥 EscrowPaymentFlow: Headers:', headers);
-        console.log('🔥 EscrowPaymentFlow: Cache busting with timestamp:', Date.now());
+        // console.log('🔥 EscrowPaymentFlow: API Payload:', payload);
+        // console.log('🔥 EscrowPaymentFlow: API URL:', getApiUrl('/payments/initialize'));
+        // console.log('🔥 EscrowPaymentFlow: Headers:', headers);
+        // console.log('🔥 EscrowPaymentFlow: Cache busting with timestamp:', Date.now());
 
         const response = await fetch(getApiUrl('/payments/initialize'), {
           method: 'POST',
@@ -728,9 +728,9 @@ const EscrowPaymentFlow = ({
           cache: 'no-store'
         });
 
-        console.log('🔥 EscrowPaymentFlow: Response status:', response.status);
+        // console.log('🔥 EscrowPaymentFlow: Response status:', response.status);
         const data = await response.json().catch(() => ({}));
-        console.log('🔥 EscrowPaymentFlow: Response data:', data);
+        // console.log('🔥 EscrowPaymentFlow: Response data:', data);
 
         // If payments route is missing (404) allow a safe dev/local fallback so Paystack can be launched for demos
         const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local'));
@@ -789,10 +789,10 @@ const EscrowPaymentFlow = ({
         const providerReference = providerData.txRef || providerData.tx_ref || paymentRecord?.reference;
         const isClientSideFallback = providerData.isClientSideFallback || (authorizationUrl && authorizationUrl.startsWith('paystack-client-side:'));
 
-        console.log('🔥 EscrowPaymentFlow: Payment initialized');
-        console.log('🔥 EscrowPaymentFlow: Provider data:', providerData);
-        console.log('🔥 EscrowPaymentFlow: Authorization URL:', authorizationUrl);
-        console.log('🔥 EscrowPaymentFlow: Is client-side fallback:', isClientSideFallback);
+        // console.log('🔥 EscrowPaymentFlow: Payment initialized');
+        // console.log('🔥 EscrowPaymentFlow: Provider data:', providerData);
+        // console.log('🔥 EscrowPaymentFlow: Authorization URL:', authorizationUrl);
+        // console.log('🔥 EscrowPaymentFlow: Is client-side fallback:', isClientSideFallback);
 
         const entryToSave = {
           escrowId,
@@ -821,12 +821,12 @@ const EscrowPaymentFlow = ({
             // Use reference returned by backend (ensures server-side record exists)
             const paystackRef = providerReference || paymentRecord?.reference || `PSK_${Date.now()}`;
 
-            console.log('🔥 EscrowPaymentFlow: Launching Paystack with reference:', paystackRef);
-            console.log('🔥 EscrowPaymentFlow: Using client-side SDK (fallback mode):', isClientSideFallback);
+            // console.log('🔥 EscrowPaymentFlow: Launching Paystack with reference:', paystackRef);
+            // console.log('🔥 EscrowPaymentFlow: Using client-side SDK (fallback mode):', isClientSideFallback);
 
             // Create a verification function that will be called after payment
             const verifyPaymentAfterSuccess = async (paystackReference) => {
-              console.log('🔥 EscrowPaymentFlow: Verifying payment with reference:', paystackReference);
+              // console.log('🔥 EscrowPaymentFlow: Verifying payment with reference:', paystackReference);
               try {
                 const headers = await buildAuthHeaders(user);
                 if (!headers) {
@@ -846,7 +846,7 @@ const EscrowPaymentFlow = ({
                 });
                 const verifyData = await verifyResp.json();
 
-                console.log('🔥 EscrowPaymentFlow: Verify response:', verifyData);
+                // console.log('🔥 EscrowPaymentFlow: Verify response:', verifyData);
 
                 if (verifyResp.ok && verifyData.success) {
                   setPaymentStatus('completed');
@@ -879,11 +879,11 @@ const EscrowPaymentFlow = ({
               metadata: { escrowId, propertyId: property?.id || null, investmentId: investment?.id || null },
               publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
               onSuccess: async (response) => {
-                console.log('🔥 EscrowPaymentFlow: Paystack onSuccess called with response:', response);
+                // console.log('🔥 EscrowPaymentFlow: Paystack onSuccess called with response:', response);
                 await verifyPaymentAfterSuccess(response.reference || paystackRef);
               },
               onClose: () => {
-                console.log('🔥 EscrowPaymentFlow: Paystack modal closed');
+                // console.log('🔥 EscrowPaymentFlow: Paystack modal closed');
                 toast('Paystack window closed. Complete the payment to proceed.');
               }
             });

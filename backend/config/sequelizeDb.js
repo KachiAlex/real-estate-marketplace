@@ -17,6 +17,8 @@ if (process.env.DATABASE_URL) {
   DATABASE_URL = process.env.DATABASE_URL;
 } else if (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME) {
   DATABASE_URL = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`;
+} else if (process.env.SKIP_SEQUELIZE_INIT === 'true') {
+  DATABASE_URL = 'postgresql://postgres:password@localhost:5432/test_dummy';
 } else {
   // If running in development, fall back to a local Postgres instance on a
   // developer-friendly port to avoid accidental connection attempts to
